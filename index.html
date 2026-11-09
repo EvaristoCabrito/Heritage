@@ -6,34 +6,24 @@
     <meta name="theme-color" content="#151714">
     <meta name="description" content="Protótipo de estratégia indireta em Mordavia, no universo Ember Ashes.">
     <title>Wasteland Farming: Heritage of Ashes</title>
-    <link rel="preload" as="image" href="public/art/mordavia-farmstead-open-v02.webp">
+    <link rel="preload" as="image" href="public/art/mordavia-map.webp">
     <link rel="preload" as="image" href="public/art/warrior-walk-v01.webp">
     <link rel="preload" as="image" href="public/art/healer-walk-v01.webp">
     <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
     <link rel="preload" as="font" href="public/fonts/PirataOne.ttf" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="app.css?v=101">
-    <script defer src="app.js?v=101"></script>
+    <link rel="stylesheet" href="app.css?v=303">
+    <script defer src="app.js?v=303"></script>
   </head>
   <body>
     <div class="game">
       <header class="hud">
-        <div class="hud-brand">
-          <div class="sigil" aria-hidden="true">M</div>
-          <div class="brand-copy">
-            <h1>Wasteland Farming</h1>
-            <span class="eyebrow">HERITAGE OF ASHES · VALE DO LUTO</span>
-          </div>
-          <span class="tag-test" id="test-badge" hidden>MODO TESTE</span>
-        </div>
-
         <div class="hud-stats" aria-label="Situação do domínio">
-          <div class="stat" title="Ouro. Vem dos impostos, cobrados à meia-noite (camponeses e taverna)."><small>OURO</small><strong id="gold">240</strong><em id="gold-rate">+2/dia</em></div>
-          <div class="stat" title="Provisões / capacidade do Depósito de Provisões (comida, armas e itens)"><small>PROVISÕES</small><strong><span id="grain">58</span><i>/<span id="storage-cap">100</span></i></strong><em id="grain-rate">+0/s</em></div>
-          <div class="stat" title="Madeira e quanto rende por segundo"><small>MADEIRA</small><strong id="timber">30</strong><em id="timber-rate">+0/s</em></div>
-          <div class="stat" title="Pessoas que vivem no domínio"><small>POVO</small><strong id="people">14</strong></div>
-          <div class="stat mood" title="Felicidade dos camponeses, de 0 a 100. Comida servida e imposto baixo aumentam; ração pequena, imposto alto e fome diminuem."><small>FELICIDADE</small><strong id="happiness">50</strong><em id="happiness-label">Conformados</em></div>
+          <div class="stat resource-stat" title="Ouro. Vem dos impostos, cobrados à meia-noite (camponeses e taverna)." aria-label="Ouro"><img class="hud-icon" src="public/art/icon-coin-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="gold">240</strong><em id="gold-rate" class="visually-hidden">+2/dia</em></span></div>
+          <div class="stat resource-stat" title="Comida guardada. Clique para abrir a lista de alimentos." aria-label="Comida"><img class="hud-icon" src="public/art/icon-provisions-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong><span id="grain">58</span><i>/<span id="storage-cap">100</span></i></strong><em id="grain-rate" class="visually-hidden">+0/s</em></span></div>
+          <div class="stat resource-stat" title="Madeira e quanto rende por segundo" aria-label="Madeira"><img class="hud-icon" src="public/art/icon-logs-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="timber">30</strong><em id="timber-rate" class="visually-hidden">+0/s</em></span></div>
+          <div class="stat mood resource-stat" title="Felicidade dos camponeses, de 0 a 100. Comida servida e imposto baixo aumentam; ração pequena, imposto alto e fome diminuem." aria-label="Felicidade dos camponeses"><img class="hud-icon" src="public/art/icon-happiness-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="happiness">50</strong><em id="happiness-label" class="visually-hidden">Conformados</em></span></div>
           <div class="stat mood favor" title="Favor dos nobres, de 0 a 100. Tributos entregues no prazo aumentam; atraso diminui. Abaixo de 20, eles atacam. Clique para ver os tributos."><small>FAVOR</small><strong id="favor">50</strong><em id="favor-label">Tolerado</em></div>
-          <div class="stat" title="Heróis no domínio / limite de hospedagem (+4 por Hotel de Estrada)"><small>HERÓIS</small><strong><span id="hero-count">1</span><i>/<span id="hero-cap">8</span></i></strong></div>
+          <div class="stat" title="Alojamento: Warrior inicial (1); cada guilda, +1 morador; hotel, +4 camas; taverna, +1 cama"><small>HERÓIS</small><strong><span id="hero-count">1</span><i>/<span id="hero-cap">1</span></i></strong></div>
           <div class="stat" title="Trabalhadores / limite (2 do casarão + 2 por casebre, 5 no Casebre Grande). Cada um come 0,3 provisão por segundo e recebe 5 de ouro por dia."><small>TRABALHADORES</small><strong><span id="worker-count">1</span><i>/<span id="worker-cap">1</span></i></strong></div>
           <div class="stat" title="Construções erguidas no domínio"><small>CONSTRUÇÕES</small><strong><span id="site-count">0</span></strong></div>
         </div>
@@ -54,18 +44,14 @@
         <section class="map-scene" id="map-scene" tabindex="0" aria-label="Mapa do domínio. Arraste para explorar; use as setas do teclado ou a roda do mouse para mover a câmera.">
           <div class="map-world" id="map-world">
             <div class="map-region manor-region">
-              <img class="map-art" src="public/art/mordavia-farmstead-open-v02.webp" alt="Casarão e terrenos do Vale do Luto" draggable="false">
+              <img class="map-art" src="public/art/mordavia-map.webp" alt="Mapa contínuo do Vale do Luto" draggable="false">
               <div class="map-atmosphere" aria-hidden="true"><span class="manor-smoke smoke-a"></span><span class="manor-smoke smoke-b"></span></div>
-            </div>
-            <div class="map-region road-region">
-              <img class="map-art" src="public/art/mordavia-old-road-color-match-v02.webp" alt="Estrada Velha" draggable="false">
             </div>
             <div class="site-layer" id="site-layer" aria-label="Construções do domínio">
               <div class="placement-preview" id="placement-preview" aria-hidden="true"></div>
               <div id="hero-layer" class="hero-layer" aria-label="Personagens do domínio"></div>
             </div>
-            <img class="tree-foreground manor-trees" src="public/art/mordavia-first-trees-v03.png" alt="" draggable="false">
-            <img class="tree-foreground road-trees" src="public/art/mordavia-second-trees-v03.png" alt="" draggable="false">
+            <img class="tree-foreground manor-trees" src="public/art/mordavia-forest-layer.png" alt="" draggable="false">
           </div>
           <div class="map-vignette"></div>
           <div class="map-tools">
@@ -89,6 +75,7 @@
             <div class="objective-progress"><div class="progress-track"><i id="objective-bar"></i></div><span class="progress-value"><span id="objective-gold">240</span> / 600</span></div>
             <div class="objective-actions">
               <div class="tax-control" role="group" aria-label="Imposto"><small>IMPOSTO</small><button type="button" id="tax-down" aria-label="Baixar imposto">−</button><b id="tax-pct">10%</b><button type="button" id="tax-up" aria-label="Subir imposto">+</button><span id="tax-preview"></span></div>
+              <button type="button" class="economy-open-btn" id="economy-open-btn">VER ECONOMIA</button>
             </div>
           </section>
 
@@ -97,8 +84,8 @@
               <button class="tab active" data-tab="build" role="tab" aria-selected="true">CONSTRUIR</button>
               <button class="tab" data-tab="heroes" role="tab" aria-selected="false">HERÓIS <span class="tab-count">1</span></button>
               <button class="tab" data-tab="food" role="tab" aria-selected="false">PROVISÕES</button>
-              <button class="tab" data-tab="market" role="tab" aria-selected="false">MERCADO</button>
               <button class="tab" data-tab="economy" role="tab" aria-selected="false">ECONOMIA</button>
+              <button class="tab" data-tab="market" role="tab" aria-selected="false">MERCADO</button>
             </div>
             <div class="panel-view" id="panel-view"></div>
           </section>

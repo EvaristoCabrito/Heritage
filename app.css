@@ -56,18 +56,18 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .map-scene { isolation: isolate; position: relative; width: 100%; max-width: 100%; margin: 0 auto; overflow: hidden; aspect-ratio: 1199 / 1312; min-height: 0; border: 1px solid rgba(202,184,141,.26); border-radius: 8px; background: #24291f; box-shadow: 0 18px 45px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.04); cursor: grab; touch-action: none; }
 .map-scene.dragging { cursor: grabbing; }
 .map-scene:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
-.map-world { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1199 / 2624; transform-origin: top left; transform: translate3d(var(--camera-x, 0px), var(--camera-y, 0px), 0) scale(var(--zoom, 1)); will-change: transform; }
-.map-region { position: absolute; left: 0; width: 100%; height: 50%; }
+.map-world { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1199 / 2452; transform-origin: top left; transform: translate3d(var(--camera-x, 0px), var(--camera-y, 0px), 0) scale(var(--zoom, 1)); will-change: transform; }
+.map-region { position: absolute; left: 0; width: 100%; height: 100%; }
 .manor-region { top: 0; }
 .road-region { top: 50%; }
 .map-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; user-select: none; pointer-events: none; }
-.tree-foreground { position: absolute; z-index: 5; left: 0; width: 100%; height: 50%; object-fit: fill; pointer-events: none; user-select: none; }
+.tree-foreground { position: absolute; z-index: 5; left: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; user-select: none; }
 .manor-trees { top: 0; }
-.road-trees { top: 50%; }
-.map-atmosphere { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
-.map-atmosphere .manor-smoke { position: absolute; left: 36.7%; bottom: 88.5%; width: 7%; aspect-ratio: 2 / 3; background: url('public/art/manor-smoke-v01.webp') center / contain no-repeat; transform-origin: 50% 100%; opacity: 0; animation: manor-smoke-rise 5.8s ease-out infinite; }
+.road-trees { top: 46.5%; }
+.map-atmosphere { position: absolute; inset: 0; z-index: 6; pointer-events: none; overflow: hidden; }
+.map-atmosphere .manor-smoke { position: absolute; left: 36.7%; bottom: 94%; width: 7%; aspect-ratio: 2 / 3; background: url('public/art/manor-smoke.webp') center / contain no-repeat; transform-origin: 50% 100%; opacity: 0; animation: manor-smoke-rise 5.8s ease-out infinite; }
 .map-atmosphere .smoke-b { animation-delay: -2.9s; }
-@keyframes manor-smoke-rise { 0% { opacity: 0; transform: translateX(-50%) scale(.48); } 18% { opacity: .36; } 56% { opacity: .4; transform: translate(-33%,-36%) scale(.85); } 100% { opacity: 0; transform: translate(-18%,-78%) scale(1.18); } }
+@keyframes manor-smoke-rise { 0% { opacity: 0; transform: translateX(-50%) scale(.48); } 18% { opacity: .58; } 56% { opacity: .46; transform: translate(-33%,-36%) scale(.85); } 100% { opacity: 0; transform: translate(-18%,-78%) scale(1.18); } }
 .map-vignette { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(10,13,10,.61) 0%, transparent 19%, transparent 69%, rgba(9,12,9,.49) 100%), linear-gradient(90deg, rgba(11,14,11,.12), transparent 24%, transparent 76%, rgba(11,14,11,.12)); }
 .map-title { position: absolute; z-index: 2; left: 18px; top: 15px; display: flex; flex-direction: column; gap: 3px; text-shadow: 0 2px 8px #000; }
 .map-title span { font: 17px 'Newsreader', Georgia, serif; letter-spacing: .11em; }
@@ -96,9 +96,9 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .site.pending .site-ring { background: var(--gold); color: #26231b; animation: pulse 1.1s infinite; }
 .site.built { min-width: 0; transform: translate(-50%,-88%); cursor: pointer; }
 .site.built:hover, .site.built:focus-visible { transform: translate(-50%,-91%) scale(1.04); }
-.building-art { position: relative; display: block; width: clamp(78px, 13vw, 132px); aspect-ratio: 1; background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
+.building-art { position: relative; display: block; width: clamp(78px, 13vw, 132px); aspect-ratio: var(--art-aspect, 1); background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
 .site[data-art="mill-body"] .building-art { width: clamp(45px, 7.5vw, 75px); }
-.mill-sails { position: absolute; z-index: 1; left: 47%; top: 51%; display: block; width: 96%; aspect-ratio: 1; background: url('public/art/mill-sails-v01.webp') center / contain no-repeat; transform-origin: 50% 50%; animation: mill-turn var(--mill-spin-duration, 8s) linear infinite; pointer-events: none; }
+.mill-sails { position: absolute; z-index: 1; left: 47%; top: 51%; display: block; width: 96%; aspect-ratio: 1; background: var(--mill-sails-image) center / contain no-repeat; transform-origin: 50% 50%; animation: mill-turn var(--mill-spin-duration, 8s) linear infinite; pointer-events: none; }
 @keyframes mill-turn { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
 .site.built small { max-width: 120px; overflow: hidden; text-overflow: ellipsis; padding: 3px 6px; border: 1px solid rgba(204,180,127,.42); border-radius: 3px; background: rgba(16,18,15,.84); font-size: 7px; }
 .site.built.selected .building-art { filter: drop-shadow(0 0 7px #e1c488) drop-shadow(2px 7px 4px rgba(9,11,8,.7)); }
@@ -175,7 +175,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .bounty-btn { min-height: 28px; padding: 0 8px; border: 1px solid rgba(195,133,91,.58); border-radius: 3px; color: #ddb38c; background: rgba(94,57,37,.22); font-size: 7px; letter-spacing: .09em; cursor: pointer; }
 .bounty-btn:hover, .bounty-btn.active { color: #221d16; background: #d1a36c; }
 .command-card { overflow: hidden; }
-.tabs { display: grid; grid-template-columns: repeat(5,1fr); border-bottom: 1px solid var(--line); background: rgba(13,15,12,.47); }
+.tabs { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); border-bottom: 1px solid var(--line); background: rgba(13,15,12,.47); }
 .tab { position: relative; padding: 12px 5px 10px; border: 0; border-bottom: 2px solid transparent; color: #8e8d80; background: transparent; font-size: 8px; letter-spacing: .13em; cursor: pointer; }
 .tab.active { border-bottom-color: var(--gold); color: #e0cfaa; background: rgba(200,175,124,.05); }
 .tab-count { margin-left: 4px; padding: 1px 4px; border-radius: 9px; color: #27241d; background: var(--gold); font-size: 8px; letter-spacing: 0; }
@@ -330,13 +330,18 @@ body { overflow: hidden; }
 .hud-brand .sigil { width: 36px; height: 36px; font-size: 18px; }
 .hud-brand h1 { margin: 0; font: 18px/1.1 'Newsreader', Georgia, serif; white-space: nowrap; }
 .hud-brand .eyebrow { margin-top: 3px; font-size: 9px; letter-spacing: .14em; white-space: nowrap; }
-.hud-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); overflow: hidden; }
+.hud-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); overflow: hidden; }
 .hud-stats .stat { justify-content: center; gap: 2px; padding: 6px 12px; background: transparent; border-left: 1px solid rgba(206,186,137,.14); }
 .hud-stats .stat:first-child { border-left: 0; }
 .hud-stats .stat small { font-size: 9px; letter-spacing: .1em; }
 .hud-stats .stat strong { font-size: 20px; line-height: 1; }
 .hud-stats .stat strong i { margin-left: 2px; font-size: 14px; }
 .hud-stats .stat em { font-size: 10px; }
+.hud-stats .resource-stat { flex-direction: row; align-items: center; gap: 7px; }
+.hud-icon { display: block; flex: 0 0 32px; width: 32px; height: 32px; object-fit: contain; }
+.resource-values { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 3px; }
+.resource-values strong { display: block; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .hud-time { display: flex; align-items: center; gap: 12px; padding: 0 10px 0 14px; }
 .hud-time .world-clock { margin: 0; font-size: 20px; }
 .hud-time .speed-btn { width: 34px; height: 30px; font: 12px 'Figtree', sans-serif; }
@@ -418,7 +423,7 @@ body { overflow: hidden; }
   .hud-brand .brand-copy { min-width: 0; }
   .hud-brand h1, .hud-brand .eyebrow { overflow: hidden; text-overflow: ellipsis; }
   .hud-time { min-height: 50px; }
-  .hud-stats { order: 3; flex: 1 1 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hud-stats { order: 3; flex: 1 1 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .hud-stats .stat:nth-child(5) { border-left: 0; }
   .hud-stats .stat:nth-child(n+5) { border-top: 1px solid rgba(206,186,137,.14); }
   .stage { grid-template-columns: 1fr; }
@@ -434,6 +439,8 @@ body { overflow: hidden; }
   .hud-stats .stat strong { font-size: 16px; }
   .hud-stats .stat strong i { font-size: 11px; }
   .hud-stats .stat em { font-size: 8px; }
+  .hud-stats .resource-stat { gap: 4px; }
+  .hud-icon { flex-basis: 24px; width: 24px; height: 24px; }
   .hud-time { gap: 6px; padding: 0 6px 0 8px; }
   .hud-time .world-clock { font-size: 15px; }
   .hud-time .speed-btn { width: 28px; height: 26px; font-size: 10px; }
@@ -454,7 +461,7 @@ body { overflow: hidden; }
 .menu-layer { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; overflow-y: auto; }
 .menu-layer[hidden] { display: none; }
 .menu-backdrop { position: fixed; inset: 0; z-index: -1; }
-.menu-layer.is-title .menu-backdrop { background: linear-gradient(90deg, rgba(10,12,9,.94) 0%, rgba(10,12,9,.72) 38%, rgba(10,12,9,.25) 70%, rgba(10,12,9,.45) 100%), url('public/art/mordavia-farmstead-open-v02.webp') center 30% / cover no-repeat, #121512; }
+.menu-layer.is-title .menu-backdrop { background: linear-gradient(90deg, rgba(10,12,9,.94) 0%, rgba(10,12,9,.72) 38%, rgba(10,12,9,.25) 70%, rgba(10,12,9,.45) 100%), url('public/art/mordavia-title.webp') center 30% / cover no-repeat, #121512; }
 .menu-layer.is-pause .menu-backdrop { background: rgba(8,10,8,.72); backdrop-filter: blur(4px); }
 .menu-panel { width: 100%; display: grid; place-items: center; }
 
@@ -543,7 +550,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
    Identidade Ember Ashes: título em Pirata One, botões de menu em Pirata One maiúscula,
    o principal em brasa e os outros em preto com borda dourada.
    ========================================================================== */
-.menu-layer.is-title .menu-backdrop { background: linear-gradient(90deg, rgba(14,14,14,.95) 0%, rgba(14,14,14,.74) 36%, rgba(14,14,14,.2) 70%, rgba(14,14,14,.5) 100%), url('public/art/mordavia-farmstead-open-v02.webp') center 30% / cover no-repeat, #0e0e0e; }
+.menu-layer.is-title .menu-backdrop { background: linear-gradient(90deg, rgba(14,14,14,.95) 0%, rgba(14,14,14,.74) 36%, rgba(14,14,14,.2) 70%, rgba(14,14,14,.5) 100%), url('public/art/mordavia-title.webp') center 30% / cover no-repeat, #0e0e0e; }
 .title-screen { gap: 30px; }
 .title-logo h1 { margin: 0; color: #f3e1c2; font: clamp(56px, 8vw, 104px)/.95 'Pirata One', Georgia, serif; letter-spacing: .01em; text-shadow: 0 3px 18px #000; }
 .title-logo .title-sub { margin: 12px 0 0 4px; color: #e8d5b6; font: 600 13px 'Figtree', sans-serif; letter-spacing: .14em; text-transform: none; text-shadow: 0 2px 6px #000; }
@@ -735,10 +742,94 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .site.constructing .building-art { opacity: .5; filter: grayscale(.85) sepia(.35) brightness(.8) drop-shadow(2px 7px 4px rgba(9,11,8,.6)); }
 .site.constructing .building-art::before, .site.constructing .building-art::after { display: none; }
 .site.constructing small { border-style: dashed; color: #f0c98a; }
+/* Na obra, o rótulo de progresso sobe para o alto da construção: o camponês trabalha na base e não o cobre.
+   O espaçador invisível mantém a altura do botão, para a obra não pular quando fica pronta. */
+.site.constructing .build-progress { position: absolute; z-index: 2; left: 50%; top: 0; transform: translateX(-50%); }
+.site.constructing .build-spacer { visibility: hidden; }
 
 /* Escolha do herdeiro um pouco menor, para caber sem rolagem. */
 .menu-card.heir-screen { padding: 20px 26px 18px; }
 .heir-screen .menu-card-head { margin-bottom: 12px; }
+
+/* Economia no HUD e na pausa; ficha ampliada para leitura. */
+.economy-card { max-height: calc(100vh - 48px); overflow-y: auto; }
+.economy-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-bottom: 22px; }
+.economy-metrics > div { display: flex; min-height: 82px; flex-direction: column; justify-content: center; gap: 5px; padding: 12px; border: 1px solid rgba(206,186,137,.2); border-radius: 5px; background: rgba(10,12,9,.48); }
+.economy-metrics small { color: #a9a08b; font: 700 10px 'Figtree', sans-serif; letter-spacing: .1em; }
+.economy-metrics b { color: #f0dfb4; font: 28px 'Newsreader', Georgia, serif; }
+.economy-metrics em { color: #9eaa83; font: normal 12px 'Figtree', sans-serif; }
+.economy-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.economy-card h3 { margin: 0 0 10px; color: #e9d5a9; font: 24px 'Newsreader', Georgia, serif; }
+.economy-list { margin: 0; }
+.economy-list > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(206,186,137,.12); }
+.economy-list dt { color: #b9b09a; font-size: 14px; }
+.economy-list dd { margin: 0; color: #eee0bf; font: 600 15px 'Figtree', sans-serif; white-space: nowrap; }
+.economy-list .economy-net { border-top: 1px solid rgba(226,170,100,.35); border-bottom: 0; }
+.economy-list .economy-net dt, .economy-list .economy-net dd { color: #f0c98a; font-weight: 700; }
+.economy-costs { margin-top: 24px; }
+.economy-table-wrap { max-height: 280px; overflow: auto; border: 1px solid rgba(206,186,137,.18); border-radius: 5px; }
+.economy-card table { width: 100%; border-collapse: collapse; text-align: left; }
+.economy-card th, .economy-card td { padding: 8px 10px; border-bottom: 1px solid rgba(206,186,137,.12); color: #d7cbb0; font-size: 13px; }
+.economy-card thead th { position: sticky; top: 0; color: #efcf91; background: #22231d; }
+.economy-card td { text-align: right; white-space: nowrap; }
+.economy-note { margin: 10px 0 0; color: #a9a08b; font-size: 12px; line-height: 1.5; }
+.menu-layer.sheet-open { place-items: center; padding: 16px; }
+.menu-layer.sheet-open .menu-backdrop { background: rgba(8,10,8,.18); backdrop-filter: none; }
+.menu-card.sheet { position: relative; width: min(680px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; padding: 18px 22px 20px; scrollbar-width: thin; scrollbar-color: #5b5240 transparent; }
+.sheet-close-row { position: sticky; z-index: 2; top: -18px; display: flex; justify-content: flex-end; height: 34px; margin: -18px -22px 0; }
+.sheet-close { width: 34px; height: 34px; border: 1px solid rgba(206,186,137,.4); border-radius: 0 0 0 6px; color: #e8dfca; background: rgba(22,24,20,.96); font: 26px/1 'Figtree', sans-serif; cursor: pointer; }
+.sheet-close:hover, .sheet-close:focus-visible { color: #211f18; background: var(--gold); outline: none; }
+.sheet-top { gap: 16px; margin: 0 0 12px; padding-right: 28px; }
+.sheet-top > .crest { width: 68px; height: auto; flex: none; }
+.sheet-portrait { width: 64px; height: 76px; }
+.sheet-top h2 { font-size: 34px; }
+.sheet-top .eyebrow { font-size: 11px; }
+.sheet-top .heir-motto { margin-top: 4px; font-size: 14px !important; }
+.sheet-level { margin-bottom: 10px; }
+.sheet-level-head { gap: 6px; margin-bottom: 5px; }
+.sheet-level-head b { font-size: 23px; }
+.sheet-level-head span, .sheet-level-head small { font-size: 12px; }
+.xp-bar { height: 7px; }
+.attr-grid { gap: 5px; margin-bottom: 8px; }
+.attr-grid div { padding: 6px 4px; }
+.attr-grid dt, .attr-grid small { font-size: 10px; }
+.attr-grid dd { margin-top: 1px; font-size: 20px; }
+.heir-attrs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.sheet-facts { gap: 8px; margin: 0 0 8px; padding: 7px 10px; }
+.sheet-facts dt { font-size: 9px; }
+.sheet-facts dd { margin-top: 2px; font-size: 14px; }
+.sheet-about { margin: 0 0 6px; font-size: 15px !important; line-height: 1.4; }
+.sheet-house { font-size: 12px; }
+.sheet-section-label { margin: 10px 0 5px; font-size: 10px; }
+.equip-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.equip-slot { gap: 7px; min-height: 42px; padding: 5px 7px; }
+.equip-slot .pixel-icon { width: 28px; height: 28px; padding: 2px; }
+.equip-slot small { font-size: 9px; }
+.equip-slot b { font-size: 12px; line-height: 1.2; }
+.equip-slot em { display: none; }
+.economy-panel-group { margin: 0 0 12px; padding: 10px; border: 1px solid rgba(206,186,137,.18); border-radius: 5px; background: rgba(10,12,9,.35); }
+.economy-panel-group h4, .economy-panel-group summary { margin: 0 0 6px; color: #d6b875; font: 700 10px 'Figtree', sans-serif; letter-spacing: .12em; }
+.economy-panel-group summary { cursor: pointer; }
+.economy-panel-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(206,186,137,.1); color: #c4baa3; font-size: 11px; }
+.economy-panel-row:last-of-type { border-bottom: 0; }
+.economy-panel-row b { color: #eee0bf; font: 600 12px 'Figtree', sans-serif; text-align: right; white-space: nowrap; }
+.economy-panel-row small { color: #9eaa83; font-size: 10px; white-space: nowrap; }
+.economy-panel-total { color: #e9d5a9; }
+.economy-panel-note { display: block; margin-top: 7px; color: #a9a08b; font-size: 10px; line-height: 1.4; }
+.economy-open-btn { min-height: 36px; border: 1px solid rgba(214,184,117,.48); border-radius: 4px; color: #ead6a7; background: rgba(17,19,16,.72); font: 700 12px 'Figtree', sans-serif; letter-spacing: .12em; cursor: pointer; }
+.economy-open-btn:hover, .economy-open-btn:focus-visible { border-color: var(--gold); color: #fff0c8; background: rgba(106,87,51,.32); outline: none; }
+@media (max-width: 760px) {
+  .economy-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .economy-columns { grid-template-columns: 1fr; }
+  .menu-layer.sheet-open { padding: 10px; }
+  .menu-card.sheet { width: min(680px, 100%); max-height: calc(100dvh - 20px); padding: 16px 14px; }
+  .sheet-close-row { top: -16px; margin: -16px -14px 0; }
+  .sheet-top { gap: 12px; }
+  .sheet-top > .crest { width: 54px; }
+  .sheet-portrait { width: 52px; height: 62px; }
+  .sheet-top h2 { font-size: 28px; }
+  .equip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .heir-screen .heir-grid { gap: 7px; margin-bottom: 9px; }
 .heir-screen .heir-row-label { margin: 2px 0 5px; }
 .heir-screen .heir-card { padding: 8px 6px 7px; gap: 2px; }
@@ -767,14 +858,19 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 
 /* Mercado. */
 .market-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-.market-row { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid rgba(193,176,135,.18); border-radius: 5px; background: rgba(15,17,14,.55); }
-.market-row img { width: 36px; height: 36px; object-fit: contain; }
-.market-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* Cada linha: produto e estoque em cima; Vender (esquerda) e Comprar (direita) embaixo, lado a lado. */
+.market-row { display: grid; grid-template-columns: 36px minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "img name name" "img sell buy"; align-items: center; gap: 6px 12px; padding: 8px 10px; border: 1px solid rgba(193,176,135,.18); border-radius: 5px; background: rgba(15,17,14,.55); }
+.market-row > img { grid-area: img; width: 36px; height: 36px; object-fit: contain; }
+.market-name { grid-area: name; display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 .market-name b { color: #ece2cb; font: 600 14px 'Newsreader', Georgia, serif; }
 .market-name small { color: #9d9583; font-size: 11px; }
-.market-side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-.market-side > small { display: inline-flex; align-items: center; gap: 3px; color: #a59d89; font-size: 9px; letter-spacing: .06em; white-space: nowrap; }
-.market-side > span { display: flex; gap: 3px; }
+.market-side { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.market-side:nth-child(3) { grid-area: sell; }
+.market-side:nth-child(4) { grid-area: buy; }
+.market-side > small { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: 100%; color: #a59d89; font-size: 10px; letter-spacing: .06em; }
+.market-side:nth-child(4) > small { color: #e8a873; }
+.market-side .cost-ico { width: 13px; height: 13px; }
+.market-side > span { display: flex; gap: 4px; }
 .market-side button { min-width: 30px; height: 26px; padding: 0 6px; border: 1px solid rgba(206,186,137,.35); border-radius: 4px; color: #e5d7b5; background: rgba(30,32,27,.9); font: 600 12px 'Figtree', sans-serif; cursor: pointer; }
 .market-side button:hover { border-color: var(--gold); color: var(--gold); }
 .market-side button.buy { border-color: rgba(255,200,130,.5); color: #f2e4d0; background: linear-gradient(180deg, #d9621c 0%, #9c2f10 55%, #561708 100%); }
@@ -862,3 +958,22 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .demand-foot .hut-upgrade:disabled { opacity: .45; cursor: not-allowed; }
 .baron-seal { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #1a0f08; background: radial-gradient(circle, #e0782a, #6a2a0c); font: 18px 'Pirata One', Georgia, serif; }
 
+.tabs .tab { padding-right: 2px; padding-left: 2px; font-size: 9px; letter-spacing: .04em; }
+.economy-panel-row { font-size: 12px; }
+.economy-panel-row b { font-size: 13px; }
+.economy-panel-note { font-size: 11px; }
+
+/* Barra de vida de quem está ferido; ladrões com nome em vermelho. */
+.character .hp-bar { position: absolute; left: 22%; right: 22%; top: -5px; height: 5px; display: none; border: 1px solid #000; background: #2a0d0b; pointer-events: none; }
+.character.hurt .hp-bar { display: block; }
+.character .hp-bar i { display: block; width: var(--hp, 100%); height: 100%; background: #7fbf5a; }
+.character.bandit .hp-bar i { background: #d9452b; }
+.character.bandit .character-name { border-color: rgba(217,69,43,.7); color: #f2b3a6; }
+
+/* Ração: efeito na felicidade em cada opção. */
+.segmented.ration button em { font-style: normal; font-size: 9px; color: inherit; opacity: .9; }
+.segmented.ration button em.mood-up { color: #a9d37f; }
+.segmented.ration button em.mood-down { color: #e8866a; }
+.segmented.ration button.active em { color: inherit; }
+.ration-effect { margin: 6px 0 0; color: #d8ccb0; font-size: 12px; line-height: 1.45; }
+.ration-effect b { color: var(--gold); }
