@@ -199,7 +199,7 @@ const HERO_START_PURSE = 15;
 function newGameState(testMode = false, heir = null) {
   return {
     gold: 240, grain: 58, timber: 30,
-    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, eggs: 0, milk: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, eggs: true, milk: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1,
+    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, eggs: 0, milk: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, eggs: true, milk: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false,
     bandits: [], nextRaidAt: 720,
@@ -628,7 +628,8 @@ function renderSites() {
   const ids = new Set(state.buildings.map(building => String(building.site)));
   $$('.site', layer).filter(site => !ids.has(site.dataset.site)).forEach(site => site.remove());
   const moving = state.movingSite != null;
-  $('#map-scene').classList.toggle('placing', !!state.selectedBuild || moving);
+  renderBountyFlags();
+  $('#map-scene').classList.toggle('placing', !!state.selectedBuild || moving || !!state.placingBounty);
   if (!state.selectedBuild && !moving) $('#placement-preview').hidden = true;
   state.buildings.forEach(building => {
     const idx = building.site;
@@ -792,6 +793,7 @@ function renderPanel() {
       <p class="build-note">A moeda é o custo em ouro e a lenha é o custo em madeira.</p>`;
   } else if (state.tab === 'heroes') {
     host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
+      ${bountyPanelHTML()}
       <div class="hero-list">${state.heroes.filter(h => h.alive).map(heroCard).join('') || '<div class="empty-state">Nenhum herói. Ninguém foi corajoso, ou burro, o bastante.<br>Construa uma taverna ou guilda.</div>'}</div>
       <div class="panel-title worker-heading"><h3>Trabalhadores</h3><span>${state.workers.filter(worker => worker.alive).length} no domínio</span></div>
       <div class="hero-list">${state.workers.filter(worker => worker.alive).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Até eles desistiram.<br>Construa um casebre.</div>'}</div>
@@ -812,6 +814,11 @@ function renderPanel() {
   $$('[data-lumber]', host).forEach(button => button.addEventListener('click', () => setLumberCrew(Number(button.dataset.lumber), Number(button.dataset.change))));
   $$('[data-move-site]', host).forEach(button => button.addEventListener('click', () => (state.movingSite === Number(button.dataset.moveSite) ? cancelMove() : startMove(Number(button.dataset.moveSite)))));
   $$('[data-open-market]', host).forEach(button => button.addEventListener('click', () => { state.tab = 'market'; $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); renderPanel(); }));
+  $$('[data-bounty-amount]', host).forEach(button => button.addEventListener('click', () => { state.bountyAmount = Number(button.dataset.bountyAmount); renderPanel(); }));
+  $$('[data-bounty-input]', host).forEach(input => input.addEventListener('change', () => { state.bountyAmount = Math.max(5, Math.round(Number(input.value) || 25)); renderPanel(); }));
+  $$('[data-bounty-place]', host).forEach(button => button.addEventListener('click', () => (state.placingBounty ? cancelBountyPlacement() : startBountyPlacement())));
+  $$('[data-bounty-preset]', host).forEach(button => button.addEventListener('click', () => createBounty(BOUNTY_PRESETS[button.dataset.bountyPreset])));
+  $$('[data-bounty-cancel]', host).forEach(button => button.addEventListener('click', () => cancelBounty(button.dataset.bountyCancel)));
   $$('[data-deliver]', host).forEach(button => button.addEventListener('click', () => deliverDemand(button.dataset.deliver)));
   $$('[data-armory-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeArmory(Number(button.dataset.armoryUpgrade))));
   $$('[data-producer-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeProducer(Number(button.dataset.producerUpgrade))));
@@ -910,6 +917,7 @@ function moveBuilding(x, y) {
 }
 
 function chooseBuild(id) {
+  state.placingBounty = false;
   const item = BUILDINGS.find(building => building.id === id);
   if (id !== 'farm' && (state.gold < item.cost || state.timber < item.wood)) {
     say('Falta ouro ou madeira. As dívidas, não.');
@@ -1257,6 +1265,9 @@ function nextActorGoal(actor) {
     actor.workTrip = !actor.workTrip;
     return;
   }
+  const current = actor.bountyId ? (state.bounties || []).find(bounty => bounty.id === actor.bountyId && String(bounty.takenBy) === String(actor.id)) : null;
+  if (current) { bountyStep(actor, current); return; }
+  actor.bountyId = null;
   const tavern = openTavern();
   if (tavern && actor.drinkUntil > state.minutes) { goDrink(actor, tavern); return; }
   if (tavern && Math.random() < (actor.trait === 'Bêbado' ? 0.6 : 0.2)) {
@@ -1264,6 +1275,8 @@ function nextActorGoal(actor) {
     goDrink(actor, tavern);
     return;
   }
+  const offer = considerBounties(actor);
+  if (offer) { bountyStep(actor, offer); return; }
   const patrol = PATROLS[actor.className] || PATROLS.other;
   let destination = patrol[(actor.patrolIndex || 0) % patrol.length];
   actor.patrolIndex = (actor.patrolIndex || 0) + 1;
@@ -1352,7 +1365,7 @@ function tick() {
   if (state.tab === 'economy' && state.ticks % 10 === 0 && !document.querySelector('#panel-view button:hover, #panel-view details[open]')) renderPanel();
   state.timber += r.timber * state.speed;
   accrueTavern(state.speed);
-  if (state.minutes % 60 < state.speed) { shopAtArmory(); processDemands(); }
+  if (state.minutes % 60 < state.speed) { shopAtArmory(); processDemands(); processBounties(); }
   state.minutes += state.speed;
   if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) { gainHeirXp(40); collectTaxes(); }
   // Heróis ganham experiência só em combate (golpes e curas). Aqui chegam os bandos e todos se recuperam.
@@ -2132,6 +2145,169 @@ function demandsHTML() {
     <p class="storage-items">Entregar no prazo: +8 (Barão +15). Atrasar: −5 e −1 por hora. Se não entregar, vêm buscar à força. Abaixo de ${FAVOR_ATTACK}, os nobres atacam o domínio.</p>
     <div class="food-label">TRIBUTOS</div>${rows || '<p class="storage-items">Nenhum nobre lembrou de você hoje. Aproveite.</p>'}</div>`;
 }
+// ==========================================================================
+// Recompensas: você escolhe quanto paga e onde (um ponto do mapa, a patrulha do segundo mapa
+// ou as ruínas do covil). O ouro sai do cofre na hora e fica guardado. Ninguém recebe ordem:
+// cada herói decide se vale a pena pelo valor, pela distância e pela própria mania.
+// Quem cumpre (vigiar o ponto por uma hora de jogo, ou fazer a patrulha inteira) embolsa tudo.
+// ==========================================================================
+const BOUNTY_GUARD = 60; // minutos de vigia no ponto
+const BOUNTY_DAYS = 2; // prazo; vencida, o ouro volta pro cofre
+const SOUTH_PATROL = [12, 13, 14, 15, 16, 17, 18, 17, 16, 15, 14, 13, 12];
+const BOUNTY_PRESETS = {
+  south: { label: 'Patrulha do segundo mapa', route: SOUTH_PATROL, node: 15 },
+  lair: { label: 'Vigiar as ruínas do covil', node: 9 },
+};
+const bountyTaker = bounty => bounty.takenBy != null ? state.heroes.find(hero => String(hero.id) === String(bounty.takenBy) && hero.alive) || null : null;
+function bountyLabelAt(x, y) {
+  return y > 100 ? 'Vigiar a estrada velha' : x > 75 ? 'Vigiar a borda da floresta' : 'Vigiar este ponto';
+}
+function createBounty(spec) {
+  const reward = Math.max(5, Math.round(state.bountyAmount || 25));
+  if (!state.testMode && state.gold < reward) { say(`Falta ouro. Ninguém arrisca o pescoço por promessa.`); return null; }
+  if (!state.testMode) state.gold -= reward;
+  const node = spec.node ?? nearestNode(spec);
+  const point = spec.x != null ? { x: spec.x, y: spec.y } : { x: PATH_NODES[node].x, y: PATH_NODES[node].y };
+  const bounty = { id: `bounty-${Date.now()}-${Math.floor(Math.random() * 1000)}`, label: spec.label || bountyLabelAt(point.x, point.y), reward, x: point.x, y: point.y, node,
+    route: spec.route || null, takenBy: null, until: state.minutes + BOUNTY_DAYS * 1440 };
+  state.bounties.push(bounty);
+  renderSites(); renderPanel(); updateHud();
+  say(`Recompensa de ${reward} de ouro: ${bounty.label.toLowerCase()}. Agora é ver quem tem coragem. Ou dívida.`);
+  return bounty;
+}
+function cancelBounty(id) {
+  const bounty = state.bounties.find(item => item.id === id);
+  if (!bounty) return;
+  const taker = bountyTaker(bounty);
+  if (taker) { taker.bountyId = null; taker.route = []; taker.finalPoint = null; }
+  if (!state.testMode) state.gold += bounty.reward;
+  state.bounties = state.bounties.filter(item => item !== bounty);
+  renderSites(); renderPanel(); updateHud();
+  say(`Recompensa cancelada. ${bounty.reward} de ouro voltou pro cofre${taker ? `, e ${taker.name} reclamou do caminho à toa` : ''}.`);
+}
+function startBountyPlacement() {
+  state.selectedBuild = null;
+  state.movingSite = null;
+  state.placingBounty = true;
+  renderSites();
+  say(`Toque no mapa onde os heróis devem vigiar. Recompensa: ${state.bountyAmount} de ouro. Esc cancela.`);
+}
+function cancelBountyPlacement() {
+  if (!state.placingBounty) return;
+  state.placingBounty = false;
+  renderSites();
+  say('Nenhuma recompensa marcada. Os heróis nem souberam.');
+}
+function placeBountyAt(x, y) {
+  if (x < 3 || x > 97 || y < 3 || y > 197) { say('Fora do mapa. Nem os heróis vão tão longe.'); return; }
+  state.placingBounty = false;
+  createBounty({ x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 });
+}
+// O herói pesa o valor contra a distância e o perigo; a mania muda a conta.
+function bountyScore(hero, bounty) {
+  const dist = Math.hypot(hero.x - bounty.x, hero.y - bounty.y);
+  const far = bounty.route || bounty.y > 100;
+  let score = bounty.reward / (10 + dist * 0.3);
+  switch (hero.trait) {
+    case 'Ganancioso': if (bounty.reward < 40) return 0; score *= 1.5; break;
+    case 'Covarde': if (bounty.reward < 20 || (far && bounty.reward < 60)) return 0; score *= 0.6; break;
+    case 'Bêbado': score *= 0.7; break;
+    case 'Valente': score *= 1.25; break;
+    case 'Teimoso': if (Math.random() < 0.5) return 0; score *= 1.2; break;
+    default: break;
+  }
+  if (far) score *= 0.85;
+  return score;
+}
+function considerBounties(hero) {
+  if (hpOf(hero) < maxHpOf(hero) * 0.5) return null;
+  const open = (state.bounties || []).filter(bounty => !bountyTaker(bounty));
+  if (!open.length) return null;
+  const best = open.map(bounty => ({ bounty, score: bountyScore(hero, bounty) })).sort((a, b) => b.score - a.score)[0];
+  if (!best || best.score < 1) return null;
+  best.bounty.takenBy = hero.id;
+  best.bounty.leg = 0;
+  best.bounty.arrivedAt = null;
+  hero.bountyId = best.bounty.id;
+  say(`${hero.name} aceitou a recompensa de ${best.bounty.reward} de ouro: ${best.bounty.label.toLowerCase()}.`, `${hero.name} foi atrás do ouro. Do ouro, não de você.`);
+  if (state.tab === 'heroes') renderPanel();
+  return best.bounty;
+}
+function completeBounty(hero, bounty) {
+  lootHero(hero, bounty.reward);
+  hero.bountyId = null;
+  state.bounties = state.bounties.filter(item => item !== bounty);
+  renderSites();
+  if (state.tab === 'heroes') renderPanel();
+  say(`${hero.name} cumpriu a recompensa (${bounty.label.toLowerCase()}) e embolsou ${bounty.reward} de ouro.`);
+}
+// Um passo da recompensa: anda até o ponto (ou pelo roteiro da patrulha) e vigia.
+function bountyStep(hero, bounty) {
+  if (bounty.route) {
+    const node = PATH_NODES[bounty.route[bounty.leg || 0]];
+    if (Math.hypot(hero.x - node.x, hero.y - node.y) < 1) {
+      bounty.leg = (bounty.leg || 0) + 1;
+      if (bounty.leg >= bounty.route.length) { completeBounty(hero, bounty); return; }
+    }
+    hero.task = `Patrulhando: ${bounty.label}`;
+    routeActor(hero, bounty.route[bounty.leg]);
+    return;
+  }
+  if (Math.hypot(hero.x - bounty.x, hero.y - bounty.y) < 1.5) {
+    if (bounty.arrivedAt == null) bounty.arrivedAt = state.minutes;
+    if (state.minutes - bounty.arrivedAt >= BOUNTY_GUARD) { completeBounty(hero, bounty); return; }
+    hero.wait = 2;
+    return;
+  }
+  routeActor(hero, bounty.node);
+  hero.finalPoint = { x: bounty.x, y: bounty.y };
+}
+// Uma vez por hora: recompensa vencida devolve o ouro; herói morto larga a dele.
+function processBounties() {
+  (state.bounties || []).forEach(bounty => {
+    if (bounty.takenBy != null && !bountyTaker(bounty)) { bounty.takenBy = null; bounty.leg = 0; bounty.arrivedAt = null; }
+  });
+  const expired = (state.bounties || []).filter(bounty => state.minutes > bounty.until && !bountyTaker(bounty));
+  expired.forEach(bounty => {
+    if (!state.testMode) state.gold += bounty.reward;
+    say(`Ninguém quis a recompensa (${bounty.label.toLowerCase()}). ${bounty.reward} de ouro voltou pro cofre, envergonhado.`);
+  });
+  if (expired.length) { state.bounties = state.bounties.filter(bounty => !expired.includes(bounty)); renderSites(); }
+}
+function bountyPanelHTML() {
+  const amounts = [10, 25, 50, 100];
+  const rows = (state.bounties || []).map(bounty => {
+    const taker = bountyTaker(bounty);
+    const status = taker ? (bounty.route ? `${taker.name} · trecho ${Math.min(bounty.leg || 0, bounty.route.length)} de ${bounty.route.length}` : bounty.arrivedAt != null ? `${taker.name} vigiando · ${Math.max(0, BOUNTY_GUARD - (state.minutes - bounty.arrivedAt))} min` : `${taker.name} a caminho`) : 'Ninguém aceitou ainda';
+    return `<div class="bounty-row"><span><b>${bounty.label}</b><small>${status} · vence em ${Math.max(0, Math.ceil((bounty.until - state.minutes) / 60))}h</small></span><em>${bounty.reward}</em><button type="button" class="bounty-cancel" data-bounty-cancel="${bounty.id}" title="Cancelar e devolver o ouro">×</button></div>`;
+  }).join('');
+  return `<section class="farm-selector hut-box bounty-box"><div class="farm-selector-heading"><b>Recompensas</b><small>você paga, eles decidem</small></div>
+    <div class="bounty-amount"><span>Valor</span>${amounts.map(value => `<button type="button" class="bounty-chip${state.bountyAmount === value ? ' active' : ''}" data-bounty-amount="${value}">${value}</button>`).join('')}<input type="number" min="5" step="5" value="${state.bountyAmount}" data-bounty-input aria-label="Valor da recompensa"></div>
+    <div class="guild-branches"><button type="button" class="hut-upgrade" data-bounty-place>${state.placingBounty ? 'Toque no mapa…' : 'Marcar no mapa'}</button><button type="button" class="hut-upgrade" data-bounty-preset="south">Patrulhar o segundo mapa</button></div>
+    <button type="button" class="hut-upgrade bounty-lair" data-bounty-preset="lair">Vigiar as ruínas do covil</button>
+    <p class="storage-items">O ouro sai do cofre agora. Ganancioso só vai por 40 ou mais; Covarde não vai longe por pouco; Teimoso às vezes nem escuta.</p>
+    ${rows ? `<div class="bounty-list">${rows}</div>` : ''}</section>`;
+}
+function renderBountyFlags() {
+  const layer = $('#site-layer');
+  const ids = new Set((state.bounties || []).map(bounty => bounty.id));
+  $$('.bounty-flag', layer).filter(flag => !ids.has(flag.dataset.bounty)).forEach(flag => flag.remove());
+  (state.bounties || []).forEach(bounty => {
+    let flag = $(`.bounty-flag[data-bounty="${bounty.id}"]`, layer);
+    if (!flag) {
+      flag = document.createElement('div');
+      flag.className = 'bounty-flag';
+      flag.dataset.bounty = bounty.id;
+      layer.insertBefore(flag, $('#hero-layer'));
+    }
+    flag.style.setProperty('--x', `${bounty.x}%`);
+    flag.style.setProperty('--y', `${bounty.y / 2}%`);
+    flag.style.zIndex = String(Math.round(bounty.y * 10) + 2);
+    flag.classList.toggle('taken', !!bountyTaker(bounty));
+    flag.innerHTML = `<i aria-hidden="true"></i><span>${bounty.reward}</span>`;
+    flag.title = `${bounty.label}: ${bounty.reward} de ouro`;
+  });
+}
 // Economia: tudo o que entra e sai, por segundo (comida e madeira) e por dia (ouro).
 function economyPanelHTML() {
   const per = value => `${rateNumber(value)}/s`;
@@ -2496,6 +2672,7 @@ function serializeState() {
   const data = JSON.parse(JSON.stringify(copy));
   data.selectedBuild = null;
   data.movingSite = null;
+  data.placingBounty = false;
   return data;
 }
 
@@ -2512,6 +2689,9 @@ function hydrateState(data) {
   if (loaded.taxPercent == null) loaded.taxPercent = 10;
   if (loaded.favor == null) loaded.favor = 50;
   if (!Array.isArray(loaded.demands)) loaded.demands = [];
+  if (!Array.isArray(loaded.bounties)) loaded.bounties = [];
+  if (loaded.bountyAmount == null) loaded.bountyAmount = 25;
+  loaded.placingBounty = false;
   if (loaded.nextDemandAt == null) loaded.nextDemandAt = loaded.minutes + 600;
   loaded.taxPercent = Math.min(TAX_MAX, loaded.taxPercent);
   if (loaded.tavernTab == null) loaded.tavernTab = 0;
@@ -3082,6 +3262,8 @@ function initMenus() {
       cancelPlacement();
     } else if (state.movingSite != null) {
       cancelMove();
+    } else if (state.placingBounty) {
+      cancelBountyPlacement();
     } else {
       event.preventDefault();
       openPause();
@@ -3100,11 +3282,13 @@ function init() {
   scene.addEventListener('contextmenu', event => {
     if (state.selectedBuild) { event.preventDefault(); cancelPlacement(); }
     else if (state.movingSite != null) { event.preventDefault(); cancelMove(); }
+    else if (state.placingBounty) { event.preventDefault(); cancelBountyPlacement(); }
   });
   scene.addEventListener('click', event => {
-    if ((!state.selectedBuild && state.movingSite == null) || camera.dragMoved || event.target.closest('button')) return;
+    if ((!state.selectedBuild && state.movingSite == null && !state.placingBounty) || camera.dragMoved || event.target.closest('button')) return;
     const { x, y } = worldPoint(event);
-    if (state.movingSite != null) moveBuilding(x, y); else placeBuilding(x, y);
+    if (state.placingBounty) placeBountyAt(x, y);
+    else if (state.movingSite != null) moveBuilding(x, y); else placeBuilding(x, y);
   });
   $('#site-layer').addEventListener('click', event => {
     const site = event.target.closest('.site');
