@@ -119,6 +119,8 @@ function writeStore(key, value) {
 // Opções do jogador e do debug ficam salvas no navegador.
 const options = readStore(OPTIONS_KEY, { startZoom: 0, names: 'selected', autosave: 3 });
 if (options.zoomVersion !== 3 || ![0, 1, 2].includes(options.startZoom)) { options.startZoom = 0; options.zoomVersion = 3; }
+// Som: 1 ligado, 0 desligado. O jogo ainda não toca áudio; todo som futuro deve respeitar esta opção.
+if (![0, 1].includes(options.sound)) options.sound = 1;
 // Modo teste: ouro e madeira infinitos. Só existe ligado pela tela de Debug.
 const debug = readStore(DEBUG_KEY, { testMode: false });
 
@@ -295,7 +297,9 @@ function say(message, event = message) {
 }
 
 const WORKER_UPKEEP = 0.3; // provisões por segundo, por trabalhador
-// Mercado: preços fixos em ouro por unidade. Comprar custa o dobro de vender.
+// Mercado: sempre aberto. Sem a construção, só a troca simples de trigo, alho e madeira, 25% pior:
+// vende por 75% do preço e compra por 125%.
+// Preços fixos em ouro por unidade. Comprar custa o dobro de vender.
 const MARKET_GOODS = [
   { id: 'wheat', name: 'Trigo', art: 'farm-wheat', sell: 1, buy: 2 },
   { id: 'garlic', name: 'Alho', art: 'farm-garlic', sell: 1, buy: 2 },
@@ -304,43 +308,45 @@ const MARKET_GOODS = [
   { id: 'bacon', name: 'Bacon', art: 'farm-bacon', sell: 3, buy: 6 },
   { id: 'timber', name: 'Madeira', art: 'lumber', sell: 2, buy: 4 },
 ];
+const BASIC_GOODS = ['wheat', 'garlic', 'timber'];
 const hasMarket = () => state.buildings.some(building => building.type === 'market' && isDone(building));
+const marketGoods = () => hasMarket() ? MARKET_GOODS : MARKET_GOODS.filter(good => BASIC_GOODS.includes(good.id));
+const unitPrice = (good, side) => hasMarket() ? good[side] : good[side] * (side === 'sell' ? 0.75 : 1.25);
+const formatPrice = n => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 const stockOf = id => id === 'timber' ? state.timber : (state.food[id] || 0);
 function trade(id, amount) {
-  const good = MARKET_GOODS.find(item => item.id === id);
-  if (!good || !hasMarket()) return;
+  const good = marketGoods().find(item => item.id === id);
+  if (!good) return;
   if (amount > 0) {
     let qty = amount;
     if (id !== 'timber') qty = Math.min(qty, Math.floor(storageCap() - storedUnits()));
     if (qty <= 0) { say('O Depósito de Provisões está cheio. Não cabe nem um ovo.'); return; }
-    const price = qty * good.buy;
-    if (!state.testMode && state.gold < price) { say(`Falta ouro. ${qty} de ${good.name.toLowerCase()} custam ${price}.`); return; }
+    const price = qty * unitPrice(good, 'buy');
+    if (!state.testMode && state.gold < price) { say(`Falta ouro. ${qty} de ${good.name.toLowerCase()} custam ${formatPrice(price)}.`); return; }
     if (!state.testMode) state.gold -= price;
     if (id === 'timber') state.timber += qty; else state.food[id] = (state.food[id] || 0) + qty;
-    say(`Comprou ${qty} de ${good.name.toLowerCase()} por ${price} de ouro. O mercador sorriu demais.`);
+    say(`Comprou ${qty} de ${good.name.toLowerCase()} por ${formatPrice(price)} de ouro. O mercador sorriu demais.`);
   } else {
     const qty = Math.min(-amount, Math.floor(stockOf(id)));
     if (qty <= 0) { say(`Não tem ${good.name.toLowerCase()} pra vender.`); return; }
-    const price = qty * good.sell;
+    const price = qty * unitPrice(good, 'sell');
     if (id === 'timber') state.timber -= qty; else state.food[id] -= qty;
     if (!state.testMode) state.gold += price;
-    say(`Vendeu ${qty} de ${good.name.toLowerCase()} por ${price} de ouro. O mercador fingiu que era caro.`);
+    say(`Vendeu ${qty} de ${good.name.toLowerCase()} por ${formatPrice(price)} de ouro. O mercador fingiu que era caro.`);
   }
   state.grain = totalFood();
   updateHud(); renderPanel();
 }
 function marketPanelHTML() {
-  if (!hasMarket()) return `<div class="panel-title"><h3>Mercado</h3><span>Fechado</span></div>
-    <div class="empty-state">Nenhum mercador para aqui sem um Mercado.<br>Construa um Mercado para vender e comprar recursos.</div>`;
   const coin = pixelIcon('coin', 14).replace('class="pixel-icon"', 'class="pixel-icon cost-ico"');
   return `<div class="panel-title"><h3>Mercado</h3><span>${coin} ${state.testMode ? '∞' : format(state.gold)} · depósito ${Math.floor(storedUnits())}/${storageCap()}</span></div>
-    <div class="market-list">${MARKET_GOODS.map(good => `<div class="market-row">
+    <div class="market-list">${marketGoods().map(good => `<div class="market-row">
       <img src="public/art/${good.art}-v01.webp" alt="">
       <span class="market-name"><b>${good.name}</b><small>Tem ${format(stockOf(good.id))}</small></span>
-      <span class="market-side"><small>VENDER · ${good.sell} ${coin} cada</small><span><button type="button" data-trade="${good.id}" data-amount="-1">1</button><button type="button" data-trade="${good.id}" data-amount="-10">10</button></span></span>
-      <span class="market-side"><small>COMPRAR · ${good.buy} ${coin} cada</small><span><button type="button" class="buy" data-trade="${good.id}" data-amount="1">1</button><button type="button" class="buy" data-trade="${good.id}" data-amount="10">10</button></span></span>
+      <span class="market-side"><small>VENDER · ${formatPrice(unitPrice(good, 'sell'))} ${coin} cada</small><span><button type="button" data-trade="${good.id}" data-amount="-1">1</button><button type="button" data-trade="${good.id}" data-amount="-10">10</button></span></span>
+      <span class="market-side"><small>COMPRAR · ${formatPrice(unitPrice(good, 'buy'))} ${coin} cada</small><span><button type="button" class="buy" data-trade="${good.id}" data-amount="1">1</button><button type="button" class="buy" data-trade="${good.id}" data-amount="10">10</button></span></span>
     </div>`).join('')}</div>
-    <p class="build-note">Armas e itens ainda não chegaram aos mercadores.</p>`;
+    <p class="build-note">${hasMarket() ? 'Armas e itens ainda não chegaram aos mercadores.' : 'Sem um Mercado, só passa a carroça de trigo, alho e madeira, e o carroceiro cobra 25% a mais. Construa um Mercado para preços justos e para negociar ovos, leite e bacon.'}</p>`;
 }
 
 // Cabana do Lenhador: até 3 camponeses escalados pelo painel.
@@ -1740,6 +1746,7 @@ const SCREENS = {
     return { cls: menuMode(), html: `<section class="menu-card">
       <header class="menu-card-head"><span class="eyebrow">OPÇÕES</span><h2>Opções</h2></header>
       <div class="option-list">
+        <div class="option-row"><div><b>Som</b><small>Música e efeitos do jogo.</small></div>${segmented('sound', options.sound, [[1, 'Ligado'], [0, 'Desligado']])}</div>
         <div class="option-row"><div><b>Salvar sozinho</b><small>Salva no slot do jogo de tempos em tempos e quando você fecha a página.</small></div>${segmented('autosave', options.autosave, [[0, 'Desligado'], [1, '1 min'], [3, '3 min'], [5, '5 min']])}</div>
         <div class="option-row"><div><b>Zoom ao começar</b><small>Ampla, normal ou próxima. Dá pra trocar no mapa a qualquer hora.</small></div>${segmented('startZoom', options.startZoom, [[0, 'Ampla'], [1, 'Normal'], [2, 'Próxima']])}</div>
         <div class="option-row"><div><b>Nomes dos personagens</b><small>Eles têm nome. Ninguém lembra qual.</small></div>${segmented('names', options.names, [['selected', 'Ao tocar'], ['always', 'Sempre']])}</div>
