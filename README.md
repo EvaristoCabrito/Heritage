@@ -33,9 +33,9 @@ Ouro e madeira infinitos existem só no **modo teste**, ligado pela tela de Debu
 - Escolher o tipo de Fazenda (alho, trigo, bacon, ovos ou leite) antes da obra e trocar a produção ao tocar na fazenda construída.
 - Ouro só vem de impostos, cobrados à meia-noite do jogo. A 10%, cada camponês paga 2 de ouro; a porcentagem vai de 0% a 50% (passos de 5%) e o valor escala junto. A taverna também paga, pelo uso: cada hora de jogo bebendo lá vale 1 de ouro por camponês, 2 por herói e 3 por herói de prestígio (a 10%). Camponeses bebem das 18h às 22h; heróis às vezes param entre uma ronda e outra (o Bêbado, mais vezes). Construções não geram ouro; provisões e madeira continuam em tempo real.
 - Ajustar a porcentagem do imposto e escolher entre três velocidades.
-- Atrair heróis construindo guildas, taverna e hotel. O hotel acrescenta quatro vagas à companhia.
+- Alojamento: o Warrior inicial ocupa uma vaga; cada guilda abriga um único herói; cada hotel acrescenta quatro camas e cada taverna uma. Heróis que chegam de fora e os recrutados nos níveis 2 e 3 das guildas precisam de cama na taverna ou no hotel.
 - Equipar a companhia no arsenal do domínio.
-- Atualizar cada guilda (toque nela): a 1ª atualização (120 G, 8 M) traz mais um herói da classe; a 2ª (180 G, 12 M) escolhe a especialização e traz um terceiro herói já especializado, enquanto os dois primeiros continuam como são.
+- Cada guilda tem três níveis: no nível 1 chega seu único morador; o nível 2 (120 G, 8 M) recruta outro herói da classe, que precisa de alojamento fora da guilda; o nível 3 (180 G, 12 M) escolhe a especialização e recruta o terceiro, também alojado fora da guilda.
 - Acompanhar os heróis até o nível 15, quando procuram uma guilda especializada para o prestígio. A Torre dos Magos evolui para Torre dos Elementalistas ou Torre dos Arcanistas.
 - Começar apenas com um camponês e um Warrior, que vêm com o casarão. Ninguém aparece sem uma construção que o gere: guildas, taverna e hotel trazem heróis com nome e mania, e cada Casebre Pequeno traz dois camponeses (alternando homem e mulher); ampliar para Casebre Grande (90 G, 6 M) traz mais três, até 5 moradores. Os camponeses moram no casebre e trabalham na fazenda ou moinho mais perto.
 - Comida no estilo Lords of the Realm: cada fazenda produz o seu alimento (trigo, alho, bacon, ovos ou leite; o moinho rende trigo). Na aba Provisões (ou clicando em Provisões ou Felicidade na barra do topo) você escolhe a ração (nenhuma, meia, normal, dobrada ou tripla, a 0,3 por camponês por segundo na normal) e o que servir. A Felicidade (0 a 100) aparece na barra do topo: ração maior, variedade e carne aumentam; ração pequena e fome diminuem.
@@ -48,12 +48,12 @@ Ouro e madeira infinitos existem só no **modo teste**, ligado pela tela de Debu
 - `index.html` — estrutura da interface.
 - `app.css` — layout responsivo e estilo visual.
 - `app.js` — economia, obras, heróis, saves, menus e cenário.
-- `public/art/mordavia-farmstead-open-v02.webp` — cenário ativo, com terrenos secos e abertos para as construções.
-- `public/art/mordavia-farmstead-open-v02.png` — versão integral do cenário aberto.
-- `public/art/mordavia-farmstead-v01.webp` e `public/art/mordavia-farmstead-v01.png` — cenário original preservado sem alteração.
+- `public/art/mordavia-map.webp` — mapa contínuo ativo.
+- `public/art/mordavia-forest-layer.png` — camada de floresta transparente sobre o mapa.
+- `public/art/mordavia-title.webp` — fundo estático sem fumaça para a tela de título.
 - `public/art/*-v01.webp` — construções novas com fundo transparente, exibidas onde o jogador as constrói. O moinho usa imagens separadas para o corpo e as pás.
 - `public/art/farm-{garlic,wheat,bacon,eggs,milk}-v01.webp` — cinco variações fotográficas da fazenda; a arte `farm-v01.webp` permanece preservada.
-- `public/art/manor-smoke-v01.webp` — fumaça fotográfica transparente animada sobre a chaminé principal.
+- `public/art/manor-smoke.webp` — fumaça fotográfica transparente, animada sobre a chaminé principal.
 - `public/art/{warrior,archer,lancer,black-mage,conjurer,healer,peasant,female-peasant}-{walk,action}-v01.webp` — folhas de caminhada e ação das seis classes iniciais e dos dois trabalhadores.
 - `public/art/{paladin,heavy-knight,ranger,assassin,sentinel,templar,elementalist,warlock,sorcerer,necromancer,bishop,cleric}-walk-v01.webp` — folhas próprias das doze especializações.
 - `public/art/portraits/*-portrait-v01.webp` — retratos de perfil novos para cada classe, trabalhador e especialização.
@@ -68,3 +68,5 @@ Os personagens seguem pontos de passagem; a posição vertical define se aparece
 É um protótipo de uma propriedade e um cenário. A lógica e a arte ainda são uma base de exploração, não o conteúdo final do jogo.
 
 - Ficha do monarca (o herdeiro): ele não luta, só usa magia. Atributos: MP (mana), CHA (carisma), MAG (magia), INT (inteligência) e WIS (sabedoria), do nível 1 ao 30. MAG segue o Mago Negro do Ember.
+
+- Ladrões e combate automático: a cada 6 horas de jogo chega um bando pela estrada velha (1 ladrão no começo, até 4, com nível que cresce com os dias), com bandidos de espada e de besta. Eles vão até uma construção ou o casarão, roubam ouro (ou comida, se não houver ouro) e fogem. Heróis que veem um ladrão até certa distância largam o que fazem e lutam sozinhos; arqueiros e magos atacam de longe, curandeiros curam heróis feridos. Dano e experiência seguem o Ember (ataque − defesa; magia para magos; 13 + 3 × diferença de nível por golpe, +25% ao matar). Heróis só ganham experiência em combate. Feridos mostram barra de vida e se recuperam fora da luta; quem chega a zero morre. Ladrão morto devolve o que roubou.

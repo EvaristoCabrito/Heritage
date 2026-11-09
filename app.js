@@ -5,7 +5,7 @@ const BUILDINGS = [
   { id: 'depot', name: 'Depósito de Provisões', glyph: 'D', cost: 70, wood: 6, detail: 'Guarda mais 30 unidades de comida, armas e itens. Amplia para 45, 70 e 100. Os ratos aprovam.', gold: 0, grain: 0, people: 0 },
   { id: 'lumber', name: 'Cabana do Lenhador', glyph: 'L', cost: 80, wood: 2, detail: 'Coloque de 1 a 3 camponeses para cortar lenha: 0,1, 0,3 ou 0,5 de madeira por segundo.', gold: 0, grain: 0, people: 0 },
   { id: 'market', name: 'Mercado', glyph: 'M', cost: 100, wood: 6, detail: 'Venda o que sobra e compre o que falta. Os mercadores cobram o dobro pra vender e pagam a metade pra comprar.', gold: 0, grain: 0, people: 0 },
-  { id: 'tavern', name: 'Taverna', glyph: 'T', cost: 145, wood: 9, detail: 'Heróis e camponeses bebem aqui no tempo livre, e a taverna paga imposto por isso. Atrai andarilhos sem perguntar de onde vêm.', gold: 1.15, grain: 0, people: 0 },
+  { id: 'tavern', name: 'Taverna', glyph: 'T', cost: 145, wood: 9, detail: 'Uma cama para um herói. Também recebe visitantes e serve bebida, que rende imposto.', gold: 1.15, grain: 0, people: 0 },
   { id: 'hotel', name: 'Hotel de Estrada', glyph: 'H', cost: 170, wood: 11, detail: 'Mais 4 camas para heróis. Os lençóis são trocados uma vez por viúva.', gold: 0.85, grain: 0, people: 0 },
   { id: 'warrior', name: 'Guilda de Guerreiros', glyph: 'W', cost: 185, wood: 11, detail: 'Recruta Warriors. Seguram a linha de frente na força.', heroClass: 'Warrior', gold: 0.3, grain: 0, people: 1 },
   { id: 'archer', name: 'Salão de Arqueiros', glyph: 'A', cost: 170, wood: 10, detail: 'Recruta Archers. Decidem a luta de longe.', heroClass: 'Archer', gold: 0.3, grain: 0, people: 1 },
@@ -63,7 +63,15 @@ const NIGHT_MSG = ['Primeira noite. Dizem que a primeira é a mais fácil. Dizem
 const LOSS_MSG = ['Um camponês morreu. Os outros pediram aumento.', 'Um camponês foi levado. A colheita atrasou.', 'Perdemos um camponês. Ele tinha nome. Ninguém lembra qual.'];
 
 const isDone = building => !building.underConstruction;
-const heroCapacity = () => 8 + state.buildings.filter(building => building.type === 'hotel' && isDone(building)).length * 4;
+const guildHousing = () => state.buildings.filter(building => BUILDINGS.some(item => item.id === building.type && item.heroClass) && isDone(building)).length;
+const lodgingCapacity = () => state.buildings.filter(building => isDone(building) && building.type === 'hotel').length * 4
+  + state.buildings.filter(building => isDone(building) && building.type === 'tavern').length;
+const heroCapacity = () => 1 + guildHousing() + lodgingCapacity();
+const freeLodging = () => {
+  return state.buildings.find(building => isDone(building)
+    && ((building.type === 'hotel' && state.heroes.filter(hero => hero.alive && hero.homeSite === building.site).length < 4)
+      || (building.type === 'tavern' && !state.heroes.some(hero => hero.alive && hero.homeSite === building.site)))) || null;
+};
 // Construção livre: estas áreas da arte não aceitam obra (coordenadas em % do mapa, no pé da construção).
 const BLOCKED_AREAS = [
   { x0: 0, x1: 50, y0: 0, y1: 43, why: 'Em cima do casarão não dá.' },
@@ -75,6 +83,25 @@ const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
   farm: 'farm-wheat', mill: 'mill-body', hut: 'hut', depot: 'depot', lumber: 'lumber', market: 'market', tavern: 'tavern', hotel: 'hotel', warrior: 'guild', archer: 'archer', lancer: 'lancer',
   blackMage: 'tower', conjurer: 'conjurer', healer: 'healer', armory: 'armory',
+};
+const PHOTOREAL_BUILDING_ART = new Set([
+  'farm-garlic', 'farm-wheat', 'farm-bacon', 'farm-eggs', 'farm-milk',
+  'mill-body', 'mill-sails', 'hut', 'hut-big', 'depot', 'lumber', 'market',
+  'tavern', 'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'manor',
+]);
+const BUILDING_ART_ASPECTS = {
+  'farm-garlic': 1.5, 'farm-wheat': 1.5, 'farm-bacon': 1.5, 'farm-eggs': 1.5, 'farm-milk': 1.5,
+  'mill-body': 1105 / 1424, 'mill-sails': 1312 / 1199, hut: 1.5, 'hut-big': 1.5,
+  depot: 2, lumber: 1.5, market: 2, tavern: 1.5, hotel: 2, guild: 1.5,
+  archer: 1199 / 1312, lancer: 1.5, tower: 1202 / 1308, conjurer: 1312 / 1199,
+  healer: 1.5, armory: 1.5, manor: 1.5,
+};
+const buildingImage = art => {
+  if (!PHOTOREAL_BUILDING_ART.has(art)) return `public/art/${art}-v01.webp`;
+  if (options.buildingArtStyle === 'color') {
+    return `public/art/buildings-color-v02/${art}.webp`;
+  }
+  return `public/art/buildings-photoreal-v03-runtime/${art}.webp`;
 };
 const PATH_NODES = [
   { x: 42, y: 39, links: [1] },                 // Entrada do casarão
@@ -117,8 +144,11 @@ function writeStore(key, value) {
 }
 
 // Opções do jogador e do debug ficam salvas no navegador.
-const options = readStore(OPTIONS_KEY, { startZoom: 0, names: 'selected', autosave: 3 });
+const options = readStore(OPTIONS_KEY, { startZoom: 0, names: 'selected', autosave: 3, buildingArtStyle: 'dark' });
 if (options.zoomVersion !== 3 || ![0, 1, 2].includes(options.startZoom)) { options.startZoom = 0; options.zoomVersion = 3; }
+// Som: 1 ligado, 0 desligado. O jogo ainda não toca áudio; todo som futuro deve respeitar esta opção.
+if (![0, 1].includes(options.sound)) options.sound = 1;
+if (!['dark', 'color'].includes(options.buildingArtStyle)) options.buildingArtStyle = 'dark';
 // Modo teste: ouro e madeira infinitos. Só existe ligado pela tela de Debug.
 const debug = readStore(DEBUG_KEY, { testMode: false });
 
@@ -126,10 +156,11 @@ const debug = readStore(DEBUG_KEY, { testMode: false });
 // outros heróis saem de guildas, taverna ou hotel; cada fazenda ou moinho traz mais um camponês.
 function newGameState(testMode = false, heir = null) {
   return {
-    gold: 240, grain: 58, timber: 30, people: 14,
+    gold: 240, grain: 58, timber: 30,
     food: { wheat: 40, garlic: 18, bacon: 0, eggs: 0, milk: 0 }, items: [], ration: 2, diet: { wheat: true, garlic: true, bacon: true, eggs: true, milk: true }, happiness: 50, moodTarget: 50, moodParts: null,
     speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false,
+    bandits: [], nextRaidAt: 720,
     testMode, heir, heirLevel: 1, heirXp: 0, equipment: BASIC_EQUIPMENT(), stash: null, playSeconds: 0,
     buildings: [],
     heroes: [
@@ -295,7 +326,9 @@ function say(message, event = message) {
 }
 
 const WORKER_UPKEEP = 0.3; // provisões por segundo, por trabalhador
-// Mercado: preços fixos em ouro por unidade. Comprar custa o dobro de vender.
+// Mercado: sempre aberto. Sem a construção, só a troca simples de trigo, alho e madeira, 25% pior:
+// vende por 75% do preço e compra por 125%.
+// Preços fixos em ouro por unidade. Comprar custa o dobro de vender.
 const MARKET_GOODS = [
   { id: 'wheat', name: 'Trigo', art: 'farm-wheat', sell: 1, buy: 2 },
   { id: 'garlic', name: 'Alho', art: 'farm-garlic', sell: 1, buy: 2 },
@@ -304,43 +337,45 @@ const MARKET_GOODS = [
   { id: 'bacon', name: 'Bacon', art: 'farm-bacon', sell: 3, buy: 6 },
   { id: 'timber', name: 'Madeira', art: 'lumber', sell: 2, buy: 4 },
 ];
+const BASIC_GOODS = ['wheat', 'garlic', 'timber'];
 const hasMarket = () => state.buildings.some(building => building.type === 'market' && isDone(building));
+const marketGoods = () => hasMarket() ? MARKET_GOODS : MARKET_GOODS.filter(good => BASIC_GOODS.includes(good.id));
+const unitPrice = (good, side) => hasMarket() ? good[side] : good[side] * (side === 'sell' ? 0.75 : 1.25);
+const formatPrice = n => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 const stockOf = id => id === 'timber' ? state.timber : (state.food[id] || 0);
 function trade(id, amount) {
-  const good = MARKET_GOODS.find(item => item.id === id);
-  if (!good || !hasMarket()) return;
+  const good = marketGoods().find(item => item.id === id);
+  if (!good) return;
   if (amount > 0) {
     let qty = amount;
     if (id !== 'timber') qty = Math.min(qty, Math.floor(storageCap() - storedUnits()));
     if (qty <= 0) { say('O Depósito de Provisões está cheio. Não cabe nem um ovo.'); return; }
-    const price = qty * good.buy;
-    if (!state.testMode && state.gold < price) { say(`Falta ouro. ${qty} de ${good.name.toLowerCase()} custam ${price}.`); return; }
+    const price = qty * unitPrice(good, 'buy');
+    if (!state.testMode && state.gold < price) { say(`Falta ouro. ${qty} de ${good.name.toLowerCase()} custam ${formatPrice(price)}.`); return; }
     if (!state.testMode) state.gold -= price;
     if (id === 'timber') state.timber += qty; else state.food[id] = (state.food[id] || 0) + qty;
-    say(`Comprou ${qty} de ${good.name.toLowerCase()} por ${price} de ouro. O mercador sorriu demais.`);
+    say(`Comprou ${qty} de ${good.name.toLowerCase()} por ${formatPrice(price)} de ouro. O mercador sorriu demais.`);
   } else {
     const qty = Math.min(-amount, Math.floor(stockOf(id)));
     if (qty <= 0) { say(`Não tem ${good.name.toLowerCase()} pra vender.`); return; }
-    const price = qty * good.sell;
+    const price = qty * unitPrice(good, 'sell');
     if (id === 'timber') state.timber -= qty; else state.food[id] -= qty;
     if (!state.testMode) state.gold += price;
-    say(`Vendeu ${qty} de ${good.name.toLowerCase()} por ${price} de ouro. O mercador fingiu que era caro.`);
+    say(`Vendeu ${qty} de ${good.name.toLowerCase()} por ${formatPrice(price)} de ouro. O mercador fingiu que era caro.`);
   }
   state.grain = totalFood();
   updateHud(); renderPanel();
 }
 function marketPanelHTML() {
-  if (!hasMarket()) return `<div class="panel-title"><h3>Mercado</h3><span>Fechado</span></div>
-    <div class="empty-state">Nenhum mercador para aqui sem um Mercado.<br>Construa um Mercado para vender e comprar recursos.</div>`;
   const coin = pixelIcon('coin', 14).replace('class="pixel-icon"', 'class="pixel-icon cost-ico"');
   return `<div class="panel-title"><h3>Mercado</h3><span>${coin} ${state.testMode ? '∞' : format(state.gold)} · depósito ${Math.floor(storedUnits())}/${storageCap()}</span></div>
-    <div class="market-list">${MARKET_GOODS.map(good => `<div class="market-row">
+    <div class="market-list">${marketGoods().map(good => `<div class="market-row">
       <img src="public/art/${good.art}-v01.webp" alt="">
       <span class="market-name"><b>${good.name}</b><small>Tem ${format(stockOf(good.id))}</small></span>
-      <span class="market-side"><small>VENDER · ${good.sell} ${coin} cada</small><span><button type="button" data-trade="${good.id}" data-amount="-1">1</button><button type="button" data-trade="${good.id}" data-amount="-10">10</button></span></span>
-      <span class="market-side"><small>COMPRAR · ${good.buy} ${coin} cada</small><span><button type="button" class="buy" data-trade="${good.id}" data-amount="1">1</button><button type="button" class="buy" data-trade="${good.id}" data-amount="10">10</button></span></span>
+      <span class="market-side"><small>VENDER ${formatPrice(unitPrice(good, 'sell'))} ${coin}</small><span><button type="button" data-trade="${good.id}" data-amount="-1">1</button><button type="button" data-trade="${good.id}" data-amount="-10">10</button></span></span>
+      <span class="market-side"><small>COMPRAR ${formatPrice(unitPrice(good, 'buy'))} ${coin}</small><span><button type="button" class="buy" data-trade="${good.id}" data-amount="1">1</button><button type="button" class="buy" data-trade="${good.id}" data-amount="10">10</button></span></span>
     </div>`).join('')}</div>
-    <p class="build-note">Armas e itens ainda não chegaram aos mercadores.</p>`;
+    <p class="build-note">${hasMarket() ? 'Armas e itens ainda não chegaram aos mercadores.' : 'Sem um Mercado, só passa a carroça de trigo, alho e madeira, e o carroceiro cobra 25% a mais. Construa um Mercado para preços justos e para negociar ovos, leite e bacon.'}</p>`;
 }
 
 // Cabana do Lenhador: até 3 camponeses escalados pelo painel.
@@ -435,7 +470,6 @@ function collectTaxes() {
 
 function updateHud() {
   if (state.testMode) { state.gold = 1e9; state.timber = 1e9; }
-  $('#test-badge').hidden = !state.testMode;
   const r = rates();
   $('#gold').textContent = format(state.gold);
   state.grain = totalFood();
@@ -447,7 +481,6 @@ function updateHud() {
   $('#happiness').closest('.stat').dataset.mood = state.happiness < 40 ? 'low' : state.happiness < 60 ? 'mid' : 'high';
   $('#timber').textContent = format(state.timber);
   if (state.testMode) { $('#gold').textContent = '∞'; $('#timber').textContent = '∞'; }
-  $('#people').textContent = format(state.people);
   $('#gold-rate').textContent = `+${format(dailyTaxEstimate())}/dia`;
   $('#grain-rate').textContent = `${r.grain < 0 ? '−' : '+'}${Math.abs(r.grain).toFixed(1).replace('.', ',')}/s`;
   $('#grain-rate').classList.toggle('negative', r.grain < 0);
@@ -508,7 +541,8 @@ function renderSites() {
       const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
       site.classList.toggle('just-built', Date.now() - building.builtAt < 1400);
       site.dataset.art = art;
-      site.innerHTML = `<span class="building-art" style="background-image:url('public/art/${art}-v01.webp')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span><small>${building.underConstruction ? constructionLabel(building) : label}</small>`;
+      const artAspect = options.buildingArtStyle === 'dark' ? BUILDING_ART_ASPECTS[art] || 1 : art === 'manor' ? 1.5 : 1;
+      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};background-image:url('${buildingImage(art)}')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${label}</small>`}`;
       site.setAttribute('aria-label', `${label}. Toque para ver opções.`);
     }
   });
@@ -540,14 +574,14 @@ function showPlacementPreview(event) {
   preview.style.setProperty('--y', `${y / 2}%`);
   preview.style.zIndex = String(Math.round(y * 10) + 1);
   preview.dataset.art = art;
-  preview.style.backgroundImage = `url('public/art/${art}-v01.webp')`;
+  preview.style.backgroundImage = `url('${buildingImage(art)}')`;
   preview.classList.toggle('invalid', !!placementProblem(x, y));
 }
 
 function renderHeroes() {
   const layer = $('#hero-layer');
   const active = new Set();
-  [...state.heroes, ...state.workers].filter(actor => actor.alive).forEach(actor => {
+  [...state.heroes, ...state.workers, ...(state.bandits || [])].filter(actor => actor.alive).forEach(actor => {
     active.add(String(actor.id));
     let token = [...layer.children].find(node => node.dataset.actor === String(actor.id));
     if (!token) {
@@ -557,7 +591,7 @@ function renderHeroes() {
       token.setAttribute('aria-label', `${actor.name}, ${actor.className}`);
       const art = actorArt(actor);
       token.innerHTML = art
-        ? `<span class="character-sprite" style="background-image:url('public/art/${art}-walk-v01.webp')" aria-hidden="true"></span><span class="character-name">${actor.name}</span>`
+        ? `<span class="character-sprite" style="background-image:url('public/art/${art}-walk-v01.${art.startsWith('bandit') ? 'png' : 'webp'}')" aria-hidden="true"></span><span class="character-name">${actor.name}</span>`
         : `<span class="hero-face">${actor.className[0]}</span><span class="character-name">${actor.name}</span>`;
       token.addEventListener('click', () => {
         if (state.selectedBuild) return;
@@ -567,10 +601,13 @@ function renderHeroes() {
         menu.stack = [];
         showScreen('actor', { id: actor.id });
       });
+      token.insertAdjacentHTML('beforeend', '<span class="hp-bar" aria-hidden="true"><i></i></span>');
       layer.append(token);
     }
     if (token.parentElement !== layer) layer.append(token);
-    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
+    const hurt = actor.hp != null && actor.hp < maxHpOf(actor);
+    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
+    if (hurt) token.style.setProperty('--hp', `${Math.max(0, Math.round(hpOf(actor) / maxHpOf(actor) * 100))}%`);
     token.style.left = `${actor.x}%`;
     token.style.top = `${actor.y / 2}%`;
     token.style.zIndex = String(Math.round(actor.y * 10));
@@ -580,7 +617,7 @@ function renderHeroes() {
       const art = actorArt(actor);
       const sheet = actorSheet(actor);
       if (token.dataset.sheet !== sheet || token.dataset.art !== art) {
-        const extension = art === 'peasant' && sheet === 'build' ? 'png' : 'webp';
+        const extension = (art === 'peasant' && sheet === 'build') || art.startsWith('bandit') ? 'png' : 'webp';
         $('.character-sprite', token).style.backgroundImage = `url('public/art/${art}-${sheet}-v01.${extension}')`;
         token.dataset.sheet = sheet;
         token.dataset.art = art;
@@ -633,7 +670,7 @@ function renderPanel() {
       ${selectedDepot ? depotBoxHTML(selectedDepot) : ''}
       ${selectedLumber ? lumberBoxHTML(selectedLumber) : ''}
       <div class="build-grid">${BUILDINGS.map(item => `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira">
-        <span class="build-preview"><img src="public/art/${item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id]}-v01.webp" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${item.detail}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`).join('')}</div>
+        <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${item.detail}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`).join('')}</div>
       <p class="build-note">A moeda é o custo em ouro e a lenha é o custo em madeira.</p>`;
   } else if (state.tab === 'heroes') {
     host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
@@ -643,6 +680,8 @@ function renderPanel() {
       <p class="build-note">Você não manda nos heróis. Eles fazem o que querem.</p>`;
   } else if (state.tab === 'food') {
     host.innerHTML = foodPanelHTML();
+  } else if (state.tab === 'economy') {
+    host.innerHTML = economyPanelHTML();
   } else if (state.tab === 'market') {
     host.innerHTML = marketPanelHTML();
   }
@@ -736,7 +775,8 @@ function assignBuilders() {
   });
 }
 
-const buildSpot = building => ({ x: building.x, y: Math.min(198, building.y + 1.2) });
+// O camponês trabalha ao lado da obra, na base. O rótulo de progresso fica no alto da obra, longe dele.
+const buildSpot = building => ({ x: building.x + (building.x > 92 ? -5 : 5), y: building.y });
 
 // Uma vez por segundo de jogo: a obra avança só com o camponês no local.
 function progressConstruction(dt) {
@@ -748,7 +788,7 @@ function progressConstruction(dt) {
       building.progress = Math.min(BUILD_TIME, (building.progress || 0) + dt);
       if (building.progress >= BUILD_TIME) { completeBuilding(building); return; }
     }
-    const label = $(`.site[data-site="${building.site}"] small`);
+    const label = $(`.site[data-site="${building.site}"] .build-progress`);
     if (label) label.textContent = constructionLabel(building);
   });
 }
@@ -767,7 +807,7 @@ function completeBuilding(building) {
   building.builderId = null;
   if (worker) { worker.buildSite = null; worker.route = []; worker.finalPoint = null; worker.wait = 0; }
   gainHeirXp(25);
-  const arrived = item.heroClass ? recruit(item.heroClass, building) : null;
+  const arrived = item.heroClass ? recruit(item.heroClass, building, null, true) : null;
   if (item.housing) for (let i = 0; i < item.housing; i++) hireWorker(building);
   assignBuilders();
   renderSites(); renderPanel(); updateHud();
@@ -777,13 +817,18 @@ function completeBuilding(building) {
   say(arrived ? `${item.name} abriu as portas.${credit} ${arrived.name} já está reclamando da cama.` : item.housing ? `Casebre Pequeno erguido.${credit} Chegaram dois camponeses. Eles não tinham pra onde ir mesmo.` : `${name} erguida.${credit} Ninguém morreu na obra. Ainda.`);
 }
 
-function recruit(className, origin, prestige = null) {
+function recruit(className, origin, prestige = null, guildResident = false) {
   if (!origin) return null;
-  if (state.heroes.filter(hero => hero.alive).length >= heroCapacity()) {
-    say('Os alojamentos estão cheios. O herói foi embora ofendido.');
+  const lodging = guildResident ? null : freeLodging();
+  if (guildResident && state.heroes.some(hero => hero.alive && hero.guildSite === origin.site)) {
+    say('Esta guilda já tem seu único morador.');
     return null;
   }
-  const hero = { id: Date.now() + Math.random(), name: heroName(), className, prestige, trait: pick(Object.keys(TRAITS)), level: 1, xp: 0, x: origin.x, y: origin.y, alive: true, guildSite: origin.site ?? null };
+  if (!guildResident && !lodging) {
+    say('Sem cama na taverna ou no hotel. O herói foi embora ofendido.');
+    return null;
+  }
+  const hero = { id: Date.now() + Math.random(), name: heroName(), className, prestige, trait: pick(Object.keys(TRAITS)), level: 1, xp: 0, x: origin.x, y: origin.y, alive: true, guildSite: guildResident ? origin.site : null, recruitedFromSite: origin.site ?? null, homeSite: lodging?.site ?? null };
   state.heroes.push(hero);
   gainHeirXp(10);
   renderHeroes();
@@ -823,8 +868,7 @@ function hireWorker(home) {
   if (state.tab === 'heroes') renderPanel();
 }
 
-// Cada guilda: atualização 1 traz mais um herói da classe; atualização 2 escolhe a especialização
-// e traz um terceiro herói já especializado. Os dois primeiros continuam como são.
+// Nível 1 traz um morador da guilda; níveis 2 e 3 trazem heróis extras, alojados em taverna/hotel.
 const GUILD_UPGRADES = [{ gold: 120, wood: 8 }, { gold: 180, wood: 12 }];
 const guildTier = guild => guild.tier ?? (guild.branch ? 2 : 0);
 function upgradeGuild(site, branch) {
@@ -835,19 +879,20 @@ function upgradeGuild(site, branch) {
   const cost = GUILD_UPGRADES[tier];
   if (!cost) return;
   if (tier === 1 && !PRESTIGE[def.heroClass]?.includes(branch)) return;
+  if (!freeLodging()) { say('A guilda mantém um único herói. Construa uma taverna ou hotel para alojar os próximos níveis.'); return; }
   if (state.gold < cost.gold || state.timber < cost.wood) { say('Falta ouro ou madeira. Os heróis vão continuar dividindo beliche.'); return; }
   state.gold -= cost.gold;
   state.timber -= cost.wood;
   gainHeirXp(25);
   if (tier === 0) {
     guild.tier = 1;
-    const hero = recruit(def.heroClass, guild);
-    say(hero ? `${def.name} ampliada. ${hero.name} já pegou a cama nova.` : 'A guilda foi ampliada, mas os alojamentos do domínio estão cheios.');
+    const hero = recruit(def.heroClass, guild, null, false);
+    say(hero ? `${def.name} chegou ao nível 2. ${hero.name} ficou alojado fora da guilda.` : 'A guilda não foi ampliada: falta alojamento.');
   } else {
     guild.tier = 2;
     guild.branch = branch;
     const hero = recruit(def.heroClass, guild, branch);
-    say(hero ? `A guilda agora forma ${branch}. ${hero.name} chegou já especializado. Os outros dois continuam como eram.` : `A guilda agora forma ${branch}, mas os alojamentos do domínio estão cheios.`);
+    say(hero ? `${def.name} chegou ao nível 3 e forma ${branch}. ${hero.name} ficou alojado fora da guilda.` : 'A guilda não foi ampliada: falta alojamento.');
   }
   renderSites(); renderPanel(); renderHeroes(); updateHud();
 }
@@ -860,11 +905,11 @@ function guildBoxHTML(guild) {
   const members = state.heroes.filter(hero => hero.alive && hero.guildSite === guild.site).length;
   const cost = GUILD_UPGRADES[tier];
   let actions = '';
-  if (tier === 0) actions = `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}">Atualizar · ${costHTML(cost.gold, cost.wood)} · +1 ${def.heroClass}</button>`;
-  else if (tier === 1) actions = `<p class="storage-items">Escolha a especialização (${costHTML(cost.gold, cost.wood)}). Chega um herói já especializado; os outros dois continuam como são.</p>
-      <div class="guild-branches">${PRESTIGE[def.heroClass].map(path => `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" data-branch="${path}">${path} · +1 ${path}</button>`).join('')}</div>`;
+  if (tier === 0) actions = `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" ${freeLodging() ? '' : 'disabled'}>Nível 2 · ${costHTML(cost.gold, cost.wood)} · +1 ${def.heroClass} (precisa de cama)</button>`;
+  else if (tier === 1) actions = `<p class="storage-items">Nível 3: escolha a especialização (${costHTML(cost.gold, cost.wood)}). Chega um herói especializado; os anteriores ficam como são.</p>
+      <div class="guild-branches">${PRESTIGE[def.heroClass].map(path => `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" data-branch="${path}" ${freeLodging() ? '' : 'disabled'}>${path} · +1 ${path}</button>`).join('')}</div>`;
   else actions = `<p class="storage-items">Especializada em ${guild.branch}. Guilda no nível máximo.</p>`;
-  return `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>${name}</b><small>Atualização ${tier} de 2 · ${members} ${members === 1 ? 'herói' : 'heróis'} da guilda</small></div>${actions}</section>`;
+  return `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>${name}</b><small>Nível ${tier + 1} de 3 · ${members}/1 morador na guilda</small></div>${actions}</section>`;
 }
 
 function assignPrestige(hero) {
@@ -981,6 +1026,7 @@ function animateActors(now) {
   if (!game.running) { requestAnimationFrame(animateActors); return; }
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   [...state.heroes, ...state.workers].filter(actor => actor.alive).forEach(actor => {
+    if (actor.className !== 'Peasant' && heroCombatStep(actor, delta, reducedMotion)) return;
     const construction = actor.className === 'Peasant' && actor.buildSite != null
       ? state.buildings.find(building => building.site === actor.buildSite && building.underConstruction)
       : null;
@@ -1032,6 +1078,7 @@ function animateActors(now) {
     actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
     actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
   });
+  (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => banditStep(bandit, delta, reducedMotion));
   renderHeroes();
   requestAnimationFrame(animateActors);
 }
@@ -1046,22 +1093,13 @@ function tick() {
   progressConstruction(state.speed);
   state.grain = totalFood();
   if ((state.tab === 'food' || state.tab === 'market') && !document.querySelector('#panel-view button:hover')) renderPanel();
+  if (state.tab === 'economy' && state.ticks % 10 === 0 && !document.querySelector('#panel-view button:hover, #panel-view details[open]')) renderPanel();
   state.timber += r.timber * state.speed;
   accrueTavern(state.speed);
   state.minutes += state.speed;
   if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) { gainHeirXp(40); collectTaxes(); }
-  // Heróis treinam, viajam e tomam decisões em tempo real.
-  state.heroes.filter(h => h.alive).forEach(hero => {
-    const before = hero.level || 1;
-    gainActorXp(hero, state.speed);
-    {
-      if (before < 15 && hero.level >= 15) {
-        say(`${hero.name} chegou ao nível 15 e acha que merece mais.`, `${hero.name} procura uma guilda de prestígio. As guildas fingem que não estão.`);
-        assignPrestige(hero);
-        if (state.tab === 'heroes') renderPanel();
-      }
-    }
-  });
+  // Heróis ganham experiência só em combate (golpes e curas). Aqui chegam os bandos e todos se recuperam.
+  combatTick(state.speed);
   const hasTavern = state.buildings.some(building => building.type === 'tavern' && isDone(building));
   const hasHotel = state.buildings.some(building => building.type === 'hotel' && isDone(building));
   if ((hasTavern && state.minutes % 180 < state.speed) || (hasHotel && state.minutes % 150 < state.speed)) {
@@ -1222,6 +1260,8 @@ const EMBER_CLASSES = {
   peasant1: { mov: 4, stats: [[12,2,0,1,0],[14,3,0,2,0],[16,4,0,3,0],[18,5,0,4,0],[20,6,0,5,0],[22,7,0,6,0],[24,8,0,7,0],[26,9,0,8,0],[28,10,0,9,0],[30,11,0,10,0],[32,12,0,11,0],[34,13,0,12,0],[36,14,0,13,0],[38,15,0,14,0],[40,16,0,15,0],[42,17,0,16,0],[44,18,0,17,0],[46,19,0,18,0],[48,20,0,19,0],[50,21,0,20,0],[52,22,0,21,0],[54,23,0,22,0],[56,24,0,23,0],[58,25,0,24,0],[60,26,0,25,0],[62,27,0,26,0],[64,28,0,27,0],[66,29,0,28,0],[68,30,0,29,0],[70,31,0,30,0]] },
   villagerF1: { mov: 4, stats: [[9,1,0,0,1],[11,2,0,0,2],[13,3,0,0,3],[15,4,0,0,4],[17,5,0,0,5],[19,6,0,0,6],[21,7,0,0,7],[23,8,0,0,8],[25,9,0,0,9],[27,10,0,0,10],[29,11,0,0,11],[31,12,0,0,12],[33,13,0,0,13],[35,14,0,0,14],[37,15,0,0,15],[39,16,0,0,16],[41,17,0,0,17],[43,18,0,0,18],[45,19,0,0,19],[47,20,0,0,20],[49,21,0,0,21],[51,22,0,0,22],[53,23,0,0,23],[55,24,0,0,24],[57,25,0,0,25],[59,26,0,0,26],[61,27,0,0,27],[63,28,0,0,28],[65,29,0,0,29],[67,30,0,0,30]] },
   captain: { mov: 4, stats: [[60,11,0,7,4],[64,13,0,9,5],[68,15,0,11,6],[72,17,0,13,7],[76,19,0,15,8],[80,21,0,17,9],[84,23,0,19,10],[88,25,0,21,11],[92,27,0,23,12],[96,29,0,25,13],[100,31,0,27,14],[104,33,0,29,15],[108,35,0,31,16],[112,37,0,33,17],[116,39,0,35,18],[120,41,0,37,19],[124,43,0,39,20],[128,45,0,41,21],[132,47,0,43,22],[136,49,0,45,23],[140,51,0,47,24],[144,53,0,49,25],[148,55,0,51,26],[152,57,0,53,27],[156,59,0,55,28],[160,61,0,57,29],[164,63,0,59,30],[168,65,0,61,31],[172,67,0,63,32],[176,69,0,65,33]] },
+  rogue: { mov: 6, stats: [[22,7,0,2,3],[25,9,0,3,4],[28,11,0,4,5],[31,13,0,5,6],[34,15,0,6,7],[37,17,0,7,8],[40,19,0,8,9],[43,21,0,9,10],[46,23,0,10,11],[49,25,0,11,12],[52,27,0,12,13],[55,29,0,13,14],[58,31,0,14,15],[61,33,0,15,16],[64,35,0,16,17],[67,37,0,17,18],[70,39,0,18,19],[73,41,0,19,20],[76,43,0,20,21],[79,45,0,21,22],[82,47,0,22,23],[85,49,0,23,24],[88,51,0,24,25],[91,53,0,25,26],[94,55,0,26,27],[97,57,0,27,28],[100,59,0,28,29],[103,61,0,29,30],[106,63,0,30,31],[109,65,0,31,32]] },
+  brigandCrossbowman: { mov: 3, stats: [[25,7,0,2,5],[28,9,0,3,6],[31,11,0,4,7],[34,13,0,5,8],[37,15,0,6,9],[40,17,0,7,10],[43,19,0,8,11],[46,21,0,9,12],[49,23,0,10,13],[52,25,0,11,14],[55,27,0,12,15],[58,29,0,13,16],[61,31,0,14,17],[64,33,0,15,18],[67,35,0,16,19],[70,37,0,17,20],[73,39,0,18,21],[76,41,0,19,22],[79,43,0,20,23],[82,45,0,21,24],[85,47,0,22,25],[88,49,0,23,26],[91,51,0,24,27],[94,53,0,25,28],[97,55,0,26,29],[100,57,0,27,30],[103,59,0,28,31],[106,61,0,29,32],[109,63,0,30,33],[112,65,0,31,34]] },
 };
 
 // Cada classe do jogo usa a tabela da classe equivalente do Ember. Sentinel não existe no Ember e usa a do Lanceiro;
@@ -1234,6 +1274,7 @@ const CLASS_TABLE = {
 const isFemalePeasant = actor => actor.spriteId === 'female-peasant';
 function tableFor(actor) {
   if (actor === 'heir') return EMBER_CLASSES.captain;
+  if (actor.className === 'Bandit') return EMBER_CLASSES[actor.kind === 'crossbow' ? 'brigandCrossbowman' : 'rogue'];
   if (actor.className === 'Peasant') return EMBER_CLASSES[isFemalePeasant(actor) ? 'villagerF1' : 'peasant1'];
   return EMBER_CLASSES[CLASS_TABLE[actor.prestige] || CLASS_TABLE[actor.className]] || EMBER_CLASSES.swordsman;
 }
@@ -1283,9 +1324,10 @@ function peasantName(female) {
   for (let i = 0; i < 40; i++) { const name = `${pick(firsts)} ${pick(PEASANT_EPITHETS)}`; if (!taken.has(name)) return name; }
   return `${pick(firsts)} ${pick(PEASANT_EPITHETS)} ${state.workers.length + 1}`;
 }
-const actorLabel = actor => actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.prestige ? ` · ${actor.prestige}` : ''}`;
-const findActor = id => [...state.heroes, ...state.workers].find(actor => String(actor.id) === String(id)) || null;
+const actorLabel = actor => actor.className === 'Bandit' ? (actor.kind === 'crossbow' ? 'Ladrão de besta' : 'Ladrão de espada') : actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.prestige ? ` · ${actor.prestige}` : ''}`;
+const findActor = id => [...state.heroes, ...state.workers, ...(state.bandits || [])].find(actor => String(actor.id) === String(id)) || null;
 function actorOrigin(actor) {
+  if (actor.className === 'Bandit') return 'Veio pela estrada velha atrás do que não é dele.';
   if (actor.className === 'Peasant' && homeOf(actor)) return 'Veio morar no casebre. Não tinha pra onde ir mesmo.';
   if (actor.className === 'Peasant') return actor.workplace ? `Veio com ${actor.workplace.type === 'mill' ? 'o moinho' : 'a fazenda'}. Não tinha pra onde ir mesmo.` : 'Veio junto com o casarão, como as dívidas.';
   if (actor.home === 'manor') return 'Veio junto com o casarão. Ninguém lembra de ter contratado.';
@@ -1406,10 +1448,11 @@ function foodPanelHTML() {
       <div class="mood-bar storage-bar"><i style="width:${Math.min(100, Math.round(used / storageCap() * 100))}%"></i></div>
       <p class="storage-items">Casarão: ${MANOR_STORAGE}${depots().length ? ` · ${depots().length} ${depots().length === 1 ? 'depósito' : 'depósitos'}: +${extra}` : ''} · armas e itens guardados: ${state.items?.length || 0}</p>
       ${depots().length ? '' : '<p class="storage-items">Precisa de mais espaço? Construa um Depósito de Provisões.</p>'}</div>`;
-  return `${storageBox}<div class="panel-title"><h3>Mesa dos camponeses</h3><span>${n} ${n === 1 ? 'boca' : 'bocas'} · ${foodDemand().toFixed(1).replace('.', ',')} por segundo</span></div>
+  return `${storageBox}<div class="panel-title"><h3>Alimentos e consumo</h3><span>${n} ${n === 1 ? 'boca' : 'bocas'} · ${foodDemand().toFixed(1).replace('.', ',')} por segundo</span></div>
     <div class="food-block"><div class="food-label">RAÇÃO</div>
-      <div class="segmented ration">${RATIONS.map((ration, i) => `<button type="button" data-ration="${i}" class="${state.ration === i ? 'active' : ''}"><b>${ration.label}</b><small>${(eaters() * WORKER_UPKEEP * ration.mult).toFixed(1).replace('.', ',')}/s</small></button>`).join('')}</div>
-      <p class="storage-items">Cada camponês come ${WORKER_UPKEEP.toFixed(1).replace('.', ',')} de provisão por segundo na ração normal. Meia come metade; dobrada, o dobro; tripla, o triplo.</p></div>
+      <div class="segmented ration">${RATIONS.map((ration, i) => `<button type="button" data-ration="${i}" class="${state.ration === i ? 'active' : ''}"><b>${ration.label}</b><small>${(eaters() * WORKER_UPKEEP * ration.mult).toFixed(1).replace('.', ',')}/s</small><em class="${ration.mood > 0 ? 'mood-up' : ration.mood < 0 ? 'mood-down' : ''}">${ration.mood > 0 ? '+' : ration.mood < 0 ? '−' : ''}${Math.abs(ration.mood)} felicidade</em></button>`).join('')}</div>
+      <p class="storage-items">Cada camponês come ${WORKER_UPKEEP.toFixed(1).replace('.', ',')} de provisão por segundo na ração normal. Meia come metade; dobrada, o dobro; tripla, o triplo.</p>
+      <p class="ration-effect">Efeito na felicidade do povo: a ração <b>${RATIONS[state.ration].label.toLowerCase()}</b> ${RATIONS[state.ration].mood > 0 ? 'deixa o povo mais feliz' : RATIONS[state.ration].mood < 0 ? 'deixa o povo mais triste' : 'não muda a felicidade'} (${RATIONS[state.ration].mood > 0 ? '+' : RATIONS[state.ration].mood < 0 ? '−' : ''}${Math.abs(RATIONS[state.ration].mood)}). Quanto mais comida, mais feliz o povo, e mais rápido o estoque acaba. Se a comida servida não der para todos, a fome tira até 40.</p></div>
     <div class="food-label">CARDÁPIO</div>
     <div class="food-list">${FOOD_TYPES.map(food => { const on = !!state.diet[food.id]; const stock = state.food[food.id] || 0; return `<div class="food-row${on ? ' on' : ''}${stock <= 0 ? ' empty' : ''}">
         <img src="public/art/${food.art}-v01.webp" alt=""><span class="food-name"><b>${food.name}</b><small>${food.note}</small></span>
@@ -1427,6 +1470,266 @@ function foodPanelHTML() {
         <div><dt>Fome</dt><dd>Quando a comida servida não dá pra todos: até −40</dd></div>
       </dl>
       <p>Só conta o que está marcado como SERVINDO e tem estoque.</p></div>`;
+}
+
+function economyPanelHTML() {
+  const e = economySnapshot(state);
+  const foodRows = FOOD_TYPES.map(food => `<div class="economy-panel-row"><span>${food.name}</span><b>${format(state.food?.[food.id] || 0)}</b><small>${e.produced[food.id] ? `+${economyRate(e.produced[food.id])}/s` : 'sem produção'}</small></div>`).join('');
+  const costs = BUILDINGS.map(building => `<div class="economy-panel-row"><span>${building.name}</span><small>${building.cost} ouro · ${building.wood} madeira</small></div>`).join('');
+  return `<div class="panel-title"><h3>Economia</h3><span>situação atual</span></div>
+    <section class="economy-panel-group"><h4>CAIXA E IMPOSTOS</h4><div class="economy-panel-row"><span>Ouro disponível</span><b>${state.testMode ? '∞' : format(state.gold)}</b></div><div class="economy-panel-row"><span>Imposto</span><b>${state.taxPercent}% · ≈ ${economyRate(e.taxEstimate)}/dia</b></div><div class="economy-panel-row"><span>Madeira</span><b>${state.testMode ? '∞' : format(state.timber)} · +${economyRate(e.woodRate)}/s</b></div></section>
+    <section class="economy-panel-group"><h4>COMIDA · ${format(e.stock)} / ${e.capacity}</h4>${foodRows}<div class="economy-panel-row economy-panel-total"><span>Consumo dos camponeses</span><b>−${economyRate(e.consumption)}/s</b></div><div class="economy-panel-row economy-panel-total"><span>Imposto diário dos camponeses</span><b>+${economyRate(e.workerTax)}</b></div><small class="economy-panel-note">A taverna acrescenta o imposto de quem bebe. A coleta acontece à meia-noite.</small></section>
+    <details class="economy-panel-group"><summary>CUSTOS PARA CONSTRUIR</summary>${costs}<small class="economy-panel-note">Custos únicos; melhorias têm seus próprios valores.</small></details>`;
+}
+
+
+// ==========================================================================
+// Ladrões e combate automático. Ladrões chegam pela estrada velha a cada 6 horas de jogo,
+// vão roubar uma construção e fogem. Heróis que os veem lutam sozinhos (idle combat).
+// Dano e experiência seguem o Ember: ataque − defesa (magia para magos) e 13 + 3 × (nível do alvo − nível de quem bate).
+// ==========================================================================
+const RAID_EVERY = 360;                 // minutos de jogo entre bandos
+const AGGRO_RANGE = 22;                 // heróis enxergam ladrões até esta distância
+const MELEE_RANGE = 2.5;
+const SHOT_RANGE = 10;
+const ATTACK_COOLDOWN = 1.2;            // segundos de jogo entre golpes
+const RANGED_CLASSES = ['Archer', 'Ranger', 'Assassin', 'Black Mage', 'Elementalist', 'Warlock', 'Conjurer', 'Sorcerer', 'Necromancer'];
+const MAGIC_CLASSES = ['Black Mage', 'Elementalist', 'Warlock', 'Conjurer', 'Sorcerer', 'Necromancer'];
+const HEALER_CLASSES = ['Healer', 'Bishop', 'Cleric'];
+const DEATH_MSG = [
+  n => `${n} morreu. Deixou dívidas na taverna.`, n => `${n} morreu fazendo o que amava: fugindo devagar demais.`,
+  n => `${n} morreu. A família vai receber uma carta. Ou não.`, n => `${n} virou adubo. Os campos agradecem.`, n => `${n} morreu. Era o favorito de ninguém.`,
+];
+const isBandit = actor => actor.className === 'Bandit';
+const classOf = actor => actor.prestige || actor.className;
+const statsOf = actor => attributesAt(tableFor(actor), actor.level || 1);
+const maxHpOf = actor => statsOf(actor).hp;
+const hpOf = actor => (actor.hp == null ? maxHpOf(actor) : actor.hp);
+const distanceTo = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const raidEntry = () => PATH_NODES[18] || PATH_NODES[9];
+
+function moveToward(actor, target, step) {
+  const dx = target.x - actor.x, dy = target.y - actor.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance < 0.001) return 0;
+  const move = Math.min(distance, step);
+  actor.x += dx / distance * move;
+  actor.y += dy / distance * move;
+  actor.facing = dy < -0.2 ? 'back' : dy > 0.2 ? 'front' : (actor.facing || 'front');
+  if (Math.abs(dx) > 0.2) actor.side = dx < 0 ? 'left' : 'right';
+  return move;
+}
+
+function faceToward(actor, target) {
+  const dx = target.x - actor.x, dy = target.y - actor.y;
+  actor.facing = dy < -0.5 ? 'back' : 'front';
+  if (Math.abs(dx) > 0.2) actor.side = dx < 0 ? 'left' : 'right';
+}
+
+function animateWalk(actor, moved, delta, reducedMotion) {
+  actor.action = 'walk';
+  actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
+  actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
+}
+
+function animateAttack(actor, delta, reducedMotion) {
+  if ((actor.attackAnim || 0) > 0) {
+    actor.attackAnim -= delta;
+    actor.action = 'action';
+    actor.actionClock = (actor.actionClock || 0) + delta;
+    actor.frame = reducedMotion ? 0 : Math.floor(actor.actionClock * 8) % 4;
+  } else {
+    actor.action = 'walk';
+    actor.frame = 0;
+  }
+}
+
+function checkPrestige(hero, before) {
+  if (before < 15 && hero.level >= 15) {
+    say(`${hero.name} chegou ao nível 15 e acha que merece mais.`, `${hero.name} procura uma guilda de prestígio. As guildas fingem que não estão.`);
+    assignPrestige(hero);
+    if (state.tab === 'heroes') renderPanel();
+  }
+}
+
+function lootText(loot) {
+  if (!loot) return 'nada';
+  if (loot.gold) return `${loot.gold} de ouro`;
+  if (loot.food) return `${loot.food.qty} de ${FOOD_TYPES.find(food => food.id === loot.food.id)?.name.toLowerCase() || 'comida'}`;
+  return 'nada';
+}
+
+function killActor(victim, killer) {
+  victim.alive = false;
+  victim.hp = 0;
+  if (isBandit(victim)) {
+    let back = '';
+    if (victim.loot?.gold) { if (!state.testMode) state.gold += victim.loot.gold; back = ` Recuperou ${victim.loot.gold} de ouro.`; }
+    if (victim.loot?.food) {
+      const qty = Math.min(victim.loot.food.qty, Math.max(0, Math.floor(storageCap() - storedUnits())));
+      state.food[victim.loot.food.id] = (state.food[victim.loot.food.id] || 0) + qty;
+      if (qty) back = ` Recuperou ${qty} de ${FOOD_TYPES.find(food => food.id === victim.loot.food.id)?.name.toLowerCase()}.`;
+    }
+    say(`${killer ? killer.name : 'Alguém'} derrubou ${victim.name}.${back}`, `${victim.name} não volta mais pela estrada velha.`);
+  } else if (victim.className === 'Peasant') {
+    say(`${victim.name} foi morto por ladrões. ${pick(['Os outros pediram aumento.', 'A colheita atrasou.', 'Ele tinha nome. Ninguém lembra qual.'])}`);
+  } else {
+    say(pick(DEATH_MSG)(victim.name), `${victim.name} morreu lutando contra ladrões.`);
+  }
+  updateHud();
+  if (state.tab === 'heroes') renderPanel();
+}
+
+// Um golpe: dano pelo Ember; heróis ganham experiência a cada golpe, mais 25% quando matam.
+function strike(attacker, defender) {
+  const a = statsOf(attacker), d = statsOf(defender);
+  const magic = MAGIC_CLASSES.includes(classOf(attacker));
+  const raw = magic ? a.mag - Math.floor(d.def / 2) : a.atk - d.def;
+  const damage = Math.max(1, Math.round(raw * (0.8 + Math.random() * 0.4)));
+  defender.hp = hpOf(defender) - damage;
+  defender.calm = 5;
+  attacker.calm = 5;
+  const killed = defender.hp <= 0;
+  if (!isBandit(attacker) && attacker.className !== 'Peasant') {
+    let xp = Math.max(1, 13 + 3 * ((defender.level || 1) - (attacker.level || 1)));
+    if (killed) xp = Math.floor(xp * 1.25);
+    const before = attacker.level || 1;
+    gainActorXp(attacker, xp);
+    checkPrestige(attacker, before);
+  }
+  if (killed) killActor(defender, attacker);
+}
+
+function healHit(healer, patient) {
+  const amount = Math.max(1, statsOf(healer).mag);
+  patient.hp = Math.min(maxHpOf(patient), hpOf(patient) + amount);
+  healer.calm = 5;
+  const before = healer.level || 1;
+  gainActorXp(healer, 13);
+  checkPrestige(healer, before);
+}
+
+// Herói: procura ladrão (ou ferido, se for curandeiro) por perto; se achar, larga o resto e luta.
+function heroCombatStep(hero, delta, reducedMotion) {
+  hero.calm = Math.max(0, (hero.calm || 0) - delta);
+  const bandits = (state.bandits || []).filter(bandit => bandit.alive);
+  let target = null, heal = false;
+  if (HEALER_CLASSES.includes(classOf(hero))) {
+    const wounded = state.heroes.filter(other => other.alive && other !== hero && hpOf(other) < maxHpOf(other) * 0.7 && distanceTo(hero, other) < AGGRO_RANGE);
+    if (wounded.length) { target = wounded.sort((x, y) => distanceTo(hero, x) - distanceTo(hero, y))[0]; heal = true; }
+  }
+  if (!target && bandits.length) {
+    const near = bandits.filter(bandit => distanceTo(hero, bandit) < AGGRO_RANGE).sort((x, y) => distanceTo(hero, x) - distanceTo(hero, y));
+    target = near[0] || null;
+  }
+  if (!target) { if (hero.combatTarget) { hero.combatTarget = null; hero.route = []; hero.finalPoint = null; } return false; }
+  if (!hero.combatTarget) { hero.route = []; hero.finalPoint = null; hero.wait = 0; }
+  hero.combatTarget = target.id;
+  hero.cooldown = (hero.cooldown || 0) - delta;
+  const range = heal ? SHOT_RANGE : RANGED_CLASSES.includes(classOf(hero)) ? SHOT_RANGE : MELEE_RANGE;
+  if (distanceTo(hero, target) > range) {
+    const moved = moveToward(hero, target, 4.2 * delta);
+    animateWalk(hero, moved > 0, delta, reducedMotion);
+    return true;
+  }
+  faceToward(hero, target);
+  if (hero.cooldown <= 0) {
+    hero.cooldown = ATTACK_COOLDOWN;
+    hero.attackAnim = 0.5;
+    hero.actionClock = 0;
+    if (heal) healHit(hero, target); else strike(hero, target);
+  }
+  animateAttack(hero, delta, reducedMotion);
+  return true;
+}
+
+// Ladrão: revida heróis por perto, ataca camponês colado (espada), senão rouba e foge.
+function banditStep(bandit, delta, reducedMotion) {
+  bandit.cooldown = (bandit.cooldown || 0) - delta;
+  bandit.calm = Math.max(0, (bandit.calm || 0) - delta);
+  const range = bandit.kind === 'crossbow' ? SHOT_RANGE : MELEE_RANGE;
+  const heroes = state.heroes.filter(hero => hero.alive && distanceTo(bandit, hero) < (bandit.kind === 'crossbow' ? SHOT_RANGE + 2 : 7));
+  let foe = heroes.sort((x, y) => distanceTo(bandit, x) - distanceTo(bandit, y))[0] || null;
+  if (!foe && bandit.kind === 'sword') foe = state.workers.find(worker => worker.alive && distanceTo(bandit, worker) < 3) || null;
+  if (foe) {
+    if (distanceTo(bandit, foe) > range) {
+      const moved = moveToward(bandit, foe, (bandit.kind === 'crossbow' ? 3.2 : 3.6) * delta);
+      animateWalk(bandit, moved > 0, delta, reducedMotion);
+      return;
+    }
+    faceToward(bandit, foe);
+    if (bandit.cooldown <= 0) { bandit.cooldown = ATTACK_COOLDOWN; bandit.attackAnim = 0.5; bandit.actionClock = 0; strike(bandit, foe); }
+    animateAttack(bandit, delta, reducedMotion);
+    return;
+  }
+  const speed = (bandit.kind === 'crossbow' ? 3.2 : 3.6) * delta;
+  if (bandit.mode === 'raid') {
+    const goal = bandit.goalSpot;
+    const moved = moveToward(bandit, goal, speed);
+    animateWalk(bandit, moved > 0, delta, reducedMotion);
+    if (distanceTo(bandit, goal) < 0.6) stealFrom(bandit);
+  } else {
+    const exit = raidEntry();
+    const moved = moveToward(bandit, exit, speed);
+    animateWalk(bandit, moved > 0, delta, reducedMotion);
+    if (distanceTo(bandit, exit) < 0.6) {
+      bandit.alive = false;
+      bandit.escaped = true;
+      say(`${bandit.name} escapou pela estrada velha com ${lootText(bandit.loot)}. Ninguém viu nada. Ninguém nunca vê.`);
+    }
+  }
+}
+
+// "do casarão", "da Taverna", "do Mercado": artigo pelo gênero da construção.
+function fromPlace(name) {
+  if (name.startsWith('o ')) return `do ${name.slice(2)}`;
+  const feminine = ['Fazenda', 'Taverna', 'Guilda', 'Torre', 'Casa', 'Cabana'].includes(name.split(' ')[0]);
+  return `${feminine ? 'da' : 'do'} ${name}`;
+}
+
+function stealFrom(bandit) {
+  const where = bandit.goalName || 'o domínio';
+  if (!state.testMode && state.gold >= 1) {
+    const amount = Math.min(Math.floor(state.gold), 10 + 5 * (bandit.level || 1));
+    state.gold -= amount;
+    bandit.loot = { gold: amount };
+  } else {
+    const richest = FOOD_TYPES.map(food => ({ id: food.id, qty: state.food[food.id] || 0 })).sort((a, b) => b.qty - a.qty)[0];
+    const qty = Math.min(10, Math.floor(richest?.qty || 0));
+    if (qty > 0) { state.food[richest.id] -= qty; bandit.loot = { food: { id: richest.id, qty } }; }
+  }
+  bandit.mode = 'flee';
+  updateHud();
+  say(`${bandit.name} roubou ${lootText(bandit.loot)} ${fromPlace(where)} e está fugindo pela estrada velha.`);
+}
+
+// Bando novo: cresce com os dias.
+function spawnBandits() {
+  const day = Math.floor(state.minutes / 1440) + 1;
+  const count = Math.min(4, 1 + Math.floor((day - 1) / 2));
+  const level = Math.min(HEIR_MAX_LEVEL, 1 + Math.floor((day - 1) / 2));
+  const entry = raidEntry();
+  const targets = [{ x: 42, y: 40, name: 'o casarão' }, ...state.buildings.filter(isDone).map(building => ({ x: building.x, y: Math.min(198, building.y + 1.2), name: buildingName(building) }))];
+  for (let i = 0; i < count; i++) {
+    const kind = Math.random() < 0.4 ? 'crossbow' : 'sword';
+    const goal = pick(targets);
+    state.bandits.push({
+      id: `bandit-${Date.now()}-${i}`, className: 'Bandit', kind, spriteId: kind === 'crossbow' ? 'bandit-crossbow' : 'bandit-sword',
+      name: `${kind === 'crossbow' ? 'Besteiro' : 'Salteador'} ${pick(EPITHETS)}`, level, alive: true,
+      x: entry.x + (Math.random() * 4 - 2), y: entry.y - i * 1.5, mode: 'raid', goalSpot: { x: goal.x, y: goal.y }, goalName: goal.name,
+    });
+  }
+  say(count === 1 ? 'Um ladrão apareceu na estrada velha. Ele não veio pedir informação.' : `${count} ladrões apareceram na estrada velha. Eles não vieram pedir informação.`);
+}
+
+// Uma vez por segundo de jogo: bandos novos, limpeza e recuperação fora de combate.
+function combatTick(minutesPassed) {
+  if (state.nextRaidAt == null) state.nextRaidAt = 720;
+  if (state.minutes >= state.nextRaidAt) { spawnBandits(); state.nextRaidAt += RAID_EVERY; }
+  state.bandits = (state.bandits || []).filter(bandit => bandit.alive);
+  [...state.heroes, ...state.workers].filter(actor => actor.alive && actor.hp != null && (actor.calm || 0) <= 0).forEach(actor => {
+    actor.hp = Math.min(maxHpOf(actor), actor.hp + maxHpOf(actor) * 0.03 * minutesPassed);
+  });
 }
 
 // ==========================================================================
@@ -1456,6 +1759,9 @@ function hydrateState(data) {
   loaded.buildings.forEach(building => { building.builtAt = 0; });
   if (!data.food) loaded.food = { ...emptyFood(), wheat: data.grain || 0 };
   if (!Array.isArray(loaded.items)) loaded.items = [];
+  if (!Array.isArray(loaded.bandits)) loaded.bandits = [];
+  if (data.nextRaidAt == null) loaded.nextRaidAt = loaded.minutes + RAID_EVERY;
+  loaded.bandits.forEach(bandit => { bandit.route = []; bandit.finalPoint = null; });
   if (loaded.taxPercent == null) loaded.taxPercent = 10;
   if (loaded.tavernTab == null) loaded.tavernTab = 0;
   loaded.nextBuildingId = Math.max(loaded.nextBuildingId || 1, ...loaded.buildings.map(building => building.site + 1));
@@ -1463,6 +1769,31 @@ function hydrateState(data) {
   loaded.workers.forEach(worker => {
     worker.workplace = worker.workplace == null ? null : loaded.buildings.find(building => building.site === worker.workplace) || null;
   });
+  // Saves antigos marcavam todos os heróis recrutados por uma guilda como moradores dela.
+  // Mantém um por guilda e transfere os demais para camas disponíveis, sem apagar personagens.
+  loaded.buildings.filter(building => isDone(building) && BUILDINGS.some(item => item.id === building.type && item.heroClass)).forEach(guild => {
+    const residents = loaded.heroes.filter(hero => hero.alive && hero.guildSite === guild.site);
+    residents.slice(1).forEach(hero => {
+      hero.recruitedFromSite = guild.site;
+      hero.guildSite = null;
+      const lodging = loaded.buildings.find(building => isDone(building) && (
+        (building.type === 'hotel' && loaded.heroes.filter(other => other.alive && other.homeSite === building.site).length < 4)
+        || (building.type === 'tavern' && !loaded.heroes.some(other => other.alive && other.homeSite === building.site))));
+      hero.homeSite = lodging?.site ?? null;
+    });
+  });
+  loaded.heroes.filter(hero => hero.alive && hero.guildSite != null
+    && !loaded.buildings.some(building => building.site === hero.guildSite && BUILDINGS.some(item => item.id === building.type && item.heroClass)))
+    .forEach(hero => {
+      hero.recruitedFromSite = hero.recruitedFromSite ?? hero.guildSite;
+      hero.guildSite = null;
+      if (hero.homeSite == null) {
+        const lodging = loaded.buildings.find(building => isDone(building) && (
+          (building.type === 'hotel' && loaded.heroes.filter(other => other.alive && other.homeSite === building.site).length < 4)
+          || (building.type === 'tavern' && !loaded.heroes.some(other => other.alive && other.homeSite === building.site))));
+        hero.homeSite = lodging?.site ?? null;
+      }
+    });
   [...loaded.heroes, ...loaded.workers].forEach(actor => { actor.route = []; actor.goal = null; actor.wait = 0; actor.finalPoint = null; });
   loaded.selectedBuild = null;
   loaded.selectedSite = null;
@@ -1552,6 +1883,7 @@ function setTestMode(on) {
 
 function applyOptions() {
   document.body.classList.toggle('names-always', options.names === 'always');
+  document.documentElement.style.setProperty('--mill-sails-image', `url('${buildingImage('mill-sails')}')`);
 }
 
 const menu = { stack: [], pending: null };
@@ -1578,6 +1910,31 @@ function slotSummary(record) {
   return `Dia ${d.day}, ${d.clock} · ${d.gold} de ouro · ${d.heroes} ${d.heroes === 1 ? 'herói' : 'heróis'} · salvo ${ago(record.savedAt)}`;
 }
 
+function economySnapshot(source) {
+  const workers = (source.workers || []).filter(worker => worker.alive);
+  const buildings = (source.buildings || []).filter(isDone);
+  const produced = Object.fromEntries(FARM_TYPES.map(food => [food.id, 0]));
+  buildings.forEach(building => {
+    if (building.type === 'farm') produced[farmType(building.produce).id] += farmType(building.produce).grain;
+    if (building.type === 'mill') produced.wheat += BUILDINGS.find(item => item.id === 'mill').grain;
+  });
+  const ration = RATIONS[source.ration ?? 2] || RATIONS[2];
+  const consumption = workers.length * WORKER_UPKEEP * ration.mult;
+  const woodRate = 0.28 + buildings.filter(building => building.type === 'lumber').reduce((sum, camp) => {
+    const crew = workers.filter(worker => (worker.workplace?.site ?? worker.workplace) === camp.site).length;
+    return sum + LUMBER_RATE[Math.min(3, crew)];
+  }, 0);
+  const factor = (source.taxPercent ?? 10) / 10;
+  const workerTax = workers.length * 2 * factor;
+  const tavernTax = (source.tavernTab || 0) * factor;
+  const food = source.food || {};
+  const stock = FOOD_TYPES.reduce((sum, item) => sum + (food[item.id] || 0), 0);
+  const capacity = 100 + buildings.filter(building => building.type === 'depot').reduce((sum, depot) => sum + [30, 45, 70, 100][depot.level || 0], 0);
+  return { source, workers: workers.length, buildings: buildings.length, produced, consumption, woodRate, workerTax, tavernTax, taxEstimate: workerTax + tavernTax, stock, capacity };
+}
+
+const economyRate = value => `${value.toFixed(2).replace('.', ',')}`;
+
 const SCREENS = {
   title() {
     const latest = latestSave();
@@ -1593,6 +1950,22 @@ const SCREENS = {
       <p class="title-save">${latest ? `Slot ${latest.slot} · ${slotSummary(latest.record)}` : 'Nenhum jogo salvo ainda.'}</p>
       <footer class="title-footer"><span>O SAVE FICA NESTE NAVEGADOR</span>${debug.testMode ? '<span class="tag-test">MODO TESTE LIGADO</span>' : ''}</footer>
     </div>` };
+  },
+  economy() {
+    const latest = latestSave();
+    const source = game.slot ? state : latest?.record?.state || newGameState();
+    const e = economySnapshot(source);
+    const foodRows = FARM_TYPES.map(food => `<div><dt>${food.name}</dt><dd>+${economyRate(e.produced[food.id])} /s</dd></div>`).join('');
+    const demandRow = `<div><dt>Consumo dos camponeses · ${RATIONS[source.ration ?? 2]?.label || 'Normal'}</dt><dd>−${economyRate(e.consumption)} /s</dd></div>`;
+    const costs = BUILDINGS.map(building => `<tr><th>${building.name}</th><td>${building.cost} ouro</td><td>${building.wood} madeira</td></tr>`).join('');
+    return { cls: menuMode(), html: `<section class="menu-card economy-card wide">
+      <header class="menu-card-head"><span class="eyebrow">${game.slot ? `SLOT ${game.slot} · DIA ${Math.floor(source.minutes / 1440) + 1}` : latest ? 'ÚLTIMO SAVE' : 'REGRAS DO INÍCIO'}</span><h2>Economia do domínio</h2><p>${game.slot ? 'Valores atuais do jogo pausado.' : latest ? 'Valores gravados no save mais recente.' : 'Sem save: mostrando o início da partida. Produção e taxas mudam com as construções e moradores.'}</p></header>
+      <div class="economy-metrics"><div><small>OURO DISPONÍVEL</small><b>${source.testMode ? '∞' : format(source.gold || 0)}</b></div><div><small>MADEIRA</small><b>${source.testMode ? '∞' : format(source.timber || 0)}</b><em>+${economyRate(e.woodRate)}/s</em></div><div><small>PROVISÕES EM ESTOQUE</small><b>${format(e.stock)} / ${e.capacity}</b></div><div><small>IMPOSTO CONFIGURADO</small><b>${source.taxPercent ?? 10}%</b></div></div>
+      <div class="economy-columns"><section><h3>Provisões por segundo</h3><dl class="economy-list">${foodRows}${demandRow}<div class="economy-net"><dt>Saldo líquido atual</dt><dd>${e.produced.wheat + e.produced.garlic + e.produced.bacon + e.produced.eggs + e.produced.milk - e.consumption >= 0 ? '+' : '−'}${economyRate(Math.abs(e.produced.wheat + e.produced.garlic + e.produced.bacon + e.produced.eggs + e.produced.milk - e.consumption))} /s</dd></div></dl></section>
+        <section><h3>Ouro na próxima cobrança</h3><dl class="economy-list"><div><dt>Camponeses · ${e.workers} × ${economyRate(2 * ((source.taxPercent ?? 10) / 10))} por dia</dt><dd>+${economyRate(e.workerTax)}</dd></div><div><dt>Conta da taverna acumulada</dt><dd>+${economyRate(e.tavernTax)}</dd></div><div class="economy-net"><dt>Estimativa da próxima coleta</dt><dd>≈ ${economyRate(e.taxEstimate)} ouro</dd></div></dl><p class="economy-note">Impostos são recolhidos à meia-noite do jogo. A taverna depende de quem bebe e de quanto tempo ficou.</p></section></div>
+      <section class="economy-costs"><h3>Gasto para construir</h3><div class="economy-table-wrap"><table><thead><tr><th>Construção</th><th>Ouro</th><th>Madeira</th></tr></thead><tbody>${costs}</tbody></table></div><p class="economy-note">Esses são custos únicos de construção. Melhorias têm custo próprio; comida é o consumo contínuo. Construções não geram ouro.</p></section>
+      <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
+    </section>` };
   },
   continue() {
     const latest = latestSave();
@@ -1627,6 +2000,7 @@ const SCREENS = {
         <li><b>Guildas, taverna e hotel</b> trazem heróis. Você não manda neles. Eles fazem o que querem.</li>
         <li>Escolha a construção e <b>toque onde quiser</b> no mapa. Onde não dá, ela fica vermelha. <b>Esc</b> cancela.</li>
         <li>Toda construção é uma <b>obra</b>: um camponês precisa trabalhar um minuto no local.</li>
+        <li><b>Ladrões</b> chegam pela estrada velha a cada 6 horas. Heróis que os veem lutam sozinhos e ganham experiência com isso.</li>
         <li>O <b>ouro</b> vem dos impostos, cobrados à meia-noite: dos camponeses e de quem bebe na taverna.</li>
         <li><b>Esc</b> ou <b>MENU</b> pausa e salva.</li>
       </ul>
@@ -1657,10 +2031,10 @@ const SCREENS = {
   },
   sheet() {
     const heir = heirById(state.heir);
-    const day = Math.floor(state.minutes / 1440) + 1;
     if (!heir) return { cls: 'is-pause', html: `<section class="menu-card"><header class="menu-card-head"><span class="eyebrow">FICHA DO HERDEIRO</span><h2>Herdeiro desconhecido</h2><p>Este save é de antes da escolha de herdeiros. Ninguém lembra quem assinou a herança.</p></header><div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar ao jogo</button></div></section>` };
     const house = HOUSES[heir.house];
     return { cls: 'is-pause', html: `<section class="menu-card sheet">
+      <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar ficha" title="Fechar ficha">×</button></div>
       <div class="sheet-top">${crestSVG(heir.house, 96)}
         <div><span class="eyebrow">FICHA DO HERDEIRO</span><h2>${heir.name}</h2><p class="heir-motto">${house.name} · “${house.motto}”</p></div></div>
       <div class="sheet-level">
@@ -1670,20 +2044,11 @@ const SCREENS = {
       ${heirAttributesHTML(state.heirLevel)}
       <dl class="sheet-facts">
         <div><dt>Idade</dt><dd>${heir.age} anos</dd></div>
-        <div><dt>${heir.gender === 'f' ? 'Herdeira' : 'Herdeiro'} de</dt><dd>Vale do Luto</dd></div>
         <div><dt>Parentesco</dt><dd>${heir.tie}</dd></div>
       </dl>
       <p class="sheet-about">${heir.about}</p>
-      <p class="sheet-house">${house.about}</p>
       <div class="sheet-section-label">EQUIPAMENTO</div>
-      <div class="equip-grid">${EQUIP_SLOTS.map(({ slot, label }) => { const item = ITEMS[(state.equipment || BASIC_EQUIPMENT())[slot]]; return `<div class="equip-slot">${item ? pixelIcon(item.icon, 48) : ''}<span><small>${label}</small><b>${item ? item.name : 'Vazio'}</b><em>${item ? item.about : ''}</em></span></div>`; }).join('')}</div>
-      <dl class="sheet-facts domain">
-        <div><dt>Dias no domínio</dt><dd>${day}</dd></div>
-        <div><dt>Construções</dt><dd>${state.buildings.length}</dd></div>
-        <div><dt>Heróis</dt><dd>${state.heroes.filter(hero => hero.alive).length}</dd></div>
-        <div><dt>Trabalhadores</dt><dd>${state.workers.filter(worker => worker.alive).length}</dd></div>
-      </dl>
-      <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar ao jogo</button></div>
+      <div class="equip-grid">${EQUIP_SLOTS.map(({ slot, label }) => { const item = ITEMS[(state.equipment || BASIC_EQUIPMENT())[slot]]; return `<div class="equip-slot" title="${item ? item.about : 'Vazio'}">${item ? pixelIcon(item.icon, 28) : ''}<span><small>${label}</small><b>${item ? item.name : 'Vazio'}</b></span></div>`; }).join('')}</div>
     </section>` };
   },
   actor({ id }) {
@@ -1691,13 +2056,14 @@ const SCREENS = {
     if (!actor) return { cls: 'is-pause', html: `<section class="menu-card"><header class="menu-card-head"><span class="eyebrow">FICHA</span><h2>Não está mais aqui</h2><p>Foi embora, morreu ou as duas coisas.</p></header><div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar ao jogo</button></div></section>` };
     const level = actor.level || 1;
     return { cls: 'is-pause', html: `<section class="menu-card sheet">
+      <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar ficha" title="Fechar ficha">×</button></div>
       <div class="sheet-top"><img class="sheet-portrait" src="public/art/portraits/${actorPortrait(actor)}-portrait-v01.webp" alt="">
-        <div><span class="eyebrow">FICHA · ${actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
+        <div><span class="eyebrow">FICHA · ${actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
       ${levelHTML(level, actor.xp || 0)}
+      <p class="sheet-house">Vida agora: ${Math.ceil(hpOf(actor))} de ${maxHpOf(actor)}</p>
       ${attributesHTML(attributesAt(tableFor(actor), level))}
       ${actor.trait ? `<p class="sheet-about"><b>${actor.trait}.</b> ${TRAITS[actor.trait] || ''}</p>` : ''}
       <p class="sheet-house">${actorOrigin(actor)}</p>
-      <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar ao jogo</button></div>
     </section>` };
   },
   scenarioEnd({ servants, protectors }) {
@@ -1738,9 +2104,11 @@ const SCREENS = {
     return { cls: menuMode(), html: `<section class="menu-card">
       <header class="menu-card-head"><span class="eyebrow">OPÇÕES</span><h2>Opções</h2></header>
       <div class="option-list">
+        <div class="option-row"><div><b>Som</b><small>Música e efeitos do jogo.</small></div>${segmented('sound', options.sound, [[1, 'Ligado'], [0, 'Desligado']])}</div>
         <div class="option-row"><div><b>Salvar sozinho</b><small>Salva no slot do jogo de tempos em tempos e quando você fecha a página.</small></div>${segmented('autosave', options.autosave, [[0, 'Desligado'], [1, '1 min'], [3, '3 min'], [5, '5 min']])}</div>
         <div class="option-row"><div><b>Zoom ao começar</b><small>Ampla, normal ou próxima. Dá pra trocar no mapa a qualquer hora.</small></div>${segmented('startZoom', options.startZoom, [[0, 'Ampla'], [1, 'Normal'], [2, 'Próxima']])}</div>
         <div class="option-row"><div><b>Nomes dos personagens</b><small>Eles têm nome. Ninguém lembra qual.</small></div>${segmented('names', options.names, [['selected', 'Ao tocar'], ['always', 'Sempre']])}</div>
+        <div class="option-row"><div><b>Aparência das construções</b><small>Só troca a arte. Não altera produção, custos, regras nem saves.</small></div>${segmented('buildingArtStyle', options.buildingArtStyle, [['dark', 'Escura'], ['color', 'Colorida']])}</div>
       </div>
       <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
     </section>` };
@@ -1764,6 +2132,7 @@ const SCREENS = {
       <header class="menu-card-head"><span class="eyebrow">SLOT ${game.slot} · DIA ${day} · ${clock}</span><h2>Pausado</h2><p>${game.lastSaved ? `Último save ${ago(game.lastSaved)}.` : 'Ainda não salvou este jogo.'}</p></header>
       <nav class="menu-list compact" aria-label="Menu de pausa">
         <button type="button" class="primary" data-action="resume">Voltar ao jogo</button>
+        <button type="button" data-action="economy">Economia do domínio</button>
         <button type="button" data-action="save">Salvar no slot ${game.slot}</button>
         <button type="button" data-action="load">Carregar jogo</button>
         <button type="button" data-action="options">Opções</button>
@@ -1789,7 +2158,7 @@ function renderMenu() {
   if (!current) return;
   const { cls, html } = SCREENS[current.name](current.params || {});
   const layer = $('#menu-layer');
-  layer.className = `menu-layer ${cls}`;
+  layer.className = `menu-layer ${cls}${current.name === 'sheet' || current.name === 'actor' ? ' sheet-open' : ''}`;
   layer.hidden = false;
   $('#menu-panel').innerHTML = html;
   fitMenu();
@@ -1799,7 +2168,7 @@ function renderMenu() {
 // A tela de menu encolhe o mínimo necessário para caber na altura da janela, sem rolagem.
 function fitMenu() {
   const card = $('#menu-panel').firstElementChild;
-  if (!card) return;
+  if (!card || card.classList.contains('sheet')) return;
   card.style.zoom = '';
   const layer = $('#menu-layer');
   const pad = parseFloat(getComputedStyle(layer).paddingTop) + parseFloat(getComputedStyle(layer).paddingBottom);
@@ -1859,7 +2228,12 @@ function initMenus() {
       const raw = button.dataset.value;
       const value = Number.isNaN(Number(raw)) ? raw : Number(raw);
       if (name === 'testMode') setTestMode(value === 1);
-      else { options[name] = value; writeStore(OPTIONS_KEY, options); applyOptions(); }
+      else {
+        options[name] = value;
+        writeStore(OPTIONS_KEY, options);
+        applyOptions();
+        if (name === 'buildingArtStyle') { renderSites(); renderPanel(); }
+      }
       renderMenu();
       return;
     }
@@ -1867,6 +2241,7 @@ function initMenus() {
       case 'continue': showScreen('continue'); break;
       case 'new': showScreen('saves', { mode: 'new' }); break;
       case 'load': showScreen('saves', { mode: 'load' }); break;
+      case 'economy': showScreen('economy'); break;
       case 'options': showScreen('options'); break;
       case 'debug': showScreen('debug'); break;
       case 'back': goBack(); break;
@@ -1920,6 +2295,11 @@ function initMenus() {
     }
   });
   $('#menu-btn').addEventListener('click', openPause);
+  $('#economy-open-btn').addEventListener('click', () => {
+    state.tab = 'economy';
+    $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
+    renderPanel();
+  });
   ['#grain', '#happiness'].forEach(sel => $(sel).closest('.stat').addEventListener('click', () => {
     if (!game.slot) return;
     state.tab = 'food';
