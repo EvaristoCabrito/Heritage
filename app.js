@@ -1,6 +1,6 @@
 const BUILDINGS = [
-  { id: 'farm', name: 'Fazenda', glyph: 'F', cost: 115, wood: 6, detail: 'Alho, trigo, bacon, ovos ou leite. Os camponeses trabalham aqui.', gold: 0.55, grain: 2.4, people: 0 },
-  { id: 'mill', name: 'Moinho', glyph: 'M', cost: 155, wood: 10, detail: 'Mói o grão e engorda as provisões. As pás giram; a vila, nem tanto.', gold: 0.4, grain: 1.8, people: 0 },
+  { id: 'farm', name: 'Fazenda', glyph: 'F', cost: 115, wood: 6, detail: 'Alho, trigo, bacon, ovos ou leite. Os camponeses trabalham aqui. Melhora até o nível 3.', gold: 0.55, grain: 0.225, people: 0 },
+  { id: 'mill', name: 'Moinho', glyph: 'M', cost: 155, wood: 10, detail: 'Mói o trigo em farinha. Trigo cru não alimenta ninguém. As pás giram; a vila, nem tanto.', gold: 0.4, grain: 0, people: 0 },
   { id: 'hut', name: 'Casebre Pequeno', glyph: 'C', cost: 60, wood: 4, detail: 'Moradia para 2 camponeses. Amplia para Casebre Grande, com 5. Eles não tinham pra onde ir mesmo.', gold: 0, grain: 0, people: 0, housing: 2 },
   { id: 'depot', name: 'Depósito de Provisões', glyph: 'D', cost: 70, wood: 6, detail: 'Guarda mais 30 unidades de comida, armas e itens. Amplia para 45, 70 e 100. Os ratos aprovam.', gold: 0, grain: 0, people: 0 },
   { id: 'lumber', name: 'Cabana do Lenhador', glyph: 'L', cost: 80, wood: 2, detail: 'Coloque de 1 a 3 camponeses para cortar lenha: 0,1, 0,3 ou 0,5 de madeira por segundo.', gold: 0, grain: 0, people: 0 },
@@ -13,16 +13,30 @@ const BUILDINGS = [
   { id: 'blackMage', name: 'Torre dos Magos', glyph: 'M', cost: 210, wood: 12, detail: 'Recruta Black Mages. Magia que explode em área. Eles também morrem fácil.', heroClass: 'Black Mage', gold: 0.2, grain: 0, people: 1 },
   { id: 'conjurer', name: 'Casa dos Conjuradores', glyph: 'C', cost: 200, wood: 12, detail: 'Recruta Conjurers. Chegam sozinhos e lutam acompanhados.', heroClass: 'Conjurer', gold: 0.2, grain: 0, people: 1 },
   { id: 'healer', name: 'Guilda de Curandeiros', glyph: 'H', cost: 180, wood: 10, detail: 'Recruta Healers. Mantêm os heróis vivos. Por um tempo.', heroClass: 'Healer', gold: 0.25, grain: 0, people: 1 },
-  { id: 'armory', name: 'Arsenal do Domínio', glyph: 'E', cost: 165, wood: 9, detail: 'Heróis compram equipamento aqui.', gold: 0.15, grain: 0, people: 0 },
+  { id: 'armory', name: 'Arsenal do Domínio', glyph: 'E', cost: 165, wood: 9, detail: 'Heróis e camponeses compram equipamento aqui com o próprio ouro. O ouro vem pro cofre.', gold: 0.15, grain: 0, people: 0 },
 ];
 const FARM_TYPES = [
-  { id: 'garlic', name: 'Alho', art: 'farm-garlic', grain: 1.6, gold: 0.9 },
-  { id: 'wheat', name: 'Trigo', art: 'farm-wheat', grain: 2.4, gold: 0.55 },
-  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', grain: 2.1, gold: 0.75 },
-  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', grain: 2.0, gold: 0.65 },
-  { id: 'milk', name: 'Leite', art: 'farm-milk', grain: 2.2, gold: 0.6 },
+  // grain: produção por segundo nos níveis 1, 2 e 3 da fazenda.
+  { id: 'garlic', name: 'Alho', art: 'farm-garlic', grain: [0.15, 0.25, 0.4], gold: 0.9 },
+  { id: 'wheat', name: 'Trigo', art: 'farm-wheat', grain: [0.225, 0.375, 0.6], gold: 0.55 },
+  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', grain: [0.195, 0.33, 0.525], gold: 0.75 },
+  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', grain: [0.19, 0.315, 0.5], gold: 0.65 },
+  { id: 'milk', name: 'Leite', art: 'farm-milk', grain: [0.205, 0.345, 0.55], gold: 0.6 },
 ];
 const farmType = id => FARM_TYPES.find(type => type.id === id) || FARM_TYPES[1];
+// A colheita fica na fazenda (até FARM_STOCK_CAP) até um camponês carregar CARRY_LOAD por viagem para o depósito.
+const CARRY_LOAD = 5;
+const FARM_STOCK_CAP = 10;
+const MANOR_DOOR = { x: 42, y: 39 };
+// Fazendas e moinhos sobem até o nível 3. O moinho melhorado mói mais rápido, sem exagero.
+const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 90, wood: 6 }, { gold: 160, wood: 10 }];
+const MILL_RATE = [0.45, 0.6, 0.8]; // trigo moído em farinha por segundo, por nível
+// Arte por nível: quando houver desenho do upgrade, liste aqui. Ex.: 'farm-garlic': [null, 'farm-garlic-l2', 'farm-garlic-l3']
+const LEVEL_ART = {};
+const producerLevel = building => Math.min(PRODUCER_LEVELS.length - 1, building?.level || 0);
+const farmOutput = building => farmType(building.produce).grain[producerLevel(building)];
+const millRate = building => MILL_RATE[producerLevel(building)];
+const levelArt = (art, building) => LEVEL_ART[art]?.[producerLevel(building)] || art;
 const rateNumber = value => value.toFixed(2).replace('.', ',');
 
 const PRESTIGE = {
@@ -62,7 +76,31 @@ const NIGHT_MSG = ['Primeira noite. Dizem que a primeira é a mais fácil. Dizem
   'Mais uma noite. Ou a última. Depende de você.', 'Anoiteceu. Alguém da família veio visitar.'];
 const LOSS_MSG = ['Um camponês morreu. Os outros pediram aumento.', 'Um camponês foi levado. A colheita atrasou.', 'Perdemos um camponês. Ele tinha nome. Ninguém lembra qual.'];
 
-const isDone = building => !building.underConstruction;
+const isDone = building => !building.underConstruction && !building.ruined;
+// Vida das construções. Monstros atacam (damageBuilding); camponeses consertam sozinhos.
+// Cada nível de melhoria dá +50% de vida. Em ruínas, a construção para até ser consertada.
+const BASE_HP = { farm: 100, mill: 120, hut: 80, depot: 150, lumber: 90, market: 120, tavern: 140, hotel: 160, armory: 200 };
+const GUILD_HP = 180;
+const REPAIR_RATE = 3; // vida por segundo de jogo, antes da habilidade e das ferramentas
+function buildingLevel(building) {
+  if (building.type === 'hut') return building.big ? 1 : 0;
+  if (building.tier != null || building.branch) return building.tier ?? 2;
+  return building.level || 0;
+}
+const buildingMaxHp = building => Math.round((BASE_HP[building.type] ?? GUILD_HP) * (1 + 0.5 * buildingLevel(building)));
+const buildingHp = building => Math.max(0, buildingMaxHp(building) - (building.damage || 0));
+const needsBuilder = building => !!building.underConstruction || (building.damage || 0) > 0;
+function damageBuilding(building, amount) {
+  if (!building || building.underConstruction) return;
+  building.damage = Math.min(buildingMaxHp(building), (building.damage || 0) + amount);
+  if (building.damage >= buildingMaxHp(building) && !building.ruined) {
+    building.ruined = true;
+    say(`${siteLabel(building)} virou ruína. Os camponeses vão juntar os pedaços.`);
+  }
+  assignBuilders();
+  renderSites();
+  if (state.selectedSite === building.site) renderPanel();
+}
 const guildHousing = () => state.buildings.filter(building => BUILDINGS.some(item => item.id === building.type && item.heroClass) && isDone(building)).length;
 const lodgingCapacity = () => state.buildings.filter(building => isDone(building) && building.type === 'hotel').length * 4
   + state.buildings.filter(building => isDone(building) && building.type === 'tavern').length;
@@ -154,20 +192,25 @@ const debug = readStore(DEBUG_KEY, { testMode: false });
 
 // Começo de um jogo novo. Regra: sem construção, sem ninguém. O casarão traz um camponês e um Warrior;
 // outros heróis saem de guildas, taverna ou hotel; cada fazenda ou moinho traz mais um camponês.
+// Bolsas: salário diário do trabalhador e o que cada um traz ao chegar.
+const WORKER_WAGE = 5;
+const WORKER_START_PURSE = 5;
+const HERO_START_PURSE = 15;
 function newGameState(testMode = false, heir = null) {
   return {
     gold: 240, grain: 58, timber: 30,
-    food: { wheat: 40, garlic: 18, bacon: 0, eggs: 0, milk: 0 }, items: [], ration: 2, diet: { wheat: true, garlic: true, bacon: true, eggs: true, milk: true }, happiness: 50, moodTarget: 50, moodParts: null,
+    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, eggs: 0, milk: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, eggs: true, milk: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false,
     bandits: [], nextRaidAt: 720,
     testMode, heir, heirLevel: 1, heirXp: 0, equipment: BASIC_EQUIPMENT(), stash: null, playSeconds: 0,
     buildings: [],
     heroes: [
-      { id: 'warrior-manor', name: 'Bogdan Sem Sorte', className: 'Warrior', trait: 'Valente', level: 1, xp: 0, x: 42, y: 39, alive: true, home: 'manor' },
+      { id: 'warrior-manor', name: 'Bogdan Sem Sorte', className: 'Warrior', trait: 'Valente', level: 1, xp: 0, x: 42, y: 39, alive: true, home: 'manor', purse: HERO_START_PURSE, gear: { weapon: 'rustySword' } },
     ],
     workers: [
-      { id: 'peasant-1', name: 'Ion do Poço', level: 1, xp: 0, className: 'Peasant', spriteId: 'peasant', portraitId: 'male-peasant', x: 42, y: 39, alive: true, workTrip: false, home: 'manor' },
+      { id: 'peasant-1', name: 'Ion do Poço', level: 1, xp: 0, className: 'Peasant', spriteId: 'peasant', portraitId: 'male-peasant', x: 42, y: 39, alive: true, workTrip: false, home: 'manor', purse: WORKER_START_PURSE },
+      { id: 'peasant-2', name: 'Rodica do Poço', level: 1, xp: 0, className: 'Peasant', spriteId: 'female-peasant', portraitId: 'female-peasant', x: 42.6, y: 39, alive: true, workTrip: false, home: 'manor', purse: WORKER_START_PURSE },
     ],
     selectedActor: null,
   };
@@ -179,7 +222,6 @@ const game = { running: false, slot: null, lastSaved: 0 };
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const format = n => Math.floor(n).toLocaleString('pt-BR');
-let toastTimer;
 
 // A câmera percorre o mundo sem alterar as coordenadas dos lotes e personagens.
 // Zoom do jogo: 1 = ampla (100%, o padrão), 2 = normal (130%), 3 = próxima (160%).
@@ -316,13 +358,42 @@ function initCamera() {
   homeCamera();
 }
 
+// Mensagens ficam na tela até o jogador clicar. Repetida vira contador; acima de TOAST_MAX, sai a mais antiga.
+const TOAST_MAX = 6;
 function say(message, event = message) {
   const toast = $('#toast');
-  toast.textContent = message;
-  toast.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+  const last = [...toast.querySelectorAll('.toast-msg')].pop();
+  if (last && last.dataset.text === message) {
+    last.dataset.count = String(Number(last.dataset.count || 1) + 1);
+    last.querySelector('em').textContent = `×${last.dataset.count}`;
+  } else {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'toast-msg';
+    item.dataset.text = message;
+    item.title = 'Clique para fechar';
+    item.innerHTML = '<span></span><em></em>';
+    item.querySelector('span').textContent = message;
+    item.addEventListener('click', () => { item.remove(); updateToastClear(); });
+    toast.insertBefore(item, toast.querySelector('.toast-clear'));
+    while (toast.querySelectorAll('.toast-msg').length > TOAST_MAX) toast.querySelector('.toast-msg').remove();
+  }
+  updateToastClear();
   $('#event-line').textContent = event;
+}
+function updateToastClear() {
+  const toast = $('#toast');
+  let clear = toast.querySelector('.toast-clear');
+  const count = toast.querySelectorAll('.toast-msg').length;
+  if (count < 3) { clear?.remove(); return; }
+  if (!clear) {
+    clear = document.createElement('button');
+    clear.type = 'button';
+    clear.className = 'toast-clear';
+    clear.textContent = 'Fechar todas';
+    clear.addEventListener('click', () => { toast.querySelectorAll('.toast-msg').forEach(item => item.remove()); updateToastClear(); });
+    toast.append(clear);
+  }
 }
 
 const WORKER_UPKEEP = 0.3; // provisões por segundo, por trabalhador
@@ -331,6 +402,7 @@ const WORKER_UPKEEP = 0.3; // provisões por segundo, por trabalhador
 // Preços fixos em ouro por unidade. Comprar custa o dobro de vender.
 const MARKET_GOODS = [
   { id: 'wheat', name: 'Trigo', art: 'farm-wheat', sell: 1, buy: 2 },
+  { id: 'flour', name: 'Farinha', art: 'mill-body', sell: 2, buy: 4 },
   { id: 'garlic', name: 'Alho', art: 'farm-garlic', sell: 1, buy: 2 },
   { id: 'eggs', name: 'Ovos', art: 'farm-eggs', sell: 2, buy: 4 },
   { id: 'milk', name: 'Leite', art: 'farm-milk', sell: 2, buy: 4 },
@@ -414,12 +486,16 @@ function rates() {
   const sum = state.buildings.reduce((sum, building) => {
     const def = BUILDINGS.find(item => item.id === building.type);
     if (def && isDone(building)) {
-      const output = building.type === 'farm' ? farmType(building.produce) : def;
-      sum.grain += output.grain; sum.people += def.people;
+      // Provisões comestíveis: trigo cru não conta; o moinho conta a farinha que mói.
+      if (building.type === 'farm') sum.grain += building.produce === 'wheat' ? 0 : farmOutput(building);
+      else if (building.type !== 'mill') sum.grain += def.grain;
+      sum.people += def.people;
     }
     return sum;
   }, { gold: 0, grain: 0, timber: 0.28, people: 0 });
-  sum.timber += state.buildings.filter(building => building.type === 'lumber' && isDone(building)).reduce((total, camp) => total + LUMBER_RATE[lumberCrew(camp).length], 0);
+  sum.timber += state.buildings.filter(building => building.type === 'lumber' && isDone(building)).reduce((total, camp) => total + LUMBER_RATE[lumberCrew(camp).length] * (1 + crewWork(camp)), 0);
+  // Farinha: o moinho só mói o trigo que existe; sem estoque, fica limitado ao que as fazendas colhem.
+  sum.grain += (state.food.wheat || 0) > 0.5 ? millCapacity() : Math.min(millCapacity(), foodProduction().wheat);
   sum.grain -= foodDemand();
   return sum;
 }
@@ -430,10 +506,15 @@ function rates() {
 // Tudo escala com a porcentagem escolhida.
 // ==========================================================================
 const taxFactor = () => (state.taxPercent ?? 10) / 10;
+// Cada personagem tem a própria bolsa. Trabalhadores recebem salário dos cofres do monarca à meia-noite
+// e pagam dela o imposto e a taverna. Heróis enchem a bolsa com loot.
+const purseOf = actor => actor?.purse || 0;
+const dailyWages = () => state.workers.filter(worker => worker.alive).length * WORKER_WAGE;
+function lootHero(hero, amount) { hero.purse = purseOf(hero) + amount; }
 const openTavern = () => state.buildings.find(building => building.type === 'tavern' && isDone(building)) || null;
 const tavernRate = actor => actor.className === 'Peasant' ? 1 : actor.prestige ? 3 : 2;
 function dailyTaxEstimate() {
-  return state.workers.filter(worker => worker.alive).length * 2 * taxFactor() + (state.tavernTab || 0) * taxFactor();
+  return state.workers.filter(worker => worker.alive).reduce((sum, worker) => sum + Math.min(purseOf(worker), 2 * taxFactor()), 0) + (state.tavernTab || 0) * taxFactor();
 }
 function tavernSpot(actor, tavern) {
   if (!actor.tavernSpot || actor.tavernSpot.site !== tavern.site) {
@@ -454,18 +535,33 @@ function isDrinking(actor) {
 }
 // Uma vez por segundo de jogo (speed minutos): anota o consumo de quem está bebendo.
 function accrueTavern(minutesPassed) {
+  // Cada um paga da própria bolsa; quem está sem dinheiro bebe fiado e a taverna não ganha nada.
   [...state.heroes, ...state.workers].filter(actor => actor.alive && isDrinking(actor)).forEach(actor => {
-    state.tavernTab = (state.tavernTab || 0) + tavernRate(actor) * minutesPassed / 60;
+    const paid = Math.min(purseOf(actor), tavernRate(actor) * minutesPassed / 60);
+    actor.purse = purseOf(actor) - paid;
+    state.tavernTab = (state.tavernTab || 0) + paid;
   });
 }
 function collectTaxes() {
-  const peasants = state.workers.filter(worker => worker.alive).length;
-  const fromPeasants = peasants * 2 * taxFactor();
+  const workers = state.workers.filter(worker => worker.alive);
+  // Primeiro o imposto, tirado da bolsa de cada um; quem não tem, paga o que tem.
+  let fromPeasants = 0;
+  workers.forEach(worker => {
+    const paid = Math.min(purseOf(worker), 2 * taxFactor());
+    worker.purse = purseOf(worker) - paid;
+    fromPeasants += paid;
+  });
   const fromTavern = (state.tavernTab || 0) * taxFactor();
   state.tavernTab = 0;
+  state.armorySales = 0;
   if (!state.testMode) state.gold += fromPeasants + fromTavern;
-  say(`Impostos a ${state.taxPercent}%: ${format(fromPeasants)} de ouro dos camponeses${openTavern() ? ` e ${format(fromTavern)} da taverna` : ''}.`,
-    'Os camponeses pagaram. Uns com moedas, outros com olhares.');
+  // Depois o salário, direto dos cofres do monarca. Sem ouro, alguém fica sem.
+  const paidCount = state.testMode ? workers.length : Math.min(workers.length, Math.floor(state.gold / WORKER_WAGE));
+  workers.slice(0, paidCount).forEach(worker => { worker.purse = purseOf(worker) + WORKER_WAGE; });
+  if (!state.testMode) state.gold -= paidCount * WORKER_WAGE;
+  const unpaid = workers.length - paidCount;
+  say(`Impostos a ${state.taxPercent}%: ${format(fromPeasants)} de ouro dos camponeses${openTavern() ? ` e ${format(fromTavern)} da taverna` : ''}. Salários: ${format(paidCount * WORKER_WAGE)} de ouro${unpaid ? `; ${unpaid} ficaram sem receber` : ''}.`,
+    unpaid ? 'O cofre não deu pra todos. Alguns trabalharam de graça hoje. Lembram disso.' : 'Os camponeses pagaram e receberam. O ouro deu uma volta e voltou menor.');
 }
 
 function updateHud() {
@@ -478,10 +574,14 @@ function updateHud() {
   $('#grain').closest('.stat').classList.toggle('full', storedUnits() >= storageCap() - 1);
   $('#happiness').textContent = Math.round(state.happiness);
   $('#happiness-label').textContent = happinessLabel(state.happiness);
+  $('#favor').textContent = Math.round(state.favor ?? 50);
+  $('#favor-label').textContent = `${favorLabel(state.favor ?? 50)}${state.demands?.length ? ` · ${state.demands.length} ${state.demands.length === 1 ? 'tributo' : 'tributos'}` : ''}`;
+  $('#favor').closest('.stat').dataset.mood = (state.favor ?? 50) < 40 ? 'low' : (state.favor ?? 50) < 60 ? 'mid' : 'high';
   $('#happiness').closest('.stat').dataset.mood = state.happiness < 40 ? 'low' : state.happiness < 60 ? 'mid' : 'high';
   $('#timber').textContent = format(state.timber);
   if (state.testMode) { $('#gold').textContent = '∞'; $('#timber').textContent = '∞'; }
-  $('#gold-rate').textContent = `+${format(dailyTaxEstimate())}/dia`;
+  const goldNet = dailyTaxEstimate() - dailyWages();
+  $('#gold-rate').textContent = `${goldNet < 0 ? '−' : '+'}${format(Math.abs(goldNet))}/dia`;
   $('#grain-rate').textContent = `${r.grain < 0 ? '−' : '+'}${Math.abs(r.grain).toFixed(1).replace('.', ',')}/s`;
   $('#grain-rate').classList.toggle('negative', r.grain < 0);
   $('#timber-rate').textContent = `+${r.timber.toFixed(1).replace('.', ',')}/s`;
@@ -489,7 +589,7 @@ function updateHud() {
   const heroes = state.heroes.filter(hero => hero.alive).length;
   const heroCap = heroCapacity();
   const workers = state.workers.filter(worker => worker.alive).length;
-  const workerCap = 1 + state.buildings.filter(building => building.type === 'hut' && isDone(building)).reduce((sum, hut) => sum + (hut.big ? 5 : 2), 0);
+  const workerCap = 2 + state.buildings.filter(building => building.type === 'hut' && isDone(building)).reduce((sum, hut) => sum + (hut.big ? 5 : 2), 0);
   $('#hero-count').textContent = heroes;
   $('#hero-cap').textContent = heroCap;
   $('#hero-count').closest('.stat').classList.toggle('full', heroes >= heroCap);
@@ -498,7 +598,7 @@ function updateHud() {
   $('#site-count').textContent = state.buildings.length;
   $('.tab-count').textContent = heroes;
   $('#tax-pct').textContent = `${state.taxPercent}%`;
-  $('#tax-preview').textContent = `≈ ${format(dailyTaxEstimate())} de ouro por dia`;
+  $('#tax-preview').textContent = `≈ ${format(dailyTaxEstimate())} de imposto · −${format(dailyWages())} de salários por dia`;
   $('#objective-gold').textContent = state.testMode ? '∞' : format(state.gold);
   const pct = Math.min(100, state.gold / 6);
   $('#objective-bar').style.width = `${pct}%`;
@@ -512,13 +612,25 @@ function updateHud() {
   }
 }
 
+const BRANCH_NAMES = { Bishop: 'Templo Bishop', Cleric: 'Treino Cleric', Elementalist: 'Torre dos Elementalistas', Warlock: 'Torre dos Arcanistas' };
+function siteLabel(building) {
+  const def = BUILDINGS.find(item => item.id === building.type);
+  return building.type === 'farm' ? `Fazenda de ${farmType(building.produce).name}` : building.type === 'hut' ? (building.big ? 'Casebre Grande' : 'Casebre Pequeno') : building.branch ? (BRANCH_NAMES[building.branch] || `Guilda ${building.branch}`) : def.name;
+}
+function siteArt(building) {
+  const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
+  return ['farm', 'mill'].includes(building.type) ? levelArt(art, building) : art;
+}
+
 // Uma construção por botão no mapa, no ponto onde foi erguida.
 function renderSites() {
   const layer = $('#site-layer');
   const ids = new Set(state.buildings.map(building => String(building.site)));
   $$('.site', layer).filter(site => !ids.has(site.dataset.site)).forEach(site => site.remove());
-  $('#map-scene').classList.toggle('placing', !!state.selectedBuild);
-  if (!state.selectedBuild) $('#placement-preview').hidden = true;
+  const moving = state.movingSite != null;
+  renderBountyFlags();
+  $('#map-scene').classList.toggle('placing', !!state.selectedBuild || moving || !!state.placingBounty);
+  if (!state.selectedBuild && !moving) $('#placement-preview').hidden = true;
   state.buildings.forEach(building => {
     const idx = building.site;
     let site = $(`.site[data-site="${idx}"]`, layer);
@@ -533,27 +645,27 @@ function renderSites() {
     site.style.setProperty('--y', `${building.y / 2}%`);
     site.classList.toggle('selected', state.selectedSite === idx);
     site.classList.toggle('constructing', !!building.underConstruction);
+    site.classList.toggle('moving', state.movingSite === idx);
+    site.classList.toggle('ruined', !!building.ruined);
     site.style.zIndex = String(Math.round(building.y * 10));
     {
-      const def = BUILDINGS.find(item => item.id === building.type);
-      const branchNames = { Bishop: 'Templo Bishop', Cleric: 'Treino Cleric', Elementalist: 'Torre dos Elementalistas', Warlock: 'Torre dos Arcanistas' };
-      const label = building.type === 'farm' ? `Fazenda de ${farmType(building.produce).name}` : building.type === 'hut' ? (building.big ? 'Casebre Grande' : 'Casebre Pequeno') : building.branch ? (branchNames[building.branch] || `Guilda ${building.branch}`) : def.name;
+      const label = siteLabel(building);
       const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
       site.classList.toggle('just-built', Date.now() - building.builtAt < 1400);
       site.dataset.art = art;
       const artAspect = options.buildingArtStyle === 'dark' ? BUILDING_ART_ASPECTS[art] || 1 : art === 'manor' ? 1.5 : 1;
-      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};background-image:url('${buildingImage(art)}')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${label}</small>`}`;
+      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};background-image:url('${buildingImage(siteArt(building))}')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${building.damage > 0 ? `${label} · ${building.ruined ? 'em ruínas' : 'vida'} ${buildingHp(building)}/${buildingMaxHp(building)}` : label}</small>`}`;
       site.setAttribute('aria-label', `${label}. Toque para ver opções.`);
     }
   });
 }
 
 // Se a construção cabe neste ponto: dentro do mapa, fora das áreas bloqueadas e longe das outras.
-function placementProblem(x, y) {
+function placementProblem(x, y, ignoreSite = null) {
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
   const blocked = BLOCKED_AREAS.find(area => x >= area.x0 && x <= area.x1 && y >= area.y0 && y <= area.y1);
   if (blocked) return blocked.why;
-  const crowded = state.buildings.some(building => Math.hypot(building.x - x, (building.y - y) * MAP_RATIO) < BUILD_SPACING);
+  const crowded = state.buildings.some(building => building.site !== ignoreSite && Math.hypot(building.x - x, (building.y - y) * MAP_RATIO) < BUILD_SPACING);
   if (crowded) return 'Encostado demais em outra construção.';
   return null;
 }
@@ -566,16 +678,17 @@ function worldPoint(event) {
 function showPlacementPreview(event) {
   const preview = $('#placement-preview');
   const item = BUILDINGS.find(building => building.id === state.selectedBuild);
-  if (!item || event.target.closest('.map-tools, .menu-btn')) { preview.hidden = true; return; }
+  const moving = state.movingSite != null ? state.buildings.find(building => building.site === state.movingSite) : null;
+  if ((!item && !moving) || event.target.closest('.map-tools, .menu-btn')) { preview.hidden = true; return; }
   const { x, y } = worldPoint(event);
-  const art = item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id];
+  const art = moving ? siteArt(moving) : item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id];
   preview.hidden = false;
   preview.style.setProperty('--x', `${x}%`);
   preview.style.setProperty('--y', `${y / 2}%`);
   preview.style.zIndex = String(Math.round(y * 10) + 1);
   preview.dataset.art = art;
   preview.style.backgroundImage = `url('${buildingImage(art)}')`;
-  preview.classList.toggle('invalid', !!placementProblem(x, y));
+  preview.classList.toggle('invalid', !!placementProblem(x, y, moving ? moving.site : null));
 }
 
 function renderHeroes() {
@@ -592,6 +705,7 @@ function renderHeroes() {
       const art = actorArt(actor);
       token.innerHTML = art
         ? `<span class="character-sprite" style="background-image:url('public/art/${art}-walk-v01.${art.startsWith('bandit') ? 'png' : 'webp'}')" aria-hidden="true"></span><span class="character-name">${actor.name}</span>`
+        : actor.className === 'Monster' ? `<span class="monster-skull" aria-hidden="true">☠</span><span class="character-name">${actor.name}</span>`
         : `<span class="hero-face">${actor.className[0]}</span><span class="character-name">${actor.name}</span>`;
       token.addEventListener('click', () => {
         if (state.selectedBuild) return;
@@ -606,7 +720,7 @@ function renderHeroes() {
     }
     if (token.parentElement !== layer) layer.append(token);
     const hurt = actor.hp != null && actor.hp < maxHpOf(actor);
-    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
+    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
     if (hurt) token.style.setProperty('--hp', `${Math.max(0, Math.round(hpOf(actor) / maxHpOf(actor) * 100))}%`);
     token.style.left = `${actor.x}%`;
     token.style.top = `${actor.y / 2}%`;
@@ -629,6 +743,13 @@ function renderHeroes() {
       token.style.setProperty('--sprite-scale-x', facingLeft !== reversedBackFrame ? -1 : 1);
     }
     token.style.setProperty('--frame-x', `${(actor.frame || 0) * 100 / 3}%`);
+    // Recompensa pela cabeça: a placa acompanha a caveira.
+    const wanted = actor.className === 'Monster' ? (state.bounties || []).find(bounty => bounty.target === actor.id) : null;
+    let tag = token.querySelector('.wanted-tag');
+    if (wanted) {
+      if (!tag) { tag = document.createElement('span'); tag.className = 'wanted-tag'; token.append(tag); }
+      if (tag.textContent !== String(wanted.reward)) tag.textContent = String(wanted.reward);
+    } else if (tag) tag.remove();
   });
   [...layer.children].filter(node => !active.has(node.dataset.actor)).forEach(node => node.remove());
 }
@@ -639,7 +760,7 @@ function heroCard(hero) {
   const guildType = GUILD_FOR[hero.className];
   return `<article class="hero-card">
     <img class="hero-portrait" src="public/art/portraits/${actorPortrait(hero)}-portrait-v01.webp" alt="Retrato de ${hero.name}">
-    <div class="hero-details"><b>${hero.name}</b><small>${hero.className}${hero.prestige ? ` · ${hero.prestige}` : ''}</small>${hero.trait ? `<small class="hero-trait"><b>${hero.trait}.</b> ${TRAITS[hero.trait] || ''}</small>` : ''}<small>${nextInfo}</small></div>
+    <div class="hero-details"><b>${hero.name}</b><small>${hero.className}${hero.prestige ? ` · ${hero.prestige}` : ''}</small>${hero.trait ? `<small class="hero-trait"><b>${hero.trait}.</b> ${TRAITS[hero.trait] || ''}</small>` : ''}<small>${nextInfo}</small><small>Bolsa: ${format(purseOf(hero))} de ouro</small></div>
     <div class="hero-xp">NÍV. ${hero.level}<i style="--xp:${hero.level >= HEIR_MAX_LEVEL ? 100 : Math.round((hero.xp || 0) / xpToNext(hero.level) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${hero.id}">FICHA</button></div>
   </article>`;
 }
@@ -647,7 +768,7 @@ function heroCard(hero) {
 function workerCard(worker) {
   return `<article class="hero-card worker-card">
     <img class="hero-portrait" src="public/art/portraits/${actorPortrait(worker)}-portrait-v01.webp" alt="Retrato de ${worker.name}">
-    <div class="hero-details"><b>${worker.name}</b><small>${actorLabel(worker)}</small><small>${homeOf(worker) ? 'Mora no casebre.' : 'Mora no casarão, como as dívidas.'} ${worker.buildSite != null ? 'Agora está numa obra.' : workplaceOf(worker) ? `Trabalha ${workplaceOf(worker).type === 'lumber' ? 'na Cabana do Lenhador' : workplaceOf(worker).type === 'mill' ? 'no moinho' : 'na fazenda'}.` : 'Sem fazenda pra trabalhar.'}</small></div>
+    <div class="hero-details"><b>${worker.name}</b><small>${actorLabel(worker)}</small><small>${homeOf(worker) ? 'Mora no casebre.' : 'Mora no casarão, como as dívidas.'} ${workplaceOf(worker) ? `Trabalha ${workPlaceName(workplaceOf(worker))}.` : 'Sem fazenda pra trabalhar.'}</small><small class="worker-task">Agora: ${peasantActivity(worker)}.</small><label class="prof-select"><span>Profissão</span><select data-profession="${worker.id}"><option value="">Nenhuma</option>${Object.entries(PROFESSIONS).map(([id, prof]) => `<option value="${id}"${worker.profession === id ? ' selected' : ''}>${isFemalePeasant(worker) ? prof.fem : prof.name}</option>`).join('')}</select></label><small>Bolsa: ${format(purseOf(worker))} de ouro</small></div>
     <div class="hero-xp">NÍV. ${worker.level || 1}<i style="--xp:${(worker.level || 1) >= HEIR_MAX_LEVEL ? 100 : Math.round((worker.xp || 0) / xpToNext(worker.level || 1) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${worker.id}">FICHA</button></div>
   </article>`;
 }
@@ -656,6 +777,9 @@ function renderPanel() {
   const host = $('#panel-view');
   if (state.tab === 'build') {
     const selectedFarm = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'farm' && isDone(building));
+    const selectedBuilding = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && !building.underConstruction);
+    const selectedArmory = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'armory' && isDone(building));
+    const selectedProducer = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && ['farm', 'mill'].includes(building.type) && isDone(building));
     const selectedHut = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'hut' && isDone(building));
     const selectedLumber = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'lumber' && isDone(building));
     const selectedDepot = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'depot' && isDone(building));
@@ -663,8 +787,11 @@ function renderPanel() {
     const farmChoice = state.selectedBuild === 'farm' || !!selectedFarm;
     const currentFarmType = selectedFarm ? farmType(selectedFarm.produce).id : state.selectedFarmType;
     host.innerHTML = `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
+      ${selectedBuilding ? buildingInfoHTML(selectedBuilding) : ''}
       ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
-        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${type.grain.toFixed(1).replace('.', ',')} provisões/s</small></span></button>`).join('')}</div></section>` : ''}
+        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0])} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small></span></button>`).join('')}</div></section>` : ''}
+      ${selectedProducer ? producerBoxHTML(selectedProducer) : ''}
+      ${selectedArmory ? armoryBoxHTML(selectedArmory) : ''}
       ${selectedHut ? `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>${selectedHut.big ? 'Casebre Grande' : 'Casebre Pequeno'}</b><small>${selectedHut.big ? '5 moradores. Não cabe mais ninguém. Nem com boa vontade.' : '2 moradores'}</small></div>${selectedHut.big ? '' : `<button type="button" class="hut-upgrade" data-hut-upgrade="${selectedHut.site}">Ampliar para Casebre Grande · ${costHTML(HUT_UPGRADE.gold, HUT_UPGRADE.wood)} · +3 moradores</button>`}</section>` : ''}
       ${selectedGuild ? guildBoxHTML(selectedGuild) : ''}
       ${selectedDepot ? depotBoxHTML(selectedDepot) : ''}
@@ -674,6 +801,7 @@ function renderPanel() {
       <p class="build-note">A moeda é o custo em ouro e a lenha é o custo em madeira.</p>`;
   } else if (state.tab === 'heroes') {
     host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
+      ${bountyPanelHTML()}
       <div class="hero-list">${state.heroes.filter(h => h.alive).map(heroCard).join('') || '<div class="empty-state">Nenhum herói. Ninguém foi corajoso, ou burro, o bastante.<br>Construa uma taverna ou guilda.</div>'}</div>
       <div class="panel-title worker-heading"><h3>Trabalhadores</h3><span>${state.workers.filter(worker => worker.alive).length} no domínio</span></div>
       <div class="hero-list">${state.workers.filter(worker => worker.alive).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Até eles desistiram.<br>Construa um casebre.</div>'}</div>
@@ -692,18 +820,120 @@ function renderPanel() {
   $$('[data-diet]', host).forEach(button => button.addEventListener('click', () => { state.diet[button.dataset.diet] = !state.diet[button.dataset.diet]; renderPanel(); }));
   $$('[data-trade]', host).forEach(button => button.addEventListener('click', () => trade(button.dataset.trade, Number(button.dataset.amount))));
   $$('[data-lumber]', host).forEach(button => button.addEventListener('click', () => setLumberCrew(Number(button.dataset.lumber), Number(button.dataset.change))));
+  $$('[data-move-site]', host).forEach(button => button.addEventListener('click', () => (state.movingSite === Number(button.dataset.moveSite) ? cancelMove() : startMove(Number(button.dataset.moveSite)))));
+  $$('[data-open-market]', host).forEach(button => button.addEventListener('click', () => { state.tab = 'market'; $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); renderPanel(); }));
+  $$('[data-bounty-amount]', host).forEach(button => button.addEventListener('click', () => { state.bountyAmount = Number(button.dataset.bountyAmount); renderPanel(); }));
+  $$('[data-bounty-input]', host).forEach(input => input.addEventListener('change', () => { state.bountyAmount = Math.max(5, Math.round(Number(input.value) || 25)); renderPanel(); }));
+  $$('[data-bounty-place]', host).forEach(button => button.addEventListener('click', () => (state.placingBounty ? cancelBountyPlacement() : startBountyPlacement())));
+  $$('[data-bounty-preset]', host).forEach(button => button.addEventListener('click', () => createBounty(BOUNTY_PRESETS[button.dataset.bountyPreset])));
+  $$('[data-bounty-hunt]', host).forEach(button => button.addEventListener('click', () => huntBounty(button.dataset.bountyHunt)));
+  $$('[data-bounty-cancel]', host).forEach(button => button.addEventListener('click', () => cancelBounty(button.dataset.bountyCancel)));
+  $$('[data-deliver]', host).forEach(button => button.addEventListener('click', () => deliverDemand(button.dataset.deliver)));
+  $$('[data-armory-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeArmory(Number(button.dataset.armoryUpgrade))));
+  $$('[data-producer-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeProducer(Number(button.dataset.producerUpgrade))));
   $$('[data-depot-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeDepot(Number(button.dataset.depotUpgrade))));
   $$('[data-hut-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeHut(Number(button.dataset.hutUpgrade))));
+  $$('[data-profession]', host).forEach(select => select.addEventListener('change', () => setProfession(select.dataset.profession, select.value)));
   $$('[data-actor-sheet]', host).forEach(button => button.addEventListener('click', () => { menu.stack = []; showScreen('actor', { id: button.dataset.actorSheet }); }));
 }
 
+// Quadro de informações: o que a construção faz agora, quem está nela e o botão de mudar de lugar.
+function buildingInfoHTML(building) {
+  const def = BUILDINGS.find(item => item.id === building.type);
+  const alive = state.workers.filter(worker => worker.alive);
+  const workersHere = alive.filter(worker => worker.buildSite == null && workplaceOf(worker)?.site === building.site);
+  const names = list => list.length ? list.map(actor => actor.name).join(', ') : 'ninguém';
+  const lines = [];
+  const repairer = needsBuilder(building) && building.builderId != null ? findActor(building.builderId) : null;
+  lines.push(['Vida', `${buildingHp(building)} de ${buildingMaxHp(building)}${building.ruined ? ' · em ruínas, parada' : building.damage > 0 ? ' · danificada' : ''}`]);
+  if (building.damage > 0) lines.push(['Conserto', repairer ? `${repairer.name} está consertando` : 'Esperando um camponês livre']);
+  if (building.ruined) return `<section class="farm-selector hut-box building-info"><div class="farm-selector-heading"><b>${siteLabel(building)}</b><small>Em ruínas</small></div>
+    <dl class="info-lines">${lines.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl></section>`;
+  if (building.type === 'farm') {
+    lines.push(['Produz', `${rateNumber(farmOutput(building))} de ${farmType(building.produce).name.toLowerCase()} por segundo${building.produce === 'wheat' ? ' (vai pro moinho)' : ''}`]);
+    lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
+    lines.push(['Esperando carregador', `${format(building.stock || 0)} de ${FARM_STOCK_CAP}`]);
+    if (crewWork(building)) lines.push(['Ferramentas', `+${Math.round(crewWork(building) * 100)}% de produção`]);
+    lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
+  } else if (building.type === 'mill') {
+    lines.push(['Mói', `${rateNumber(millRate(building))} de trigo em farinha por segundo`]);
+    lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
+    lines.push(['No moinho', `${format(building.input || 0)} de trigo · ${format(building.stock || 0)} de farinha esperando`]);
+    lines.push(['No depósito', `${format(state.food.wheat || 0)} de trigo · ${format(state.food.flour || 0)} de farinha`]);
+    lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
+  } else if (building.type === 'hut') {
+    const residents = alive.filter(worker => worker.homeSite === building.site);
+    lines.push(['Moradores', `${residents.length} de ${building.big ? 5 : 2}: ${names(residents)}`]);
+  } else if (building.type === 'depot') {
+    lines.push(['Guarda', `${depotCap(building)} unidades`]);
+    lines.push(['Ocupação total', `${Math.floor(storedUnits())} de ${storageCap()}`]);
+  } else if (building.type === 'lumber') {
+    const crew = lumberCrew(building);
+    lines.push(['Produz', `${LUMBER_RATE[crew.length].toFixed(1).replace('.', ',')} de madeira por segundo`]);
+    lines.push(['Lenhadores', `${crew.length} de 3: ${names(crew)}`]);
+  } else if (building.type === 'market') {
+    lines.push(['Faz', 'Compra e vende comida e madeira a preço fixo']);
+  } else if (building.type === 'tavern') {
+    const drinkers = [...state.heroes, ...state.workers].filter(actor => actor.alive && isDrinking(actor));
+    lines.push(['Bebendo agora', `${drinkers.length}: ${names(drinkers)}`]);
+    lines.push(['Imposto de hoje', `${format((state.tavernTab || 0) * taxFactor())} de ouro, pago à meia-noite`]);
+  } else if (building.type === 'hotel') {
+    lines.push(['Faz', '+4 camas para heróis']);
+    lines.push(['Heróis no domínio', `${state.heroes.filter(hero => hero.alive).length} de ${heroCapacity()}`]);
+  } else if (building.type === 'armory') {
+    const geared = [...state.heroes, ...state.workers].filter(actor => actor.alive && Object.keys(gearOf(actor)).length).length;
+    lines.push(['Vende', `Equipamento até o nível ${(building.level || 0) + 1}`]);
+    lines.push(['Equipados', `${geared} personagens`]);
+  } else if (def.heroClass) {
+    const recruits = state.heroes.filter(hero => hero.alive && hero.guildSite === building.site);
+    lines.push(['Recruta', building.branch || def.heroClass]);
+    lines.push(['Heróis daqui', `${recruits.length}: ${names(recruits)}`]);
+  }
+  const moving = state.movingSite === building.site;
+  return `<section class="farm-selector hut-box building-info"><div class="farm-selector-heading"><b>${siteLabel(building)}</b><small>${def.name === siteLabel(building) ? 'Informações' : def.name}</small></div>
+    <dl class="info-lines">${lines.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>
+    <div class="guild-branches">${building.type === 'market' ? '<button type="button" class="hut-upgrade" data-open-market>Abrir o Mercado</button>' : ''}<button type="button" class="hut-upgrade" data-move-site="${building.site}">${moving ? 'Cancelar mudança' : 'Mudar de lugar'}</button></div>
+    ${moving ? '<p class="storage-items">Toque no novo lugar no mapa. Esc cancela.</p>' : ''}</section>`;
+}
+
+// Mudar de lugar: a construção pronta vai inteira para outro ponto livre, sem custo.
+function startMove(site) {
+  const building = state.buildings.find(item => item.site === site && isDone(item));
+  if (!building) return;
+  state.selectedBuild = null;
+  state.movingSite = site;
+  state.selectedSite = site;
+  renderSites(); renderPanel();
+  say(`${siteLabel(building)}: toque no novo lugar. Esc cancela.`);
+}
+function cancelMove() {
+  if (state.movingSite == null) return;
+  state.movingSite = null;
+  renderSites(); renderPanel();
+  say('Mudança cancelada. Ninguém queria carregar nada mesmo.');
+}
+function moveBuilding(x, y) {
+  const building = state.buildings.find(item => item.site === state.movingSite);
+  if (!building) { state.movingSite = null; return; }
+  const problem = placementProblem(x, y, building.site);
+  if (problem) { say(problem); return; }
+  building.x = Math.round(x * 10) / 10;
+  building.y = Math.round(y * 10) / 10;
+  state.movingSite = null;
+  [...state.heroes, ...state.workers].forEach(actor => { if (actor.tavernSpot?.site === building.site) actor.tavernSpot = null; actor.route = []; });
+  renderSites(); renderPanel();
+  say(`${siteLabel(building)} mudou de lugar. Os camponeses vão reclamar do caminho novo.`);
+}
+
 function chooseBuild(id) {
+  state.placingBounty = false;
   const item = BUILDINGS.find(building => building.id === id);
   if (id !== 'farm' && (state.gold < item.cost || state.timber < item.wood)) {
     say('Falta ouro ou madeira. As dívidas, não.');
     return;
   }
   if (state.selectedBuild === id) { cancelPlacement(); return; }
+  state.movingSite = null;
   state.selectedBuild = id;
   state.selectedSite = null;
   renderSites(); renderPanel();
@@ -727,6 +957,7 @@ function chooseFarmType(id) {
   }
   const farm = state.buildings.find(building => building.site === state.selectedSite && building.type === 'farm' && isDone(building));
   if (!farm) return;
+  if (farm.produce !== type.id) farm.stock = 0;
   farm.produce = type.id;
   state.selectedFarmType = type.id;
   renderSites(); renderPanel(); updateHud();
@@ -760,16 +991,17 @@ function placeBuilding(x, y) {
 }
 
 function busyBuilders() {
-  return new Set(state.buildings.filter(building => building.underConstruction && building.builderId != null).map(building => String(building.builderId)));
+  return new Set(state.buildings.filter(building => needsBuilder(building) && building.builderId != null).map(building => String(building.builderId)));
 }
 
 // Cada obra sem camponês recebe o primeiro camponês livre.
 function assignBuilders() {
-  state.buildings.filter(building => building.underConstruction).forEach(building => {
+  state.buildings.filter(needsBuilder).sort((a, b) => Number(!!b.underConstruction) - Number(!!a.underConstruction)).forEach(building => {
     const current = building.builderId != null ? findActor(building.builderId) : null;
     if (current && current.alive) return;
     const busy = busyBuilders();
-    const worker = state.workers.find(candidate => candidate.alive && !busy.has(String(candidate.id)));
+    const rank = candidate => candidate.profession === 'builder' ? 0 : !candidate.profession ? 1 : 2;
+    const worker = state.workers.filter(candidate => candidate.alive && !busy.has(String(candidate.id))).sort((a, b) => rank(a) - rank(b))[0];
     building.builderId = worker ? worker.id : null;
     if (worker) { worker.buildSite = building.site; worker.route = []; worker.finalPoint = null; worker.wait = 0; }
   });
@@ -781,11 +1013,30 @@ const buildSpot = building => ({ x: building.x + (building.x > 92 ? -5 : 5), y: 
 // Uma vez por segundo de jogo: a obra avança só com o camponês no local.
 function progressConstruction(dt) {
   assignBuilders();
-  state.buildings.filter(building => building.underConstruction).forEach(building => {
+  state.buildings.filter(needsBuilder).forEach(building => {
     const worker = building.builderId != null ? findActor(building.builderId) : null;
     const spot = buildSpot(building);
+    if (!building.underConstruction) {
+      if (worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5) {
+        building.damage = Math.max(0, building.damage - REPAIR_RATE * dt * (1 + skillOf(worker, 'building') / 100 + gearBonus(worker, 'build')));
+        gainSkill(worker, 'building', 0.02 * dt);
+        if (building.damage <= 0) {
+          building.damage = 0;
+          building.ruined = false;
+          building.builderId = null;
+          worker.buildSite = null; worker.route = []; worker.finalPoint = null; worker.wait = 0;
+          renderSites();
+          say(`${siteLabel(building)} consertada por ${worker.name}. Até o próximo monstro.`);
+          return;
+        }
+      }
+      const label = $(`.site[data-site="${building.site}"] small`);
+      if (label) label.textContent = `${siteLabel(building)} · ${building.ruined ? 'em ruínas' : 'consertando'} ${buildingHp(building)}/${buildingMaxHp(building)}`;
+      return;
+    }
     if (worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5) {
-      building.progress = Math.min(BUILD_TIME, (building.progress || 0) + dt);
+      building.progress = Math.min(BUILD_TIME, (building.progress || 0) + dt * (1 + skillOf(worker, 'building') / 100 + gearBonus(worker, 'build')));
+      gainSkill(worker, 'building', 0.02 * dt);
       if (building.progress >= BUILD_TIME) { completeBuilding(building); return; }
     }
     const label = $(`.site[data-site="${building.site}"] .build-progress`);
@@ -808,7 +1059,9 @@ function completeBuilding(building) {
   if (worker) { worker.buildSite = null; worker.route = []; worker.finalPoint = null; worker.wait = 0; }
   gainHeirXp(25);
   const arrived = item.heroClass ? recruit(item.heroClass, building, null, true) : null;
-  if (item.housing) for (let i = 0; i < item.housing; i++) hireWorker(building);
+  if (item.housing) for (let i = 0; i < item.housing; i++) hireWorker(building, i % 2 === 1);
+  // Fazenda ou moinho novo: todo mundo é redistribuído para ninguém ficar vazio.
+  if (['farm', 'mill'].includes(item.id)) state.workers.forEach(worker => { worker.jobSite = null; });
   assignBuilders();
   renderSites(); renderPanel(); updateHud();
   setTimeout(() => $(`.site[data-site="${building.site}"]`)?.classList.remove('just-built'), 1400);
@@ -828,7 +1081,7 @@ function recruit(className, origin, prestige = null, guildResident = false) {
     say('Sem cama na taverna ou no hotel. O herói foi embora ofendido.');
     return null;
   }
-  const hero = { id: Date.now() + Math.random(), name: heroName(), className, prestige, trait: pick(Object.keys(TRAITS)), level: 1, xp: 0, x: origin.x, y: origin.y, alive: true, guildSite: guildResident ? origin.site : null, recruitedFromSite: origin.site ?? null, homeSite: lodging?.site ?? null };
+  const hero = { id: Date.now() + Math.random(), name: heroName(), className, prestige, trait: pick(Object.keys(TRAITS)), level: 1, xp: 0, x: origin.x, y: origin.y, alive: true, guildSite: guildResident ? origin.site : null, recruitedFromSite: origin.site ?? null, homeSite: lodging?.site ?? null, purse: HERO_START_PURSE, gear: STARTER_WEAPON[className] ? { weapon: STARTER_WEAPON[className] } : {} };
   state.heroes.push(hero);
   gainHeirXp(10);
   renderHeroes();
@@ -845,15 +1098,14 @@ function upgradeHut(site) {
   state.gold -= HUT_UPGRADE.gold;
   state.timber -= HUT_UPGRADE.wood;
   hut.big = true;
-  for (let i = 0; i < 3; i++) hireWorker(hut);
+  for (let i = 0; i < 3; i++) hireWorker(hut, Math.random() < 0.5);
   gainHeirXp(25);
   renderSites(); renderPanel(); updateHud();
   say('Casebre Grande. Chegaram mais três. Cabem cinco, se ninguém respirar fundo.');
 }
 
-function hireWorker(home) {
+function hireWorker(home, female) {
   const n = state.workers.length + 1;
-  const female = n % 2 === 0;
   state.workers.push({
     id: `worker-${Date.now()}-${n}`,
     name: peasantName(female),
@@ -861,7 +1113,7 @@ function hireWorker(home) {
     className: 'Peasant',
     spriteId: female ? 'female-peasant' : 'peasant',
     portraitId: female ? 'female-peasant' : 'male-peasant',
-    x: home.x, y: home.y, alive: true, workTrip: false, homeSite: home.site,
+    x: home.x, y: home.y, alive: true, workTrip: false, homeSite: home.site, purse: WORKER_START_PURSE,
   });
   renderHeroes();
   updateHud();
@@ -958,10 +1210,25 @@ function homeOf(actor) {
 
 function workplaceOf(actor) {
   if (actor?.workplace) return actor.workplace;
-  const places = state.buildings.filter(building => ['farm', 'mill'].includes(building.type) && isDone(building));
-  if (!places.length) return null;
+  // Lenhador entra sozinho numa Cabana do Lenhador com vaga.
+  if (actor?.profession === 'woodcutter') {
+    const camp = state.buildings.find(building => building.type === 'lumber' && isDone(building) && lumberCrew(building).length < 3);
+    if (camp) { actor.workplace = camp; actor.jobSite = null; return camp; }
+  }
+  const all = state.buildings.filter(building => ['farm', 'mill'].includes(building.type) && isDone(building));
+  if (!all.length) return null;
+  // Com profissão, só os lugares dela; se não houver nenhum, faz o que estiver disponível.
+  const own = all.filter(building => PROFESSIONS[actor?.profession]?.types.includes(building.type));
+  const places = own.length ? own : all;
+  // Cada camponês fica fixo num lugar; quem não tem vai para o que tem menos gente (empate: o mais perto de casa).
+  const current = actor && places.find(place => place.site === actor.jobSite);
+  if (current) return current;
   const from = homeOf(actor) || actor || { x: 42, y: 39 };
-  return places.reduce((best, place) => Math.hypot(place.x - from.x, place.y - from.y) < Math.hypot(best.x - from.x, best.y - from.y) ? place : best);
+  const crew = site => state.workers.filter(worker => worker.alive && worker !== actor && !worker.workplace && worker.jobSite === site).length;
+  const dist = place => Math.hypot(place.x - from.x, place.y - from.y);
+  const best = places.reduce((best, place) => crew(place.site) < crew(best.site) || (crew(place.site) === crew(best.site) && dist(place) < dist(best)) ? place : best);
+  if (actor) actor.jobSite = best.site;
+  return best;
 }
 
 function workerDestination(actor) {
@@ -973,10 +1240,11 @@ function workerDestination(actor) {
 function nextActorGoal(actor) {
   if (actor.className === 'Peasant') {
     if (actor.buildSite != null) {
-      const site = state.buildings.find(building => building.site === actor.buildSite && building.underConstruction);
+      const site = state.buildings.find(building => building.site === actor.buildSite && needsBuilder(building));
       if (site) {
         const spot = buildSpot(site);
         actor.headingToWork = false;
+        actor.task = `${site.underConstruction ? 'Construindo' : 'Consertando'} ${buildingName(site)}`;
         if (Math.hypot(actor.x - spot.x, actor.y - spot.y) < 1.2) { actor.wait = 1.5; actor.actionTime = 1.5; actor.actionClock = 0; return; }
         routeActor(actor, nearestNode(spot));
         actor.finalPoint = spot;
@@ -989,11 +1257,15 @@ function nextActorGoal(actor) {
     if (tavern && minuteOfDay >= 1080 && minuteOfDay < 1320) {
       actor.drinkUntil = state.minutes - minuteOfDay + 1320;
       actor.headingToWork = false;
+      actor.task = 'Bebendo na taverna';
       goDrink(actor, tavern);
       return;
     }
+    const job = workplaceOf(actor);
+    if (job && ['farm', 'mill'].includes(job.type) && isDone(job)) { haulRoutine(actor, job); return; }
     const home = homeOf(actor);
     const workplace = actor.workTrip ? null : workplaceOf(actor);
+    actor.task = workplace ? (workplace.type === 'lumber' ? 'Cortando lenha na Cabana do Lenhador' : `Indo trabalhar ${workPlaceName(workplace)}`) : home ? 'Voltando pra casa' : job ? 'Voltando pro casarão' : 'À toa, sem fazenda pra trabalhar';
     const target = actor.workTrip ? home : workplace;
     routeActor(actor, actor.workTrip ? (home ? nearestNode(home) : 0) : workerDestination(actor));
     // Da trilha até a porta da construção, em linha reta.
@@ -1002,6 +1274,9 @@ function nextActorGoal(actor) {
     actor.workTrip = !actor.workTrip;
     return;
   }
+  const current = actor.bountyId ? (state.bounties || []).find(bounty => bounty.id === actor.bountyId && String(bounty.takenBy) === String(actor.id)) : null;
+  if (current) { bountyStep(actor, current); return; }
+  actor.bountyId = null;
   const tavern = openTavern();
   if (tavern && actor.drinkUntil > state.minutes) { goDrink(actor, tavern); return; }
   if (tavern && Math.random() < (actor.trait === 'Bêbado' ? 0.6 : 0.2)) {
@@ -1009,6 +1284,8 @@ function nextActorGoal(actor) {
     goDrink(actor, tavern);
     return;
   }
+  const offer = considerBounties(actor);
+  if (offer) { bountyStep(actor, offer); return; }
   const patrol = PATROLS[actor.className] || PATROLS.other;
   let destination = patrol[(actor.patrolIndex || 0) % patrol.length];
   actor.patrolIndex = (actor.patrolIndex || 0) + 1;
@@ -1028,7 +1305,7 @@ function animateActors(now) {
   [...state.heroes, ...state.workers].filter(actor => actor.alive).forEach(actor => {
     if (actor.className === 'Peasant' ? peasantDefenseStep(actor, delta, reducedMotion) : heroCombatStep(actor, delta, reducedMotion)) return;
     const construction = actor.className === 'Peasant' && actor.buildSite != null
-      ? state.buildings.find(building => building.site === actor.buildSite && building.underConstruction)
+      ? state.buildings.find(building => building.site === actor.buildSite && needsBuilder(building))
       : null;
     if (construction) {
       const spot = buildSpot(construction);
@@ -1049,7 +1326,7 @@ function animateActors(now) {
     }
     if (!actor.route) actor.route = [];
     if (!actor.route.length && !actor.finalPoint) nextActorGoal(actor);
-    let remaining = (actor.className === 'Peasant' ? 3.1 : 4.2) * delta;
+    let remaining = (actor.className === 'Peasant' ? 3.1 : 4.2) * (1 + gearBonus(actor, 'speed')) * delta;
     let moved = false;
     while (remaining > 0 && (actor.route.length || actor.finalPoint)) {
       const onTrail = actor.route.length > 0;
@@ -1069,6 +1346,7 @@ function animateActors(now) {
         if (onTrail) actor.route.shift(); else actor.finalPoint = null;
         if (!actor.route.length && !actor.finalPoint) {
           actor.wait = actor.className === 'Peasant' ? 2.3 : 1.2;
+          if (actor.className === 'Peasant' && actor.headingToWork && workplaceOf(actor)?.type === 'lumber') gainSkill(actor, 'woodcutting', 0.3);
           if (actor.className === 'Peasant' && actor.headingToWork) { actor.actionTime = actor.wait; actor.actionClock = 0; gainActorXp(actor, 13); actor.headingToWork = false; }
           actor.goal = null;
         }
@@ -1078,7 +1356,7 @@ function animateActors(now) {
     actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
     actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
   });
-  (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => banditStep(bandit, delta, reducedMotion));
+  (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => (bandit.className === 'Monster' ? monsterStep : banditStep)(bandit, delta, reducedMotion));
   renderHeroes();
   requestAnimationFrame(animateActors);
 }
@@ -1096,6 +1374,7 @@ function tick() {
   if (state.tab === 'economy' && state.ticks % 10 === 0 && !document.querySelector('#panel-view button:hover, #panel-view details[open]')) renderPanel();
   state.timber += r.timber * state.speed;
   accrueTavern(state.speed);
+  if (state.minutes % 60 < state.speed) { shopAtArmory(); processDemands(); processBounties(); }
   state.minutes += state.speed;
   if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) { gainHeirXp(40); collectTaxes(); }
   // Heróis ganham experiência só em combate (golpes e curas). Aqui chegam os bandos e todos se recuperam.
@@ -1237,6 +1516,211 @@ const ITEMS = {
 };
 function BASIC_EQUIPMENT() { return { scepter: 'pineScepter', orb: 'crackedOrb', mantle: 'wornMantle', crown: 'tinCrown', medallion: 'familyMedallion', ring1: 'copperRing', ring2: 'boneRing' }; }
 
+// ==========================================================================
+// Equipamento de heróis e camponeses. Cada um compra no Arsenal com a própria bolsa, pela ordem
+// de prioridade que acha mais importante; o ouro da venda vai pro cofre do monarca.
+// O nível do Arsenal libera itens melhores (nível 1, 2 e 3).
+// ==========================================================================
+const HERO_SLOTS = [
+  { slot: 'weapon', label: 'Arma' }, { slot: 'offhand', label: 'Mão secundária' }, { slot: 'head', label: 'Cabeça' }, { slot: 'body', label: 'Armadura' },
+  { slot: 'hands', label: 'Mãos' }, { slot: 'feet', label: 'Pés' }, { slot: 'cloak', label: 'Capa' }, { slot: 'amulet', label: 'Amuleto' },
+  { slot: 'ring1', label: 'Anel I' }, { slot: 'ring2', label: 'Anel II' },
+];
+const PEASANT_SLOTS = [
+  { slot: 'tool', label: 'Ferramenta' }, { slot: 'clothes', label: 'Roupa' }, { slot: 'hands', label: 'Mãos' }, { slot: 'feet', label: 'Pés' }, { slot: 'head', label: 'Cabeça' },
+];
+const MELEE = ['Warrior', 'Lancer', 'Healer'];
+const FRONT = ['Warrior', 'Lancer'];
+const CASTERS = ['Black Mage', 'Conjurer'];
+// bonus: atk, def, mag, hp, dex (heróis) · work (produção, fração), carry (carga extra), speed (passo, fração) (camponeses)
+const GEAR = {
+  rustySword: { name: 'Espada Enferrujada', slot: 'weapon', tier: 1, price: 10, classes: ['Warrior'], bonus: { atk: 2 }, about: 'A ferrugem também corta. Mais devagar.' },
+  warAxe: { name: 'Machado de Guerra', slot: 'weapon', tier: 2, price: 40, classes: ['Warrior'], bonus: { atk: 5 }, about: 'Pesado o bastante pra resolver discussões.' },
+  valeGreatsword: { name: 'Montante do Vale', slot: 'weapon', tier: 3, price: 110, classes: ['Warrior'], bonus: { atk: 9 }, about: 'Forjado pra um herói. Vendido pra quem pagou.' },
+  shortBow: { name: 'Arco Curto', slot: 'weapon', tier: 1, price: 10, classes: ['Archer'], bonus: { atk: 2, dex: 1 }, about: 'Curto no alcance e na paciência.' },
+  yewBow: { name: 'Arco Longo de Teixo', slot: 'weapon', tier: 2, price: 40, classes: ['Archer'], bonus: { atk: 4, dex: 2 }, about: 'Teixo de cemitério. Por isso acerta.' },
+  hornBow: { name: 'Arco de Chifre', slot: 'weapon', tier: 3, price: 110, classes: ['Archer'], bonus: { atk: 7, dex: 3 }, about: 'O dono anterior era o bicho do chifre.' },
+  ashSpear: { name: 'Lança de Freixo', slot: 'weapon', tier: 1, price: 10, classes: ['Lancer'], bonus: { atk: 2 }, about: 'Um pau comprido com opinião na ponta.' },
+  halberd: { name: 'Alabarda', slot: 'weapon', tier: 2, price: 40, classes: ['Lancer'], bonus: { atk: 5 }, about: 'Machado, lança e gancho. Indecisa, mas eficiente.' },
+  knightLance: { name: 'Lança de Cavaleiro', slot: 'weapon', tier: 3, price: 110, classes: ['Lancer'], bonus: { atk: 9 }, about: 'Feita pra cavalo. Ninguém aqui tem cavalo.' },
+  crookedStaff: { name: 'Cajado Torto', slot: 'weapon', tier: 1, price: 10, classes: ['Black Mage'], bonus: { mag: 2 }, about: 'Torto de nascença. A magia sai torta também.' },
+  scorchedTome: { name: 'Grimório Chamuscado', slot: 'weapon', tier: 1, price: 10, classes: ['Conjurer'], bonus: { mag: 2 }, about: 'Faltam páginas. As que sobraram mordem.' },
+  ebonyStaff: { name: 'Cajado de Ébano', slot: 'weapon', tier: 2, price: 45, classes: CASTERS, bonus: { mag: 5 }, about: 'Preto, lustroso e frio ao toque. Como o dono.' },
+  skullStaff: { name: 'Cajado de Caveira', slot: 'weapon', tier: 3, price: 120, classes: CASTERS, bonus: { mag: 9 }, about: 'A caveira às vezes dá palpite.' },
+  woodenMace: { name: 'Maça de Madeira', slot: 'weapon', tier: 1, price: 10, classes: ['Healer'], bonus: { atk: 1, mag: 1 }, about: 'Cura de um lado, machuca do outro.' },
+  blessedMace: { name: 'Maça Benta', slot: 'weapon', tier: 2, price: 40, classes: ['Healer'], bonus: { atk: 2, mag: 3 }, about: 'Abençoada por um padre bêbado. Conta igual.' },
+  reliquaryMace: { name: 'Maça Relicário', slot: 'weapon', tier: 3, price: 110, classes: ['Healer'], bonus: { atk: 4, mag: 5 }, about: 'Tem um dedo de santo dentro. Dizem.' },
+  plankShield: { name: 'Escudo de Tábuas', slot: 'offhand', tier: 1, price: 8, classes: MELEE, bonus: { def: 2 }, about: 'Era uma porta. Ainda range.' },
+  ironShield: { name: 'Escudo de Ferro', slot: 'offhand', tier: 2, price: 35, classes: MELEE, bonus: { def: 4 }, about: 'Amassado nos lugares certos.' },
+  towerShield: { name: 'Escudo-Torre', slot: 'offhand', tier: 3, price: 95, classes: FRONT, bonus: { def: 7 }, about: 'Dá pra morar atrás dele.' },
+  quiver: { name: 'Aljava de Couro', slot: 'offhand', tier: 1, price: 8, classes: ['Archer'], bonus: { dex: 2 }, about: 'Cabe flecha, pão e arrependimento.' },
+  boneTalisman: { name: 'Talismã de Osso', slot: 'offhand', tier: 1, price: 8, classes: CASTERS, bonus: { mag: 1 }, about: 'Chacoalha quando alguém mente.' },
+  crystalFocus: { name: 'Foco de Cristal', slot: 'offhand', tier: 2, price: 35, classes: CASTERS, bonus: { mag: 3 }, about: 'Concentra a magia. E o sol, se esquecer na janela.' },
+  leatherHood: { name: 'Capuz de Couro', slot: 'head', tier: 1, price: 6, bonus: { def: 1 }, about: 'Protege da chuva. Do resto, nem tanto.' },
+  ironHelm: { name: 'Elmo de Ferro', slot: 'head', tier: 2, price: 30, classes: MELEE, bonus: { def: 3 }, about: 'Ouve-se o mar dentro dele. Não tem mar aqui.' },
+  greatHelm: { name: 'Elmo Fechado', slot: 'head', tier: 3, price: 80, classes: FRONT, bonus: { def: 5 }, about: 'Não se vê nada. Mas também não se é visto.' },
+  pointyHat: { name: 'Chapéu Pontudo', slot: 'head', tier: 2, price: 30, classes: CASTERS, bonus: { mag: 2 }, about: 'Ninguém sabe se ajuda. Ninguém arrisca tirar.' },
+  paddedJerkin: { name: 'Gibão Acolchoado', slot: 'body', tier: 1, price: 12, bonus: { def: 2, hp: 3 }, about: 'Recheado de palha e esperança.' },
+  studdedLeather: { name: 'Couro Tachonado', slot: 'body', tier: 2, price: 45, classes: ['Archer'], bonus: { def: 3, dex: 2 }, about: 'Leve, firme e com cheiro de curtume.' },
+  chainmail: { name: 'Cota de Malha', slot: 'body', tier: 2, price: 50, classes: MELEE, bonus: { def: 5, hp: 5 }, about: 'Mil argolinhas, cada uma com um furo.' },
+  arcaneRobe: { name: 'Manto Arcano', slot: 'body', tier: 2, price: 45, classes: [...CASTERS, 'Healer'], bonus: { mag: 3, hp: 3 }, about: 'Bordado com runas. Uma diz "lavar à mão".' },
+  plateArmor: { name: 'Armadura de Placas', slot: 'body', tier: 3, price: 130, classes: FRONT, bonus: { def: 9, hp: 8 }, about: 'Leva meia hora pra vestir e a vida toda pra pagar.' },
+  leatherGloves: { name: 'Luvas de Couro', slot: 'hands', tier: 1, price: 5, bonus: { dex: 1 }, about: 'Firmes no punho. Furadas no dedão.' },
+  ironGauntlets: { name: 'Manoplas de Ferro', slot: 'hands', tier: 2, price: 25, classes: MELEE, bonus: { def: 2, atk: 1 }, about: 'Ótimas pra socar. Péssimas pra coçar.' },
+  wornBoots: { name: 'Botas Gastas', slot: 'feet', tier: 1, price: 5, bonus: { dex: 1 }, about: 'Já andaram mais que o dono.' },
+  travelBoots: { name: 'Botas de Viagem', slot: 'feet', tier: 2, price: 22, bonus: { dex: 2, hp: 2 }, about: 'Feitas pra ir longe. Ninguém volta pra reclamar.' },
+  steelGreaves: { name: 'Grevas de Aço', slot: 'feet', tier: 3, price: 70, classes: FRONT, bonus: { def: 4 }, about: 'Chutam portas. E canelas.' },
+  woolCloak: { name: 'Capa de Lã', slot: 'cloak', tier: 1, price: 6, bonus: { hp: 2 }, about: 'Esquenta e pinica na mesma medida.' },
+  travelerCloak: { name: 'Capa de Viajante', slot: 'cloak', tier: 2, price: 25, bonus: { hp: 4, def: 1 }, about: 'Tem bolso secreto. Vazio.' },
+  shadowCloak: { name: 'Capa das Sombras', slot: 'cloak', tier: 3, price: 75, bonus: { dex: 3, def: 2 }, about: 'Some no escuro. O dono também, às vezes.' },
+  garlicAmulet: { name: 'Amuleto de Alho', slot: 'amulet', tier: 1, price: 6, bonus: { def: 1 }, about: 'Afasta strigoi e amizades.' },
+  silverAmulet: { name: 'Amuleto de Prata', slot: 'amulet', tier: 2, price: 35, bonus: { mag: 2, def: 1 }, about: 'Prata de verdade. Quase toda.' },
+  saintReliquary: { name: 'Relicário de Santo', slot: 'amulet', tier: 3, price: 90, bonus: { hp: 6, mag: 2 }, about: 'Ossinho de santo. De qual santo, ninguém garante.' },
+  ironRing: { name: 'Anel de Ferro', slot: 'ring', tier: 1, price: 8, bonus: { atk: 1 }, about: 'Deixa marca no dedo e na cara dos outros.' },
+  silverRing: { name: 'Anel de Prata', slot: 'ring', tier: 2, price: 30, bonus: { def: 2 }, about: 'Brilha o suficiente pra ser roubado.' },
+  rubyRing: { name: 'Anel de Rubi', slot: 'ring', tier: 3, price: 85, bonus: { atk: 3, mag: 3 }, about: 'Vermelho como a dívida que ele custou.' },
+  // Camponeses. Itens com prof são da profissão; sem profissão o camponês só compra o básico (sem prof).
+  oldSickle: { name: 'Foice Velha', slot: 'tool', tier: 1, price: 5, peasant: true, prof: ['farmer'], bonus: { work: 0.1 }, about: 'Cega, mas insiste.' },
+  ironHoe: { name: 'Enxada de Ferro', slot: 'tool', tier: 2, price: 15, peasant: true, prof: ['farmer'], bonus: { work: 0.2 }, about: 'A terra cede. As costas também.' },
+  greatScythe: { name: 'Gadanha', slot: 'tool', tier: 3, price: 30, peasant: true, prof: ['farmer'], bonus: { work: 0.3 }, about: 'Corta trigo e conversa fiada.' },
+  flourSieve: { name: 'Peneira de Farinha', slot: 'tool', tier: 1, price: 5, peasant: true, prof: ['miller'], bonus: { work: 0.1 }, about: 'Separa a farinha do resto. O resto é a maior parte.' },
+  millPick: { name: 'Picão de Mó', slot: 'tool', tier: 2, price: 15, peasant: true, prof: ['miller'], bonus: { work: 0.2 }, about: 'Afia a pedra do moinho. E a paciência.' },
+  millwrightKit: { name: 'Ferramentas de Moleiro', slot: 'tool', tier: 3, price: 30, peasant: true, prof: ['miller'], bonus: { work: 0.3 }, about: 'Conserta engrenagem, pá e eixo. Menos a vida.' },
+  hatchet: { name: 'Machadinha', slot: 'tool', tier: 1, price: 5, peasant: true, prof: ['woodcutter'], bonus: { work: 0.1 }, about: 'Pequena, mas não se ofende.' },
+  woodAxe: { name: 'Machado de Lenhador', slot: 'tool', tier: 2, price: 15, peasant: true, prof: ['woodcutter'], bonus: { work: 0.2 }, about: 'As árvores do vale já ouviram falar dele.' },
+  bowSaw: { name: 'Serra de Arco', slot: 'tool', tier: 3, price: 30, peasant: true, prof: ['woodcutter'], bonus: { work: 0.3 }, about: 'Range como gente. Corta melhor que gente.' },
+  mallet: { name: 'Maço de Madeira', slot: 'tool', tier: 1, price: 5, peasant: true, prof: ['builder'], bonus: { build: 0.1 }, about: 'Bate prego, bate dedo.' },
+  masonHammer: { name: 'Martelo de Pedreiro', slot: 'tool', tier: 2, price: 15, peasant: true, prof: ['builder'], bonus: { build: 0.2 }, about: 'Ergue parede. Às vezes reta.' },
+  smithTools: { name: 'Ferramentas de Ferreiro', slot: 'tool', tier: 3, price: 30, peasant: true, prof: ['builder'], bonus: { build: 0.3 }, about: 'Martelo, tenaz e lima. Resolve até dobradiça.' },
+  workClothes: { name: 'Roupa de Trabalho', slot: 'clothes', tier: 1, price: 4, peasant: true, bonus: { carry: 1 }, about: 'Remendada sobre remendo.' },
+  farmSmock: { name: 'Bata de Lavrador', slot: 'clothes', tier: 2, price: 10, peasant: true, prof: ['farmer', 'woodcutter'], bonus: { carry: 2 }, about: 'Bolsos fundos e cheiro de terra.' },
+  leatherApron: { name: 'Avental de Couro', slot: 'clothes', tier: 2, price: 10, peasant: true, prof: ['miller', 'builder'], bonus: { carry: 2 }, about: 'Segura farinha, cal e reclamação.' },
+  smithApron: { name: 'Avental de Ferreiro', slot: 'clothes', tier: 3, price: 20, peasant: true, prof: ['builder'], bonus: { carry: 3 }, about: 'Aguenta brasa, ferro e patrão.' },
+  woolGloves: { name: 'Luvas de Lã', slot: 'hands', tier: 1, price: 3, peasant: true, bonus: { work: 0.05 }, about: 'Quentinhas até molhar.' },
+  workGloves: { name: 'Luvas de Couro Grosso', slot: 'hands', tier: 2, price: 8, peasant: true, bonus: { work: 0.1 }, about: 'Calo é pra quem não tem.' },
+  smithGloves: { name: 'Luvas de Ferreiro', slot: 'hands', tier: 3, price: 16, peasant: true, prof: ['builder', 'woodcutter'], bonus: { work: 0.1, build: 0.15 }, about: 'Pega carvão em brasa. Não recomendado.' },
+  clogs: { name: 'Tamancos', slot: 'feet', tier: 1, price: 3, peasant: true, bonus: { speed: 0.05 }, about: 'Dá pra ouvir chegando.' },
+  workBoots: { name: 'Botas de Trabalho', slot: 'feet', tier: 2, price: 8, peasant: true, bonus: { speed: 0.1 }, about: 'Lama não entra. Quase.' },
+  hobnailBoots: { name: 'Botas Ferradas', slot: 'feet', tier: 3, price: 16, peasant: true, prof: ['woodcutter', 'builder'], bonus: { speed: 0.15 }, about: 'Pregos na sola, firmeza no passo.' },
+  strawHat: { name: 'Chapéu de Palha', slot: 'head', tier: 1, price: 2, peasant: true, bonus: { work: 0.05 }, about: 'Protege do sol. Sol aqui é raro.' },
+  wideHat: { name: 'Chapéu de Abas Largas', slot: 'head', tier: 2, price: 6, peasant: true, prof: ['farmer'], bonus: { work: 0.1 }, about: 'Sombra pra ele e pra quem estiver do lado.' },
+};
+const STARTER_WEAPON = { Warrior: 'rustySword', Archer: 'shortBow', Lancer: 'ashSpear', 'Black Mage': 'crookedStaff', Conjurer: 'scorchedTome', Healer: 'woodenMace' };
+// Cada herói compra na ordem que acha mais importante. A mania muda a ordem.
+const SLOT_PRIORITY = {
+  default: ['weapon', 'body', 'head', 'offhand', 'feet', 'hands', 'cloak', 'amulet', 'ring1', 'ring2'],
+  Valente: ['weapon', 'hands', 'ring1', 'body', 'offhand', 'head', 'feet', 'cloak', 'amulet', 'ring2'],
+  Teimoso: ['weapon', 'ring1', 'ring2', 'body', 'head', 'offhand', 'hands', 'feet', 'cloak', 'amulet'],
+  Covarde: ['body', 'head', 'offhand', 'feet', 'cloak', 'hands', 'amulet', 'weapon', 'ring1', 'ring2'],
+  Amaldiçoado: ['amulet', 'body', 'head', 'cloak', 'weapon', 'offhand', 'feet', 'hands', 'ring1', 'ring2'],
+  Ganancioso: ['ring1', 'ring2', 'amulet', 'weapon', 'body', 'head', 'offhand', 'cloak', 'feet', 'hands'],
+  Bêbado: ['cloak', 'feet', 'weapon', 'body', 'head', 'offhand', 'hands', 'amulet', 'ring1', 'ring2'],
+};
+// Profissões: você escolhe. Sem profissão o camponês faz o que houver e não compra ferramenta de ofício.
+const PROFESSIONS = {
+  farmer: { name: 'Fazendeiro', fem: 'Fazendeira', skill: 'farming', types: ['farm'] },
+  miller: { name: 'Moleiro', fem: 'Moleira', skill: 'milling', types: ['mill'] },
+  woodcutter: { name: 'Lenhador', fem: 'Lenhadora', skill: 'woodcutting', types: ['lumber'] },
+  builder: { name: 'Pedreiro', fem: 'Pedreira', skill: 'building', types: [] },
+};
+// Habilidades de 0 a 100. Sobem devagar com o que o camponês faz, e mais devagar quanto mais alto.
+const SKILLS = [
+  { id: 'farming', name: 'Lavoura' }, { id: 'milling', name: 'Moagem' }, { id: 'woodcutting', name: 'Lenha' },
+  { id: 'building', name: 'Construção' }, { id: 'hauling', name: 'Carga' },
+];
+const SKILL_OF_TYPE = { farm: 'farming', mill: 'milling', lumber: 'woodcutting' };
+const skillOf = (actor, id) => actor?.skills?.[id] || 0;
+function gainSkill(actor, id, amount) {
+  if (!actor || actor.className !== 'Peasant') return;
+  actor.skills = actor.skills || {};
+  const now = actor.skills[id] || 0;
+  actor.skills[id] = Math.min(100, now + amount * (1 - now / 110));
+}
+const professionName = actor => { const prof = PROFESSIONS[actor.profession]; return prof ? (isFemalePeasant(actor) ? prof.fem : prof.name) : 'Sem profissão'; };
+function setProfession(id, profession) {
+  const worker = findActor(id);
+  if (!worker || worker.className !== 'Peasant') return;
+  worker.profession = PROFESSIONS[profession] ? profession : null;
+  worker.jobSite = null;
+  if (worker.workplace?.type === 'lumber' && worker.profession !== 'woodcutter') worker.workplace = null;
+  worker.route = []; worker.finalPoint = null; worker.wait = 0;
+  workplaceOf(worker);
+  renderPanel();
+  say(worker.profession ? `${worker.name} agora é ${professionName(worker).toLowerCase()}. Ninguém perguntou se queria.` : `${worker.name} ficou sem profissão. Vai fazer o que aparecer.`);
+}
+const PEASANT_PRIORITY = ['tool', 'clothes', 'feet', 'hands', 'head'];
+const ARMORY_LEVELS = [{ gold: 0, wood: 0 }, { gold: 120, wood: 8 }, { gold: 200, wood: 14 }];
+const BONUS_LABELS = { atk: 'Ataque', def: 'Defesa', mag: 'Magia', hp: 'Vida', dex: 'Destreza', work: 'trabalho', carry: 'carga', speed: 'passo', build: 'obra' };
+const gearOf = actor => actor.gear || (actor.gear = {});
+const slotsFor = actor => actor.className === 'Peasant' ? PEASANT_SLOTS : HERO_SLOTS;
+const slotKind = slot => slot.startsWith('ring') ? 'ring' : slot;
+const fitsSlot = (item, actor, slot) => item.slot === slotKind(slot) && (actor.className === 'Peasant' ? !!item.peasant && (!item.prof || item.prof.includes(actor.profession)) : !item.peasant && (!item.classes || item.classes.includes(actor.className)));
+const gearBonus = (actor, key) => Object.values(gearOf(actor)).reduce((sum, id) => sum + (GEAR[id]?.bonus[key] || 0), 0);
+const bonusText = bonus => Object.entries(bonus).map(([key, value]) => ['work', 'speed', 'build'].includes(key) ? `+${Math.round(value * 100)}% ${BONUS_LABELS[key]}` : `+${value} ${BONUS_LABELS[key]}`).join(', ');
+const carryLoad = actor => CARRY_LOAD + gearBonus(actor, 'carry') + Math.floor(skillOf(actor, 'hauling') / 25);
+// Bônus de trabalho de quem está escalado nesta construção (fazenda, moinho ou cabana).
+function crewWork(building) {
+  return state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site)
+    .reduce((sum, worker) => sum + gearBonus(worker, 'work') + skillOf(worker, SKILL_OF_TYPE[building.type]) / 200, 0);
+}
+const armoryTier = () => state.buildings.filter(building => building.type === 'armory' && isDone(building)).reduce((best, armory) => Math.max(best, (armory.level || 0) + 1), 0);
+function bestPurchase(actor, tier) {
+  const order = actor.className === 'Peasant' ? PEASANT_PRIORITY.filter(slot => actor.profession || slot !== 'tool') : (SLOT_PRIORITY[actor.trait] || SLOT_PRIORITY.default);
+  for (const slot of order) {
+    const current = GEAR[gearOf(actor)[slot]];
+    const options = Object.entries(GEAR).filter(([, item]) => fitsSlot(item, actor, slot) && item.tier <= tier && item.price <= purseOf(actor) && item.tier > (current?.tier || 0));
+    if (options.length) {
+      const [id, item] = options.sort((a, b) => b[1].tier - a[1].tier)[0];
+      return { slot, id, item };
+    }
+  }
+  return null;
+}
+// Uma vez por hora de jogo: quem está livre pode passar no Arsenal. No máximo uma compra por dia por pessoa.
+function shopAtArmory() {
+  const tier = armoryTier();
+  if (!tier) return;
+  const day = Math.floor(state.minutes / 1440);
+  [...state.heroes, ...state.workers].filter(actor => actor.alive && actor.buildSite == null && !(actor.drinkUntil > state.minutes) && actor.lastShopDay !== day).forEach(actor => {
+    if (Math.random() > 0.3) return;
+    const buy = bestPurchase(actor, tier);
+    if (!buy) return;
+    actor.purse = purseOf(actor) - buy.item.price;
+    gearOf(actor)[buy.slot] = buy.id;
+    actor.lastShopDay = day;
+    if (!state.testMode) state.gold += buy.item.price;
+    state.armorySales = (state.armorySales || 0) + buy.item.price;
+    say(`${actor.name} comprou ${buy.item.name} no Arsenal por ${buy.item.price} de ouro.`, `${actor.name} saiu do Arsenal com ${buy.item.name}. E com a bolsa mais leve.`);
+  });
+}
+function upgradeArmory(site) {
+  const armory = state.buildings.find(building => building.site === site && building.type === 'armory' && isDone(building));
+  const next = armory && ARMORY_LEVELS[(armory.level || 0) + 1];
+  if (!next) return;
+  if (state.gold < next.gold || state.timber < next.wood) { say('Falta ouro ou madeira. O ferreiro vai continuar vendendo sucata.'); return; }
+  state.gold -= next.gold;
+  state.timber -= next.wood;
+  armory.level = (armory.level || 0) + 1;
+  renderSites(); renderPanel(); updateHud();
+  say(`Arsenal no nível ${armory.level + 1}. Chegaram itens melhores. Os preços também.`);
+}
+function armoryBoxHTML(armory) {
+  const level = armory.level || 0;
+  const next = ARMORY_LEVELS[level + 1];
+  const forSale = Object.values(GEAR).filter(item => item.tier <= level + 1).sort((a, b) => (a.peasant === b.peasant ? 0 : a.peasant ? 1 : -1) || a.tier - b.tier || a.price - b.price);
+  return `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>À venda no Arsenal</b><small>nível ${level + 1} de ${ARMORY_LEVELS.length} · ${forSale.length} itens</small></div>
+    ${next ? `<button type="button" class="hut-upgrade" data-armory-upgrade="${armory.site}">Melhorar para nível ${level + 2} · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. O ferreiro já não dorme.</p>'}
+    <p class="storage-items">Heróis e camponeses compram sozinhos, com o próprio ouro, o que acham mais importante. O ouro vai pro cofre.</p>
+    <ul class="shop-list">${forSale.map(item => `<li><span><b>${item.name}</b><small>${item.peasant ? (item.prof ? item.prof.map(id => PROFESSIONS[id].name).join(', ') : 'Qualquer camponês') : item.classes ? item.classes.join(', ') : 'Qualquer herói'} · ${bonusText(item.bonus)}</small></span><em>${item.price}</em></li>`).join('')}</ul></section>`;
+}
+function gearHTML(actor) {
+  if (actor.className === 'Bandit' || actor.className === 'Monster') return '';
+  return `<div class="sheet-section-label">EQUIPAMENTO</div><div class="equip-grid">${slotsFor(actor).map(({ slot, label }) => {
+    const item = GEAR[gearOf(actor)[slot]];
+    return `<div class="equip-slot${item ? '' : ' empty'}"><span class="gear-icon" aria-hidden="true">${label[0]}</span><span><small>${label}</small><b>${item ? item.name : 'Vazio'}</b><em>${item ? `${bonusText(item.bonus)}. ${item.about}` : ''}</em></span></div>`;
+  }).join('')}</div>`;
+}
+
 // Tabelas de atributos de combate: [Vida, Ataque, Magia, Defesa, Destreza] no nível 1; mov = Movimento.
 // Todas as classes crescem no mesmo ritmo (+16% do valor inicial por nível, até o nível 30). Assim o equilíbrio
 // entre classes é o mesmo no nível 1 e no 30, e só a diferença de nível muda quem leva vantagem.
@@ -1282,6 +1766,7 @@ const isFemalePeasant = actor => actor.spriteId === 'female-peasant';
 function tableFor(actor) {
   if (actor === 'heir') return EMBER_CLASSES.captain;
   if (actor.className === 'Bandit') return EMBER_CLASSES[actor.kind === 'crossbow' ? 'brigandCrossbowman' : 'rogue'];
+  if (actor.className === 'Monster') return SKELETON_TABLE;
   if (actor.className === 'Peasant') return EMBER_CLASSES[isFemalePeasant(actor) ? 'villagerF1' : 'peasant1'];
   return EMBER_CLASSES[CLASS_TABLE[actor.prestige] || CLASS_TABLE[actor.className]] || EMBER_CLASSES.swordsman;
 }
@@ -1289,9 +1774,9 @@ function attributesAt(table, level) {
   const [hp, atk, mag, def, dex] = table.stats[Math.max(1, Math.min(HEIR_MAX_LEVEL, level)) - 1];
   return { hp, atk, mag, def, dex, mov: table.mov };
 }
-function attributesHTML(attrs) {
-  const rows = [['Vida', attrs.hp], ['Ataque', attrs.atk], ['Magia', attrs.mag], ['Defesa', attrs.def], ['Destreza', attrs.dex], ['Movimento', attrs.mov]];
-  return `<div class="sheet-section-label">ATRIBUTOS</div><dl class="attr-grid">${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>`;
+function attributesHTML(attrs, actor = null) {
+  const rows = [['Vida', attrs.hp, 'hp'], ['Ataque', attrs.atk, 'atk'], ['Magia', attrs.mag, 'mag'], ['Defesa', attrs.def, 'def'], ['Destreza', attrs.dex, 'dex'], ['Movimento', attrs.mov, null]];
+  return `<div class="sheet-section-label">ATRIBUTOS</div><dl class="attr-grid">${rows.map(([label, value, key]) => { const extra = actor && key ? gearBonus(actor, key) : 0; return `<div><dt>${label}</dt><dd>${value + extra}${extra ? `<small class="attr-bonus">+${extra}</small>` : ''}</dd></div>`; }).join('')}</dl>`;
 }
 // Monarca: não luta, só usa magia. Atributos MP, CHA, MAG, INT e WIS.
 // MAG segue o Mago Negro do Ember (+3 por nível); os outros crescem em linha reta até o nível 30.
@@ -1331,10 +1816,11 @@ function peasantName(female) {
   for (let i = 0; i < 40; i++) { const name = `${pick(firsts)} ${pick(PEASANT_EPITHETS)}`; if (!taken.has(name)) return name; }
   return `${pick(firsts)} ${pick(PEASANT_EPITHETS)} ${state.workers.length + 1}`;
 }
-const actorLabel = actor => actor.className === 'Bandit' ? (actor.kind === 'crossbow' ? 'Ladrão de besta' : 'Ladrão de espada') : actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.prestige ? ` · ${actor.prestige}` : ''}`;
+const actorLabel = actor => actor.className === 'Monster' ? `Caveira · nível ${actor.level || 1}` : actor.className === 'Bandit' ? (actor.kind === 'crossbow' ? 'Ladrão de besta' : 'Ladrão de espada') : actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.prestige ? ` · ${actor.prestige}` : ''}`;
 const findActor = id => [...state.heroes, ...state.workers, ...(state.bandits || [])].find(actor => String(actor.id) === String(id)) || null;
 function actorOrigin(actor) {
   if (actor.className === 'Bandit') return 'Veio pela estrada velha atrás do que não é dele.';
+  if (actor.className === 'Monster') return 'Levantou do cemitério dos Wilds. Ninguém sabe o que quer. Ela também não.';
   if (actor.className === 'Peasant' && homeOf(actor)) return 'Veio morar no casebre. Não tinha pra onde ir mesmo.';
   if (actor.className === 'Peasant') return actor.workplace ? `Veio com ${actor.workplace.type === 'mill' ? 'o moinho' : 'a fazenda'}. Não tinha pra onde ir mesmo.` : 'Veio junto com o casarão, como as dívidas.';
   if (actor.home === 'manor') return 'Veio junto com o casarão. Ninguém lembra de ter contratado.';
@@ -1347,22 +1833,24 @@ function actorOrigin(actor) {
 // e cardápio servido. Carne e variedade alegram; ração pequena e fome entristecem.
 // ==========================================================================
 const FOOD_TYPES = [
-  { id: 'wheat', name: 'Trigo', art: 'farm-wheat', note: 'Pão de todo dia. Ninguém reclama, ninguém comemora.' },
-  { id: 'garlic', name: 'Alho', art: 'farm-garlic', note: 'Afasta strigoi. E todo o resto também.' },
-  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', meat: true, note: 'Carne. Deixa os camponeses mais felizes.' },
-  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', note: 'Variedade. Os camponeses notam.' },
-  { id: 'milk', name: 'Leite', art: 'farm-milk', note: 'Variedade. Às vezes azeda antes.' },
+  { id: 'flour', name: 'Farinha', art: 'mill-body', mood: 3, note: 'Sai do moinho. Eles que cozinhem em casa.' },
+  { id: 'wheat', name: 'Trigo', art: 'farm-wheat', raw: true, note: 'Cru não serve pra nada. Vai pro moinho virar farinha.' },
+  { id: 'garlic', name: 'Alho', art: 'farm-garlic', mood: 1, note: 'Afasta strigoi. E todo o resto também.' },
+  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', meat: true, mood: 4, note: 'Carne. Deixa os camponeses mais felizes.' },
+  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', mood: 2, note: 'Variedade. Os camponeses notam.' },
+  { id: 'milk', name: 'Leite', art: 'farm-milk', mood: 2, note: 'Variedade. Às vezes azeda antes.' },
 ];
 const RATIONS = [
   { label: 'Nenhuma', mult: 0, mood: -40 }, { label: 'Meia', mult: 0.5, mood: -15 }, { label: 'Normal', mult: 1, mood: 0 },
   { label: 'Dobrada', mult: 2, mood: 10 }, { label: 'Tripla', mult: 3, mood: 20 },
 ];
-const VARIETY_MOOD = [0, -5, 0, 5, 8, 10]; // pelo número de alimentos diferentes na mesa
-const MEAT_MOOD = 10;
-const emptyFood = () => ({ wheat: 0, garlic: 0, bacon: 0, eggs: 0, milk: 0 });
-// O casarão guarda 100 unidades. Cada Depósito de Provisões construído soma 30, e amplia para 45, 70 e 100.
+// Imposto: 0% alegra, 10% é neutro, 20% entristece.
+const TAX_MAX = 20;
+const taxMood = () => Math.round((10 - (state.taxPercent ?? 10)) * 2);
+const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, eggs: 0, milk: 0 });
+// O casarão guarda 200 unidades. Cada Depósito de Provisões construído soma 30, e amplia para 45, 70 e 100.
 // Guardam comida, armas e itens; madeira e ouro ficam fora.
-const MANOR_STORAGE = 100;
+const MANOR_STORAGE = 200;
 const STORAGE_LEVELS = [
   { cap: 30, gold: 0, wood: 0 }, { cap: 45, gold: 80, wood: 6 }, { cap: 70, gold: 140, wood: 10 }, { cap: 100, gold: 220, wood: 16 },
 ];
@@ -1393,10 +1881,113 @@ const eaters = () => state.workers.filter(worker => worker.alive).length;
 function foodProduction() {
   const prod = emptyFood();
   state.buildings.filter(isDone).forEach(building => {
-    if (building.type === 'farm') { const type = farmType(building.produce); prod[type.id] += type.grain; }
-    else if (building.type === 'mill') prod.wheat += BUILDINGS.find(item => item.id === 'mill').grain;
+    if (building.type === 'farm') prod[farmType(building.produce).id] += farmOutput(building);
   });
   return prod;
+}
+// Moinhos prontos: quanto trigo conseguem moer por segundo, somados.
+const millCapacity = () => state.buildings.filter(building => building.type === 'mill' && isDone(building)).reduce((sum, mill) => sum + millRate(mill), 0);
+// Cada moinho mói o trigo que os camponeses trouxeram; a farinha espera no moinho até alguém levar ao depósito.
+function grindWheat(dt) {
+  state.buildings.filter(building => building.type === 'mill' && isDone(building)).forEach(mill => {
+    const qty = Math.min(millRate(mill) * (1 + crewWork(mill)) * dt, mill.input || 0, Math.max(0, FARM_STOCK_CAP - (mill.stock || 0)));
+    if (qty <= 0) return;
+    mill.input -= qty;
+    mill.stock = (mill.stock || 0) + qty;
+  });
+}
+// Depósitos onde o camponês descarrega: o casarão e os Depósitos de Provisões prontos.
+function nearestStorage(from) {
+  const points = [MANOR_DOOR, ...depots()];
+  return points.reduce((best, point) => Math.hypot(point.x - from.x, point.y - from.y) < Math.hypot(best.x - from.x, best.y - from.y) ? point : best);
+}
+function deliverLoad(actor) {
+  const load = actor.carrying;
+  actor.carrying = null;
+  if (!load) return;
+  gainSkill(actor, 'hauling', 0.25);
+  const put = Math.min(load.qty, Math.max(0, storageCap() - storedUnits()));
+  state.food[load.food] = (state.food[load.food] || 0) + put;
+  if (put < load.qty - 1e-6 && !state.storageWarned) { state.storageWarned = true; say('O Depósito de Provisões está cheio. O resto da carga apodreceu do lado de fora.'); }
+  if (put >= load.qty - 1e-6) state.storageWarned = false;
+}
+const foodName = id => (FOOD_TYPES.find(food => food.id === id)?.name || id).toLowerCase();
+const workPlaceName = building => building.type === 'mill' ? 'no moinho' : building.type === 'lumber' ? 'na Cabana do Lenhador' : `na ${buildingName(building)}`;
+function walkTo(actor, point) {
+  routeActor(actor, nearestNode(point));
+  actor.finalPoint = { x: point.x, y: Math.min(198, point.y + 1.2) };
+}
+const isAt = (actor, point) => Math.hypot(actor.x - point.x, actor.y - Math.min(198, point.y + 1.2)) < 1.5;
+// Rotina do camponês de fazenda ou moinho: trabalha, carrega a produção ao depósito e volta.
+// No moinho ele também busca trigo no depósito e leva a farinha de volta.
+function haulRoutine(actor, workplace) {
+  const store = nearestStorage(workplace);
+  const mill = workplace.type === 'mill';
+  if (isAt(actor, workplace)) {
+    if (mill && actor.carrying?.food === 'wheat') { workplace.input = (workplace.input || 0) + actor.carrying.qty; actor.carrying = null; }
+    if ((workplace.stock || 0) >= 1) {
+      const qty = Math.min(carryLoad(actor), workplace.stock);
+      workplace.stock -= qty;
+      actor.carrying = { food: mill ? 'flour' : farmType(workplace.produce).id, qty };
+      actor.task = `Carregando ${format(qty)} de ${foodName(actor.carrying.food)} para o depósito`;
+      walkTo(actor, store);
+      return;
+    }
+    if (mill && (state.food.wheat || 0) >= 1 && (workplace.input || 0) < CARRY_LOAD) {
+      actor.task = 'Indo buscar trigo no depósito';
+      walkTo(actor, store);
+      return;
+    }
+    actor.task = mill ? (workplace.input > 0 ? 'Moendo trigo no moinho' : 'No moinho, esperando trigo') : `Trabalhando ${workPlaceName(workplace)}`;
+    if (!mill || workplace.input > 0) gainSkill(actor, SKILL_OF_TYPE[workplace.type], 0.3);
+    actor.wait = 3; actor.actionTime = 3; actor.actionClock = 0;
+    return;
+  }
+  if (isAt(actor, store)) {
+    if (actor.carrying && (actor.carrying.food !== 'wheat' || !mill)) deliverLoad(actor);
+    if (mill && !actor.carrying && (state.food.wheat || 0) >= 0.5) {
+      const qty = Math.min(carryLoad(actor), state.food.wheat);
+      state.food.wheat -= qty;
+      actor.carrying = { food: 'wheat', qty };
+    }
+  }
+  if (actor.carrying && (actor.carrying.food !== 'wheat' || !mill)) {
+    actor.task = `Carregando ${format(actor.carrying.qty)} de ${foodName(actor.carrying.food)} para o depósito`;
+    walkTo(actor, store);
+    return;
+  }
+  actor.task = actor.carrying ? `Levando ${format(actor.carrying.qty)} de trigo pro moinho` : `Indo trabalhar ${workPlaceName(workplace)}`;
+  actor.headingToWork = true;
+  walkTo(actor, workplace);
+}
+// O que o camponês está fazendo agora, para a ficha e o cartão.
+function peasantActivity(actor) {
+  if (actor.buildSite != null) {
+    const site = state.buildings.find(building => building.site === actor.buildSite && needsBuilder(building));
+    if (site) return `${site.underConstruction ? 'Construindo' : 'Consertando'} ${buildingName(site)}`;
+  }
+  if (actor.drinkUntil > state.minutes && openTavern()) return 'Bebendo na taverna';
+  return actor.task || 'À toa, esperando trabalho';
+}
+function producerBoxHTML(building) {
+  const level = producerLevel(building);
+  const next = PRODUCER_LEVELS[level + 1];
+  const mill = building.type === 'mill';
+  const rateAt = lv => mill ? MILL_RATE[lv] : farmType(building.produce).grain[lv];
+  const unit = mill ? 'de trigo moído em farinha por segundo' : `de ${farmType(building.produce).name.toLowerCase()} por segundo`;
+  return `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>Melhoria</b><small>nível ${level + 1} de ${PRODUCER_LEVELS.length} · ${rateNumber(rateAt(level))} ${unit}</small></div>
+    ${next ? `<button type="button" class="hut-upgrade" data-producer-upgrade="${building.site}">Melhorar para nível ${level + 2} · ${rateNumber(rateAt(level + 1))}/s · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. Mais que isso, só com milagre.</p>'}</section>`;
+}
+function upgradeProducer(site) {
+  const building = state.buildings.find(item => item.site === site && ['farm', 'mill'].includes(item.type) && isDone(item));
+  const next = building && PRODUCER_LEVELS[producerLevel(building) + 1];
+  if (!next) return;
+  if (state.gold < next.gold || state.timber < next.wood) { say('Falta ouro ou madeira. A colheita vai continuar do mesmo tamanho.'); return; }
+  state.gold -= next.gold;
+  state.timber -= next.wood;
+  building.level = producerLevel(building) + 1;
+  renderSites(); renderPanel(); updateHud();
+  say(building.type === 'mill' ? `Moinho no nível ${building.level + 1}: mói ${rateNumber(millRate(building))} de trigo por segundo.` : `${buildingName(building)} no nível ${building.level + 1}: ${rateNumber(farmOutput(building))} por segundo. A terra não pediu, mas aceitou.`);
 }
 const foodDemand = () => eaters() * WORKER_UPKEEP * RATIONS[state.ration].mult;
 
@@ -1406,18 +1997,15 @@ function happinessLabel(value) {
 
 // Uma vez por segundo de jogo: produz, serve a mesa e move a felicidade em direção ao alvo.
 function feedWorkers(dt) {
-  const prod = foodProduction();
-  const produced = FOOD_TYPES.reduce((sum, food) => sum + prod[food.id] * dt, 0);
-  const free = Math.max(0, storageCap() - storedUnits());
-  const fit = produced > 0 ? Math.min(1, free / produced) : 1;
-  FOOD_TYPES.forEach(food => { state.food[food.id] = (state.food[food.id] || 0) + prod[food.id] * dt * fit; });
-  if (fit < 1 && !state.storageWarned) { state.storageWarned = true; say('O Depósito de Provisões está cheio. O resto da colheita apodreceu do lado de fora.'); }
-  if (fit >= 1) state.storageWarned = false;
+  state.buildings.filter(building => building.type === 'farm' && isDone(building)).forEach(farm => {
+    farm.stock = Math.min(FARM_STOCK_CAP, (farm.stock || 0) + farmOutput(farm) * (1 + crewWork(farm)) * dt);
+  });
+  grindWheat(dt);
   const ration = RATIONS[state.ration];
   const demand = foodDemand() * dt;
   let remaining = demand;
   const eaten = new Set();
-  let pool = FOOD_TYPES.filter(food => state.diet[food.id] && state.food[food.id] > 0);
+  let pool = FOOD_TYPES.filter(food => !food.raw && state.diet[food.id] && state.food[food.id] > 0);
   for (let pass = 0; pass < 6 && remaining > 1e-9 && pool.length; pass++) {
     const share = remaining / pool.length;
     pool.forEach(food => {
@@ -1431,11 +2019,11 @@ function feedWorkers(dt) {
   const fulfilled = demand > 0 ? (demand - remaining) / demand : 1;
   const parts = eaters() ? {
     ration: ration.mood,
-    variety: ration.mult > 0 ? VARIETY_MOOD[eaten.size] : 0,
-    meat: [...eaten].some(id => FOOD_TYPES.find(food => food.id === id)?.meat) ? MEAT_MOOD : 0,
+    food: ration.mult > 0 ? [...eaten].reduce((sum, id) => sum + (FOOD_TYPES.find(food => food.id === id)?.mood || 0), 0) : 0,
+    tax: taxMood(),
     hunger: demand > 0 ? -Math.round(40 * (1 - fulfilled)) : 0,
-  } : { ration: 0, variety: 0, meat: 0, hunger: 0 };
-  const target = Math.max(0, Math.min(100, 50 + parts.ration + parts.variety + parts.meat + parts.hunger));
+  } : { ration: 0, food: 0, tax: 0, hunger: 0 };
+  const target = Math.max(0, Math.min(100, 50 + parts.ration + parts.food + parts.tax + parts.hunger));
   const step = 0.5 * dt;
   state.happiness = Math.max(0, Math.min(100, state.happiness + Math.max(-step, Math.min(step, target - state.happiness))));
   state.moodParts = parts;
@@ -1444,9 +2032,394 @@ function feedWorkers(dt) {
   if (fulfilled >= 0.999) state.hungerWarned = false;
 }
 
+// ==========================================================================
+// Tributos e Favor dos nobres. De tempos em tempos um nobre de Mordavia (às vezes o próprio
+// Barão das Cinzas) exige um tanto de algum recurso, com prazo. Entregar no prazo dá Favor;
+// atrasar tira Favor a cada hora; passado o fim da tolerância, os homens dele vêm buscar
+// à força. Com Favor muito baixo, os nobres atacam o domínio.
+// ==========================================================================
+const FAVOR_ATTACK = 20;
+const DEMAND_GRACE = 720; // minutos de atraso tolerados antes de virem buscar
+const NOBLES = [
+  { id: 'grenholt', name: 'Lorde Anselm Grenholt', house: 'grenholt', title: 'Caçador-Mor das Montanhas', wants: ['bacon', 'timber', 'garlic'],
+    lines: ['Diz que é pros cães. Os cães dele comem melhor que seus camponeses.', 'A lua cheia vem aí e a despensa dele esvaziou de um jeito que ninguém comenta.', 'Mandou junto um dente de lobo embrulhado num bilhete. O bilhete diz "lembrança".'],
+    paid: 'Lorde Anselm mandou agradecer com um uivo. Pelo menos foi o que o mensageiro disse.', late: 'Lorde Anselm não gosta de esperar. Os cães dele, menos ainda.' },
+  { id: 'montalvo', name: 'Dama Severina Montalvo', house: 'montalvo', title: 'Credora de Meio Reino', wants: ['gold', 'flour', 'eggs'],
+    lines: ['Ela chama de "juros de cortesia". Você chama de assalto com sotaque.', 'Ela anotou a dívida num livro. Seu nome está em vermelho, sublinhado duas vezes.', 'O tio de vocês devia a ela. Ela fez questão de lembrar que dívida é herança.'],
+    paid: 'Dama Severina riscou uma linha do livro. Sobraram só umas quarenta.', late: 'Dama Severina cobra juros sobre o atraso. E juros sobre os juros.' },
+  { id: 'lucerna', name: 'Padre-Conde Ottokar Lucerna', house: 'lucerna', title: 'Coveiro da Coroa', wants: ['milk', 'flour', 'timber'],
+    lines: ['É pra um velório. Ele não disse de quem. Ainda.', 'Segundo ele, os mortos de Mordavia também precisam comer.', 'É pros caixões, explicou. Perguntou o seu tamanho, por curiosidade.'],
+    paid: 'O Padre-Conde rezou pela sua alma. Disse que ela vai precisar.', late: 'O Padre-Conde mandou medir a sua porta. Pra ver se o caixão passa.' },
+  { id: 'kastrell', name: 'Baronesa Ilka Kastrell', house: 'kastrell', title: 'Marechal de uma guerra que não veio', wants: ['timber', 'bacon', 'gold'],
+    lines: ['Ela abastece um exército pra uma guerra que nunca chega. Os soldados comem do mesmo jeito.', 'Diz que é pras paliçadas. Contra quem, ninguém sabe. Ela sabe.', 'A guerra vai começar a qualquer momento, garante ela. Faz vinte anos.'],
+    paid: 'A Baronesa anotou seu nome na lista de aliados. A lista é curta e nervosa.', late: 'A Baronesa considera atraso um ato de guerra. Finalmente, uma guerra.' },
+  { id: 'vaelmont', name: 'Tia-Avó Brunhilde Vaelmont', house: 'vaelmont', title: 'Matriarca de uma casa hipotecada', wants: ['eggs', 'milk', 'garlic', 'gold'],
+    lines: ['Ela é da família. Isso não é bom sinal.', 'Diz que é pra um chá. Ninguém sobrevive ao chá dela por muito tempo.', 'Exige respeito aos mais velhos. E pontualidade. Principalmente a pontualidade.'],
+    paid: 'A Tia-Avó Brunhilde resmungou. Na língua dela, isso é amor.', late: 'A Tia-Avó Brunhilde mencionou o testamento. O seu nome saiu dele.' },
+];
+const BARON = { id: 'baron', name: 'O Barão das Cinzas', house: null, title: 'Senhor de tudo o que já queimou', baron: true, wants: ['gold', 'flour', 'bacon', 'timber'],
+  lines: ['Ninguém viu o rosto dele. Quem viu não comenta. Quem comenta não é mais visto.', 'O mensageiro chegou com o cabelo chamuscado e pediu pra não ser o próximo.', 'A carta veio selada com cera preta. Ainda estava quente.'],
+  paid: 'O Barão das Cinzas aceitou o tributo. Ninguém se queimou hoje. Ainda.', late: 'Cheiro de fumaça no vento. O Barão das Cinzas não manda segundo aviso.' };
+const DEMAND_BASE = { gold: 30, timber: 15, flour: 15, garlic: 10, bacon: 6, eggs: 8, milk: 8, wheat: 15 };
+const resourceName = id => id === 'gold' ? 'ouro' : id === 'timber' ? 'madeira' : foodName(id);
+const resourceStock = id => id === 'gold' ? (state.testMode ? Infinity : state.gold) : id === 'timber' ? state.timber : (state.food[id] || 0);
+const nobleOf = demand => demand.noble === 'baron' ? BARON : NOBLES.find(noble => noble.id === demand.noble) || BARON;
+function favorLabel(value) {
+  return value < FAVOR_ATTACK ? 'Inimigo' : value < 40 ? 'Mal-visto' : value < 60 ? 'Tolerado' : value < 80 ? 'Bem-visto' : 'Favorito';
+}
+function changeFavor(amount) { state.favor = Math.max(0, Math.min(100, (state.favor ?? 50) + amount)); }
+function newDemand() {
+  const baron = Math.random() < 0.15;
+  const noble = baron ? BARON : pick(NOBLES);
+  const res = pick(noble.wants);
+  const day = Math.floor(state.minutes / 1440);
+  const qty = Math.round(DEMAND_BASE[res] * (1 + day * 0.15) * (baron ? 2 : 1));
+  const demand = { id: `demand-${Date.now()}-${Math.floor(Math.random() * 1000)}`, noble: noble.id, res, qty, line: pick(noble.lines),
+    created: state.minutes, due: state.minutes + (baron ? 1080 : 1440), late: false };
+  state.demands.push(demand);
+  say(`${noble.name} exige ${qty} de ${resourceName(res)} em ${baron ? 18 : 24} horas. ${demand.line}`, `${noble.name} mandou um mensageiro. Veja na aba Economia.`);
+  if (state.tab === 'economy') renderPanel();
+}
+function deliverDemand(id) {
+  const demand = state.demands.find(item => item.id === id);
+  if (!demand) return;
+  const noble = nobleOf(demand);
+  if (resourceStock(demand.res) < demand.qty) { say(`Falta ${resourceName(demand.res)}. ${noble.name} não aceita metade. Nem fiado.`); return; }
+  if (demand.res === 'gold') { if (!state.testMode) state.gold -= demand.qty; }
+  else if (demand.res === 'timber') state.timber -= demand.qty;
+  else state.food[demand.res] -= demand.qty;
+  const gain = demand.late ? 2 : noble.baron ? 15 : 8;
+  changeFavor(gain);
+  state.demands = state.demands.filter(item => item !== demand);
+  say(`${noble.paid} Favor +${gain}.`);
+  updateHud(); renderPanel();
+}
+// Os homens do nobre vêm buscar o que der e ainda quebram alguma coisa no caminho.
+function seizeDemand(demand) {
+  const noble = nobleOf(demand);
+  const taken = Math.min(demand.qty, Math.max(0, resourceStock(demand.res) === Infinity ? demand.qty : resourceStock(demand.res)));
+  if (demand.res === 'gold') { if (!state.testMode) state.gold -= taken; }
+  else if (demand.res === 'timber') state.timber -= taken;
+  else state.food[demand.res] -= taken;
+  changeFavor(noble.baron ? -20 : -10);
+  const targets = state.buildings.filter(building => !building.underConstruction && !building.ruined);
+  const hits = noble.baron ? 2 : 1;
+  for (let i = 0; i < hits && targets.length; i++) {
+    const target = targets.splice(Math.floor(Math.random() * targets.length), 1)[0];
+    damageBuilding(target, Math.round(buildingMaxHp(target) * (noble.baron ? 0.6 : 0.3)));
+  }
+  state.demands = state.demands.filter(item => item !== demand);
+  say(noble.baron ? `O Barão das Cinzas mandou buscar o tributo. Levaram ${format(taken)} de ${resourceName(demand.res)} e deixaram fogo. Favor −20.`
+    : `Os homens de ${noble.name} vieram buscar à força: levaram ${format(taken)} de ${resourceName(demand.res)} e quebraram o que acharam. Favor −10.`);
+}
+// Com Favor abaixo de FAVOR_ATTACK, uma vez por dia algum nobre manda atacar o domínio.
+function nobleRaid() {
+  const day = Math.floor(state.minutes / 1440);
+  if ((state.favor ?? 50) >= FAVOR_ATTACK || state.lastRaidDay === day) return;
+  const targets = state.buildings.filter(building => !building.underConstruction && !building.ruined);
+  if (!targets.length) return;
+  state.lastRaidDay = day;
+  const noble = pick(NOBLES);
+  const hits = 1 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < hits && targets.length; i++) {
+    const target = targets.splice(Math.floor(Math.random() * targets.length), 1)[0];
+    damageBuilding(target, Math.round(buildingMaxHp(target) * (0.25 + Math.random() * 0.25)));
+  }
+  say(`Os homens de ${noble.name} atacaram o domínio à noite. Com Favor assim, ninguém em Mordavia vai te defender.`);
+}
+// Uma vez por hora de jogo.
+function processDemands() {
+  if (!state.demands) state.demands = [];
+  if (state.demands.length < 2 && state.minutes >= (state.nextDemandAt ?? 600)) {
+    newDemand();
+    state.nextDemandAt = state.minutes + 1440 + Math.floor(Math.random() * 1440);
+  }
+  [...state.demands].forEach(demand => {
+    const noble = nobleOf(demand);
+    if (!demand.late && state.minutes > demand.due) {
+      demand.late = true;
+      changeFavor(-5);
+      say(`Tributo de ${noble.name} atrasado. ${noble.late} Favor −5, e cai mais a cada hora.`);
+    } else if (demand.late) changeFavor(-1);
+    if (state.minutes > demand.due + DEMAND_GRACE) seizeDemand(demand);
+  });
+  nobleRaid();
+  updateHud();
+}
+function demandsHTML() {
+  const favor = Math.round(state.favor ?? 50);
+  const rows = (state.demands || []).map(demand => {
+    const noble = nobleOf(demand);
+    const left = demand.due - state.minutes;
+    const when = demand.late ? `ATRASADO · vêm buscar em ${Math.max(0, Math.ceil((demand.due + DEMAND_GRACE - state.minutes) / 60))}h` : `${Math.ceil(left / 60)}h de prazo`;
+    const enough = resourceStock(demand.res) >= demand.qty;
+    return `<div class="demand${demand.late ? ' late' : ''}${noble.baron ? ' baron' : ''}">
+      <div class="demand-head">${noble.house ? crestSVG(noble.house, 32) : '<span class="baron-seal" aria-hidden="true">B</span>'}<span><b>${noble.name}</b><small>${noble.title}</small></span></div>
+      <p>${demand.line}</p>
+      <div class="demand-foot"><span><b>${demand.qty} de ${resourceName(demand.res)}</b><small>${when} · você tem ${resourceStock(demand.res) === Infinity ? '∞' : format(resourceStock(demand.res))}</small></span>
+        <button type="button" class="hut-upgrade" data-deliver="${demand.id}" ${enough ? '' : 'disabled'}>Entregar</button></div></div>`;
+  }).join('');
+  return `<div class="econ-block favor-block"><div class="mood-head"><span>FAVOR DOS NOBRES</span><b>${favor}</b><em>${favorLabel(favor)}</em></div>
+    <div class="mood-bar favor-bar"><i style="width:${favor}%"></i></div>
+    <p class="storage-items">Entregar no prazo: +8 (Barão +15). Atrasar: −5 e −1 por hora. Se não entregar, vêm buscar à força. Abaixo de ${FAVOR_ATTACK}, os nobres atacam o domínio.</p>
+    <div class="food-label">TRIBUTOS</div>${rows || '<p class="storage-items">Nenhum nobre lembrou de você hoje. Aproveite.</p>'}</div>`;
+}
+// ==========================================================================
+// Recompensas: você escolhe quanto paga e onde (um ponto do mapa, a patrulha do segundo mapa
+// ou as ruínas do covil). O ouro sai do cofre na hora e fica guardado. Ninguém recebe ordem:
+// cada herói decide se vale a pena pelo valor, pela distância e pela própria mania.
+// Quem cumpre (vigiar o ponto por uma hora de jogo, ou fazer a patrulha inteira) embolsa tudo.
+// ==========================================================================
+const BOUNTY_GUARD = 60; // minutos de vigia no ponto
+const BOUNTY_DAYS = 2; // prazo; vencida, o ouro volta pro cofre
+const SOUTH_PATROL = [12, 13, 14, 15, 16, 17, 18, 17, 16, 15, 14, 13, 12];
+const BOUNTY_PRESETS = {
+  south: { label: 'Patrulha do segundo mapa', route: SOUTH_PATROL, node: 15 },
+  lair: { label: 'Vigiar as ruínas do covil', node: 9 },
+};
+const bountyTaker = bounty => bounty.takenBy != null ? state.heroes.find(hero => String(hero.id) === String(bounty.takenBy) && hero.alive) || null : null;
+function bountyLabelAt(x, y) {
+  return y > 100 ? 'Vigiar a estrada velha' : x > 75 ? 'Vigiar a borda da floresta' : 'Vigiar este ponto';
+}
+function createBounty(spec) {
+  const reward = Math.max(5, Math.round(state.bountyAmount || 25));
+  if (!state.testMode && state.gold < reward) { say(`Falta ouro. Ninguém arrisca o pescoço por promessa.`); return null; }
+  if (!state.testMode) state.gold -= reward;
+  const node = spec.node ?? nearestNode(spec);
+  const point = spec.x != null ? { x: spec.x, y: spec.y } : { x: PATH_NODES[node].x, y: PATH_NODES[node].y };
+  const bounty = { id: `bounty-${Date.now()}-${Math.floor(Math.random() * 1000)}`, label: spec.label || bountyLabelAt(point.x, point.y), reward, x: point.x, y: point.y, node,
+    route: spec.route || null, target: spec.target || null, takenBy: null, until: state.minutes + BOUNTY_DAYS * 1440 };
+  state.bounties.push(bounty);
+  renderSites(); renderPanel(); updateHud();
+  say(`Recompensa de ${reward} de ouro: ${bounty.label.toLowerCase()}. Agora é ver quem tem coragem. Ou dívida.`);
+  return bounty;
+}
+// Caça: a recompensa fica presa à caveira e vale enquanto ela andar.
+function huntBounty(monsterId) {
+  const monster = (state.bandits || []).find(actor => actor.id === monsterId && actor.alive);
+  if (!monster || state.bounties.some(bounty => bounty.target === monsterId)) return;
+  createBounty({ x: monster.x, y: monster.y, target: monster.id, label: `Caçar a ${monster.name}` });
+}
+const bountyPos = bounty => {
+  if (!bounty.target) return bounty;
+  const monster = (state.bandits || []).find(actor => actor.id === bounty.target);
+  return monster ? { x: monster.x, y: monster.y } : bounty;
+};
+// Caveira derrubada: quem derrubou embolsa; se não foi herói, quem aceitou; senão o ouro volta.
+function payHuntBounty(monster, killer) {
+  const bounty = (state.bounties || []).find(item => item.target === monster.id);
+  if (!bounty) return '';
+  const taker = bountyTaker(bounty);
+  const winner = killer && state.heroes.includes(killer) ? killer : taker;
+  if (taker) taker.bountyId = null;
+  state.bounties = state.bounties.filter(item => item !== bounty);
+  if (winner) { lootHero(winner, bounty.reward); return ` ${winner.name} embolsou a recompensa de ${bounty.reward} de ouro.`; }
+  if (!state.testMode) state.gold += bounty.reward;
+  return ` A recompensa de ${bounty.reward} de ouro voltou pro cofre.`;
+}
+function cancelBounty(id) {
+  const bounty = state.bounties.find(item => item.id === id);
+  if (!bounty) return;
+  const taker = bountyTaker(bounty);
+  if (taker) { taker.bountyId = null; taker.route = []; taker.finalPoint = null; }
+  if (!state.testMode) state.gold += bounty.reward;
+  state.bounties = state.bounties.filter(item => item !== bounty);
+  renderSites(); renderPanel(); updateHud();
+  say(`Recompensa cancelada. ${bounty.reward} de ouro voltou pro cofre${taker ? `, e ${taker.name} reclamou do caminho à toa` : ''}.`);
+}
+function startBountyPlacement() {
+  state.selectedBuild = null;
+  state.movingSite = null;
+  state.placingBounty = true;
+  renderSites();
+  say(`Toque no mapa onde os heróis devem vigiar. Recompensa: ${state.bountyAmount} de ouro. Esc cancela.`);
+}
+function cancelBountyPlacement() {
+  if (!state.placingBounty) return;
+  state.placingBounty = false;
+  renderSites();
+  say('Nenhuma recompensa marcada. Os heróis nem souberam.');
+}
+function placeBountyAt(x, y) {
+  if (x < 3 || x > 97 || y < 3 || y > 197) { say('Fora do mapa. Nem os heróis vão tão longe.'); return; }
+  state.placingBounty = false;
+  createBounty({ x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 });
+}
+// O herói pesa o valor contra a distância e o perigo; a mania muda a conta.
+function bountyScore(hero, bounty) {
+  const pos = bountyPos(bounty);
+  const dist = Math.hypot(hero.x - pos.x, hero.y - pos.y);
+  const far = bounty.route || pos.y > 100;
+  let score = bounty.reward / (10 + dist * 0.3);
+  switch (hero.trait) {
+    case 'Ganancioso': if (bounty.reward < 40) return 0; score *= 1.5; break;
+    case 'Covarde': if (bounty.reward < 20 || (far && bounty.reward < 60)) return 0; score *= 0.6; break;
+    case 'Bêbado': score *= 0.7; break;
+    case 'Valente': score *= 1.25; break;
+    case 'Teimoso': if (Math.random() < 0.5) return 0; score *= 1.2; break;
+    default: break;
+  }
+  if (far) score *= 0.85;
+  return score;
+}
+function considerBounties(hero) {
+  if (hpOf(hero) < maxHpOf(hero) * 0.5) return null;
+  const open = (state.bounties || []).filter(bounty => !bountyTaker(bounty));
+  if (!open.length) return null;
+  const best = open.map(bounty => ({ bounty, score: bountyScore(hero, bounty) })).sort((a, b) => b.score - a.score)[0];
+  if (!best || best.score < 1) return null;
+  best.bounty.takenBy = hero.id;
+  best.bounty.leg = 0;
+  best.bounty.arrivedAt = null;
+  hero.bountyId = best.bounty.id;
+  say(`${hero.name} aceitou a recompensa de ${best.bounty.reward} de ouro: ${best.bounty.label.toLowerCase()}.`, `${hero.name} foi atrás do ouro. Do ouro, não de você.`);
+  if (state.tab === 'heroes') renderPanel();
+  return best.bounty;
+}
+function completeBounty(hero, bounty) {
+  lootHero(hero, bounty.reward);
+  hero.bountyId = null;
+  state.bounties = state.bounties.filter(item => item !== bounty);
+  renderSites();
+  if (state.tab === 'heroes') renderPanel();
+  say(`${hero.name} cumpriu a recompensa (${bounty.label.toLowerCase()}) e embolsou ${bounty.reward} de ouro.`);
+}
+// Um passo da recompensa: anda até o ponto (ou pelo roteiro da patrulha) e vigia.
+function bountyStep(hero, bounty) {
+  if (bounty.target) {
+    const monster = (state.bandits || []).find(actor => actor.id === bounty.target && actor.alive);
+    if (!monster) return;
+    hero.task = bounty.label;
+    routeActor(hero, nearestNode(monster));
+    hero.finalPoint = { x: monster.x, y: monster.y };
+    return;
+  }
+  if (bounty.route) {
+    const node = PATH_NODES[bounty.route[bounty.leg || 0]];
+    if (Math.hypot(hero.x - node.x, hero.y - node.y) < 1) {
+      bounty.leg = (bounty.leg || 0) + 1;
+      if (bounty.leg >= bounty.route.length) { completeBounty(hero, bounty); return; }
+    }
+    hero.task = `Patrulhando: ${bounty.label}`;
+    routeActor(hero, bounty.route[bounty.leg]);
+    return;
+  }
+  if (Math.hypot(hero.x - bounty.x, hero.y - bounty.y) < 1.5) {
+    if (bounty.arrivedAt == null) bounty.arrivedAt = state.minutes;
+    if (state.minutes - bounty.arrivedAt >= BOUNTY_GUARD) { completeBounty(hero, bounty); return; }
+    hero.wait = 2;
+    return;
+  }
+  routeActor(hero, bounty.node);
+  hero.finalPoint = { x: bounty.x, y: bounty.y };
+}
+// Uma vez por hora: recompensa vencida devolve o ouro; herói morto larga a dele.
+function processBounties() {
+  (state.bounties || []).forEach(bounty => {
+    if (bounty.takenBy != null && !bountyTaker(bounty)) { bounty.takenBy = null; bounty.leg = 0; bounty.arrivedAt = null; }
+  });
+  // Caça cuja caveira sumiu sem ninguém derrubar: o ouro volta.
+  (state.bounties || []).filter(bounty => bounty.target && !(state.bandits || []).some(actor => actor.id === bounty.target && actor.alive)).forEach(bounty => {
+    if (!state.testMode) state.gold += bounty.reward;
+    state.bounties = state.bounties.filter(item => item !== bounty);
+  });
+  const expired = (state.bounties || []).filter(bounty => !bounty.target && state.minutes > bounty.until && !bountyTaker(bounty));
+  expired.forEach(bounty => {
+    if (!state.testMode) state.gold += bounty.reward;
+    say(`Ninguém quis a recompensa (${bounty.label.toLowerCase()}). ${bounty.reward} de ouro voltou pro cofre, envergonhado.`);
+  });
+  if (expired.length) { state.bounties = state.bounties.filter(bounty => !expired.includes(bounty)); renderSites(); }
+}
+function bountyPanelHTML() {
+  const amounts = [10, 25, 50, 100];
+  const monsters = (state.bandits || []).filter(actor => actor.alive && actor.className === 'Monster');
+  const hunts = monsters.filter(monster => !(state.bounties || []).some(bounty => bounty.target === monster.id)).map(monster => {
+    const eta = skeletonEta(monster);
+    return `<div class="bounty-row monster-row"><span><b>${monster.name}</b><small>nível ${monster.level} · ${eta > 0 ? `chega à cidade em ~${Math.max(1, Math.round(eta / 60))}h` : 'atacando a cidade agora'}</small></span><button type="button" class="hut-upgrade hunt-btn" data-bounty-hunt="${monster.id}">Recompensa · ${state.bountyAmount}</button></div>`;
+  }).join('');
+  const rows = (state.bounties || []).map(bounty => {
+    const taker = bountyTaker(bounty);
+    const status = bounty.target ? (taker ? `${taker.name} foi caçar` : 'Ninguém aceitou ainda') : taker ? (bounty.route ? `${taker.name} · trecho ${Math.min(bounty.leg || 0, bounty.route.length)} de ${bounty.route.length}` : bounty.arrivedAt != null ? `${taker.name} vigiando · ${Math.max(0, BOUNTY_GUARD - (state.minutes - bounty.arrivedAt))} min` : `${taker.name} a caminho`) : 'Ninguém aceitou ainda';
+    return `<div class="bounty-row"><span><b>${bounty.label}</b><small>${status}${bounty.target ? '' : ` · vence em ${Math.max(0, Math.ceil((bounty.until - state.minutes) / 60))}h`}</small></span><em>${bounty.reward}</em><button type="button" class="bounty-cancel" data-bounty-cancel="${bounty.id}" title="Cancelar e devolver o ouro">×</button></div>`;
+  }).join('');
+  return `<section class="farm-selector hut-box bounty-box"><div class="farm-selector-heading"><b>Recompensas</b><small>você paga, eles decidem</small></div>
+    <div class="bounty-amount"><span>Valor</span>${amounts.map(value => `<button type="button" class="bounty-chip${state.bountyAmount === value ? ' active' : ''}" data-bounty-amount="${value}">${value}</button>`).join('')}<input type="number" min="5" step="5" value="${state.bountyAmount}" data-bounty-input aria-label="Valor da recompensa"></div>
+    <div class="guild-branches"><button type="button" class="hut-upgrade" data-bounty-place>${state.placingBounty ? 'Toque no mapa…' : 'Marcar no mapa'}</button><button type="button" class="hut-upgrade" data-bounty-preset="south">Patrulhar o segundo mapa</button></div>
+    <button type="button" class="hut-upgrade bounty-lair" data-bounty-preset="lair">Vigiar as ruínas do covil</button>
+    <p class="storage-items">O ouro sai do cofre agora. Ganancioso só vai por 40 ou mais; Covarde não vai longe por pouco; Teimoso às vezes nem escuta.</p>
+    ${hunts ? `<div class="food-label">CAVEIRAS NA ESTRADA</div><div class="bounty-list">${hunts}</div>` : ''}
+    ${rows ? `<div class="bounty-list">${rows}</div>` : ''}</section>`;
+}
+function renderBountyFlags() {
+  const layer = $('#site-layer');
+  const ids = new Set((state.bounties || []).filter(bounty => !bounty.target).map(bounty => bounty.id));
+  $$('.bounty-flag', layer).filter(flag => !ids.has(flag.dataset.bounty)).forEach(flag => flag.remove());
+  (state.bounties || []).filter(bounty => !bounty.target).forEach(bounty => {
+    let flag = $(`.bounty-flag[data-bounty="${bounty.id}"]`, layer);
+    if (!flag) {
+      flag = document.createElement('div');
+      flag.className = 'bounty-flag';
+      flag.dataset.bounty = bounty.id;
+      layer.insertBefore(flag, $('#hero-layer'));
+    }
+    flag.style.setProperty('--x', `${bounty.x}%`);
+    flag.style.setProperty('--y', `${bounty.y / 2}%`);
+    flag.style.zIndex = String(Math.round(bounty.y * 10) + 2);
+    flag.classList.toggle('taken', !!bountyTaker(bounty));
+    flag.innerHTML = `<i aria-hidden="true"></i><span>${bounty.reward}</span>`;
+    flag.title = `${bounty.label}: ${bounty.reward} de ouro`;
+  });
+}
+// Economia: tudo o que entra e sai, por segundo (comida e madeira) e por dia (ouro).
+function economyPanelHTML() {
+  const per = value => `${rateNumber(value)}/s`;
+  const row = (label, value, note = '') => `<div><dt>${label}${note ? `<small>${note}</small>` : ''}</dt><dd>${value}</dd></div>`;
+  const farms = state.buildings.filter(building => building.type === 'farm' && isDone(building));
+  const mills = state.buildings.filter(building => building.type === 'mill' && isDone(building));
+  const camps = state.buildings.filter(building => building.type === 'lumber' && isDone(building));
+  const crewOf = building => state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site).length;
+  const produced = emptyFood();
+  farms.forEach(farm => { produced[farm.produce] += farmOutput(farm) * (1 + crewWork(farm)); });
+  const milling = mills.reduce((sum, mill) => sum + millRate(mill) * (1 + crewWork(mill)), 0);
+  const woodRates = camps.map(camp => LUMBER_RATE[lumberCrew(camp).length] * (1 + crewWork(camp)));
+  const wood = 0.28 + woodRates.reduce((a, b) => a + b, 0);
+  const taxes = dailyTaxEstimate();
+  const wages = dailyWages();
+  const waiting = farms.reduce((sum, farm) => sum + (farm.stock || 0), 0) + mills.reduce((sum, mill) => sum + (mill.stock || 0), 0);
+  return `<div class="panel-title"><h3>Economia</h3><span>${state.testMode ? '∞' : format(state.gold)} de ouro no cofre</span></div>
+    ${demandsHTML()}
+    <div class="econ-block"><div class="food-label">OURO POR DIA</div><dl class="econ-lines">
+      ${row('Impostos', `+${format(taxes - (state.tavernTab || 0) * taxFactor())}`, `${state.taxPercent}%, da bolsa dos camponeses`)}
+      ${row('Taverna', `+${format((state.tavernTab || 0) * taxFactor())}`, 'conta de hoje, paga à meia-noite')}
+      ${row('Vendas do Arsenal', `+${format(state.armorySales || 0)}`, 'hoje, já no cofre')}
+      ${row('Salários', `−${format(wages)}`, `${WORKER_WAGE} por trabalhador`)}
+      ${row('<b>Saldo da meia-noite</b>', `<b>${taxes - wages < 0 ? '−' : '+'}${format(Math.abs(taxes - wages))}</b>`)}
+    </dl></div>
+    <div class="econ-block"><div class="food-label">MADEIRA POR SEGUNDO</div><dl class="econ-lines">
+      ${row('Lenha catada no casarão', per(0.28))}
+      ${camps.map((camp, i) => row(`Cabana do Lenhador ${camps.length > 1 ? i + 1 : ''}`, per(woodRates[i]), `${lumberCrew(camp).length} de 3 lenhadores`)).join('')}
+      ${row('<b>Total</b>', `<b>${per(wood)}</b>`, `${format(state.timber)} no estoque`)}
+    </dl></div>
+    <div class="econ-block"><div class="food-label">COMIDA POR SEGUNDO</div><dl class="econ-lines">
+      ${FOOD_TYPES.filter(food => food.id !== 'flour').map(food => row(food.name, produced[food.id] ? `+${per(produced[food.id])}` : '—', `${format(state.food[food.id] || 0)} no depósito${food.raw ? ' · vai pro moinho' : ''}`)).join('')}
+      ${row('Farinha', milling ? `até +${per(milling)}` : '—', `${format(state.food.flour || 0)} no depósito · ${mills.length ? `${mills.length} ${mills.length === 1 ? 'moinho' : 'moinhos'}` : 'sem moinho'}`)}
+      ${row('Consumo dos camponeses', `−${per(foodDemand())}`, `${eaters()} bocas · ração ${RATIONS[state.ration].label.toLowerCase()}`)}
+      ${row('Esperando carregador', format(waiting), 'nas fazendas e moinhos')}
+      ${row('Depósito', `${Math.floor(storedUnits())} / ${storageCap()}`)}
+    </dl></div>
+    <div class="econ-block"><div class="food-label">POR CONSTRUÇÃO</div><dl class="econ-lines">
+      ${[...farms, ...mills].map(building => row(siteLabel(building), building.type === 'mill' ? `${per(millRate(building) * (1 + crewWork(building)))} de trigo` : per(farmOutput(building) * (1 + crewWork(building))),
+        `nível ${producerLevel(building) + 1} · ${crewOf(building)} ${crewOf(building) === 1 ? 'trabalhador' : 'trabalhadores'}${crewWork(building) ? ` · +${Math.round(crewWork(building) * 100)}%` : ''} · ${format(building.stock || 0)} esperando`)).join('') || '<p class="storage-items">Nenhuma fazenda ou moinho ainda.</p>'}
+    </dl></div>
+    <details class="econ-block"><summary class="food-label">CUSTOS PARA CONSTRUIR</summary><dl class="econ-lines">
+      ${BUILDINGS.map(building => row(building.name, `${building.cost} ouro · ${building.wood} madeira`)).join('')}
+    </dl><p class="storage-items">Custos únicos; melhorias têm seus próprios valores.</p></details>`;
+}
+
 function foodPanelHTML() {
   const prod = foodProduction();
-  const parts = state.moodParts || { ration: 0, variety: 0, meat: 0, hunger: 0 };
+  const milling = millCapacity();
+  const parts = { ration: 0, food: 0, tax: 0, hunger: 0, ...(state.moodParts || {}) };
   const signed = n => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n)}`;
   const n = eaters();
   const used = storedUnits();
@@ -1463,31 +2436,22 @@ function foodPanelHTML() {
     <div class="food-label">CARDÁPIO</div>
     <div class="food-list">${FOOD_TYPES.map(food => { const on = !!state.diet[food.id]; const stock = state.food[food.id] || 0; return `<div class="food-row${on ? ' on' : ''}${stock <= 0 ? ' empty' : ''}">
         <img src="public/art/${food.art}-v01.webp" alt=""><span class="food-name"><b>${food.name}</b><small>${food.note}</small></span>
-        <span class="food-stock"><b>${format(stock)}</b><small>${prod[food.id] ? `+${prod[food.id].toFixed(1).replace('.', ',')}/s` : 'sem produção'}</small></span>
-        <button type="button" data-diet="${food.id}" class="${on ? 'on' : ''}">${on ? 'SERVINDO' : 'GUARDADO'}</button></div>`; }).join('')}</div>
+        <span class="food-stock"><b>${format(stock)}</b><small>${food.id === 'flour' ? (milling ? `até +${rateNumber(milling)}/s` : 'sem moinho') : prod[food.id] ? `+${rateNumber(prod[food.id])}/s${food.raw && milling ? ` · moinho −${rateNumber(milling)}/s` : ''}` : 'sem produção'}</small></span>
+        ${food.raw ? '<button type="button" disabled>PRO MOINHO</button>' : `<button type="button" data-diet="${food.id}" class="${on ? 'on' : ''}">${on ? 'SERVINDO' : 'GUARDADO'}</button>`}</div>`; }).join('')}</div>
     <div class="mood-box"><div class="mood-head"><span>FELICIDADE</span><b>${Math.round(state.happiness)}</b><em>${happinessLabel(state.happiness)}</em><small>indo para ${Math.round(state.moodTarget ?? state.happiness)}</small></div>
       <div class="mood-bar"><i style="width:${Math.round(state.happiness)}%"></i></div>
-      <dl class="mood-parts"><div><dt>Ração</dt><dd>${signed(parts.ration)}</dd></div><div><dt>Variedade</dt><dd>${signed(parts.variety)}</dd></div><div><dt>Carne</dt><dd>${signed(parts.meat)}</dd></div><div><dt>Fome</dt><dd>${signed(parts.hunger)}</dd></div></dl></div>
+      <dl class="mood-parts"><div><dt>Ração</dt><dd>${signed(parts.ration)}</dd></div><div><dt>Comida</dt><dd>${signed(parts.food)}</dd></div><div><dt>Imposto</dt><dd>${signed(parts.tax)}</dd></div><div><dt>Fome</dt><dd>${signed(parts.hunger)}</dd></div></dl></div>
     <div class="mood-rules"><div class="food-label">O QUE MUDA A FELICIDADE</div>
       <p>A felicidade parte de 50 e anda devagar até o alvo, que é 50 somado a estes efeitos:</p>
       <dl>
         <div><dt>Ração</dt><dd>Nenhuma −40 · Meia −15 · Normal 0 · Dobrada +10 · Tripla +20</dd></div>
-        <div><dt>Variedade</dt><dd>Alimentos diferentes na mesa: 1 = −5 · 2 = 0 · 3 = +5 · 4 = +8 · 5 = +10</dd></div>
-        <div><dt>Carne</dt><dd>Bacon servido e no estoque: +10</dd></div>
+        <div><dt>Comida</dt><dd>Cada alimento servido soma: alho +1 · farinha +3 · bacon +4 · ovos +2 · leite +2</dd></div>
+        <div><dt>Imposto</dt><dd>0% +20 · 5% +10 · 10% 0 · 15% −10 · 20% −20</dd></div>
         <div><dt>Fome</dt><dd>Quando a comida servida não dá pra todos: até −40</dd></div>
       </dl>
-      <p>Só conta o que está marcado como SERVINDO e tem estoque.</p></div>`;
+      <p>Só conta o que está marcado como SERVINDO e tem estoque. Trigo cru não vai pra mesa: o moinho transforma em farinha.</p></div>`;
 }
 
-function economyPanelHTML() {
-  const e = economySnapshot(state);
-  const foodRows = FOOD_TYPES.map(food => `<div class="economy-panel-row"><span>${food.name}</span><b>${format(state.food?.[food.id] || 0)}</b><small>${e.produced[food.id] ? `+${economyRate(e.produced[food.id])}/s` : 'sem produção'}</small></div>`).join('');
-  const costs = BUILDINGS.map(building => `<div class="economy-panel-row"><span>${building.name}</span><small>${building.cost} ouro · ${building.wood} madeira</small></div>`).join('');
-  return `<div class="panel-title"><h3>Economia</h3><span>situação atual</span></div>
-    <section class="economy-panel-group"><h4>CAIXA E IMPOSTOS</h4><div class="economy-panel-row"><span>Ouro disponível</span><b>${state.testMode ? '∞' : format(state.gold)}</b></div><div class="economy-panel-row"><span>Imposto</span><b>${state.taxPercent}% · ≈ ${economyRate(e.taxEstimate)}/dia</b></div><div class="economy-panel-row"><span>Madeira</span><b>${state.testMode ? '∞' : format(state.timber)} · +${economyRate(e.woodRate)}/s</b></div></section>
-    <section class="economy-panel-group"><h4>COMIDA · ${format(e.stock)} / ${e.capacity}</h4>${foodRows}<div class="economy-panel-row economy-panel-total"><span>Consumo dos camponeses</span><b>−${economyRate(e.consumption)}/s</b></div><div class="economy-panel-row economy-panel-total"><span>Imposto diário dos camponeses</span><b>+${economyRate(e.workerTax)}</b></div><small class="economy-panel-note">A taverna acrescenta o imposto de quem bebe. A coleta acontece à meia-noite.</small></section>
-    <details class="economy-panel-group"><summary>CUSTOS PARA CONSTRUIR</summary>${costs}<small class="economy-panel-note">Custos únicos; melhorias têm seus próprios valores.</small></details>`;
-}
 
 
 // ==========================================================================
@@ -1495,6 +2459,74 @@ function economyPanelHTML() {
 // vão roubar uma construção e fogem. Heróis que os veem lutam sozinhos (idle combat).
 // Dano proporcional (ver strike); experiência segue o Ember: 13 + 3 × (nível do alvo − nível de quem bate).
 // ==========================================================================
+// Caveiras: toda noite, às 22h, o cemitério dos Wilds (ponta sul da estrada velha) solta uma.
+// Ela sobe a estrada devagar até a cidade; chegando, ataca as construções até alguém derrubar.
+// Mais dura que um Salteador: um herói sozinho do mesmo nível luta parelho; dois resolvem.
+const SKELETON_TABLE = statTable(3, [44, 12, 0, 6, 2]);
+const SKELETON_PATH = [18, 17, 16, 15, 14, 13, 12, 5, 4, 2, 1];
+const SKELETON_SPEED = 0.5; // bem mais lenta que gente: dá tempo de pagar alguém pra ir atrás
+const SKELETON_NAMES = ['do Coveiro Esquecido', 'Sem Lápide', 'da Cova Rasa', 'do Velório Barato', 'Que Ninguém Chorou', 'do Jazigo Vendido', 'da Vala Comum'];
+const isHostile = actor => actor.className === 'Bandit' || actor.className === 'Monster';
+function spawnSkeleton() {
+  const day = Math.floor(state.minutes / 1440) + 1;
+  const start = PATH_NODES[SKELETON_PATH[0]];
+  state.bandits.push({
+    id: `skeleton-${Date.now()}`, className: 'Monster', kind: 'skeleton', name: `Caveira ${pick(SKELETON_NAMES)}`,
+    level: Math.min(HEIR_MAX_LEVEL, day), alive: true, x: start.x, y: Math.min(198, start.y + 2), leg: 0, mode: 'walk', bornAt: state.minutes,
+  });
+  say('O cemitério dos Wilds soltou uma caveira. Ela vem subindo a estrada velha, devagar. Dá tempo de pagar alguém pra ir atrás.', 'Uma caveira vem pela estrada velha.');
+  if (state.tab === 'heroes') renderPanel();
+}
+// Quanto falta (em minutos de jogo, na velocidade 1) para a caveira chegar à cidade.
+function skeletonEta(monster) {
+  if (monster.mode !== 'walk') return 0;
+  let dist = 0, from = monster;
+  for (let i = monster.leg || 0; i < SKELETON_PATH.length; i++) { const node = PATH_NODES[SKELETON_PATH[i]]; dist += Math.hypot(node.x - from.x, node.y - from.y); from = node; }
+  return dist / SKELETON_SPEED;
+}
+function monsterStep(monster, delta, reducedMotion) {
+  monster.cooldown = (monster.cooldown || 0) - delta;
+  monster.calm = Math.max(0, (monster.calm || 0) - delta);
+  const heroes = state.heroes.filter(hero => hero.alive && distanceTo(monster, hero) < 6);
+  const foe = heroes.sort((x, y) => distanceTo(monster, x) - distanceTo(monster, y))[0] || state.workers.find(worker => worker.alive && distanceTo(monster, worker) < 2.5) || null;
+  if (foe) {
+    if (distanceTo(monster, foe) > MELEE_RANGE) { animateWalk(monster, moveToward(monster, foe, 1.4 * delta) > 0, delta, reducedMotion); return; }
+    faceToward(monster, foe);
+    if (monster.cooldown <= 0) { monster.cooldown = ATTACK_COOLDOWN; monster.attackAnim = 0.5; monster.actionClock = 0; strike(monster, foe); }
+    animateAttack(monster, delta, reducedMotion);
+    return;
+  }
+  if (monster.mode === 'walk') {
+    const node = PATH_NODES[SKELETON_PATH[monster.leg || 0]];
+    animateWalk(monster, moveToward(monster, node, SKELETON_SPEED * delta) > 0, delta, reducedMotion);
+    if (distanceTo(monster, node) < 0.5) {
+      monster.leg = (monster.leg || 0) + 1;
+      if (monster.leg >= SKELETON_PATH.length) {
+        monster.mode = 'siege';
+        say(`${monster.name} chegou à cidade e começou a bater nas paredes. Com os ossos.`);
+      }
+    }
+    return;
+  }
+  // Na cidade: escolhe a construção mais perto e bate até virar ruína.
+  let target = monster.targetSite != null ? state.buildings.find(building => building.site === monster.targetSite && !building.ruined && !building.underConstruction) : null;
+  if (!target) {
+    const options = state.buildings.filter(building => !building.ruined && !building.underConstruction);
+    target = options.sort((a, b) => distanceTo(monster, a) - distanceTo(monster, b))[0] || null;
+    monster.targetSite = target ? target.site : null;
+  }
+  const spot = target ? { x: target.x, y: Math.min(198, target.y + 1.2) } : { x: 42, y: 40 };
+  if (distanceTo(monster, spot) > 1.5) { animateWalk(monster, moveToward(monster, spot, 1.0 * delta) > 0, delta, reducedMotion); return; }
+  if (!target) { animateWalk(monster, false, delta, reducedMotion); return; }
+  faceToward(monster, target);
+  if (monster.cooldown <= 0) {
+    monster.cooldown = ATTACK_COOLDOWN * 1.5; monster.attackAnim = 0.5; monster.actionClock = 0;
+    damageBuilding(target, Math.round(statsOf(monster).atk * 1.5));
+    if (target.ruined) monster.targetSite = null;
+  }
+  animateAttack(monster, delta, reducedMotion);
+}
+
 const RAID_EVERY = 360;                 // minutos de jogo entre bandos
 const AGGRO_RANGE = 22;                 // heróis enxergam ladrões até esta distância
 const MELEE_RANGE = 2.5;
@@ -1509,7 +2541,12 @@ const DEATH_MSG = [
 ];
 const isBandit = actor => actor.className === 'Bandit';
 const classOf = actor => actor.prestige || actor.className;
-const statsOf = actor => attributesAt(tableFor(actor), actor.level || 1);
+// Atributos de luta: os da classe no nível, mais o equipamento.
+const statsOf = actor => {
+  const base = attributesAt(tableFor(actor), actor.level || 1);
+  if (!actor.gear) return base;
+  return { ...base, hp: base.hp + gearBonus(actor, 'hp'), atk: base.atk + gearBonus(actor, 'atk'), mag: base.mag + gearBonus(actor, 'mag'), def: base.def + gearBonus(actor, 'def'), dex: base.dex + gearBonus(actor, 'dex') };
+};
 const maxHpOf = actor => statsOf(actor).hp;
 const hpOf = actor => (actor.hp == null ? maxHpOf(actor) : actor.hp);
 const distanceTo = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -1577,9 +2614,17 @@ function killActor(victim, killer) {
       state.food[victim.loot.food.id] = (state.food[victim.loot.food.id] || 0) + qty;
       if (qty) back = ` Recuperou ${qty} de ${FOOD_TYPES.find(food => food.id === victim.loot.food.id)?.name.toLowerCase()}.`;
     }
+    // O que o ladrão tinha no bolso é de quem derrubou: o loot do herói.
+    if (killer && !isHostile(killer) && killer.className !== 'Peasant') {
+      const coins = 2 + Math.floor(Math.random() * 4) + 2 * (victim.level || 1);
+      lootHero(killer, coins);
+      back += ` ${killer.name} ficou com ${coins} de ouro do bolso dele.`;
+    }
     say(`${killer ? killer.name : 'Alguém'} derrubou ${victim.name}.${back}`, `${victim.name} não volta mais pela estrada velha.`);
+  } else if (victim.className === 'Monster') {
+    say(`${killer ? killer.name : 'Alguém'} desmontou ${victim.name}. Os ossos voltaram a ser só ossos.${payHuntBounty(victim, killer)}`, `${victim.name} não sobe mais a estrada.`);
   } else if (victim.className === 'Peasant') {
-    say(`${victim.name} foi morto por ladrões. ${pick(['Os outros pediram aumento.', 'A colheita atrasou.', 'Ele tinha nome. Ninguém lembra qual.'])}`);
+    say(`${victim.name} foi ${isFemalePeasant(victim) ? 'morta' : 'morto'}${killer?.className === 'Monster' ? ' por uma caveira' : ' por ladrões'}. ${pick(['Os outros pediram aumento.', 'A colheita atrasou.', 'Ele tinha nome. Ninguém lembra qual.'])}`);
   } else {
     say(pick(DEATH_MSG)(victim.name), `${victim.name} morreu lutando contra ladrões.`);
   }
@@ -1605,7 +2650,7 @@ function strike(attacker, defender) {
   defender.calm = 5;
   attacker.calm = 5;
   const killed = defender.hp <= 0;
-  if (!isBandit(attacker) && attacker.className !== 'Peasant') {
+  if (!isHostile(attacker) && attacker.className !== 'Peasant') {
     let xp = Math.max(1, 13 + 3 * ((defender.level || 1) - (attacker.level || 1)));
     if (killed) xp = Math.floor(xp * 1.25);
     const before = attacker.level || 1;
@@ -1755,6 +2800,8 @@ function spawnBandits() {
 function combatTick(minutesPassed) {
   if (state.nextRaidAt == null) state.nextRaidAt = 720;
   if (state.minutes >= state.nextRaidAt) { spawnBandits(); state.nextRaidAt += RAID_EVERY; }
+  const night = Math.floor(state.minutes / 1440);
+  if (state.minutes % 1440 >= 1320 && state.lastSkeletonDay !== night) { state.lastSkeletonDay = night; spawnSkeleton(); }
   state.bandits = (state.bandits || []).filter(bandit => bandit.alive);
   [...state.heroes, ...state.workers].filter(actor => actor.alive && actor.hp != null && (actor.calm || 0) <= 0).forEach(actor => {
     actor.hp = Math.min(maxHpOf(actor), actor.hp + maxHpOf(actor) * 0.03 * minutesPassed);
@@ -1780,6 +2827,8 @@ function serializeState() {
   const copy = { ...state, workers: state.workers.map(worker => ({ ...worker, workplace: worker.workplace ? worker.workplace.site : null })) };
   const data = JSON.parse(JSON.stringify(copy));
   data.selectedBuild = null;
+  data.movingSite = null;
+  data.placingBounty = false;
   return data;
 }
 
@@ -1787,11 +2836,20 @@ function hydrateState(data) {
   const loaded = Object.assign(newGameState(!!data.testMode), data);
   loaded.buildings.forEach(building => { building.builtAt = 0; });
   if (!data.food) loaded.food = { ...emptyFood(), wheat: data.grain || 0 };
+  if (loaded.food.flour == null) loaded.food.flour = 0;
+  if (loaded.diet && loaded.diet.flour == null) loaded.diet.flour = true;
   if (!Array.isArray(loaded.items)) loaded.items = [];
   if (!Array.isArray(loaded.bandits)) loaded.bandits = [];
   if (data.nextRaidAt == null) loaded.nextRaidAt = loaded.minutes + RAID_EVERY;
   loaded.bandits.forEach(bandit => { bandit.route = []; bandit.finalPoint = null; });
   if (loaded.taxPercent == null) loaded.taxPercent = 10;
+  if (loaded.favor == null) loaded.favor = 50;
+  if (!Array.isArray(loaded.demands)) loaded.demands = [];
+  if (!Array.isArray(loaded.bounties)) loaded.bounties = [];
+  if (loaded.bountyAmount == null) loaded.bountyAmount = 25;
+  loaded.placingBounty = false;
+  if (loaded.nextDemandAt == null) loaded.nextDemandAt = loaded.minutes + 600;
+  loaded.taxPercent = Math.min(TAX_MAX, loaded.taxPercent);
   if (loaded.tavernTab == null) loaded.tavernTab = 0;
   loaded.nextBuildingId = Math.max(loaded.nextBuildingId || 1, ...loaded.buildings.map(building => building.site + 1));
   if (loaded.tab === 'contracts') loaded.tab = 'build';
@@ -1825,6 +2883,7 @@ function hydrateState(data) {
     });
   [...loaded.heroes, ...loaded.workers].forEach(actor => { actor.route = []; actor.goal = null; actor.wait = 0; actor.finalPoint = null; });
   loaded.selectedBuild = null;
+  loaded.movingSite = null;
   loaded.selectedSite = null;
   loaded.selectedActor = null;
   return loaded;
@@ -1942,10 +3001,10 @@ function slotSummary(record) {
 function economySnapshot(source) {
   const workers = (source.workers || []).filter(worker => worker.alive);
   const buildings = (source.buildings || []).filter(isDone);
-  const produced = Object.fromEntries(FARM_TYPES.map(food => [food.id, 0]));
+  const produced = Object.fromEntries(FOOD_TYPES.map(food => [food.id, 0]));
   buildings.forEach(building => {
-    if (building.type === 'farm') produced[farmType(building.produce).id] += farmType(building.produce).grain;
-    if (building.type === 'mill') produced.wheat += BUILDINGS.find(item => item.id === 'mill').grain;
+    if (building.type === 'farm') produced[farmType(building.produce).id] += farmOutput(building);
+    if (building.type === 'mill') produced.flour += millRate(building);
   });
   const ration = RATIONS[source.ration ?? 2] || RATIONS[2];
   const consumption = workers.length * WORKER_UPKEEP * ration.mult;
@@ -1954,12 +3013,14 @@ function economySnapshot(source) {
     return sum + LUMBER_RATE[Math.min(3, crew)];
   }, 0);
   const factor = (source.taxPercent ?? 10) / 10;
-  const workerTax = workers.length * 2 * factor;
+  const workerTax = workers.reduce((sum, worker) => sum + Math.min(purseOf(worker), 2 * factor), 0);
+  const wages = workers.length * WORKER_WAGE;
   const tavernTax = (source.tavernTab || 0) * factor;
   const food = source.food || {};
   const stock = FOOD_TYPES.reduce((sum, item) => sum + (food[item.id] || 0), 0);
-  const capacity = 100 + buildings.filter(building => building.type === 'depot').reduce((sum, depot) => sum + [30, 45, 70, 100][depot.level || 0], 0);
-  return { source, workers: workers.length, buildings: buildings.length, produced, consumption, woodRate, workerTax, tavernTax, taxEstimate: workerTax + tavernTax, stock, capacity };
+  const capacity = MANOR_STORAGE + buildings.filter(building => building.type === 'depot').reduce((sum, depot) => sum + STORAGE_LEVELS[depot.level || 0].cap, 0);
+  const edible = FOOD_TYPES.filter(item => !item.raw).reduce((sum, item) => sum + produced[item.id], 0);
+  return { source, workers: workers.length, buildings: buildings.length, produced, edible, consumption, woodRate, workerTax, wages, tavernTax, taxEstimate: workerTax + tavernTax, stock, capacity };
 }
 
 const economyRate = value => `${value.toFixed(2).replace('.', ',')}`;
@@ -1984,14 +3045,14 @@ const SCREENS = {
     const latest = latestSave();
     const source = game.slot ? state : latest?.record?.state || newGameState();
     const e = economySnapshot(source);
-    const foodRows = FARM_TYPES.map(food => `<div><dt>${food.name}</dt><dd>+${economyRate(e.produced[food.id])} /s</dd></div>`).join('');
+    const foodRows = FOOD_TYPES.map(food => `<div><dt>${food.name}${food.raw ? ' · vai pro moinho' : food.id === 'flour' ? ' · do moinho' : ''}</dt><dd>+${economyRate(e.produced[food.id])} /s</dd></div>`).join('');
     const demandRow = `<div><dt>Consumo dos camponeses · ${RATIONS[source.ration ?? 2]?.label || 'Normal'}</dt><dd>−${economyRate(e.consumption)} /s</dd></div>`;
     const costs = BUILDINGS.map(building => `<tr><th>${building.name}</th><td>${building.cost} ouro</td><td>${building.wood} madeira</td></tr>`).join('');
     return { cls: menuMode(), html: `<section class="menu-card economy-card wide">
       <header class="menu-card-head"><span class="eyebrow">${game.slot ? `SLOT ${game.slot} · DIA ${Math.floor(source.minutes / 1440) + 1}` : latest ? 'ÚLTIMO SAVE' : 'REGRAS DO INÍCIO'}</span><h2>Economia do domínio</h2><p>${game.slot ? 'Valores atuais do jogo pausado.' : latest ? 'Valores gravados no save mais recente.' : 'Sem save: mostrando o início da partida. Produção e taxas mudam com as construções e moradores.'}</p></header>
       <div class="economy-metrics"><div><small>OURO DISPONÍVEL</small><b>${source.testMode ? '∞' : format(source.gold || 0)}</b></div><div><small>MADEIRA</small><b>${source.testMode ? '∞' : format(source.timber || 0)}</b><em>+${economyRate(e.woodRate)}/s</em></div><div><small>PROVISÕES EM ESTOQUE</small><b>${format(e.stock)} / ${e.capacity}</b></div><div><small>IMPOSTO CONFIGURADO</small><b>${source.taxPercent ?? 10}%</b></div></div>
-      <div class="economy-columns"><section><h3>Provisões por segundo</h3><dl class="economy-list">${foodRows}${demandRow}<div class="economy-net"><dt>Saldo líquido atual</dt><dd>${e.produced.wheat + e.produced.garlic + e.produced.bacon + e.produced.eggs + e.produced.milk - e.consumption >= 0 ? '+' : '−'}${economyRate(Math.abs(e.produced.wheat + e.produced.garlic + e.produced.bacon + e.produced.eggs + e.produced.milk - e.consumption))} /s</dd></div></dl></section>
-        <section><h3>Ouro na próxima cobrança</h3><dl class="economy-list"><div><dt>Camponeses · ${e.workers} × ${economyRate(2 * ((source.taxPercent ?? 10) / 10))} por dia</dt><dd>+${economyRate(e.workerTax)}</dd></div><div><dt>Conta da taverna acumulada</dt><dd>+${economyRate(e.tavernTax)}</dd></div><div class="economy-net"><dt>Estimativa da próxima coleta</dt><dd>≈ ${economyRate(e.taxEstimate)} ouro</dd></div></dl><p class="economy-note">Impostos são recolhidos à meia-noite do jogo. A taverna depende de quem bebe e de quanto tempo ficou.</p></section></div>
+      <div class="economy-columns"><section><h3>Provisões por segundo</h3><dl class="economy-list">${foodRows}${demandRow}<div class="economy-net"><dt>Saldo líquido atual</dt><dd>${e.edible - e.consumption >= 0 ? '+' : '−'}${economyRate(Math.abs(e.edible - e.consumption))} /s</dd></div></dl></section>
+        <section><h3>Ouro na próxima cobrança</h3><dl class="economy-list"><div><dt>Camponeses · ${e.workers} × ${economyRate(2 * ((source.taxPercent ?? 10) / 10))} por dia</dt><dd>+${economyRate(e.workerTax)}</dd></div><div><dt>Conta da taverna acumulada</dt><dd>+${economyRate(e.tavernTax)}</dd></div><div><dt>Salários · ${e.workers} × ${WORKER_WAGE}</dt><dd>−${economyRate(e.wages)}</dd></div><div class="economy-net"><dt>Estimativa da próxima coleta</dt><dd>≈ ${economyRate(e.taxEstimate)} ouro</dd></div></dl><p class="economy-note">Impostos são recolhidos à meia-noite do jogo. A taverna depende de quem bebe e de quanto tempo ficou.</p></section></div>
       <section class="economy-costs"><h3>Gasto para construir</h3><div class="economy-table-wrap"><table><thead><tr><th>Construção</th><th>Ouro</th><th>Madeira</th></tr></thead><tbody>${costs}</tbody></table></div><p class="economy-note">Esses são custos únicos de construção. Melhorias têm custo próprio; comida é o consumo contínuo. Construções não geram ouro.</p></section>
       <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
     </section>` };
@@ -2087,11 +3148,14 @@ const SCREENS = {
     return { cls: 'is-pause', html: `<section class="menu-card sheet">
       <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar ficha" title="Fechar ficha">×</button></div>
       <div class="sheet-top"><img class="sheet-portrait" src="public/art/portraits/${actorPortrait(actor)}-portrait-v01.webp" alt="">
-        <div><span class="eyebrow">FICHA · ${actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
+        <div><span class="eyebrow">FICHA · ${actor.className === 'Monster' ? 'MONSTRO' : actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
       ${levelHTML(level, actor.xp || 0)}
       <p class="sheet-house">Vida agora: ${Math.ceil(hpOf(actor))} de ${maxHpOf(actor)}</p>
-      ${attributesHTML(attributesAt(tableFor(actor), level))}
+      ${attributesHTML(attributesAt(tableFor(actor), level), actor)}
       ${actor.trait ? `<p class="sheet-about"><b>${actor.trait}.</b> ${TRAITS[actor.trait] || ''}</p>` : ''}
+      ${actor.className === 'Peasant' ? `<dl class="info-lines sheet-work"><div><dt>Profissão</dt><dd>${professionName(actor)}</dd></div><div><dt>Trabalha</dt><dd>${workplaceOf(actor) ? siteLabel(workplaceOf(actor)) : 'Em lugar nenhum'}</dd></div><div><dt>Mora</dt><dd>${homeOf(actor) ? siteLabel(homeOf(actor)) : 'Casarão'}</dd></div><div><dt>Agora</dt><dd>${peasantActivity(actor)}</dd></div>${actor.carrying ? `<div><dt>Carregando</dt><dd>${format(actor.carrying.qty)} de ${foodName(actor.carrying.food)}</dd></div>` : ''}<div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro · salário ${WORKER_WAGE} por dia</dd></div></dl>` : `<dl class="info-lines sheet-work"><div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro, ganho no loot</dd></div></dl>`}
+      ${actor.className === 'Peasant' ? `<div class="sheet-section-label">HABILIDADES</div><dl class="skill-grid">${SKILLS.map(skill => { const value = skillOf(actor, skill.id); return `<div${PROFESSIONS[actor.profession]?.skill === skill.id ? ' class="main"' : ''}><dt>${skill.name}</dt><dd><i style="width:${value}%"></i></dd><small>${Math.floor(value)}</small></div>`; }).join('')}</dl>` : ''}
+      ${gearHTML(actor)}
       <p class="sheet-house">${actorOrigin(actor)}</p>
     </section>` };
   },
@@ -2335,6 +3399,12 @@ function initMenus() {
     $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
     renderPanel();
   }));
+  $('#favor').closest('.stat').addEventListener('click', () => {
+    if (!game.slot) return;
+    state.tab = 'economy';
+    $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
+    renderPanel();
+  });
   $('#sheet-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('sheet'); });
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
@@ -2346,6 +3416,10 @@ function initMenus() {
       if (['pause', 'sheet', 'actor', 'retinueDone'].includes(top)) closeMenu(); else goBack();
     } else if (state.selectedBuild) {
       cancelPlacement();
+    } else if (state.movingSite != null) {
+      cancelMove();
+    } else if (state.placingBounty) {
+      cancelBountyPlacement();
     } else {
       event.preventDefault();
       openPause();
@@ -2359,20 +3433,26 @@ function initMenus() {
 function init() {
   initCamera();
   const scene = $('#map-scene');
-  scene.addEventListener('pointermove', event => { if (state.selectedBuild) showPlacementPreview(event); });
+  scene.addEventListener('pointermove', event => { if (state.selectedBuild || state.movingSite != null) showPlacementPreview(event); });
   scene.addEventListener('pointerleave', () => { $('#placement-preview').hidden = true; });
-  scene.addEventListener('contextmenu', event => { if (state.selectedBuild) { event.preventDefault(); cancelPlacement(); } });
+  scene.addEventListener('contextmenu', event => {
+    if (state.selectedBuild) { event.preventDefault(); cancelPlacement(); }
+    else if (state.movingSite != null) { event.preventDefault(); cancelMove(); }
+    else if (state.placingBounty) { event.preventDefault(); cancelBountyPlacement(); }
+  });
   scene.addEventListener('click', event => {
-    if (!state.selectedBuild || camera.dragMoved || event.target.closest('button')) return;
+    if ((!state.selectedBuild && state.movingSite == null && !state.placingBounty) || camera.dragMoved || event.target.closest('button')) return;
     const { x, y } = worldPoint(event);
-    placeBuilding(x, y);
+    if (state.placingBounty) placeBountyAt(x, y);
+    else if (state.movingSite != null) moveBuilding(x, y); else placeBuilding(x, y);
   });
   $('#site-layer').addEventListener('click', event => {
     const site = event.target.closest('.site');
     if (!site) return;
     const idx = Number(site.dataset.site);
     const building = state.buildings.find(item => item.site === idx);
-    if (state.selectedBuild) say('Aqui já tem construção. Escolha outro lugar.');
+    if (state.movingSite != null) { if (idx === state.movingSite) cancelMove(); else say('Aqui já tem construção. Escolha outro lugar.'); }
+    else if (state.selectedBuild) say('Aqui já tem construção. Escolha outro lugar.');
     else if (building && building.underConstruction) {
       const worker = building.builderId != null ? findActor(building.builderId) : null;
       say(`${buildingName(building)}: em obra, ${Math.floor((building.progress || 0) / BUILD_TIME * 100)}%. ${worker ? `${worker.name} está trabalhando.` : 'Esperando um camponês livre.'}`);
@@ -2381,22 +3461,18 @@ function init() {
       state.selectedSite = idx;
       const def = BUILDINGS.find(item => item.id === building.type);
       renderSites();
+      state.tab = 'build';
+      $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
+      if (def.id === 'farm') state.selectedFarmType = farmType(building.produce).id;
+      renderPanel();
+      $('#panel-view').scrollTop = 0;
       if (def.id === 'market') {
-        state.tab = 'market';
-        $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
-        renderPanel();
         say('Mercado: venda o que sobra, compre o que falta.');
       } else if (def.id === 'hut' || def.id === 'depot' || def.id === 'lumber') {
-        state.tab = 'build';
-        $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
-        renderPanel();
         say(def.id === 'lumber' ? `Cabana do Lenhador: ${lumberCrew(building).length} de 3 camponeses. Escale no painel.` : def.id === 'depot' ? `Depósito de Provisões: ${depotCap(building)} unidades. Dá pra ampliar no painel.` : building.big ? 'Casebre Grande: cinco moradores, nenhuma privacidade.' : 'Casebre Pequeno: dá pra ampliar no painel.');
-      } else if (def.heroClass || def.id === 'farm') {
-        state.tab = 'build';
-        $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
-        if (def.id === 'farm') state.selectedFarmType = farmType(building.produce).id;
-        renderPanel();
-        say(def.id === 'farm' ? `Fazenda de ${farmType(building.produce).name}: escolha a produção no painel.` : `${def.name}: atualize ou especialize no painel.`, def.id === 'farm' ? `A fazenda está produzindo ${farmType(building.produce).name.toLowerCase()}.` : `${def.name} está aberta. A localização afeta quem a procura.`);
+      } else if (def.heroClass || def.id === 'farm' || def.id === 'mill') {
+        if (def.id === 'mill') say(`Moinho, nível ${producerLevel(building) + 1}: mói ${rateNumber(millRate(building))} de trigo em farinha por segundo. Dá pra melhorar no painel.`);
+        else say(def.id === 'farm' ? `Fazenda de ${farmType(building.produce).name}, nível ${producerLevel(building) + 1}: troque a produção ou melhore no painel.` : `${def.name}: atualize ou especialize no painel.`, def.id === 'farm' ? `A fazenda está produzindo ${farmType(building.produce).name.toLowerCase()}.` : `${def.name} está aberta. A localização afeta quem a procura.`);
       } else say(def.id === 'tavern' ? 'Taverna: o imposto vem de quem passa o tempo livre bebendo aqui.' : def.grain ? `${def.name}: produz provisões.` : `${def.name}.`);
     }
   });
@@ -2412,9 +3488,9 @@ function init() {
     say(`Velocidade do domínio: ${state.speed}×.`, `A rotina agora corre a ${state.speed}×.`);
   }));
   const setTax = step => {
-    state.taxPercent = Math.max(0, Math.min(50, state.taxPercent + step));
+    state.taxPercent = Math.max(0, Math.min(TAX_MAX, state.taxPercent + step));
     updateHud();
-    say(`Imposto em ${state.taxPercent}%. Cobrado à meia-noite.`, state.taxPercent >= 30 ? `Imposto em ${state.taxPercent}%. Os camponeses aprenderam palavras novas.` : `Imposto em ${state.taxPercent}%.`);
+    say(`Imposto em ${state.taxPercent}%. Cobrado à meia-noite.`, state.taxPercent >= 15 ? `Imposto em ${state.taxPercent}%. Os camponeses aprenderam palavras novas.` : `Imposto em ${state.taxPercent}%.`);
   };
   $('#tax-down').addEventListener('click', () => setTax(-5));
   $('#tax-up').addEventListener('click', () => setTax(5));

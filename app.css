@@ -97,7 +97,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .site.built { min-width: 0; transform: translate(-50%,-88%); cursor: pointer; }
 .site.built:hover, .site.built:focus-visible { transform: translate(-50%,-91%) scale(1.04); }
 .building-art { position: relative; display: block; width: clamp(78px, 13vw, 132px); aspect-ratio: var(--art-aspect, 1); background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
-.site[data-art="mill-body"] .building-art { width: clamp(90px, 15vw, 150px); }
+.site[data-art="mill-body"] .building-art { width: clamp(45px, 7.5vw, 75px); }
 .mill-sails { position: absolute; z-index: 1; left: 47%; top: 51%; display: block; width: 96%; aspect-ratio: 1; background: var(--mill-sails-image) center / contain no-repeat; transform-origin: 50% 50%; animation: mill-turn var(--mill-spin-duration, 8s) linear infinite; pointer-events: none; }
 @keyframes mill-turn { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
 .site.built small { max-width: 120px; overflow: hidden; text-overflow: ellipsis; padding: 3px 6px; border: 1px solid rgba(204,180,127,.42); border-radius: 3px; background: rgba(16,18,15,.84); font-size: 7px; }
@@ -124,8 +124,13 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .hero-face { width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid #d7c28f; border-radius: 50%; background: linear-gradient(135deg,#65705a,#282b23); color: #f0e4cb; font: 9px 'Newsreader',Georgia,serif; }
 .map-footnote { position: absolute; z-index: 5; left: 14px; bottom: 11px; display: flex; align-items: center; gap: 7px; color: #e3dccb; font-size: 8px; letter-spacing: .11em; text-shadow: 0 2px 5px #000; }
 .map-key { width: 7px; height: 7px; border: 1px solid #eed49a; transform: rotate(45deg); }
-.toast { position: absolute; z-index: 7; left: 50%; bottom: 38px; transform: translate(-50%, 12px); padding: 9px 13px; border: 1px solid rgba(226,201,151,.55); border-radius: 4px; opacity: 0; color: #f4ead4; background: rgba(26,28,23,.95); box-shadow: 0 8px 20px #111; font-size: 11px; text-align: center; pointer-events: none; transition: .2s; }
-.toast.show { transform: translate(-50%,0); opacity: 1; }
+.toast { position: absolute; z-index: 7; left: 50%; bottom: 38px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(560px, calc(100% - 32px)); font-size: 11px; pointer-events: none; }
+.toast-msg { display: flex; align-items: baseline; gap: 8px; max-width: 100%; padding: 9px 13px; border: 1px solid rgba(226,201,151,.55); border-radius: 4px; color: #f4ead4; background: rgba(26,28,23,.95); box-shadow: 0 8px 20px #111; font: inherit; text-align: center; cursor: pointer; pointer-events: auto; animation: toast-in .2s ease-out; }
+.toast-msg:hover { border-color: #e7cf98; }
+.toast-msg em { color: #e7cf98; font-style: normal; }
+.toast-msg em:empty { display: none; }
+.toast-clear { padding: 3px 10px; border: 1px solid rgba(226,201,151,.35); border-radius: 3px; color: #cfc4a8; background: rgba(26,28,23,.85); font: inherit; font-size: 10px; letter-spacing: .08em; cursor: pointer; pointer-events: auto; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .map-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 9px 15px; padding: 9px 2px 0; color: #a6a18f; font-size: 8px; letter-spacing: .12em; }
 .map-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .legend-dot { width: 6px; height: 6px; display: inline-block; border-radius: 50%; }
@@ -325,7 +330,7 @@ body { overflow: hidden; }
 .hud-brand .sigil { width: 36px; height: 36px; font-size: 18px; }
 .hud-brand h1 { margin: 0; font: 18px/1.1 'Newsreader', Georgia, serif; white-space: nowrap; }
 .hud-brand .eyebrow { margin-top: 3px; font-size: 9px; letter-spacing: .14em; white-space: nowrap; }
-.hud-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); overflow: hidden; }
+.hud-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); overflow: hidden; }
 .hud-stats .stat { justify-content: center; gap: 2px; padding: 6px 12px; background: transparent; border-left: 1px solid rgba(206,186,137,.14); }
 .hud-stats .stat:first-child { border-left: 0; }
 .hud-stats .stat small { font-size: 9px; letter-spacing: .1em; }
@@ -406,7 +411,7 @@ body { overflow: hidden; }
 .character { width: 5.2%; }
 .character.worker { width: 5%; }
 .site.built { width: 15%; }
-.site.built[data-art="mill-body"] { width: 17%; }
+.site.built[data-art="mill-body"] { width: 8.5%; }
 .site.built .building-art, .site.built[data-art="mill-body"] .building-art { width: 100%; }
 
 /* Telas estreitas: tudo empilhado e a página rola. */
@@ -605,7 +610,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 /* Construção livre: prévia da obra embaixo do cursor. Dourada onde dá, vermelha onde não dá. */
 .map-scene.placing { cursor: crosshair; }
 .placement-preview { position: absolute; left: var(--x); top: var(--y); width: 15%; aspect-ratio: 1; transform: translate(-50%, -88%); background: center bottom / contain no-repeat; opacity: .72; pointer-events: none; filter: drop-shadow(0 0 6px rgba(240,200,120,.9)) drop-shadow(2px 7px 4px rgba(9,11,8,.6)); }
-.placement-preview[data-art="mill-body"] { width: 17%; }
+.placement-preview[data-art="mill-body"] { width: 8.5%; }
 .placement-preview::after { content: ''; position: absolute; left: 22%; right: 22%; bottom: 6%; height: 12%; border: 2px solid rgba(240,205,130,.9); border-radius: 50%; background: rgba(240,205,130,.15); }
 .placement-preview.invalid { opacity: .55; filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(5) drop-shadow(0 0 6px rgba(220,60,40,.9)); }
 .placement-preview.invalid::after { border-color: rgba(230,70,50,.95); background: rgba(230,70,50,.2); }
@@ -890,6 +895,69 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .attr-grid.heir-attrs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .attr-grid.heir-attrs dt { color: var(--gold); font-size: 12px; font-weight: 700; letter-spacing: .1em; }
 .attr-grid.heir-attrs small { display: block; margin-top: 2px; color: #9d9583; font-size: 10px; }
+
+/* Quadro de informações da construção selecionada. */
+.info-lines { display: grid; gap: 5px; margin: 0 0 10px; }
+.info-lines div { display: flex; justify-content: space-between; gap: 12px; }
+.info-lines dt { color: #9d9583; font-size: 12px; white-space: nowrap; }
+.info-lines dd { margin: 0; color: #ece2cb; font-size: 12px; text-align: right; }
+.building-info .guild-branches { display: flex; gap: 8px; }
+.site.moving { opacity: .35; }
+
+/* Equipamento: ícone provisório até chegar o desenho de cada item. */
+.gear-icon { flex: 0 0 auto; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid rgba(214,184,117,.45); border-radius: 4px; color: #e7cf98; background: rgba(46,38,24,.7); font: 20px 'Pirata One', Georgia, serif; }
+.equip-slot.empty .gear-icon { opacity: .4; }
+.equip-slot.empty b { color: #8f8a7a; }
+.attr-bonus { display: block; color: #9fcf7f; font-size: 10px; }
+.shop-list { display: grid; gap: 4px; max-height: 260px; margin: 8px 0 0; padding: 0; overflow-y: auto; list-style: none; }
+.shop-list li { display: flex; justify-content: space-between; gap: 10px; padding: 5px 6px; border-bottom: 1px solid rgba(206,184,135,.12); }
+.shop-list li span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.shop-list b { color: #ece2cb; font-size: 12px; font-weight: 600; }
+.shop-list small { color: #9d9583; font-size: 10px; }
+.shop-list em { color: #e7cf98; font-style: normal; font-size: 12px; white-space: nowrap; }
+
+/* Profissão no cartão do camponês e habilidades na ficha. */
+.prof-select { display: flex; align-items: center; gap: 6px; margin-top: 4px; color: #9d9583; font-size: 11px; }
+.prof-select select { padding: 2px 4px; border: 1px solid rgba(206,184,135,.35); border-radius: 3px; color: #ece2cb; background: #1b1d17; font: inherit; }
+.skill-grid { display: grid; gap: 6px; margin: 0 0 12px; }
+.skill-grid div { display: grid; grid-template-columns: 90px 1fr 30px; align-items: center; gap: 8px; }
+.skill-grid dt { color: #9d9583; font-size: 12px; }
+.skill-grid .main dt { color: #e7cf98; }
+.skill-grid dd { height: 6px; margin: 0; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+.skill-grid dd i { display: block; height: 100%; background: linear-gradient(90deg, #6f5a2e, #d6b875); }
+.skill-grid small { color: #ece2cb; font-size: 12px; text-align: right; }
+
+/* Construção em ruínas: escura até ser consertada. */
+.site.ruined .building-art { filter: grayscale(.85) brightness(.5); }
+
+/* Aba Economia. */
+.econ-block { margin-bottom: 14px; padding: 10px 12px; border: 1px solid rgba(206,186,137,.2); border-radius: 6px; background: rgba(10,12,9,.45); }
+.econ-lines { display: grid; gap: 6px; margin: 6px 0 0; }
+.econ-lines div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.econ-lines dt { color: #cfc4a8; font-size: 12px; }
+.econ-lines dt small { display: block; color: #8f8a7a; font-size: 10px; }
+.econ-lines dd { margin: 0; color: #ece2cb; font-size: 13px; white-space: nowrap; }
+
+/* Favor dos nobres e tributos. */
+.stat.favor { cursor: pointer; }
+.favor-bar i { background: linear-gradient(90deg, #5b2a1c, #c9a35a); }
+.demand { margin-top: 8px; padding: 9px 10px; border: 1px solid rgba(206,184,135,.25); border-radius: 5px; background: rgba(30,32,26,.7); }
+.demand.late { border-color: rgba(214,96,64,.7); }
+.demand.baron { border-color: rgba(230,120,40,.75); background: rgba(40,22,14,.75); }
+.demand-head { display: flex; align-items: center; gap: 8px; }
+.demand-head span { display: flex; flex-direction: column; }
+.demand-head b { color: #ece2cb; font: 600 14px 'Newsreader', Georgia, serif; }
+.demand-head small { color: #9d9583; font-size: 10px; }
+.demand p { margin: 6px 0; color: #cfc4a8; font-size: 12px; font-style: italic; }
+.demand-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.demand-foot span { display: flex; flex-direction: column; }
+.demand-foot b { color: #e7cf98; font-size: 13px; }
+.demand-foot small { color: #9d9583; font-size: 10px; }
+.demand.late .demand-foot small { color: #e08a6a; }
+.demand-foot .hut-upgrade { width: auto; height: 32px; padding: 0 14px; font-size: 13px; }
+.demand-foot .hut-upgrade:disabled { opacity: .45; cursor: not-allowed; }
+.baron-seal { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #1a0f08; background: radial-gradient(circle, #e0782a, #6a2a0c); font: 18px 'Pirata One', Georgia, serif; }
+
 .tabs .tab { padding-right: 2px; padding-left: 2px; font-size: 9px; letter-spacing: .04em; }
 .economy-panel-row { font-size: 12px; }
 .economy-panel-row b { font-size: 13px; }
@@ -909,3 +977,29 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .segmented.ration button.active em { color: inherit; }
 .ration-effect { margin: 6px 0 0; color: #d8ccb0; font-size: 12px; line-height: 1.45; }
 .ration-effect b { color: var(--gold); }
+
+/* Recompensas: painel e bandeira no mapa. */
+.bounty-amount { display: flex; align-items: center; gap: 5px; margin-bottom: 8px; color: #9d9583; font-size: 11px; }
+.bounty-chip { min-width: 34px; height: 26px; border: 1px solid rgba(206,184,135,.35); border-radius: 3px; color: #e7cf98; background: rgba(30,32,26,.8); font: inherit; cursor: pointer; }
+.bounty-chip.active, .bounty-chip:hover { color: #221d16; background: #d1a36c; }
+.bounty-amount input { width: 62px; height: 26px; padding: 0 6px; border: 1px solid rgba(206,184,135,.35); border-radius: 3px; color: #ece2cb; background: #1b1d17; font: inherit; }
+.bounty-lair { margin-top: 6px; }
+.bounty-list { display: grid; gap: 4px; margin-top: 8px; }
+.bounty-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid rgba(206,184,135,.2); border-radius: 4px; background: rgba(30,32,26,.6); }
+.bounty-row span { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.bounty-row b { color: #ece2cb; font-size: 12px; }
+.bounty-row small { color: #9d9583; font-size: 10px; }
+.bounty-row em { color: #e7cf98; font-style: normal; font-size: 13px; }
+.bounty-cancel { width: 24px; height: 24px; border: 1px solid rgba(214,96,64,.5); border-radius: 3px; color: #e8866a; background: transparent; cursor: pointer; }
+.bounty-flag { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.bounty-flag i { width: 3px; height: 28px; background: #3a2a18; position: relative; }
+.bounty-flag i::after { content: ''; position: absolute; left: 3px; top: 0; width: 18px; height: 12px; background: #c9a35a; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.bounty-flag.taken i::after { background: #8fbf6a; }
+.bounty-flag span { margin-top: -2px; padding: 1px 5px; border: 1px solid rgba(201,163,90,.7); border-radius: 3px; color: #f4e3b0; background: rgba(26,20,12,.9); font-size: 10px; }
+
+/* Caveira: boneco provisório até chegar o desenho, e a placa de recompensa. */
+.monster-skull { display: grid; place-items: center; width: 100%; aspect-ratio: 1; color: #e8e2cf; font-size: clamp(18px, 2.6vw, 30px); text-shadow: 0 0 6px rgba(140,200,120,.55), 0 2px 3px #000; }
+.character.monster .character-name { border-color: rgba(150,200,120,.6); color: #d6e8c4; }
+.wanted-tag { position: absolute; left: 50%; top: -18px; transform: translateX(-50%); padding: 0 5px; border: 1px solid rgba(201,163,90,.8); border-radius: 3px; color: #f4e3b0; background: rgba(26,20,12,.92); font-size: 10px; pointer-events: none; }
+.monster-row .hunt-btn { width: auto; height: 30px; padding: 0 10px; font-size: 12px; }
+

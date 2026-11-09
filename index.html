@@ -21,9 +21,10 @@
           <div class="stat resource-stat" title="Ouro. Vem dos impostos, cobrados à meia-noite (camponeses e taverna)." aria-label="Ouro"><img class="hud-icon" src="public/art/icon-coin-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="gold">240</strong><em id="gold-rate" class="visually-hidden">+2/dia</em></span></div>
           <div class="stat resource-stat" title="Comida guardada. Clique para abrir a lista de alimentos." aria-label="Comida"><img class="hud-icon" src="public/art/icon-provisions-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong><span id="grain">58</span><i>/<span id="storage-cap">100</span></i></strong><em id="grain-rate" class="visually-hidden">+0/s</em></span></div>
           <div class="stat resource-stat" title="Madeira e quanto rende por segundo" aria-label="Madeira"><img class="hud-icon" src="public/art/icon-logs-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="timber">30</strong><em id="timber-rate" class="visually-hidden">+0/s</em></span></div>
-          <div class="stat mood resource-stat" title="Felicidade dos camponeses, de 0 a 100. Carne e variedade aumentam; ração pequena e fome diminuem." aria-label="Felicidade dos camponeses"><img class="hud-icon" src="public/art/icon-happiness-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="happiness">50</strong><em id="happiness-label" class="visually-hidden">Conformados</em></span></div>
+          <div class="stat mood resource-stat" title="Felicidade dos camponeses, de 0 a 100. Comida servida e imposto baixo aumentam; ração pequena, imposto alto e fome diminuem." aria-label="Felicidade dos camponeses"><img class="hud-icon" src="public/art/icon-happiness-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="happiness">50</strong><em id="happiness-label" class="visually-hidden">Conformados</em></span></div>
+          <div class="stat mood favor" title="Favor dos nobres, de 0 a 100. Tributos entregues no prazo aumentam; atraso diminui. Abaixo de 20, eles atacam. Clique para ver os tributos."><small>FAVOR</small><strong id="favor">50</strong><em id="favor-label">Tolerado</em></div>
           <div class="stat" title="Alojamento: Warrior inicial (1); cada guilda, +1 morador; hotel, +4 camas; taverna, +1 cama"><small>HERÓIS</small><strong><span id="hero-count">1</span><i>/<span id="hero-cap">1</span></i></strong></div>
-          <div class="stat" title="Trabalhadores / limite (1 do casarão + 2 por casebre). Cada um come 0,3 provisão por segundo."><small>TRABALHADORES</small><strong><span id="worker-count">1</span><i>/<span id="worker-cap">1</span></i></strong></div>
+          <div class="stat" title="Trabalhadores / limite (2 do casarão + 2 por casebre, 5 no Casebre Grande). Cada um come 0,3 provisão por segundo e recebe 5 de ouro por dia."><small>TRABALHADORES</small><strong><span id="worker-count">1</span><i>/<span id="worker-cap">1</span></i></strong></div>
           <div class="stat" title="Construções erguidas no domínio"><small>CONSTRUÇÕES</small><strong><span id="site-count">0</span></strong></div>
         </div>
 
@@ -64,7 +65,6 @@
           </div>
           <div class="map-footer">
             <span class="map-footnote"><span class="map-key"></span> ARRASTE PARA EXPLORAR · CONSTRUA ONDE QUISER</span>
-            <span class="map-legend"><span><i class="legend-dot hero-dot"></i> HERÓIS</span><span><i class="legend-dot worker-dot"></i> TRABALHADORES</span></span>
           </div>
           <div class="toast" id="toast" role="status" aria-live="polite"></div>
         </section>
