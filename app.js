@@ -573,7 +573,8 @@ function renderHeroes() {
     token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
     token.style.left = `${actor.x}%`;
     token.style.top = `${actor.y / 2}%`;
-    token.style.zIndex = String(Math.round(actor.y * 10));
+    // Trabalhando na obra, fica à frente dela mesmo estando um pouco acima da base.
+    token.style.zIndex = String(Math.round(actor.y * 10) + (actor.action === 'build' ? 10 : 0));
     token.dataset.facing = actor.facing || 'front';
     token.dataset.side = actor.side || 'right';
     if (actorArt(actor)) {
@@ -736,7 +737,8 @@ function assignBuilders() {
   });
 }
 
-const buildSpot = building => ({ x: building.x, y: Math.min(198, building.y + 1.2) });
+// O camponês trabalha ao lado da obra, um pouco acima da base, para não tampar o rótulo de progresso logo abaixo.
+const buildSpot = building => ({ x: building.x + (building.x > 92 ? -5 : 5), y: building.y - 0.8 });
 
 // Uma vez por segundo de jogo: a obra avança só com o camponês no local.
 function progressConstruction(dt) {
