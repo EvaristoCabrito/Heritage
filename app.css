@@ -325,7 +325,7 @@ body { overflow: hidden; }
 .hud-brand .sigil { width: 36px; height: 36px; font-size: 18px; }
 .hud-brand h1 { margin: 0; font: 18px/1.1 'Newsreader', Georgia, serif; white-space: nowrap; }
 .hud-brand .eyebrow { margin-top: 3px; font-size: 9px; letter-spacing: .14em; white-space: nowrap; }
-.hud-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); overflow: hidden; }
+.hud-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); overflow: hidden; }
 .hud-stats .stat { justify-content: center; gap: 2px; padding: 6px 12px; background: transparent; border-left: 1px solid rgba(206,186,137,.14); }
 .hud-stats .stat:first-child { border-left: 0; }
 .hud-stats .stat small { font-size: 9px; letter-spacing: .1em; }
@@ -346,7 +346,7 @@ body { overflow: hidden; }
 .stage .map-scene { width: 100%; height: 100%; max-width: none; margin: 0; aspect-ratio: auto; border-radius: 7px; }
 .stage .map-world { width: 100%; height: auto; }
 .map-tools { position: absolute; z-index: 6; top: 12px; right: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.map-tools .camera-home, .map-tools .zoom-control { position: static; }
+.map-tools .camera-home, .map-tools .camera-road, .map-tools .zoom-control { position: static; }
 .map-tools .camera-home { width: 36px; height: 36px; font-size: 22px; }
 .map-tools .zoom-btn { width: 30px; height: 30px; font-size: 13px; }
 .map-footer { position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 14px 10px; background: linear-gradient(transparent, rgba(9,11,9,.72)); pointer-events: none; }
@@ -909,3 +909,29 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .segmented.ration button.active em { color: inherit; }
 .ration-effect { margin: 6px 0 0; color: #d8ccb0; font-size: 12px; line-height: 1.45; }
 .ration-effect b { color: var(--gold); }
+
+/* Missão 2: Wilds, cemitério e mortos-vivos */
+.map-flip { min-width: 36px; height: 30px; padding: 0 6px; border: 1px solid rgba(226,201,151,.65); border-radius: 4px; color: #f4ead4; background: rgba(40,46,38,.9); font: 700 10px 'Figtree', sans-serif; letter-spacing: .1em; cursor: pointer; }
+.map-flip:hover, .map-flip:focus-visible { border-color: var(--gold); color: #fff0c8; background: rgba(70,82,60,.92); outline: none; }
+.map-flip[hidden] { display: none; }
+.map-scene.wilds .site, .map-scene.wilds .tree-foreground, .map-scene.wilds .map-atmosphere, .map-scene.wilds .placement-preview { display: none; }
+.cemetery-marker { display: none; position: absolute; left: 72%; top: 32%; z-index: 620; width: 17%; flex-direction: column; align-items: center; gap: 2px; transform: translate(-50%, -62%); pointer-events: none; color: #d9d2bf; text-shadow: 0 1px 6px #12120f, 0 1px 2px #000; }
+.cemetery-marker svg { width: 100%; filter: drop-shadow(0 0 10px rgba(120,190,140,.45)); animation: cemetery-glow 3.2s ease-in-out infinite alternate; }
+.cemetery-marker small { font: 600 11px 'Figtree', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.cemetery-marker.cleared svg { filter: none; animation: none; }
+.map-scene.wilds .cemetery-marker { display: flex; }
+@keyframes cemetery-glow { from { filter: drop-shadow(0 0 4px rgba(120,190,140,.25)); } to { filter: drop-shadow(0 0 14px rgba(120,190,140,.6)); } }
+.character.undead .character-sprite { filter: grayscale(1) brightness(1.15) sepia(.35) hue-rotate(55deg) saturate(1.4); }
+.character.undead .character-name { border-color: rgba(140,200,150,.7); color: #c8e6c8; }
+.character.undead .hp-bar i { background: #7fbf86; }
+.favor-stat strong { color: #e7c977; }
+.send-heroes-btn { border-color: rgba(224,138,60,.7); color: #f5c58f; background: rgba(90,38,14,.55); }
+.send-heroes-btn[hidden] { display: none; }
+.mission-story .menu-card-head p + p { margin-top: 8px; }
+.mission-rewards { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 10px; }
+.reward-chip { padding: 5px 10px; border: 1px solid rgba(214,184,117,.45); border-radius: 4px; color: #e6dcc4; background: rgba(15,17,14,.6); font: 700 12px 'Figtree', sans-serif; letter-spacing: .04em; }
+.reward-chip.loss { border-color: rgba(217,69,43,.7); color: #f2b3a6; }
+.reward-chip.gain { border-color: rgba(224,190,100,.8); color: #f4da9a; }
+.mission-goal { margin: 0 0 12px; color: #e7dcc4; font-size: 14px; line-height: 1.5; }
+.mission-goal b { color: #f0c98a; }
+@media (prefers-reduced-motion: reduce) { .cemetery-marker svg { animation: none; } }

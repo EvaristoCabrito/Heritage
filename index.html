@@ -11,8 +11,8 @@
     <link rel="preload" as="image" href="public/art/healer-walk-v01.webp">
     <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
     <link rel="preload" as="font" href="public/fonts/PirataOne.ttf" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="app.css?v=303">
-    <script defer src="app.js?v=303"></script>
+    <link rel="stylesheet" href="app.css?v=304">
+    <script defer src="app.js?v=304"></script>
   </head>
   <body>
     <div class="game">
@@ -25,6 +25,7 @@
           <div class="stat" title="Alojamento: Warrior inicial (1); cada guilda, +1 morador; hotel, +4 camas; taverna, +1 cama"><small>HERÓIS</small><strong><span id="hero-count">1</span><i>/<span id="hero-cap">1</span></i></strong></div>
           <div class="stat" title="Trabalhadores / limite (1 do casarão + 2 por casebre). Cada um come 0,3 provisão por segundo."><small>TRABALHADORES</small><strong><span id="worker-count">1</span><i>/<span id="worker-cap">1</span></i></strong></div>
           <div class="stat" title="Construções erguidas no domínio"><small>CONSTRUÇÕES</small><strong><span id="site-count">0</span></strong></div>
+          <div class="stat favor-stat" title="Favor dos nobres. Sobe quando o domínio cumpre o que o Conselho pede." aria-label="Favor dos nobres"><small>FAVOR</small><strong id="favor">0</strong></div>
         </div>
 
         <div class="hud-time">
@@ -43,11 +44,15 @@
         <section class="map-scene" id="map-scene" tabindex="0" aria-label="Mapa do domínio. Arraste para explorar; use as setas do teclado ou a roda do mouse para mover a câmera.">
           <div class="map-world" id="map-world">
             <div class="map-region manor-region">
-              <img class="map-art" src="public/art/mordavia-map.webp" alt="Mapa contínuo do Vale do Luto" draggable="false">
+              <img class="map-art" id="map-art" src="public/art/mordavia-map.webp" alt="Mapa contínuo do Vale do Luto" draggable="false">
               <div class="map-atmosphere" aria-hidden="true"><span class="manor-smoke smoke-a"></span><span class="manor-smoke smoke-b"></span></div>
             </div>
             <div class="site-layer" id="site-layer" aria-label="Construções do domínio">
               <div class="placement-preview" id="placement-preview" aria-hidden="true"></div>
+              <div class="cemetery-marker" id="cemetery-marker" aria-hidden="true">
+                <svg viewBox="0 0 120 70" aria-hidden="true"><g fill="#3b3d38" stroke="#14150f" stroke-width="1.5"><path d="M12 52v-14a7 7 0 0 1 14 0v14z"/><path d="M38 46v-18a8 8 0 0 1 16 0v18z"/><path d="M68 54v-13a7 7 0 0 1 14 0v13z"/><path d="M94 48v-15a7 7 0 0 1 14 0v15z"/><path d="M57 60v-30h-6v-6h6v-7h6v7h6v6h-6v30z" fill="#2c2e2a"/></g><g fill="#141510" opacity=".55"><ellipse cx="19" cy="54" rx="10" ry="3"/><ellipse cx="46" cy="48" rx="11" ry="3"/><ellipse cx="75" cy="56" rx="10" ry="3"/><ellipse cx="101" cy="50" rx="10" ry="3"/><ellipse cx="60" cy="62" rx="9" ry="2.5"/></g></svg>
+                <small>Cemitério velho</small>
+              </div>
               <div id="hero-layer" class="hero-layer" aria-label="Personagens do domínio"></div>
             </div>
             <img class="tree-foreground manor-trees" src="public/art/mordavia-forest-layer.png" alt="" draggable="false">
@@ -56,6 +61,7 @@
           <div class="map-tools">
             <button class="camera-home" id="camera-home" type="button" aria-label="Centralizar câmera no casarão" title="Voltar ao casarão">⌂</button>
             <button class="camera-road" id="camera-road" type="button" aria-label="Centralizar câmera na Estrada Velha" title="Ir para a Estrada Velha">↓</button>
+            <button class="map-flip" id="map-flip" type="button" hidden aria-label="Ir para as Wilds" title="Ir para as Wilds">WILDS</button>
             <div class="zoom-control" role="group" aria-label="Nível de zoom">
               <button class="zoom-btn active" type="button" data-zoom="0" aria-label="Zoom 1: visão ampla" aria-pressed="true" title="Ampla">1</button>
               <button class="zoom-btn" type="button" data-zoom="1" aria-label="Zoom 2: visão normal" aria-pressed="false" title="Normal">2</button>
@@ -71,10 +77,11 @@
 
         <aside class="side-panel">
           <section class="objective-card">
-            <div class="objective-head"><span class="eyebrow">OBJETIVO</span><b>Acumule 600 moedas</b></div>
-            <div class="objective-progress"><div class="progress-track"><i id="objective-bar"></i></div><span class="progress-value"><span id="objective-gold">240</span> / 600</span></div>
+            <div class="objective-head"><span class="eyebrow">OBJETIVO</span><b id="objective-title">Acumule 600 moedas</b></div>
+            <div class="objective-progress"><div class="progress-track"><i id="objective-bar"></i></div><span class="progress-value" id="objective-value">240 / 600</span></div>
             <div class="objective-actions">
               <div class="tax-control" role="group" aria-label="Imposto"><small>IMPOSTO</small><button type="button" id="tax-down" aria-label="Baixar imposto">−</button><b id="tax-pct">10%</b><button type="button" id="tax-up" aria-label="Subir imposto">+</button><span id="tax-preview"></span></div>
+              <button type="button" class="economy-open-btn send-heroes-btn" id="send-heroes-btn" hidden>ENVIAR HERÓIS AO CEMITÉRIO</button>
               <button type="button" class="economy-open-btn" id="economy-open-btn">VER ECONOMIA</button>
             </div>
           </section>

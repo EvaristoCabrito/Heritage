@@ -160,6 +160,8 @@ function newGameState(testMode = false, heir = null) {
     food: { wheat: 40, garlic: 18, bacon: 0, eggs: 0, milk: 0 }, items: [], ration: 2, diet: { wheat: true, garlic: true, bacon: true, eggs: true, milk: true }, happiness: 50, moodTarget: 50, moodParts: null,
     speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false,
+    // Missões: 1 = juntar 600 de ouro; 2 = limpar o cemitério das Wilds; 3 = cemitério limpo.
+    mission: 1, favor: 0, view: 'vale', wildsOpen: false, undead: [], cemeteryTotal: 0,
     bandits: [], nextRaidAt: 720,
     testMode, heir, heirLevel: 1, heirXp: 0, equipment: BASIC_EQUIPMENT(), stash: null, playSeconds: 0,
     buildings: [],
@@ -248,10 +250,15 @@ function setZoom(index) {
 
 function focusRegion(name) {
   if (name !== 'road') { homeCamera(); return; }
+  focusPoint(150);
+}
+
+// Centraliza a câmera na altura y do mapa (0 a 200).
+function focusPoint(y) {
   const scene = $('#map-scene');
   const world = $('#map-world');
   const bounds = cameraBounds();
-  const desiredCenter = world.offsetHeight * ZOOM_LEVELS[camera.zoom] * 0.75;
+  const desiredCenter = world.offsetHeight * ZOOM_LEVELS[camera.zoom] * (y / 200);
   camera.y = bounds.y ? clampCamera((desiredCenter - scene.clientHeight / 2) / bounds.y) : 0;
   renderCamera();
 }
@@ -307,8 +314,9 @@ function initCamera() {
     }
   });
   $('#camera-home').addEventListener('click', () => {
-    focusRegion('manor');
+    if (state.view === 'wilds') setView('vale'); else focusRegion('manor');
   });
+  $('#map-flip').addEventListener('click', () => setView(state.view === 'wilds' ? 'vale' : 'wilds'));
   $('#camera-road').addEventListener('click', () => focusRegion('road'));
   $$('.zoom-btn').forEach(button => button.addEventListener('click', () => setZoom(Number(button.dataset.zoom))));
   window.addEventListener('resize', () => { sizeWorld(); renderCamera(); });
@@ -499,17 +507,120 @@ function updateHud() {
   $('.tab-count').textContent = heroes;
   $('#tax-pct').textContent = `${state.taxPercent}%`;
   $('#tax-preview').textContent = `≈ ${format(dailyTaxEstimate())} de ouro por dia`;
-  $('#objective-gold').textContent = state.testMode ? '∞' : format(state.gold);
-  const pct = Math.min(100, state.gold / 6);
-  $('#objective-bar').style.width = `${pct}%`;
+  $('#favor').textContent = format(state.favor || 0);
+  renderObjective();
+  renderMapFlip();
   const hh = Math.floor(state.minutes / 60) % 24;
   const mm = state.minutes % 60;
   $('#clock').textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-  if (!state.testMode && state.gold >= 600 && !state.won) {
-    state.won = true;
-    say('Cenário conquistado: o domínio agora paga as próprias dívidas.', 'Os credores receberam a notícia. Infelizmente, também receberam o endereço.');
-    if (!state.retinue && game.slot) { menu.stack = []; showScreen('scenarioEnd', { servants: [], protectors: [] }); }
+  if (!state.testMode && state.gold >= MISSION_GOLD && state.mission === 1) completeDebtMission();
+  if (state.mission === 2 && !(state.undead || []).some(undead => undead.alive)) completeCemeteryMission();
+}
+
+// ==========================================================================
+// Missões. A 1 paga as dívidas (600 de ouro); a continuação manda heróis às Wilds limpar o cemitério.
+// ==========================================================================
+const MISSION_GOLD = 600;
+const MISSION_FAVOR = 16;
+const CEMETERY = { x: 72, y: 64 };          // centro do cemitério nas Wilds (mesmas coordenadas do Vale: x 0–100, y 0–200)
+const WILDS_ENTRY = { x: 40, y: 194 };      // onde quem vem do Vale aparece nas Wilds
+const UNDEAD_SQUAD = [
+  { kind: 'skeleton', level: 1 }, { kind: 'skeleton', level: 1 }, { kind: 'skeleton', level: 2 },
+  { kind: 'skeleton', level: 2 }, { kind: 'ghoul', level: 3 }, { kind: 'ghoul', level: 3 },
+];
+const mapOf = actor => actor.map || 'vale';
+const isUndead = actor => actor.className === 'Undead';
+const isEnemy = actor => isBandit(actor) || isUndead(actor);
+const undeadLeft = () => (state.undead || []).filter(undead => undead.alive).length;
+
+function renderObjective() {
+  const sendBtn = $('#send-heroes-btn');
+  if (state.mission === 1) {
+    $('#objective-title').textContent = `Acumule ${MISSION_GOLD} moedas`;
+    $('#objective-value').textContent = `${state.testMode ? '∞' : format(state.gold)} / ${MISSION_GOLD}`;
+    $('#objective-bar').style.width = `${Math.min(100, state.gold / MISSION_GOLD * 100)}%`;
+    sendBtn.hidden = true;
+    return;
   }
+  const total = state.cemeteryTotal || UNDEAD_SQUAD.length;
+  const done = state.mission >= 3 ? total : total - undeadLeft();
+  $('#objective-title').textContent = state.mission >= 3 ? 'Cemitério limpo' : 'Limpe o cemitério das Wilds';
+  $('#objective-value').textContent = `${done} / ${total} mortos-vivos`;
+  $('#objective-bar').style.width = `${Math.round(done / total * 100)}%`;
+  sendBtn.hidden = state.mission >= 3;
+  const away = state.heroes.filter(hero => hero.alive && mapOf(hero) === 'wilds').length;
+  sendBtn.textContent = away ? `HERÓIS NAS WILDS: ${away} · TROCAR` : 'ENVIAR HERÓIS AO CEMITÉRIO';
+}
+
+// Missão 1 cumprida: os credores levam os 600, os nobres gostam, as Wilds abrem e o cemitério acorda.
+function completeDebtMission() {
+  state.won = true;
+  state.mission = 2;
+  state.gold -= MISSION_GOLD;
+  state.favor = (state.favor || 0) + MISSION_FAVOR;
+  state.wildsOpen = true;
+  spawnUndead();
+  updateHud();
+  if (game.slot) { menu.stack = []; showScreen('missionTwo'); }
+}
+
+// Continuação cumprida: os heróis voltam ao Vale e o cenário segue para a escolha da comitiva.
+function completeCemeteryMission() {
+  state.mission = 3;
+  state.undead = [];
+  state.heroes.filter(hero => hero.alive && mapOf(hero) === 'wilds').forEach(hero => moveHeroToMap(hero, 'vale'));
+  if (state.view === 'wilds') setView('vale');
+  say('O cemitério está limpo. Os mortos voltaram a ser só mortos.', 'Os nobres mandaram uma carta de parabéns. Sem dinheiro dentro.');
+  updateHud();
+  if (!state.retinue && game.slot) { menu.stack = []; showScreen('scenarioEnd', { servants: [], protectors: [] }); }
+}
+
+function spawnUndead() {
+  state.undead = UNDEAD_SQUAD.map((entry, i) => {
+    const angle = i / UNDEAD_SQUAD.length * Math.PI * 2;
+    const post = { x: CEMETERY.x + Math.cos(angle) * 6, y: CEMETERY.y + Math.sin(angle) * 5 };
+    return {
+      id: `undead-${Date.now()}-${i}`, className: 'Undead', kind: entry.kind, spriteId: 'bandit-sword', map: 'wilds',
+      name: `${entry.kind === 'ghoul' ? 'Carniçal' : 'Esqueleto'} ${pick(EPITHETS)}`, level: entry.level, alive: true,
+      x: post.x, y: post.y, post,
+    };
+  });
+  state.cemeteryTotal = state.undead.length;
+}
+
+// Herói muda de mapa: some de um lado e aparece na entrada do outro, sem rota antiga.
+function moveHeroToMap(hero, map) {
+  const entry = map === 'wilds' ? WILDS_ENTRY : raidEntry();
+  hero.map = map === 'wilds' ? 'wilds' : undefined;
+  hero.x = entry.x + (Math.random() * 4 - 2);
+  hero.y = entry.y - Math.random() * 2;
+  hero.route = []; hero.finalPoint = null; hero.goal = null; hero.wait = 0;
+  hero.combatTarget = null; hero.drinkUntil = 0; hero.tavernSpot = null;
+}
+
+// Mapa visível: Vale do Luto (construções) ou Wilds (cemitério). O botão só aparece depois da missão 1.
+function setView(view) {
+  state.view = view === 'wilds' && state.wildsOpen ? 'wilds' : 'vale';
+  const wilds = state.view === 'wilds';
+  if (wilds && state.selectedBuild) cancelPlacement();
+  $('#map-scene').classList.toggle('wilds', wilds);
+  $('#map-art').src = wilds ? 'public/art/wilds-map-v01.webp' : 'public/art/mordavia-map.webp';
+  $('#map-art').alt = wilds ? 'Mapa das Wilds, com o cemitério velho' : 'Mapa contínuo do Vale do Luto';
+  state.selectedActor = null;
+  $('#hero-layer').innerHTML = '';
+  renderMapFlip();
+  renderHeroes();
+  if (wilds) focusPoint(CEMETERY.y); else homeCamera();
+}
+
+function renderMapFlip() {
+  const flip = $('#map-flip');
+  flip.hidden = !state.wildsOpen;
+  const wilds = state.view === 'wilds';
+  flip.textContent = wilds ? 'VALE' : 'WILDS';
+  flip.title = wilds ? 'Voltar ao Vale do Luto' : 'Ir para as Wilds';
+  flip.setAttribute('aria-label', flip.title);
+  $('#cemetery-marker').classList.toggle('cleared', state.mission >= 3);
 }
 
 // Uma construção por botão no mapa, no ponto onde foi erguida.
@@ -581,7 +692,8 @@ function showPlacementPreview(event) {
 function renderHeroes() {
   const layer = $('#hero-layer');
   const active = new Set();
-  [...state.heroes, ...state.workers, ...(state.bandits || [])].filter(actor => actor.alive).forEach(actor => {
+  const view = state.view || 'vale';
+  [...state.heroes, ...state.workers, ...(state.bandits || []), ...(state.undead || [])].filter(actor => actor.alive && mapOf(actor) === view).forEach(actor => {
     active.add(String(actor.id));
     let token = [...layer.children].find(node => node.dataset.actor === String(actor.id));
     if (!token) {
@@ -606,7 +718,7 @@ function renderHeroes() {
     }
     if (token.parentElement !== layer) layer.append(token);
     const hurt = actor.hp != null && actor.hp < maxHpOf(actor);
-    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
+    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${isEnemy(actor) ? ' bandit' : ''}${isUndead(actor) ? ' undead' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
     if (hurt) token.style.setProperty('--hp', `${Math.max(0, Math.round(hpOf(actor) / maxHpOf(actor) * 100))}%`);
     token.style.left = `${actor.x}%`;
     token.style.top = `${actor.y / 2}%`;
@@ -704,6 +816,8 @@ function chooseBuild(id) {
     return;
   }
   if (state.selectedBuild === id) { cancelPlacement(); return; }
+  // Só se constrói no Vale: escolher uma carta nas Wilds volta pro Vale.
+  if (state.view === 'wilds') setView('vale');
   state.selectedBuild = id;
   state.selectedSite = null;
   renderSites(); renderPanel();
@@ -1002,6 +1116,11 @@ function nextActorGoal(actor) {
     actor.workTrip = !actor.workTrip;
     return;
   }
+  if (mapOf(actor) === 'wilds') {
+    actor.route = [];
+    actor.finalPoint = { x: CEMETERY.x + (Math.random() * 16 - 8), y: CEMETERY.y + 6 + Math.random() * 10 };
+    return;
+  }
   const tavern = openTavern();
   if (tavern && actor.drinkUntil > state.minutes) { goDrink(actor, tavern); return; }
   if (tavern && Math.random() < (actor.trait === 'Bêbado' ? 0.6 : 0.2)) {
@@ -1079,6 +1198,7 @@ function animateActors(now) {
     actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
   });
   (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => banditStep(bandit, delta, reducedMotion));
+  (state.undead || []).filter(undead => undead.alive).forEach(undead => undeadStep(undead, delta, reducedMotion));
   renderHeroes();
   requestAnimationFrame(animateActors);
 }
@@ -1275,6 +1395,7 @@ const isFemalePeasant = actor => actor.spriteId === 'female-peasant';
 function tableFor(actor) {
   if (actor === 'heir') return EMBER_CLASSES.captain;
   if (actor.className === 'Bandit') return EMBER_CLASSES[actor.kind === 'crossbow' ? 'brigandCrossbowman' : 'rogue'];
+  if (actor.className === 'Undead') return EMBER_CLASSES.rogue;
   if (actor.className === 'Peasant') return EMBER_CLASSES[isFemalePeasant(actor) ? 'villagerF1' : 'peasant1'];
   return EMBER_CLASSES[CLASS_TABLE[actor.prestige] || CLASS_TABLE[actor.className]] || EMBER_CLASSES.swordsman;
 }
@@ -1324,10 +1445,12 @@ function peasantName(female) {
   for (let i = 0; i < 40; i++) { const name = `${pick(firsts)} ${pick(PEASANT_EPITHETS)}`; if (!taken.has(name)) return name; }
   return `${pick(firsts)} ${pick(PEASANT_EPITHETS)} ${state.workers.length + 1}`;
 }
-const actorLabel = actor => actor.className === 'Bandit' ? (actor.kind === 'crossbow' ? 'Ladrão de besta' : 'Ladrão de espada') : actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.prestige ? ` · ${actor.prestige}` : ''}`;
-const findActor = id => [...state.heroes, ...state.workers, ...(state.bandits || [])].find(actor => String(actor.id) === String(id)) || null;
+const actorLabel = actor => actor.className === 'Undead' ? (actor.kind === 'ghoul' ? 'Carniçal' : 'Esqueleto') : actor.className === 'Bandit' ? (actor.kind === 'crossbow' ? 'Ladrão de besta' : 'Ladrão de espada') : actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.prestige ? ` · ${actor.prestige}` : ''}`;
+const findActor = id => [...state.heroes, ...state.workers, ...(state.bandits || []), ...(state.undead || [])].find(actor => String(actor.id) === String(id)) || null;
 function actorOrigin(actor) {
   if (actor.className === 'Bandit') return 'Veio pela estrada velha atrás do que não é dele.';
+  if (actor.className === 'Undead') return 'Saiu do cemitério das Wilds. Não pagou o enterro e não pretende pagar.';
+  if (mapOf(actor) === 'wilds') return 'Está nas Wilds, limpando o cemitério. Ninguém mais quis ir.';
   if (actor.className === 'Peasant' && homeOf(actor)) return 'Veio morar no casebre. Não tinha pra onde ir mesmo.';
   if (actor.className === 'Peasant') return actor.workplace ? `Veio com ${actor.workplace.type === 'mill' ? 'o moinho' : 'a fazenda'}. Não tinha pra onde ir mesmo.` : 'Veio junto com o casarão, como as dívidas.';
   if (actor.home === 'manor') return 'Veio junto com o casarão. Ninguém lembra de ter contratado.';
@@ -1571,10 +1694,13 @@ function killActor(victim, killer) {
       if (qty) back = ` Recuperou ${qty} de ${FOOD_TYPES.find(food => food.id === victim.loot.food.id)?.name.toLowerCase()}.`;
     }
     say(`${killer ? killer.name : 'Alguém'} derrubou ${victim.name}.${back}`, `${victim.name} não volta mais pela estrada velha.`);
+  } else if (isUndead(victim)) {
+    const left = undeadLeft();
+    say(`${killer ? killer.name : 'Alguém'} devolveu ${victim.name} à cova.${left ? ` ${left === 1 ? 'Falta 1' : `Faltam ${left}`} no cemitério.` : ''}`, `${victim.name} voltou a ser só osso.`);
   } else if (victim.className === 'Peasant') {
     say(`${victim.name} foi morto por ladrões. ${pick(['Os outros pediram aumento.', 'A colheita atrasou.', 'Ele tinha nome. Ninguém lembra qual.'])}`);
   } else {
-    say(pick(DEATH_MSG)(victim.name), `${victim.name} morreu lutando contra ladrões.`);
+    say(pick(DEATH_MSG)(victim.name), killer && isUndead(killer) ? `${victim.name} morreu no cemitério. Agora mora lá.` : `${victim.name} morreu lutando contra ladrões.`);
   }
   updateHud();
   if (state.tab === 'heroes') renderPanel();
@@ -1590,7 +1716,7 @@ function strike(attacker, defender) {
   defender.calm = 5;
   attacker.calm = 5;
   const killed = defender.hp <= 0;
-  if (!isBandit(attacker) && attacker.className !== 'Peasant') {
+  if (!isEnemy(attacker) && attacker.className !== 'Peasant') {
     let xp = Math.max(1, 13 + 3 * ((defender.level || 1) - (attacker.level || 1)));
     if (killed) xp = Math.floor(xp * 1.25);
     const before = attacker.level || 1;
@@ -1612,10 +1738,10 @@ function healHit(healer, patient) {
 // Herói: procura ladrão (ou ferido, se for curandeiro) por perto; se achar, larga o resto e luta.
 function heroCombatStep(hero, delta, reducedMotion) {
   hero.calm = Math.max(0, (hero.calm || 0) - delta);
-  const bandits = (state.bandits || []).filter(bandit => bandit.alive);
+  const bandits = [...(state.bandits || []), ...(state.undead || [])].filter(foe => foe.alive && mapOf(foe) === mapOf(hero));
   let target = null, heal = false;
   if (HEALER_CLASSES.includes(classOf(hero))) {
-    const wounded = state.heroes.filter(other => other.alive && other !== hero && hpOf(other) < maxHpOf(other) * 0.7 && distanceTo(hero, other) < AGGRO_RANGE);
+    const wounded = state.heroes.filter(other => other.alive && other !== hero && mapOf(other) === mapOf(hero) && hpOf(other) < maxHpOf(other) * 0.7 && distanceTo(hero, other) < AGGRO_RANGE);
     if (wounded.length) { target = wounded.sort((x, y) => distanceTo(hero, x) - distanceTo(hero, y))[0]; heal = true; }
   }
   if (!target && bandits.length) {
@@ -1648,7 +1774,7 @@ function banditStep(bandit, delta, reducedMotion) {
   bandit.cooldown = (bandit.cooldown || 0) - delta;
   bandit.calm = Math.max(0, (bandit.calm || 0) - delta);
   const range = bandit.kind === 'crossbow' ? SHOT_RANGE : MELEE_RANGE;
-  const heroes = state.heroes.filter(hero => hero.alive && distanceTo(bandit, hero) < (bandit.kind === 'crossbow' ? SHOT_RANGE + 2 : 7));
+  const heroes = state.heroes.filter(hero => hero.alive && mapOf(hero) === 'vale' && distanceTo(bandit, hero) < (bandit.kind === 'crossbow' ? SHOT_RANGE + 2 : 7));
   let foe = heroes.sort((x, y) => distanceTo(bandit, x) - distanceTo(bandit, y))[0] || null;
   if (!foe && bandit.kind === 'sword') foe = state.workers.find(worker => worker.alive && distanceTo(bandit, worker) < 3) || null;
   if (foe) {
@@ -1678,6 +1804,27 @@ function banditStep(bandit, delta, reducedMotion) {
       say(`${bandit.name} escapou pela estrada velha com ${lootText(bandit.loot)}. Ninguém viu nada. Ninguém nunca vê.`);
     }
   }
+}
+
+// Morto-vivo: guarda o cemitério. Ataca herói que chega perto e não persegue para longe da cova.
+function undeadStep(undead, delta, reducedMotion) {
+  undead.cooldown = (undead.cooldown || 0) - delta;
+  undead.calm = Math.max(0, (undead.calm || 0) - delta);
+  const foe = state.heroes.filter(hero => hero.alive && mapOf(hero) === 'wilds' && distanceTo(undead, hero) < 9 && distanceTo(hero, CEMETERY) < 24)
+    .sort((x, y) => distanceTo(undead, x) - distanceTo(undead, y))[0] || null;
+  if (foe) {
+    if (distanceTo(undead, foe) > MELEE_RANGE) {
+      const moved = moveToward(undead, foe, (undead.kind === 'ghoul' ? 3.4 : 2.8) * delta);
+      animateWalk(undead, moved > 0, delta, reducedMotion);
+      return;
+    }
+    faceToward(undead, foe);
+    if (undead.cooldown <= 0) { undead.cooldown = ATTACK_COOLDOWN; undead.attackAnim = 0.5; undead.actionClock = 0; strike(undead, foe); }
+    animateAttack(undead, delta, reducedMotion);
+    return;
+  }
+  const moved = moveToward(undead, undead.post || CEMETERY, 2.2 * delta);
+  animateWalk(undead, moved > 0, delta, reducedMotion);
 }
 
 // "do casarão", "da Taverna", "do Mercado": artigo pelo gênero da construção.
@@ -1727,6 +1874,7 @@ function combatTick(minutesPassed) {
   if (state.nextRaidAt == null) state.nextRaidAt = 720;
   if (state.minutes >= state.nextRaidAt) { spawnBandits(); state.nextRaidAt += RAID_EVERY; }
   state.bandits = (state.bandits || []).filter(bandit => bandit.alive);
+  state.undead = (state.undead || []).filter(undead => undead.alive);
   [...state.heroes, ...state.workers].filter(actor => actor.alive && actor.hp != null && (actor.calm || 0) <= 0).forEach(actor => {
     actor.hp = Math.min(maxHpOf(actor), actor.hp + maxHpOf(actor) * 0.03 * minutesPassed);
   });
@@ -1760,6 +1908,12 @@ function hydrateState(data) {
   if (!data.food) loaded.food = { ...emptyFood(), wheat: data.grain || 0 };
   if (!Array.isArray(loaded.items)) loaded.items = [];
   if (!Array.isArray(loaded.bandits)) loaded.bandits = [];
+  if (!Array.isArray(loaded.undead)) loaded.undead = [];
+  // Saves de antes das missões: quem já tinha vencido segue com o cemitério resolvido.
+  if (data.mission == null) { loaded.mission = data.won ? 3 : 1; loaded.wildsOpen = !!data.won; }
+  if (loaded.favor == null) loaded.favor = 0;
+  if (!loaded.wildsOpen || loaded.view !== 'wilds') loaded.view = 'vale';
+  loaded.undead.forEach(undead => { undead.route = []; });
   if (data.nextRaidAt == null) loaded.nextRaidAt = loaded.minutes + RAID_EVERY;
   loaded.bandits.forEach(bandit => { bandit.route = []; bandit.finalPoint = null; });
   if (loaded.taxPercent == null) loaded.taxPercent = 10;
@@ -1853,7 +2007,7 @@ function startGame(newState, slot) {
   $$('.zoom-btn').forEach(button => { const active = Number(button.dataset.zoom) === camera.zoom; button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active)); });
   closeMenu();
   sizeWorld();
-  homeCamera();
+  setView(state.view || 'vale');
   renderSites(); renderHeroes(); renderPanel(); updateHud();
   $('#event-line').textContent = state.ticks ? 'De volta ao Vale do Luto.' : 'A herança foi aceita. Os credores já estão a caminho.';
   writeSave(slot);
@@ -2058,12 +2212,39 @@ const SCREENS = {
     return { cls: 'is-pause', html: `<section class="menu-card sheet">
       <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar ficha" title="Fechar ficha">×</button></div>
       <div class="sheet-top"><img class="sheet-portrait" src="public/art/portraits/${actorPortrait(actor)}-portrait-v01.webp" alt="">
-        <div><span class="eyebrow">FICHA · ${actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
+        <div><span class="eyebrow">FICHA · ${actor.className === 'Undead' ? 'MORTO-VIVO' : actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
       ${levelHTML(level, actor.xp || 0)}
       <p class="sheet-house">Vida agora: ${Math.ceil(hpOf(actor))} de ${maxHpOf(actor)}</p>
       ${attributesHTML(attributesAt(tableFor(actor), level))}
       ${actor.trait ? `<p class="sheet-about"><b>${actor.trait}.</b> ${TRAITS[actor.trait] || ''}</p>` : ''}
       <p class="sheet-house">${actorOrigin(actor)}</p>
+    </section>` };
+  },
+  // Continuação da missão 1: os credores levam o ouro, os nobres dão favor e mandam limpar o cemitério.
+  missionTwo() {
+    const heir = heirById(state.heir);
+    const first = heir ? heir.name.split(' ')[0] : 'o herdeiro';
+    return { cls: 'is-pause', html: `<section class="menu-card wide mission-story">
+      <header class="menu-card-head"><span class="eyebrow">MISSÃO 1 CUMPRIDA · A DÍVIDA</span><h2>Os credores levaram tudo. Os nobres gostaram.</h2>
+        <p>À meia-noite, três homens de luto bateram no casarão e contaram as ${MISSION_GOLD} moedas duas vezes. Levaram todas. Deixaram um recibo e um cheiro de vela.</p>
+        <p>De manhã chegou uma carta com o selo do Conselho dos Nobres. Eles ficaram impressionados: ninguém nunca tinha pago aquela dívida. Nem o falecido, que morreu justamente pra não pagar.</p>
+        <p>O favor tem preço. Depois da Estrada Velha começam as Wilds, e no meio delas fica o cemitério velho, onde os nobres enterram os parentes que não querem visitar. Os mortos de lá pararam de ficar deitados. Os nobres querem que voltem pra cova antes do próximo enterro. Mandam ${first} cuidar disso. Pessoalmente, não: mandar heróis serve.</p></header>
+      <div class="mission-rewards"><span class="reward-chip loss">−${MISSION_GOLD} ouro</span><span class="reward-chip gain">+${MISSION_FAVOR} Favor dos nobres</span><span class="reward-chip">Wilds liberadas</span></div>
+      <p class="mission-goal"><b>Nova missão:</b> envie heróis às Wilds e limpe o cemitério. São ${state.cemeteryTotal || UNDEAD_SQUAD.length} mortos-vivos. Todos pontuais.</p>
+      <div class="menu-actions"><button type="button" class="primary" data-action="open-send">Escolher heróis</button><button type="button" data-action="resume">Depois</button></div>
+    </section>` };
+  },
+  // Quem vai ao cemitério: selecionados ficam nas Wilds; desmarcados voltam ao Vale.
+  sendHeroes({ chosen }) {
+    const heroes = state.heroes.filter(hero => hero.alive);
+    const card = hero => `<button type="button" class="retinue-card${chosen.includes(String(hero.id)) ? ' selected' : ''}" data-action="toggle-send" data-id="${hero.id}">
+        <img src="public/art/portraits/${actorPortrait(hero)}-portrait-v01.webp" alt=""><span><b>${hero.name}</b><small>${actorLabel(hero)} · Nível ${hero.level || 1} · ${mapOf(hero) === 'wilds' ? 'nas Wilds' : 'no Vale'}</small></span></button>`;
+    return { cls: 'is-pause', html: `<section class="menu-card wide retinue">
+      <header class="menu-card-head"><span class="eyebrow">MISSÃO · O CEMITÉRIO DAS WILDS</span><h2>Quem vai acordar os mortos de novo</h2>
+        <p>Marque quem vai às Wilds. Quem fica desmarcado volta ao Vale. Lá eles lutam sozinhos, como sempre. Restam ${undeadLeft()} mortos-vivos.</p></header>
+      <div class="heir-row-label">HERÓIS · ${chosen.length} ESCOLHIDOS</div>
+      <div class="retinue-grid">${heroes.map(card).join('') || '<p class="save-empty">Nenhum herói vivo. Os mortos agradecem.</p>'}</div>
+      <div class="menu-actions"><button type="button" class="primary" data-action="confirm-send">Confirmar</button><button type="button" data-action="back">Cancelar</button></div>
     </section>` };
   },
   scenarioEnd({ servants, protectors }) {
@@ -2075,8 +2256,8 @@ const SCREENS = {
         <img src="public/art/portraits/${actorPortrait(actor)}-portrait-v01.webp" alt=""><span><b>${actor.name}</b><small>${actorLabel(actor)} · Nível ${actor.level || 1}</small></span></button>`;
     const ready = servants.length === needS && protectors.length === needP;
     return { cls: 'is-pause', html: `<section class="menu-card wide retinue">
-      <header class="menu-card-head"><span class="eyebrow">FIM DO CENÁRIO 1 · A HERANÇA</span><h2>O Vale do Luto paga as próprias dívidas</h2>
-        <p>Por enquanto. Escolha quem segue com ${heir ? heir.name.split(' ')[0] : 'você'} para o castelo. O resto fica. Ninguém vai chorar.</p></header>
+      <header class="menu-card-head"><span class="eyebrow">FIM DO CENÁRIO 1 · A HERANÇA</span><h2>Dívida paga, mortos de volta à cova</h2>
+        <p>O Vale do Luto paga as próprias dívidas e o cemitério voltou a ficar quieto. Por enquanto. Escolha quem segue com ${heir ? heir.name.split(' ')[0] : 'você'} para o castelo. O resto fica. Ninguém vai chorar.</p></header>
       <div class="heir-row-label">SERVOS · ${servants.length} DE ${needS}</div>
       <div class="retinue-grid">${workers.map(worker => pickCard(worker, 's', servants)).join('') || '<p class="save-empty">Nenhum servo sobrou.</p>'}</div>
       <div class="heir-row-label">PROTETORES · ${protectors.length} DE ${needP}</div>
@@ -2287,6 +2468,33 @@ function initMenus() {
         showScreen('retinueDone');
         break;
       }
+      case 'open-send':
+        menu.stack = [];
+        showScreen('sendHeroes', { chosen: state.heroes.filter(hero => hero.alive && mapOf(hero) === 'wilds').map(hero => String(hero.id)) });
+        break;
+      case 'toggle-send': {
+        const params = menu.stack[menu.stack.length - 1].params;
+        const id = button.dataset.id;
+        if (params.chosen.includes(id)) params.chosen.splice(params.chosen.indexOf(id), 1); else params.chosen.push(id);
+        renderMenu();
+        break;
+      }
+      case 'confirm-send': {
+        const chosen = menu.stack[menu.stack.length - 1].params.chosen;
+        let sent = 0, back = 0;
+        state.heroes.filter(hero => hero.alive).forEach(hero => {
+          const goes = chosen.includes(String(hero.id));
+          if (goes && mapOf(hero) !== 'wilds') { moveHeroToMap(hero, 'wilds'); sent++; }
+          if (!goes && mapOf(hero) === 'wilds') { moveHeroToMap(hero, 'vale'); back++; }
+        });
+        closeMenu();
+        $('#hero-layer').innerHTML = '';
+        updateHud(); renderHeroes();
+        if (state.tab === 'heroes') renderPanel();
+        if (sent) { setView('wilds'); say(`${sent === 1 ? '1 herói partiu' : `${sent} heróis partiram`} para o cemitério das Wilds.`, 'Os heróis foram às Wilds. Os mortos já estão de pé esperando.'); }
+        else if (back) say(`${back === 1 ? '1 herói voltou' : `${back} heróis voltaram`} ao Vale do Luto.`);
+        break;
+      }
       case 'confirm-yes': { const run = menu.pending; menu.pending = null; run?.(); break; }
       case 'save': say(writeSave(game.slot) ? `Salvo no slot ${game.slot}, neste navegador.` : 'Não deu pra salvar. O navegador recusou.'); renderMenu(); break;
       case 'quit': showScreen('quit'); break;
@@ -2295,6 +2503,11 @@ function initMenus() {
     }
   });
   $('#menu-btn').addEventListener('click', openPause);
+  $('#send-heroes-btn').addEventListener('click', () => {
+    if (!game.slot || state.mission !== 2) return;
+    menu.stack = [];
+    showScreen('sendHeroes', { chosen: state.heroes.filter(hero => hero.alive && mapOf(hero) === 'wilds').map(hero => String(hero.id)) });
+  });
   $('#economy-open-btn').addEventListener('click', () => {
     state.tab = 'economy';
     $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
