@@ -35,7 +35,7 @@ const PORTRAIT_ART = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', '
 const PRESTIGE_ART = { Paladin: 'paladin', 'Heavy Knight': 'heavy-knight', Ranger: 'ranger', Assassin: 'assassin', Sentinel: 'sentinel', Templar: 'templar', Elementalist: 'elementalist', Warlock: 'warlock', Sorcerer: 'sorcerer', Necromancer: 'necromancer', Bishop: 'bishop', Cleric: 'cleric' };
 const actorArt = actor => PRESTIGE_ART[actor.prestige] || actor.spriteId || CLASS_ART[actor.className];
 const actorPortrait = actor => PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || 'male-peasant';
-const actorSheet = actor => actor.action === 'action' && !actor.prestige ? 'action' : 'walk';
+const actorSheet = actor => actor.action === 'build' ? 'build' : actor.action === 'action' && !actor.prestige ? 'action' : 'walk';
 // Nomes, manias e falas vindos do Herança de Cinzas original.
 const FIRST_NAMES = ['Vasile','Mirela','Bogdan','Ileana','Radu','Doina','Grigore','Anca','Toma','Zoia','Petru','Lenuța','Costel','Viorica','Mircea','Sanda','Dorin','Floarea','Ion','Rodica'];
 const EPITHETS = ['Três Dedos','Sem Sorte','do Brejo','da Vala','Meio Surdo','Olho Torto','de Ninguém','Dente Mole','do Poço'];
@@ -69,6 +69,7 @@ const BLOCKED_AREAS = [
   { x0: 0, x1: 50, y0: 0, y1: 43, why: 'Em cima do casarão não dá.' },
   { x0: 68, x1: 100, y0: 0, y1: 29, why: 'As ruínas não aceitam obra. Nem visita.' },
   { x0: 0, x1: 100, y0: 0, y1: 16, why: 'A floresta não deixa. Ela tem dono.' },
+  { x0: 0, x1: 100, y0: 96, y1: 109, why: 'A passagem entre as regiões deve ficar livre.' },
 ];
 const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
@@ -81,13 +82,20 @@ const PATH_NODES = [
   { x: 41, y: 58, links: [1, 4] },
   { x: 62, y: 56, links: [1, 6, 10] },
   { x: 40, y: 68, links: [2, 5] },
-  { x: 40, y: 80, links: [4] },
+  { x: 40, y: 80, links: [4, 12] },
   { x: 62, y: 81, links: [3] },
   { x: 90, y: 52, links: [8, 11] },
   { x: 91, y: 29, links: [7, 9] },
   { x: 85, y: 21, links: [8] },                 // Ruínas do covil
   { x: 62, y: 67, links: [3, 11] },           // Contorno sul do lote direito
   { x: 90, y: 67, links: [10, 7] },
+  { x: 42, y: 99, links: [5, 13] },
+  { x: 54, y: 107, links: [12, 14] },
+  { x: 51, y: 121, links: [13, 15] },
+  { x: 39, y: 137, links: [14, 16] },
+  { x: 45, y: 153, links: [15, 17] },
+  { x: 56, y: 171, links: [16, 18] },
+  { x: 44, y: 190, links: [17] },
 ];
 const PATROLS = {
   Warrior: [0, 3, 6, 1, 5],
@@ -208,7 +216,13 @@ function setZoom(index) {
 }
 
 function focusRegion(name) {
-  homeCamera();
+  if (name !== 'road') { homeCamera(); return; }
+  const scene = $('#map-scene');
+  const world = $('#map-world');
+  const bounds = cameraBounds();
+  const desiredCenter = world.offsetHeight * ZOOM_LEVELS[camera.zoom] * 0.75;
+  camera.y = bounds.y ? clampCamera((desiredCenter - scene.clientHeight / 2) / bounds.y) : 0;
+  renderCamera();
 }
 
 function moveCamera(dx, dy) {
@@ -264,6 +278,7 @@ function initCamera() {
   $('#camera-home').addEventListener('click', () => {
     focusRegion('manor');
   });
+  $('#camera-road').addEventListener('click', () => focusRegion('road'));
   $$('.zoom-btn').forEach(button => button.addEventListener('click', () => setZoom(Number(button.dataset.zoom))));
   window.addEventListener('resize', () => { sizeWorld(); renderCamera(); });
   sizeWorld();
@@ -387,7 +402,7 @@ function dailyTaxEstimate() {
 }
 function tavernSpot(actor, tavern) {
   if (!actor.tavernSpot || actor.tavernSpot.site !== tavern.site) {
-    actor.tavernSpot = { site: tavern.site, x: tavern.x + (Math.random() * 4 - 2), y: Math.min(98, tavern.y + 1 + Math.random() * 1.5) };
+    actor.tavernSpot = { site: tavern.site, x: tavern.x + (Math.random() * 4 - 2), y: Math.min(198, tavern.y + 1 + Math.random() * 1.5) };
   }
   return actor.tavernSpot;
 }
@@ -482,7 +497,7 @@ function renderSites() {
       layer.insertBefore(site, $('#hero-layer'));
     }
     site.style.setProperty('--x', `${building.x}%`);
-    site.style.setProperty('--y', `${building.y}%`);
+    site.style.setProperty('--y', `${building.y / 2}%`);
     site.classList.toggle('selected', state.selectedSite === idx);
     site.classList.toggle('constructing', !!building.underConstruction);
     site.style.zIndex = String(Math.round(building.y * 10));
@@ -501,7 +516,7 @@ function renderSites() {
 
 // Se a construção cabe neste ponto: dentro do mapa, fora das áreas bloqueadas e longe das outras.
 function placementProblem(x, y) {
-  if (x < 6 || x > 94 || y > 96) return 'Fora do mapa.';
+  if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
   const blocked = BLOCKED_AREAS.find(area => x >= area.x0 && x <= area.x1 && y >= area.y0 && y <= area.y1);
   if (blocked) return blocked.why;
   const crowded = state.buildings.some(building => Math.hypot(building.x - x, (building.y - y) * MAP_RATIO) < BUILD_SPACING);
@@ -511,7 +526,7 @@ function placementProblem(x, y) {
 
 function worldPoint(event) {
   const rect = $('#map-world').getBoundingClientRect();
-  return { x: (event.clientX - rect.left) / rect.width * 100, y: (event.clientY - rect.top) / rect.height * 100 };
+  return { x: (event.clientX - rect.left) / rect.width * 100, y: (event.clientY - rect.top) / rect.height * 200 };
 }
 
 function showPlacementPreview(event) {
@@ -522,7 +537,7 @@ function showPlacementPreview(event) {
   const art = item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id];
   preview.hidden = false;
   preview.style.setProperty('--x', `${x}%`);
-  preview.style.setProperty('--y', `${y}%`);
+  preview.style.setProperty('--y', `${y / 2}%`);
   preview.style.zIndex = String(Math.round(y * 10) + 1);
   preview.dataset.art = art;
   preview.style.backgroundImage = `url('public/art/${art}-v01.webp')`;
@@ -557,7 +572,7 @@ function renderHeroes() {
     if (token.parentElement !== layer) layer.append(token);
     token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
     token.style.left = `${actor.x}%`;
-    token.style.top = `${actor.y}%`;
+    token.style.top = `${actor.y / 2}%`;
     token.style.zIndex = String(Math.round(actor.y * 10));
     token.dataset.facing = actor.facing || 'front';
     token.dataset.side = actor.side || 'right';
@@ -565,10 +580,16 @@ function renderHeroes() {
       const art = actorArt(actor);
       const sheet = actorSheet(actor);
       if (token.dataset.sheet !== sheet || token.dataset.art !== art) {
-        $('.character-sprite', token).style.backgroundImage = `url('public/art/${art}-${sheet}-v01.webp')`;
+        const extension = art === 'peasant' && sheet === 'build' ? 'png' : 'webp';
+        $('.character-sprite', token).style.backgroundImage = `url('public/art/${art}-${sheet}-v01.${extension}')`;
         token.dataset.sheet = sheet;
         token.dataset.art = art;
       }
+      // Os quadros 2 e 3 da caminhada de costas do camponês têm o balde na mão oposta.
+      // Espelhar só esses quadros mantém o balde no mesmo lado durante a sequência.
+      const reversedBackFrame = art === 'peasant' && sheet === 'walk' && token.dataset.facing === 'back' && (actor.frame || 0) >= 2;
+      const facingLeft = token.dataset.side === 'left';
+      token.style.setProperty('--sprite-scale-x', facingLeft !== reversedBackFrame ? -1 : 1);
     }
     token.style.setProperty('--frame-x', `${(actor.frame || 0) * 100 / 3}%`);
   });
@@ -715,7 +736,7 @@ function assignBuilders() {
   });
 }
 
-const buildSpot = building => ({ x: building.x, y: Math.min(98, building.y + 1.2) });
+const buildSpot = building => ({ x: building.x, y: Math.min(198, building.y + 1.2) });
 
 // Uma vez por segundo de jogo: a obra avança só com o camponês no local.
 function progressConstruction(dt) {
@@ -931,7 +952,7 @@ function nextActorGoal(actor) {
     const target = actor.workTrip ? home : workplace;
     routeActor(actor, actor.workTrip ? (home ? nearestNode(home) : 0) : workerDestination(actor));
     // Da trilha até a porta da construção, em linha reta.
-    actor.finalPoint = target ? { x: target.x, y: Math.min(98, target.y + 1.2) } : null;
+    actor.finalPoint = target ? { x: target.x, y: Math.min(198, target.y + 1.2) } : null;
     actor.headingToWork = !!workplace;
     actor.workTrip = !actor.workTrip;
     return;
@@ -960,6 +981,18 @@ function animateActors(now) {
   if (!game.running) { requestAnimationFrame(animateActors); return; }
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   [...state.heroes, ...state.workers].filter(actor => actor.alive).forEach(actor => {
+    const construction = actor.className === 'Peasant' && actor.buildSite != null
+      ? state.buildings.find(building => building.site === actor.buildSite && building.underConstruction)
+      : null;
+    if (construction) {
+      const spot = buildSpot(construction);
+      if (Math.hypot(actor.x - spot.x, actor.y - spot.y) < 1.5) {
+        actor.actionClock = (actor.action === 'build' ? actor.actionClock || 0 : 0) + delta;
+        actor.action = 'build';
+        actor.frame = reducedMotion ? 0 : Math.floor(actor.actionClock * 5) % 4;
+        return;
+      }
+    }
     if (actor.wait > 0) {
       actor.wait = Math.max(0, actor.wait - delta);
       actor.action = actor.actionTime > 0 ? 'action' : 'walk';
@@ -1146,11 +1179,9 @@ function costHTML(gold, wood) {
 }
 
 function pixelIcon(name, size = 48) {
-  const rows = PIXEL_ART[name];
-  if (!rows) return '';
-  let rects = '';
-  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL_COLORS[ch]}"/>`; }));
-  return `<svg class="pixel-icon" width="${size}" height="${size}" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
+  if (!PIXEL_ART[name]) return '';
+  const asset = { ringCopper: 'ring-copper', ringBone: 'ring-bone' }[name] || name;
+  return `<img class="pixel-icon" src="public/art/icon-${asset}-photo-v01.png" width="${size}" height="${size}" alt="" aria-hidden="true" decoding="async">`;
 }
 
 const EQUIP_SLOTS = [

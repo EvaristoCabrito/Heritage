@@ -52,16 +52,24 @@
       <main class="stage">
         <section class="map-scene" id="map-scene" tabindex="0" aria-label="Mapa do domínio. Arraste para explorar; use as setas do teclado ou a roda do mouse para mover a câmera.">
           <div class="map-world" id="map-world">
-            <img class="map-art" src="public/art/mordavia-farmstead-open-v02.webp" alt="Casarão e terrenos do Vale do Luto" draggable="false">
-            <div class="map-atmosphere" aria-hidden="true"><span class="manor-smoke smoke-a"></span><span class="manor-smoke smoke-b"></span></div>
+            <div class="map-region manor-region">
+              <img class="map-art" src="public/art/mordavia-farmstead-open-v02.webp" alt="Casarão e terrenos do Vale do Luto" draggable="false">
+              <div class="map-atmosphere" aria-hidden="true"><span class="manor-smoke smoke-a"></span><span class="manor-smoke smoke-b"></span></div>
+            </div>
+            <div class="map-region road-region">
+              <img class="map-art" src="public/art/mordavia-old-road-color-match-v02.webp" alt="Estrada Velha" draggable="false">
+            </div>
             <div class="site-layer" id="site-layer" aria-label="Construções do domínio">
               <div class="placement-preview" id="placement-preview" aria-hidden="true"></div>
               <div id="hero-layer" class="hero-layer" aria-label="Personagens do domínio"></div>
             </div>
+            <img class="tree-foreground manor-trees" src="public/art/mordavia-first-trees-v03.png" alt="" draggable="false">
+            <img class="tree-foreground road-trees" src="public/art/mordavia-second-trees-v03.png" alt="" draggable="false">
           </div>
           <div class="map-vignette"></div>
           <div class="map-tools">
             <button class="camera-home" id="camera-home" type="button" aria-label="Centralizar câmera no casarão" title="Voltar ao casarão">⌂</button>
+            <button class="camera-road" id="camera-road" type="button" aria-label="Centralizar câmera na Estrada Velha" title="Ir para a Estrada Velha">↓</button>
             <div class="zoom-control" role="group" aria-label="Nível de zoom">
               <button class="zoom-btn active" type="button" data-zoom="0" aria-label="Zoom 1: visão ampla" aria-pressed="true" title="Ampla">1</button>
               <button class="zoom-btn" type="button" data-zoom="1" aria-label="Zoom 2: visão normal" aria-pressed="false" title="Normal">2</button>
