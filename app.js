@@ -705,6 +705,7 @@ function renderHeroes() {
       const art = actorArt(actor);
       token.innerHTML = art
         ? `<span class="character-sprite" style="background-image:url('public/art/${art}-walk-v01.${art.startsWith('bandit') ? 'png' : 'webp'}')" aria-hidden="true"></span><span class="character-name">${actor.name}</span>`
+        : actor.className === 'Monster' ? `<span class="monster-skull" aria-hidden="true">☠</span><span class="character-name">${actor.name}</span>`
         : `<span class="hero-face">${actor.className[0]}</span><span class="character-name">${actor.name}</span>`;
       token.addEventListener('click', () => {
         if (state.selectedBuild) return;
@@ -719,7 +720,7 @@ function renderHeroes() {
     }
     if (token.parentElement !== layer) layer.append(token);
     const hurt = actor.hp != null && actor.hp < maxHpOf(actor);
-    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
+    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
     if (hurt) token.style.setProperty('--hp', `${Math.max(0, Math.round(hpOf(actor) / maxHpOf(actor) * 100))}%`);
     token.style.left = `${actor.x}%`;
     token.style.top = `${actor.y / 2}%`;
@@ -742,6 +743,13 @@ function renderHeroes() {
       token.style.setProperty('--sprite-scale-x', facingLeft !== reversedBackFrame ? -1 : 1);
     }
     token.style.setProperty('--frame-x', `${(actor.frame || 0) * 100 / 3}%`);
+    // Recompensa pela cabeça: a placa acompanha a caveira.
+    const wanted = actor.className === 'Monster' ? (state.bounties || []).find(bounty => bounty.target === actor.id) : null;
+    let tag = token.querySelector('.wanted-tag');
+    if (wanted) {
+      if (!tag) { tag = document.createElement('span'); tag.className = 'wanted-tag'; token.append(tag); }
+      if (tag.textContent !== String(wanted.reward)) tag.textContent = String(wanted.reward);
+    } else if (tag) tag.remove();
   });
   [...layer.children].filter(node => !active.has(node.dataset.actor)).forEach(node => node.remove());
 }
@@ -818,6 +826,7 @@ function renderPanel() {
   $$('[data-bounty-input]', host).forEach(input => input.addEventListener('change', () => { state.bountyAmount = Math.max(5, Math.round(Number(input.value) || 25)); renderPanel(); }));
   $$('[data-bounty-place]', host).forEach(button => button.addEventListener('click', () => (state.placingBounty ? cancelBountyPlacement() : startBountyPlacement())));
   $$('[data-bounty-preset]', host).forEach(button => button.addEventListener('click', () => createBounty(BOUNTY_PRESETS[button.dataset.bountyPreset])));
+  $$('[data-bounty-hunt]', host).forEach(button => button.addEventListener('click', () => huntBounty(button.dataset.bountyHunt)));
   $$('[data-bounty-cancel]', host).forEach(button => button.addEventListener('click', () => cancelBounty(button.dataset.bountyCancel)));
   $$('[data-deliver]', host).forEach(button => button.addEventListener('click', () => deliverDemand(button.dataset.deliver)));
   $$('[data-armory-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeArmory(Number(button.dataset.armoryUpgrade))));
@@ -1347,7 +1356,7 @@ function animateActors(now) {
     actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
     actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
   });
-  (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => banditStep(bandit, delta, reducedMotion));
+  (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => (bandit.className === 'Monster' ? monsterStep : banditStep)(bandit, delta, reducedMotion));
   renderHeroes();
   requestAnimationFrame(animateActors);
 }
@@ -1705,6 +1714,7 @@ function armoryBoxHTML(armory) {
     <ul class="shop-list">${forSale.map(item => `<li><span><b>${item.name}</b><small>${item.peasant ? (item.prof ? item.prof.map(id => PROFESSIONS[id].name).join(', ') : 'Qualquer camponês') : item.classes ? item.classes.join(', ') : 'Qualquer herói'} · ${bonusText(item.bonus)}</small></span><em>${item.price}</em></li>`).join('')}</ul></section>`;
 }
 function gearHTML(actor) {
+  if (actor.className === 'Bandit' || actor.className === 'Monster') return '';
   return `<div class="sheet-section-label">EQUIPAMENTO</div><div class="equip-grid">${slotsFor(actor).map(({ slot, label }) => {
     const item = GEAR[gearOf(actor)[slot]];
     return `<div class="equip-slot${item ? '' : ' empty'}"><span class="gear-icon" aria-hidden="true">${label[0]}</span><span><small>${label}</small><b>${item ? item.name : 'Vazio'}</b><em>${item ? `${bonusText(item.bonus)}. ${item.about}` : ''}</em></span></div>`;
@@ -1749,6 +1759,7 @@ const isFemalePeasant = actor => actor.spriteId === 'female-peasant';
 function tableFor(actor) {
   if (actor === 'heir') return EMBER_CLASSES.captain;
   if (actor.className === 'Bandit') return EMBER_CLASSES[actor.kind === 'crossbow' ? 'brigandCrossbowman' : 'rogue'];
+  if (actor.className === 'Monster') return SKELETON_TABLE;
   if (actor.className === 'Peasant') return EMBER_CLASSES[isFemalePeasant(actor) ? 'villagerF1' : 'peasant1'];
   return EMBER_CLASSES[CLASS_TABLE[actor.prestige] || CLASS_TABLE[actor.className]] || EMBER_CLASSES.swordsman;
 }
@@ -1798,10 +1809,11 @@ function peasantName(female) {
   for (let i = 0; i < 40; i++) { const name = `${pick(firsts)} ${pick(PEASANT_EPITHETS)}`; if (!taken.has(name)) return name; }
   return `${pick(firsts)} ${pick(PEASANT_EPITHETS)} ${state.workers.length + 1}`;
 }
-const actorLabel = actor => actor.className === 'Bandit' ? (actor.kind === 'crossbow' ? 'Ladrão de besta' : 'Ladrão de espada') : actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.prestige ? ` · ${actor.prestige}` : ''}`;
+const actorLabel = actor => actor.className === 'Monster' ? `Caveira · nível ${actor.level || 1}` : actor.className === 'Bandit' ? (actor.kind === 'crossbow' ? 'Ladrão de besta' : 'Ladrão de espada') : actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.prestige ? ` · ${actor.prestige}` : ''}`;
 const findActor = id => [...state.heroes, ...state.workers, ...(state.bandits || [])].find(actor => String(actor.id) === String(id)) || null;
 function actorOrigin(actor) {
   if (actor.className === 'Bandit') return 'Veio pela estrada velha atrás do que não é dele.';
+  if (actor.className === 'Monster') return 'Levantou do cemitério dos Wilds. Ninguém sabe o que quer. Ela também não.';
   if (actor.className === 'Peasant' && homeOf(actor)) return 'Veio morar no casebre. Não tinha pra onde ir mesmo.';
   if (actor.className === 'Peasant') return actor.workplace ? `Veio com ${actor.workplace.type === 'mill' ? 'o moinho' : 'a fazenda'}. Não tinha pra onde ir mesmo.` : 'Veio junto com o casarão, como as dívidas.';
   if (actor.home === 'manor') return 'Veio junto com o casarão. Ninguém lembra de ter contratado.';
@@ -2169,11 +2181,34 @@ function createBounty(spec) {
   const node = spec.node ?? nearestNode(spec);
   const point = spec.x != null ? { x: spec.x, y: spec.y } : { x: PATH_NODES[node].x, y: PATH_NODES[node].y };
   const bounty = { id: `bounty-${Date.now()}-${Math.floor(Math.random() * 1000)}`, label: spec.label || bountyLabelAt(point.x, point.y), reward, x: point.x, y: point.y, node,
-    route: spec.route || null, takenBy: null, until: state.minutes + BOUNTY_DAYS * 1440 };
+    route: spec.route || null, target: spec.target || null, takenBy: null, until: state.minutes + BOUNTY_DAYS * 1440 };
   state.bounties.push(bounty);
   renderSites(); renderPanel(); updateHud();
   say(`Recompensa de ${reward} de ouro: ${bounty.label.toLowerCase()}. Agora é ver quem tem coragem. Ou dívida.`);
   return bounty;
+}
+// Caça: a recompensa fica presa à caveira e vale enquanto ela andar.
+function huntBounty(monsterId) {
+  const monster = (state.bandits || []).find(actor => actor.id === monsterId && actor.alive);
+  if (!monster || state.bounties.some(bounty => bounty.target === monsterId)) return;
+  createBounty({ x: monster.x, y: monster.y, target: monster.id, label: `Caçar a ${monster.name}` });
+}
+const bountyPos = bounty => {
+  if (!bounty.target) return bounty;
+  const monster = (state.bandits || []).find(actor => actor.id === bounty.target);
+  return monster ? { x: monster.x, y: monster.y } : bounty;
+};
+// Caveira derrubada: quem derrubou embolsa; se não foi herói, quem aceitou; senão o ouro volta.
+function payHuntBounty(monster, killer) {
+  const bounty = (state.bounties || []).find(item => item.target === monster.id);
+  if (!bounty) return '';
+  const taker = bountyTaker(bounty);
+  const winner = killer && state.heroes.includes(killer) ? killer : taker;
+  if (taker) taker.bountyId = null;
+  state.bounties = state.bounties.filter(item => item !== bounty);
+  if (winner) { lootHero(winner, bounty.reward); return ` ${winner.name} embolsou a recompensa de ${bounty.reward} de ouro.`; }
+  if (!state.testMode) state.gold += bounty.reward;
+  return ` A recompensa de ${bounty.reward} de ouro voltou pro cofre.`;
 }
 function cancelBounty(id) {
   const bounty = state.bounties.find(item => item.id === id);
@@ -2205,8 +2240,9 @@ function placeBountyAt(x, y) {
 }
 // O herói pesa o valor contra a distância e o perigo; a mania muda a conta.
 function bountyScore(hero, bounty) {
-  const dist = Math.hypot(hero.x - bounty.x, hero.y - bounty.y);
-  const far = bounty.route || bounty.y > 100;
+  const pos = bountyPos(bounty);
+  const dist = Math.hypot(hero.x - pos.x, hero.y - pos.y);
+  const far = bounty.route || pos.y > 100;
   let score = bounty.reward / (10 + dist * 0.3);
   switch (hero.trait) {
     case 'Ganancioso': if (bounty.reward < 40) return 0; score *= 1.5; break;
@@ -2243,6 +2279,14 @@ function completeBounty(hero, bounty) {
 }
 // Um passo da recompensa: anda até o ponto (ou pelo roteiro da patrulha) e vigia.
 function bountyStep(hero, bounty) {
+  if (bounty.target) {
+    const monster = (state.bandits || []).find(actor => actor.id === bounty.target && actor.alive);
+    if (!monster) return;
+    hero.task = bounty.label;
+    routeActor(hero, nearestNode(monster));
+    hero.finalPoint = { x: monster.x, y: monster.y };
+    return;
+  }
   if (bounty.route) {
     const node = PATH_NODES[bounty.route[bounty.leg || 0]];
     if (Math.hypot(hero.x - node.x, hero.y - node.y) < 1) {
@@ -2267,7 +2311,12 @@ function processBounties() {
   (state.bounties || []).forEach(bounty => {
     if (bounty.takenBy != null && !bountyTaker(bounty)) { bounty.takenBy = null; bounty.leg = 0; bounty.arrivedAt = null; }
   });
-  const expired = (state.bounties || []).filter(bounty => state.minutes > bounty.until && !bountyTaker(bounty));
+  // Caça cuja caveira sumiu sem ninguém derrubar: o ouro volta.
+  (state.bounties || []).filter(bounty => bounty.target && !(state.bandits || []).some(actor => actor.id === bounty.target && actor.alive)).forEach(bounty => {
+    if (!state.testMode) state.gold += bounty.reward;
+    state.bounties = state.bounties.filter(item => item !== bounty);
+  });
+  const expired = (state.bounties || []).filter(bounty => !bounty.target && state.minutes > bounty.until && !bountyTaker(bounty));
   expired.forEach(bounty => {
     if (!state.testMode) state.gold += bounty.reward;
     say(`Ninguém quis a recompensa (${bounty.label.toLowerCase()}). ${bounty.reward} de ouro voltou pro cofre, envergonhado.`);
@@ -2276,23 +2325,29 @@ function processBounties() {
 }
 function bountyPanelHTML() {
   const amounts = [10, 25, 50, 100];
+  const monsters = (state.bandits || []).filter(actor => actor.alive && actor.className === 'Monster');
+  const hunts = monsters.filter(monster => !(state.bounties || []).some(bounty => bounty.target === monster.id)).map(monster => {
+    const eta = skeletonEta(monster);
+    return `<div class="bounty-row monster-row"><span><b>${monster.name}</b><small>nível ${monster.level} · ${eta > 0 ? `chega à cidade em ~${Math.max(1, Math.round(eta / 60))}h` : 'atacando a cidade agora'}</small></span><button type="button" class="hut-upgrade hunt-btn" data-bounty-hunt="${monster.id}">Recompensa · ${state.bountyAmount}</button></div>`;
+  }).join('');
   const rows = (state.bounties || []).map(bounty => {
     const taker = bountyTaker(bounty);
-    const status = taker ? (bounty.route ? `${taker.name} · trecho ${Math.min(bounty.leg || 0, bounty.route.length)} de ${bounty.route.length}` : bounty.arrivedAt != null ? `${taker.name} vigiando · ${Math.max(0, BOUNTY_GUARD - (state.minutes - bounty.arrivedAt))} min` : `${taker.name} a caminho`) : 'Ninguém aceitou ainda';
-    return `<div class="bounty-row"><span><b>${bounty.label}</b><small>${status} · vence em ${Math.max(0, Math.ceil((bounty.until - state.minutes) / 60))}h</small></span><em>${bounty.reward}</em><button type="button" class="bounty-cancel" data-bounty-cancel="${bounty.id}" title="Cancelar e devolver o ouro">×</button></div>`;
+    const status = bounty.target ? (taker ? `${taker.name} foi caçar` : 'Ninguém aceitou ainda') : taker ? (bounty.route ? `${taker.name} · trecho ${Math.min(bounty.leg || 0, bounty.route.length)} de ${bounty.route.length}` : bounty.arrivedAt != null ? `${taker.name} vigiando · ${Math.max(0, BOUNTY_GUARD - (state.minutes - bounty.arrivedAt))} min` : `${taker.name} a caminho`) : 'Ninguém aceitou ainda';
+    return `<div class="bounty-row"><span><b>${bounty.label}</b><small>${status}${bounty.target ? '' : ` · vence em ${Math.max(0, Math.ceil((bounty.until - state.minutes) / 60))}h`}</small></span><em>${bounty.reward}</em><button type="button" class="bounty-cancel" data-bounty-cancel="${bounty.id}" title="Cancelar e devolver o ouro">×</button></div>`;
   }).join('');
   return `<section class="farm-selector hut-box bounty-box"><div class="farm-selector-heading"><b>Recompensas</b><small>você paga, eles decidem</small></div>
     <div class="bounty-amount"><span>Valor</span>${amounts.map(value => `<button type="button" class="bounty-chip${state.bountyAmount === value ? ' active' : ''}" data-bounty-amount="${value}">${value}</button>`).join('')}<input type="number" min="5" step="5" value="${state.bountyAmount}" data-bounty-input aria-label="Valor da recompensa"></div>
     <div class="guild-branches"><button type="button" class="hut-upgrade" data-bounty-place>${state.placingBounty ? 'Toque no mapa…' : 'Marcar no mapa'}</button><button type="button" class="hut-upgrade" data-bounty-preset="south">Patrulhar o segundo mapa</button></div>
     <button type="button" class="hut-upgrade bounty-lair" data-bounty-preset="lair">Vigiar as ruínas do covil</button>
     <p class="storage-items">O ouro sai do cofre agora. Ganancioso só vai por 40 ou mais; Covarde não vai longe por pouco; Teimoso às vezes nem escuta.</p>
+    ${hunts ? `<div class="food-label">CAVEIRAS NA ESTRADA</div><div class="bounty-list">${hunts}</div>` : ''}
     ${rows ? `<div class="bounty-list">${rows}</div>` : ''}</section>`;
 }
 function renderBountyFlags() {
   const layer = $('#site-layer');
-  const ids = new Set((state.bounties || []).map(bounty => bounty.id));
+  const ids = new Set((state.bounties || []).filter(bounty => !bounty.target).map(bounty => bounty.id));
   $$('.bounty-flag', layer).filter(flag => !ids.has(flag.dataset.bounty)).forEach(flag => flag.remove());
-  (state.bounties || []).forEach(bounty => {
+  (state.bounties || []).filter(bounty => !bounty.target).forEach(bounty => {
     let flag = $(`.bounty-flag[data-bounty="${bounty.id}"]`, layer);
     if (!flag) {
       flag = document.createElement('div');
@@ -2397,6 +2452,73 @@ function foodPanelHTML() {
 // vão roubar uma construção e fogem. Heróis que os veem lutam sozinhos (idle combat).
 // Dano e experiência seguem o Ember: ataque − defesa (magia para magos) e 13 + 3 × (nível do alvo − nível de quem bate).
 // ==========================================================================
+// Caveiras: toda noite, às 22h, o cemitério dos Wilds (ponta sul da estrada velha) solta uma.
+// Ela sobe a estrada devagar até a cidade; chegando, ataca as construções até alguém derrubar.
+const SKELETON_TABLE = { mov: 3, stats: Array.from({ length: 30 }, (_, i) => [30 + 6 * i, 7 + 2 * i, 0, 4 + i, 2 + Math.floor(i / 2)]) };
+const SKELETON_PATH = [18, 17, 16, 15, 14, 13, 12, 5, 4, 2, 1];
+const SKELETON_SPEED = 0.5; // bem mais lenta que gente: dá tempo de pagar alguém pra ir atrás
+const SKELETON_NAMES = ['do Coveiro Esquecido', 'Sem Lápide', 'da Cova Rasa', 'do Velório Barato', 'Que Ninguém Chorou', 'do Jazigo Vendido', 'da Vala Comum'];
+const isHostile = actor => actor.className === 'Bandit' || actor.className === 'Monster';
+function spawnSkeleton() {
+  const day = Math.floor(state.minutes / 1440) + 1;
+  const start = PATH_NODES[SKELETON_PATH[0]];
+  state.bandits.push({
+    id: `skeleton-${Date.now()}`, className: 'Monster', kind: 'skeleton', name: `Caveira ${pick(SKELETON_NAMES)}`,
+    level: Math.min(HEIR_MAX_LEVEL, day), alive: true, x: start.x, y: Math.min(198, start.y + 2), leg: 0, mode: 'walk', bornAt: state.minutes,
+  });
+  say('O cemitério dos Wilds soltou uma caveira. Ela vem subindo a estrada velha, devagar. Dá tempo de pagar alguém pra ir atrás.', 'Uma caveira vem pela estrada velha.');
+  if (state.tab === 'heroes') renderPanel();
+}
+// Quanto falta (em minutos de jogo, na velocidade 1) para a caveira chegar à cidade.
+function skeletonEta(monster) {
+  if (monster.mode !== 'walk') return 0;
+  let dist = 0, from = monster;
+  for (let i = monster.leg || 0; i < SKELETON_PATH.length; i++) { const node = PATH_NODES[SKELETON_PATH[i]]; dist += Math.hypot(node.x - from.x, node.y - from.y); from = node; }
+  return dist / SKELETON_SPEED;
+}
+function monsterStep(monster, delta, reducedMotion) {
+  monster.cooldown = (monster.cooldown || 0) - delta;
+  monster.calm = Math.max(0, (monster.calm || 0) - delta);
+  const heroes = state.heroes.filter(hero => hero.alive && distanceTo(monster, hero) < 6);
+  const foe = heroes.sort((x, y) => distanceTo(monster, x) - distanceTo(monster, y))[0] || state.workers.find(worker => worker.alive && distanceTo(monster, worker) < 2.5) || null;
+  if (foe) {
+    if (distanceTo(monster, foe) > MELEE_RANGE) { animateWalk(monster, moveToward(monster, foe, 1.4 * delta) > 0, delta, reducedMotion); return; }
+    faceToward(monster, foe);
+    if (monster.cooldown <= 0) { monster.cooldown = ATTACK_COOLDOWN; monster.attackAnim = 0.5; monster.actionClock = 0; strike(monster, foe); }
+    animateAttack(monster, delta, reducedMotion);
+    return;
+  }
+  if (monster.mode === 'walk') {
+    const node = PATH_NODES[SKELETON_PATH[monster.leg || 0]];
+    animateWalk(monster, moveToward(monster, node, SKELETON_SPEED * delta) > 0, delta, reducedMotion);
+    if (distanceTo(monster, node) < 0.5) {
+      monster.leg = (monster.leg || 0) + 1;
+      if (monster.leg >= SKELETON_PATH.length) {
+        monster.mode = 'siege';
+        say(`${monster.name} chegou à cidade e começou a bater nas paredes. Com os ossos.`);
+      }
+    }
+    return;
+  }
+  // Na cidade: escolhe a construção mais perto e bate até virar ruína.
+  let target = monster.targetSite != null ? state.buildings.find(building => building.site === monster.targetSite && !building.ruined && !building.underConstruction) : null;
+  if (!target) {
+    const options = state.buildings.filter(building => !building.ruined && !building.underConstruction);
+    target = options.sort((a, b) => distanceTo(monster, a) - distanceTo(monster, b))[0] || null;
+    monster.targetSite = target ? target.site : null;
+  }
+  const spot = target ? { x: target.x, y: Math.min(198, target.y + 1.2) } : { x: 42, y: 40 };
+  if (distanceTo(monster, spot) > 1.5) { animateWalk(monster, moveToward(monster, spot, 1.0 * delta) > 0, delta, reducedMotion); return; }
+  if (!target) { animateWalk(monster, false, delta, reducedMotion); return; }
+  faceToward(monster, target);
+  if (monster.cooldown <= 0) {
+    monster.cooldown = ATTACK_COOLDOWN * 1.5; monster.attackAnim = 0.5; monster.actionClock = 0;
+    damageBuilding(target, Math.round(statsOf(monster).atk * 1.5));
+    if (target.ruined) monster.targetSite = null;
+  }
+  animateAttack(monster, delta, reducedMotion);
+}
+
 const RAID_EVERY = 360;                 // minutos de jogo entre bandos
 const AGGRO_RANGE = 22;                 // heróis enxergam ladrões até esta distância
 const MELEE_RANGE = 2.5;
@@ -2485,14 +2607,16 @@ function killActor(victim, killer) {
       if (qty) back = ` Recuperou ${qty} de ${FOOD_TYPES.find(food => food.id === victim.loot.food.id)?.name.toLowerCase()}.`;
     }
     // O que o ladrão tinha no bolso é de quem derrubou: o loot do herói.
-    if (killer && !isBandit(killer) && killer.className !== 'Peasant') {
+    if (killer && !isHostile(killer) && killer.className !== 'Peasant') {
       const coins = 2 + Math.floor(Math.random() * 4) + 2 * (victim.level || 1);
       lootHero(killer, coins);
       back += ` ${killer.name} ficou com ${coins} de ouro do bolso dele.`;
     }
     say(`${killer ? killer.name : 'Alguém'} derrubou ${victim.name}.${back}`, `${victim.name} não volta mais pela estrada velha.`);
+  } else if (victim.className === 'Monster') {
+    say(`${killer ? killer.name : 'Alguém'} desmontou ${victim.name}. Os ossos voltaram a ser só ossos.${payHuntBounty(victim, killer)}`, `${victim.name} não sobe mais a estrada.`);
   } else if (victim.className === 'Peasant') {
-    say(`${victim.name} foi morto por ladrões. ${pick(['Os outros pediram aumento.', 'A colheita atrasou.', 'Ele tinha nome. Ninguém lembra qual.'])}`);
+    say(`${victim.name} foi ${isFemalePeasant(victim) ? 'morta' : 'morto'}${killer?.className === 'Monster' ? ' por uma caveira' : ' por ladrões'}. ${pick(['Os outros pediram aumento.', 'A colheita atrasou.', 'Ele tinha nome. Ninguém lembra qual.'])}`);
   } else {
     say(pick(DEATH_MSG)(victim.name), `${victim.name} morreu lutando contra ladrões.`);
   }
@@ -2510,7 +2634,7 @@ function strike(attacker, defender) {
   defender.calm = 5;
   attacker.calm = 5;
   const killed = defender.hp <= 0;
-  if (!isBandit(attacker) && attacker.className !== 'Peasant') {
+  if (!isHostile(attacker) && attacker.className !== 'Peasant') {
     let xp = Math.max(1, 13 + 3 * ((defender.level || 1) - (attacker.level || 1)));
     if (killed) xp = Math.floor(xp * 1.25);
     const before = attacker.level || 1;
@@ -2646,6 +2770,8 @@ function spawnBandits() {
 function combatTick(minutesPassed) {
   if (state.nextRaidAt == null) state.nextRaidAt = 720;
   if (state.minutes >= state.nextRaidAt) { spawnBandits(); state.nextRaidAt += RAID_EVERY; }
+  const night = Math.floor(state.minutes / 1440);
+  if (state.minutes % 1440 >= 1320 && state.lastSkeletonDay !== night) { state.lastSkeletonDay = night; spawnSkeleton(); }
   state.bandits = (state.bandits || []).filter(bandit => bandit.alive);
   [...state.heroes, ...state.workers].filter(actor => actor.alive && actor.hp != null && (actor.calm || 0) <= 0).forEach(actor => {
     actor.hp = Math.min(maxHpOf(actor), actor.hp + maxHpOf(actor) * 0.03 * minutesPassed);
@@ -2992,7 +3118,7 @@ const SCREENS = {
     return { cls: 'is-pause', html: `<section class="menu-card sheet">
       <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar ficha" title="Fechar ficha">×</button></div>
       <div class="sheet-top"><img class="sheet-portrait" src="public/art/portraits/${actorPortrait(actor)}-portrait-v01.webp" alt="">
-        <div><span class="eyebrow">FICHA · ${actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
+        <div><span class="eyebrow">FICHA · ${actor.className === 'Monster' ? 'MONSTRO' : actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
       ${levelHTML(level, actor.xp || 0)}
       <p class="sheet-house">Vida agora: ${Math.ceil(hpOf(actor))} de ${maxHpOf(actor)}</p>
       ${attributesHTML(attributesAt(tableFor(actor), level), actor)}
