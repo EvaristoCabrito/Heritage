@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#151714">
+    <meta name="description" content="Protótipo de estratégia indireta em Mordavia, no universo Ember Ashes.">
+    <title>Mordavia — A Fazenda Falida</title>
+    <link rel="preload" as="image" href="public/art/mordavia-farmstead-open-v02.webp">
+    <link rel="preload" as="image" href="public/art/warrior-walk-v01.webp">
+    <link rel="preload" as="image" href="public/art/healer-walk-v01.webp">
+    <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
+    <link rel="stylesheet" href="app.css?v=8">
+    <script defer src="app.js?v=8"></script>
+  </head>
+  <body>
+    <div class="game-frame">
+      <header class="topbar">
+        <div class="brand-block">
+          <div class="sigil" aria-hidden="true">M</div>
+          <div class="brand-copy">
+            <span class="eyebrow">EMBER ASHES · MORDAVIA</span>
+            <h1>A Fazenda Falida</h1>
+          </div>
+          <span class="chapter-tag">CENÁRIO 01 <i>·</i> HERANÇA</span>
+        </div>
+        <div class="resource-strip" aria-label="Recursos do domínio">
+          <div class="resource gold"><span class="resource-mark">G</span><span><small>OURO</small><strong id="gold">240</strong></span><em id="gold-rate">+1/s</em></div>
+          <div class="resource grain"><span class="resource-mark">F</span><span><small>PROVISÕES</small><strong id="grain">58</strong></span><em id="grain-rate">+0/s</em></div>
+          <div class="resource timber"><span class="resource-mark">M</span><span><small>MADEIRA</small><strong id="timber">30</strong></span><em id="timber-rate">+0/s</em></div>
+          <div class="resource people"><span class="resource-mark">P</span><span><small>POVO</small><strong id="people">14</strong></span><em>almas</em></div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="map-column" aria-label="Mapa do domínio">
+          <div class="map-toolbar">
+            <div><span class="eyebrow">PROPRIEDADE DE VOSS</span><strong>Vale do Luto</strong></div>
+            <div class="world-clock"><span class="live-dot"></span><span id="clock">06:20</span><small>AMANHECER</small></div>
+            <div class="speed-control" aria-label="Velocidade do jogo">
+              <button class="speed-btn active" data-speed="1" aria-label="Velocidade normal">I</button>
+              <button class="speed-btn" data-speed="2" aria-label="Velocidade rápida">II</button>
+              <button class="speed-btn" data-speed="3" aria-label="Velocidade máxima">III</button>
+            </div>
+          </div>
+
+          <div class="map-scene" id="map-scene" tabindex="0" aria-label="Mapa do domínio. Arraste para explorar; use as setas do teclado ou a roda do mouse para mover a câmera.">
+            <div class="map-world" id="map-world">
+              <div class="map-region manor-region">
+                <img class="map-art" src="public/art/mordavia-farmstead-open-v02.webp" alt="Casarão e terrenos do Vale do Luto" draggable="false">
+                <div class="map-atmosphere" aria-hidden="true"><span class="manor-smoke smoke-a"></span><span class="manor-smoke smoke-b"></span></div>
+                <div class="den-marker"><span class="den-pulse"></span><b>COVIL</b><small>pressão crescente</small></div>
+                <div class="site-layer" id="site-layer" aria-label="Lotes do casarão">
+                  <button class="site" data-site="0" style="--x:77%;--y:42%"><span class="site-ring">+</span><small>LOTE LIVRE</small></button>
+                  <button class="site" data-site="1" style="--x:26%;--y:56%"><span class="site-ring">+</span><small>LOTE LIVRE</small></button>
+                  <button class="site" data-site="2" style="--x:76%;--y:63%"><span class="site-ring">+</span><small>LOTE LIVRE</small></button>
+                  <button class="site" data-site="3" style="--x:25%;--y:77%"><span class="site-ring">+</span><small>LOTE LIVRE</small></button>
+                  <button class="site" data-site="4" style="--x:76%;--y:86%"><span class="site-ring">+</span><small>LOTE LIVRE</small></button>
+                  <button class="site" data-site="5" style="--x:54%;--y:82%"><span class="site-ring">+</span><small>LOTE LIVRE</small></button>
+                  <div id="lair-layer-manor" class="lair-layer" aria-label="Dungeons e covis do casarão"></div>
+                  <div id="hero-layer" class="hero-layer" aria-label="Personagens do casarão"></div>
+                </div>
+              </div>
+              <div class="map-region road-region">
+                <img class="map-art" src="public/art/mordavia-old-road-v01.png" alt="Estrada Velha com terrenos abertos para ampliar o domínio" draggable="false">
+                <div class="region-label">ESTRADA VELHA</div>
+                <div class="site-layer" aria-label="Lotes da Estrada Velha">
+                  <button class="site" data-site="6" style="--x:23%;--y:31%"><span class="site-ring">+</span><small>LOTE LIVRE</small></button>
+                  <button class="site" data-site="7" style="--x:79%;--y:25%"><span class="site-ring">+</span><small>LOTE LIVRE</small></button>
+                  <button class="site" data-site="8" style="--x:77%;--y:56%"><span class="site-ring">+</span><small>LOTE LIVRE</small></button>
+                  <button class="site" data-site="9" style="--x:23%;--y:68%"><span class="site-ring">+</span><small>LOTE LIVRE</small></button>
+                  <div id="lair-layer-road" class="lair-layer" aria-label="Dungeons e covis da Estrada Velha"></div>
+                  <div id="hero-layer-road" class="hero-layer" aria-label="Personagens da Estrada Velha"></div>
+                </div>
+              </div>
+            </div>
+            <div class="map-vignette"></div>
+            <div class="map-title"><span>VALE DO LUTO</span><small>DOMÍNIO RECÉM-HERDADO</small></div>
+            <button class="camera-home" id="camera-home" type="button" aria-label="Centralizar câmera no casarão" title="Voltar ao casarão">⌂</button>
+            <div class="zoom-control" role="group" aria-label="Nível de zoom">
+              <button class="zoom-btn" type="button" data-zoom="0" aria-label="Zoom 1: visão ampla" aria-pressed="false">1</button>
+              <button class="zoom-btn active" type="button" data-zoom="1" aria-label="Zoom 2: visão normal" aria-pressed="true">2</button>
+              <button class="zoom-btn" type="button" data-zoom="2" aria-label="Zoom 3: visão próxima" aria-pressed="false">3</button>
+            </div>
+            <div class="map-footnote"><span class="map-key"></span> ARRASTE PARA EXPLORAR · SELECIONE UM LOTE</div>
+            <div class="toast" id="toast" role="status" aria-live="polite"></div>
+          </div>
+
+          <div class="map-legend">
+            <span><i class="legend-dot hero-dot"></i> HERÓIS</span>
+            <span><i class="legend-dot worker-dot"></i> TRABALHADORES</span>
+            <span><i class="legend-dot threat-dot"></i> AMEAÇA</span>
+            <div class="region-nav" role="group" aria-label="Regiões do mapa"><button type="button" data-region="manor" aria-pressed="true">CASARÃO</button><button type="button" data-region="road" aria-pressed="false">ESTRADA VELHA</button></div>
+            <span class="map-hint" id="map-hint">A névoa guarda o resto de Mordavia.</span>
+          </div>
+        </section>
+
+        <aside class="command-column">
+          <section class="objective-card">
+            <div class="card-heading"><span class="eyebrow">ORDEM DO CENÁRIO</span><span class="seal">01</span></div>
+            <h2>Faça esta terra valer alguma coisa.</h2>
+            <p>Reative a propriedade e acumule <b>600 moedas</b>. O antigo dono deixou pouco além de dívidas e um covil de monstros.</p>
+            <div class="objective-progress"><div class="progress-label"><span>TESOURO</span><b><span id="objective-gold">240</span> / 600</b></div><div class="progress-track"><i id="objective-bar"></i></div></div>
+            <div class="tax-row"><span><small>IMPOSTO LOCAL</small><b id="tax-name">MODERADO</b></span><button id="tax-btn" aria-label="Alterar taxa de impostos">ALTERAR · <span id="tax-rate-label">PADRÃO</span></button></div>
+            <div class="threat-line"><span class="threat-icon">!</span><span><b>Covil de saqueadores</b><small>As incursões aumentam com o tempo.</small></span><button id="bounty-btn" class="bounty-btn">OFERECER RECOMPENSA</button></div>
+          </section>
+
+          <section class="command-card">
+            <div class="tabs" role="tablist" aria-label="Painel do domínio">
+              <button class="tab active" data-tab="build" role="tab" aria-selected="true">CONSTRUIR</button>
+              <button class="tab" data-tab="heroes" role="tab" aria-selected="false">HERÓIS <span class="tab-count">2</span></button>
+              <button class="tab" data-tab="lairs" role="tab" aria-selected="false">COVIS</button>
+              <button class="tab" data-tab="contracts" role="tab" aria-selected="false">EDITOS</button>
+            </div>
+            <div class="panel-view" id="panel-view"></div>
+          </section>
+
+          <section class="event-card" aria-live="polite">
+            <div class="card-heading"><span class="eyebrow">CRÔNICA DO DOMÍNIO</span><span class="event-live">AGORA</span></div>
+            <p id="event-line">A herança foi aceita. Os credores já estão a caminho.</p>
+          </section>
+        </aside>
+      </main>
+      <footer class="bottom-line"><span>UM DOMÍNIO DE CADA VEZ</span><span>PROTÓTIPO JOGÁVEL · TOQUE PARA INTERAGIR</span><button id="reset-btn" title="Reiniciar cenário">REINICIAR CENÁRIO</button></footer>
+    </div>
+  </body>
+</html>

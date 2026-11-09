@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#151714">
+    <meta name="description" content="Protótipo de estratégia indireta em Mordavia, no universo Ember Ashes.">
+    <title>Wasteland Farming: Heritage of Ashes</title>
+    <link rel="preload" as="image" href="public/art/mordavia-farmstead-open-v02.webp">
+    <link rel="preload" as="image" href="public/art/warrior-walk-v01.webp">
+    <link rel="preload" as="image" href="public/art/healer-walk-v01.webp">
+    <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
+    <link rel="preload" as="font" href="public/fonts/PirataOne.ttf" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="app.css?v=101">
+    <script defer src="app.js?v=101"></script>
+  </head>
+  <body>
+    <div class="game">
+      <header class="hud">
+        <div class="hud-brand">
+          <div class="sigil" aria-hidden="true">M</div>
+          <div class="brand-copy">
+            <h1>Wasteland Farming</h1>
+            <span class="eyebrow">HERITAGE OF ASHES · VALE DO LUTO</span>
+          </div>
+          <span class="tag-test" id="test-badge" hidden>MODO TESTE</span>
+        </div>
+
+        <div class="hud-stats" aria-label="Situação do domínio">
+          <div class="stat" title="Ouro. Vem dos impostos, cobrados à meia-noite (camponeses e taverna)."><small>OURO</small><strong id="gold">240</strong><em id="gold-rate">+2/dia</em></div>
+          <div class="stat" title="Provisões / capacidade do Depósito de Provisões (comida, armas e itens)"><small>PROVISÕES</small><strong><span id="grain">58</span><i>/<span id="storage-cap">100</span></i></strong><em id="grain-rate">+0/s</em></div>
+          <div class="stat" title="Madeira e quanto rende por segundo"><small>MADEIRA</small><strong id="timber">30</strong><em id="timber-rate">+0/s</em></div>
+          <div class="stat" title="Pessoas que vivem no domínio"><small>POVO</small><strong id="people">14</strong></div>
+          <div class="stat mood" title="Felicidade dos camponeses, de 0 a 100. Carne e variedade aumentam; ração pequena e fome diminuem."><small>FELICIDADE</small><strong id="happiness">50</strong><em id="happiness-label">Conformados</em></div>
+          <div class="stat" title="Heróis no domínio / limite de hospedagem (+4 por Hotel de Estrada)"><small>HERÓIS</small><strong><span id="hero-count">1</span><i>/<span id="hero-cap">8</span></i></strong></div>
+          <div class="stat" title="Trabalhadores / limite (1 do casarão + 2 por casebre). Cada um come 0,3 provisão por segundo."><small>TRABALHADORES</small><strong><span id="worker-count">1</span><i>/<span id="worker-cap">1</span></i></strong></div>
+          <div class="stat" title="Construções erguidas no domínio"><small>CONSTRUÇÕES</small><strong><span id="site-count">0</span></strong></div>
+        </div>
+
+        <div class="hud-time">
+          <div class="world-clock"><span class="live-dot"></span><span id="clock">06:20</span></div>
+          <div class="speed-control" aria-label="Velocidade do jogo">
+            <button class="speed-btn active" data-speed="1" aria-label="Velocidade normal">1×</button>
+            <button class="speed-btn" data-speed="2" aria-label="Velocidade rápida">2×</button>
+            <button class="speed-btn" data-speed="3" aria-label="Velocidade máxima">3×</button>
+          </div>
+          <button class="sheet-btn" id="sheet-btn" type="button" title="Ficha do herdeiro" aria-label="Abrir a ficha do herdeiro">FICHA</button>
+          <button class="menu-btn" id="menu-btn" type="button" title="Menu (Esc)" aria-label="Abrir menu do jogo">MENU</button>
+        </div>
+      </header>
+
+      <main class="stage">
+        <section class="map-scene" id="map-scene" tabindex="0" aria-label="Mapa do domínio. Arraste para explorar; use as setas do teclado ou a roda do mouse para mover a câmera.">
+          <div class="map-world" id="map-world">
+            <img class="map-art" src="public/art/mordavia-farmstead-open-v02.webp" alt="Casarão e terrenos do Vale do Luto" draggable="false">
+            <div class="map-atmosphere" aria-hidden="true"><span class="manor-smoke smoke-a"></span><span class="manor-smoke smoke-b"></span></div>
+            <div class="site-layer" id="site-layer" aria-label="Construções do domínio">
+              <div class="placement-preview" id="placement-preview" aria-hidden="true"></div>
+              <div id="hero-layer" class="hero-layer" aria-label="Personagens do domínio"></div>
+            </div>
+          </div>
+          <div class="map-vignette"></div>
+          <div class="map-tools">
+            <button class="camera-home" id="camera-home" type="button" aria-label="Centralizar câmera no casarão" title="Voltar ao casarão">⌂</button>
+            <div class="zoom-control" role="group" aria-label="Nível de zoom">
+              <button class="zoom-btn active" type="button" data-zoom="0" aria-label="Zoom 1: visão ampla" aria-pressed="true" title="Ampla">1</button>
+              <button class="zoom-btn" type="button" data-zoom="1" aria-label="Zoom 2: visão normal" aria-pressed="false" title="Normal">2</button>
+              <button class="zoom-btn" type="button" data-zoom="2" aria-label="Zoom 3: visão próxima" aria-pressed="false" title="Próxima">3</button>
+            </div>
+          </div>
+          <div class="map-footer">
+            <span class="map-footnote"><span class="map-key"></span> ARRASTE PARA EXPLORAR · CONSTRUA ONDE QUISER</span>
+            <span class="map-legend"><span><i class="legend-dot hero-dot"></i> HERÓIS</span><span><i class="legend-dot worker-dot"></i> TRABALHADORES</span></span>
+          </div>
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        </section>
+
+        <aside class="side-panel">
+          <section class="objective-card">
+            <div class="objective-head"><span class="eyebrow">OBJETIVO</span><b>Acumule 600 moedas</b></div>
+            <div class="objective-progress"><div class="progress-track"><i id="objective-bar"></i></div><span class="progress-value"><span id="objective-gold">240</span> / 600</span></div>
+            <div class="objective-actions">
+              <div class="tax-control" role="group" aria-label="Imposto"><small>IMPOSTO</small><button type="button" id="tax-down" aria-label="Baixar imposto">−</button><b id="tax-pct">10%</b><button type="button" id="tax-up" aria-label="Subir imposto">+</button><span id="tax-preview"></span></div>
+            </div>
+          </section>
+
+          <section class="command-card">
+            <div class="tabs" role="tablist" aria-label="Painel do domínio">
+              <button class="tab active" data-tab="build" role="tab" aria-selected="true">CONSTRUIR</button>
+              <button class="tab" data-tab="heroes" role="tab" aria-selected="false">HERÓIS <span class="tab-count">1</span></button>
+              <button class="tab" data-tab="food" role="tab" aria-selected="false">PROVISÕES</button>
+              <button class="tab" data-tab="market" role="tab" aria-selected="false">MERCADO</button>
+            </div>
+            <div class="panel-view" id="panel-view"></div>
+          </section>
+
+          <section class="event-card" aria-live="polite">
+            <p id="event-line">A herança foi aceita. Os credores já estão a caminho.</p>
+            <span class="map-hint" id="map-hint" hidden>A névoa guarda o resto de Mordavia.</span>
+            
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <div class="menu-layer is-title" id="menu-layer">
+      <div class="menu-backdrop" aria-hidden="true"></div>
+      <div class="menu-panel" id="menu-panel" role="dialog" aria-modal="true" aria-label="Menu do jogo"></div>
+    </div>
+  </body>
+</html>
