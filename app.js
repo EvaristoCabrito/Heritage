@@ -111,13 +111,6 @@ const freeLodging = () => {
       || (building.type === 'tavern' && !state.heroes.some(hero => hero.alive && hero.homeSite === building.site)))) || null;
 };
 // Construção livre: estas áreas da arte não aceitam obra (coordenadas em % do mapa, no pé da construção).
-const BLOCKED_AREAS = [
-  { x0: 0, x1: 50, y0: 0, y1: 43, why: 'Em cima do casarão não dá.' },
-  { x0: 68, x1: 100, y0: 0, y1: 29, why: 'As ruínas não aceitam obra. Nem visita.' },
-  { x0: 0, x1: 100, y0: 0, y1: 16, why: 'A floresta não deixa. Ela tem dono.' },
-  { x0: 0, x1: 100, y0: 96, y1: 109, why: 'A passagem entre as regiões deve ficar livre.' },
-];
-const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
   farm: 'farm-wheat', mill: 'mill-body', hut: 'hut', depot: 'depot', lumber: 'lumber', market: 'market', tavern: 'tavern', hotel: 'hotel', warrior: 'guild', archer: 'archer', lancer: 'lancer',
   blackMage: 'tower', conjurer: 'conjurer', healer: 'healer', armory: 'armory',
@@ -661,12 +654,9 @@ function renderSites() {
 }
 
 // Se a construção cabe neste ponto: dentro do mapa, fora das áreas bloqueadas e longe das outras.
-function placementProblem(x, y, ignoreSite = null) {
-  if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
-  const blocked = BLOCKED_AREAS.find(area => x >= area.x0 && x <= area.x1 && y >= area.y0 && y <= area.y1);
-  if (blocked) return blocked.why;
-  const crowded = state.buildings.some(building => building.site !== ignoreSite && Math.hypot(building.x - x, (building.y - y) * MAP_RATIO) < BUILD_SPACING);
-  if (crowded) return 'Encostado demais em outra construção.';
+// Constrói em qualquer lugar do mapa: só não dá para sair dele.
+function placementProblem(x, y) {
+  if (x < 2 || x > 98 || y < 2 || y > 198) return 'Fora do mapa.';
   return null;
 }
 
