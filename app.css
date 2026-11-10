@@ -214,7 +214,8 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .empty-state { min-height: 220px; display: grid; place-items: center; padding: 20px; color: #9d998a; text-align: center; font-size: 11px; line-height: 1.6; }
 .hero-list { display: flex; flex-direction: column; gap: 7px; }
 .hero-card { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 9px; padding: 10px; border: 1px solid rgba(193,176,135,.17); border-radius: 5px; background: rgba(46,49,40,.46); }
-.hero-portrait { display: block; width: 52px; height: 62px; object-fit: cover; object-position: center 28%; border: 1px solid #a58d59; border-radius: 3px; background: #161714; }
+.hero-portrait { display: block; width: 52px; height: 62px; object-fit: cover; object-position: center 28%; border: 1px solid #a58d59; border-radius: 3px; background: #161714; cursor: pointer; }
+.hero-portrait:hover { border-color: #e2aa64; }
 .worker-heading { margin-top: 18px; }
 .hero-details { display: flex; flex-direction: column; gap: 3px; }
 .hero-details b { color: #e6ddca; font: 12px 'Newsreader',Georgia,serif; }
