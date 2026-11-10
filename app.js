@@ -1769,6 +1769,12 @@ const HEIRS = [
   { id: 'zoia', name: 'Amara Lucerna', house: 'lucerna', gender: 'f', age: 17, tie: 'Parente, segundo os mortos.', about: 'Conversa com os mortos. Eles respondem mais que os vivos.' },
   { id: 'anca', name: 'Rowena Kastrell', house: 'kastrell', gender: 'f', age: 16, tie: 'Neta do irmão do falecido.', about: 'Duelou com metade da corte. A outra metade foi embora do reino.' },
   { id: 'isabel-salazar', name: 'Isabel Salazar', house: 'salazar', gender: 'f', age: 21, tie: 'Descendente do mesmo ramo antigo da família Salazar.', about: 'Aprendeu que a elegância também é uma armadura — e que uma família sobrevive melhor quando sabe mudar sem esquecer de onde veio.' },
+  // Os nobres das casas também podem herdar. Os retratos deles ficam em noble-portraits-v01.
+  { id: 'anselm', name: 'Anselm Grenholt', house: 'grenholt', gender: 'm', age: 30, portrait: 'noble-portraits-v01/grenholt', tie: 'Caçador-Mor das Montanhas. Primo do falecido, pelo lado dos lobos.', about: 'Os cães dele comem melhor que os camponeses. Ele acha justo: os cães trabalham mais.' },
+  { id: 'ottokar', name: 'Ottokar Lucerna', house: 'lucerna', gender: 'm', age: 38, portrait: 'noble-portraits-v01/lucerna', tie: 'Padre-Conde. Rezou a missa do falecido e leu o testamento na mesma tarde.', about: 'Mede a porta de quem visita. Pra saber se o caixão passa.' },
+  { id: 'severina', name: 'Severina Montalvo', house: 'montalvo', gender: 'f', age: 32, portrait: 'noble-portraits-v01/montalvo', tie: 'Credora do falecido. Veio cobrar e saiu com a herança.', about: 'Anota tudo num livro de capa vermelha. Seu nome já está lá, sublinhado duas vezes.' },
+  { id: 'ilka', name: 'Ilka Kastrell', house: 'kastrell', gender: 'f', age: 33, portrait: 'noble-portraits-v01/kastrell', tie: 'Baronesa e marechal de uma guerra que nunca veio.', about: 'Abastece um exército há anos pra uma guerra que não chega. Desta vez, jura ela, vem.' },
+  { id: 'brunhilde', name: 'Brunhilde Vaelmont', house: 'vaelmont', gender: 'f', age: 40, portrait: 'noble-portraits-v01/vaelmont', tie: 'Tia-avó do falecido. A idade verdadeira dela é segredo de família.', about: 'Ninguém sobrevive ao chá dela por muito tempo. Ela jura que é a receita da família.' },
 ];
 const heirById = id => HEIRS.find(heir => heir.id === id) || null;
 
@@ -2580,7 +2586,7 @@ const GAME_YEAR_MINUTES = DAYS_PER_YEAR * 1440; // o mesmo ano do calendário do
 const HEIR_PHASE_YEARS = 25;
 const heirYearsElapsed = (minutes = state.minutes) => Math.min(75, Math.floor(Math.max(0, minutes) / (GAME_YEAR_MINUTES * HEIR_PHASE_YEARS)) * HEIR_PHASE_YEARS);
 const heirPhase = (minutes = state.minutes) => Math.min(4, 1 + Math.floor(heirYearsElapsed(minutes) / HEIR_PHASE_YEARS));
-const heirPortraitSrc = (id, phase = 1) => `public/art/heir-portraits-v01/${id}-phase-${phase}.webp`;
+const heirPortraitSrc = (id, phase = 1) => `public/art/${heirById(id)?.portrait || `heir-portraits-v01/${id}`}-phase-${phase}.webp`;
 const noblePortraitSrc = (house, phase = heirPhase()) => `public/art/noble-portraits-v01/${house}-phase-${phase}.webp`;
 const resourceName = id => id === 'gold' ? 'ouro' : id === 'timber' ? 'madeira' : foodName(id);
 const resourceStock = id => id === 'gold' ? (state.testMode ? Infinity : state.gold) : id === 'timber' ? state.timber : (state.food[id] || 0);
