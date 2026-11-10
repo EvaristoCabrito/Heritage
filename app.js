@@ -3897,9 +3897,23 @@ function renderMenu() {
   $('#menu-panel button:not([disabled])')?.focus({ preventScroll: true });
 }
 
-// Os menus não encolhem mais para caber na janela: o que não couber rola. Volta ao topo a cada tela nova.
+// A tela de menu encolhe o mínimo necessário para caber na altura da janela, sem rolagem.
+// Escolha de herdeiro e Nobres não encolhem (as fotos ficariam minúsculas): essas rolam.
 function fitMenu() {
   $('#menu-layer').scrollTop = 0;
+  const card = $('#menu-panel').firstElementChild;
+  if (!card || card.classList.contains('sheet') || card.classList.contains('heir-screen') || card.classList.contains('nobles-screen')) return;
+  card.style.zoom = '';
+  const layer = $('#menu-layer');
+  const pad = parseFloat(getComputedStyle(layer).paddingTop) + parseFloat(getComputedStyle(layer).paddingBottom);
+  const available = window.innerHeight - pad - 6;
+  let zoom = 1;
+  for (let i = 0; i < 4; i++) {
+    const height = card.getBoundingClientRect().height;
+    if (height <= available || zoom <= 0.5) break;
+    zoom = Math.max(0.5, zoom * available / height - 0.005);
+    card.style.zoom = zoom.toFixed(3);
+  }
 }
 
 function showScreen(name, params = {}) {
@@ -4068,6 +4082,7 @@ function initMenus() {
       openPause();
     }
   });
+  window.addEventListener('resize', () => { if (!$('#menu-layer').hidden) fitMenu(); });
   window.addEventListener('pagehide', () => { if (game.slot && options.autosave) writeSave(game.slot); });
   showScreen('title');
 }
