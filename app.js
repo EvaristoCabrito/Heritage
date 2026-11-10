@@ -47,7 +47,7 @@ const GUILD_FOR = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', 'Bla
 const CLASS_ART = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', 'Black Mage': 'black-mage', Conjurer: 'conjurer', Healer: 'healer', Peasant: 'peasant' };
 const PORTRAIT_ART = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', 'Black Mage': 'black-mage', Conjurer: 'conjurer', Healer: 'healer' };
 const PRESTIGE_ART = { Paladin: 'paladin', 'Heavy Knight': 'heavy-knight', Ranger: 'ranger', Assassin: 'assassin', Sentinel: 'sentinel', Templar: 'templar', Elementalist: 'elementalist', Warlock: 'warlock', Sorcerer: 'sorcerer', Necromancer: 'necromancer', Bishop: 'bishop', Cleric: 'cleric' };
-const actorArt = actor => PRESTIGE_ART[actor.prestige] || actor.spriteId || CLASS_ART[actor.className];
+const actorArt = actor => PRESTIGE_ART[actor.prestige] || actor.spriteId || (actor.kind === 'skeleton' ? 'skeleton-v02' : actor.kind === 'zombie' ? 'zombie-v01' : null) || CLASS_ART[actor.className];
 const actorPortrait = actor => PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || 'male-peasant';
 const actorSheet = actor => actor.action === 'build' ? 'build' : actor.action === 'action' && !actor.prestige ? 'action' : 'walk';
 // Nomes, manias e falas vindos do Herança de Cinzas original.
@@ -704,7 +704,7 @@ function renderHeroes() {
       token.setAttribute('aria-label', `${actor.name}, ${actor.className}`);
       const art = actorArt(actor);
       token.innerHTML = art
-        ? `<span class="character-sprite" style="background-image:url('public/art/${art}-walk-v01.${art.startsWith('bandit') ? 'png' : 'webp'}')" aria-hidden="true"></span><span class="character-name">${actor.name}</span>`
+        ? `<span class="character-sprite" style="background-image:url('public/art/${art}-walk-v01.${art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') ? 'png' : 'webp'}')" aria-hidden="true"></span><span class="character-name">${actor.name}</span>`
         : actor.className === 'Monster' ? `<span class="monster-skull" aria-hidden="true">☠</span><span class="character-name">${actor.name}</span>`
         : `<span class="hero-face">${actor.className[0]}</span><span class="character-name">${actor.name}</span>`;
       token.addEventListener('click', () => {
@@ -730,17 +730,20 @@ function renderHeroes() {
     if (actorArt(actor)) {
       const art = actorArt(actor);
       const sheet = actorSheet(actor);
-      if (token.dataset.sheet !== sheet || token.dataset.art !== art) {
-        const extension = (art === 'peasant' && sheet === 'build') || art.startsWith('bandit') ? 'png' : 'webp';
-        $('.character-sprite', token).style.backgroundImage = `url('public/art/${art}-${sheet}-v01.${extension}')`;
+
+      // A caminhada de costas tem uma tira própria: a cesta permanece na mesma mão
+      // e os quatro quadros mantêm a passada alternada sem espelhar metade do ciclo.
+      const backWalk = art === 'peasant' && sheet === 'walk' && token.dataset.facing === 'back';
+      const extension = (art === 'peasant' && sheet === 'build') || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') ? 'png' : 'webp';
+      const spriteFile = backWalk ? 'peasant-walk-back-v02.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : `${art}-${sheet}-v01.${extension}`;
+      if (token.dataset.spriteFile !== spriteFile) {
+        $('.character-sprite', token).style.backgroundImage = `url('public/art/${spriteFile}')`;
+        token.dataset.spriteFile = spriteFile;
         token.dataset.sheet = sheet;
         token.dataset.art = art;
       }
-      // Os quadros 2 e 3 da caminhada de costas do camponês têm o balde na mão oposta.
-      // Espelhar só esses quadros mantém o balde no mesmo lado durante a sequência.
-      const reversedBackFrame = art === 'peasant' && sheet === 'walk' && token.dataset.facing === 'back' && (actor.frame || 0) >= 2;
-      const facingLeft = token.dataset.side === 'left';
-      token.style.setProperty('--sprite-scale-x', facingLeft !== reversedBackFrame ? -1 : 1);
+      token.dataset.backWalk = backWalk ? 'true' : 'false';
+      token.style.setProperty('--sprite-scale-x', !backWalk && token.dataset.side === 'left' ? -1 : 1);
     }
     token.style.setProperty('--frame-x', `${(actor.frame || 0) * 100 / 3}%`);
     // Recompensa pela cabeça: a placa acompanha a caveira.
@@ -2463,7 +2466,7 @@ function spawnSkeleton() {
   const day = Math.floor(state.minutes / 1440) + 1;
   const start = PATH_NODES[SKELETON_PATH[0]];
   state.bandits.push({
-    id: `skeleton-${Date.now()}`, className: 'Monster', kind: 'skeleton', name: `Caveira ${pick(SKELETON_NAMES)}`,
+    id: `skeleton-${Date.now()}`, className: 'Monster', kind: 'skeleton', spriteId: 'skeleton-v02', name: `Caveira ${pick(SKELETON_NAMES)}`,
     level: Math.min(HEIR_MAX_LEVEL, day), alive: true, x: start.x, y: Math.min(198, start.y + 2), leg: 0, mode: 'walk', bornAt: state.minutes,
   });
   say('O cemitério dos Wilds soltou uma caveira. Ela vem subindo a estrada velha, devagar. Dá tempo de pagar alguém pra ir atrás.', 'Uma caveira vem pela estrada velha.');
