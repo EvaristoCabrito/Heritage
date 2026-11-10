@@ -2576,11 +2576,10 @@ const BARON = { id: 'baron', name: 'O Barão das Cinzas', house: null, title: 'S
   paid: 'O Barão das Cinzas aceitou o tributo. Ninguém se queimou hoje. Ainda.', late: 'Cheiro de fumaça no vento. O Barão das Cinzas não manda segundo aviso.' };
 const DEMAND_BASE = { gold: 30, timber: 15, flour: 15, garlic: 10, bacon: 6, eggs: 8, milk: 8, wheat: 15 };
 // Para a cronologia dos herdeiros, um ano ficcional equivale a 360 dias de jogo.
-const GAME_YEAR_MINUTES = 360 * 1440;
+const GAME_YEAR_MINUTES = DAYS_PER_YEAR * 1440; // o mesmo ano do calendário do relógio
 const HEIR_PHASE_YEARS = 25;
 const heirYearsElapsed = (minutes = state.minutes) => Math.min(75, Math.floor(Math.max(0, minutes) / (GAME_YEAR_MINUTES * HEIR_PHASE_YEARS)) * HEIR_PHASE_YEARS);
 const heirPhase = (minutes = state.minutes) => Math.min(4, 1 + Math.floor(heirYearsElapsed(minutes) / HEIR_PHASE_YEARS));
-const heirAge = (heir, minutes = state.minutes) => heir.age + heirYearsElapsed(minutes);
 const heirPortraitSrc = (id, phase = 1) => `public/art/heir-portraits-v01/${id}-phase-${phase}.webp`;
 const noblePortraitSrc = (house, phase = heirPhase()) => `public/art/noble-portraits-v01/${house}-phase-${phase}.webp`;
 const resourceName = id => id === 'gold' ? 'ouro' : id === 'timber' ? 'madeira' : foodName(id);
