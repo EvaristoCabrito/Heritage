@@ -1092,52 +1092,8 @@ const Monarch = (() => {
     refreshCursor();
   }
 
-  function init() {
-    const world = document.getElementById('map-world');
-    const scene = document.getElementById('map-scene');
-    if (!world || !scene) return;
-    const layer = document.createElement('div');
-    layer.id = 'monarch-layer';
-    layer.className = 'monarch-layer';
-    document.getElementById('hero-layer').after(layer);
-    bar = document.createElement('div');
-    bar.className = 'monarch-bar';
-    bar.id = 'monarch-bar';
-    bar.hidden = true;
-    bar.innerHTML = `<div class="monarch-res"><div class="res res-mp"><em></em><i></i><span></span></div><div class="res res-auth"><i></i><span></span></div><small class="aura-slots"></small></div><div class="spell-row"></div>`;
-    scene.append(bar);
-    bar.addEventListener('pointerdown', event => event.stopPropagation());
-    bar.addEventListener('click', event => {
-      event.stopPropagation();
-      const button = event.target.closest('.spell-btn');
-      if (button) press(button.dataset.spell);
-    });
-    scene.addEventListener('pointermove', event => { rt.hover = worldPoint(event); });
-    scene.addEventListener('click', event => {
-      if (!rt.targeting || !active() || camera.dragMoved || event.target.closest('.monarch-bar, .map-tools')) return;
-      event.stopPropagation();
-      event.preventDefault();
-      onMapClick(worldPoint(event));
-    }, true);
-    scene.addEventListener('contextmenu', event => {
-      if (!active() || state.selectedBuild || state.movingSite != null || state.placingBounty) return;
-      event.preventDefault();
-      if (rt.targeting) { rt.targeting = null; refreshCursor(); return; }
-      const m = ms();
-      m.goal = worldPoint(event); m.pending = null; m.walkTo = null;
-      FX.sigil(m.goal.x, m.goal.y, 1.4, C.gold, 0.7, 4);
-    });
-    window.addEventListener('keydown', event => {
-      if (!active() || !document.getElementById('menu-layer')?.hidden) return;
-      if (event.target.closest?.('input, textarea, select')) return;
-      if (event.key === 'Escape' && rt.targeting) { event.preventDefault(); event.stopPropagation(); rt.targeting = null; refreshCursor(); return; }
-      if (/^[0-9]$/.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
-        const index = (Number(event.key) + 9) % 10;
-        const spell = unlockedSpells()[index];
-        if (spell) { event.preventDefault(); press(spell.key); }
-      }
-    }, true);
-  }
+  // Sem Monarca no mapa: nada de estandarte, barra ou atalhos. As magias ficam só na lista do botão MAGIAS.
+  function init() {}
 
   init();
   return {

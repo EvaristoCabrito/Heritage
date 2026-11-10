@@ -1136,8 +1136,6 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .spell-btn.on { border-color: #fff0c2; box-shadow: 0 0 0 1px var(--accent), 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent); }
 .spell-btn.targeting { border-color: #9df0b3; box-shadow: 0 0 0 2px rgba(157,240,179,.6); }
 .spell-btn.spell-move { --accent: #cdbf9d; }
-.map-scene:has(.monarch-bar:not([hidden])) .toast { bottom: 108px; }
-.map-scene:has(.monarch-bar:not([hidden])) .map-footer { display: none; }
 
 .sheet-spell-res { margin: 0 0 8px; color: #b8ad93; font-size: 12px; }
 .spell-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
