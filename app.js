@@ -963,6 +963,10 @@ function bindPanel(host) {
   $$('[data-bounty-hunt]', host).forEach(button => button.addEventListener('click', () => huntBounty(button.dataset.bountyHunt)));
   $$('[data-bounty-cancel]', host).forEach(button => button.addEventListener('click', () => cancelBounty(button.dataset.bountyCancel)));
   $$('[data-deliver]', host).forEach(button => button.addEventListener('click', () => deliverDemand(button.dataset.deliver)));
+  $$('[data-monarch-buy]', host).forEach(button => button.addEventListener('click', () => {
+    const select = $(`[data-monarch-pick="${button.dataset.monarchBuy}"]`, host);
+    if (select) buyMonarchItem(button.dataset.monarchBuy, select.value);
+  }));
   $$('[data-armory-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeArmory(Number(button.dataset.armoryUpgrade))));
   $$('[data-producer-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeProducer(Number(button.dataset.producerUpgrade))));
   $$('[data-depot-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeDepot(Number(button.dataset.depotUpgrade))));
@@ -1843,15 +1847,126 @@ const EQUIP_SLOTS = [
   { slot: 'medallion', label: 'Medalhão' }, { slot: 'ring1', label: 'Anel I' }, { slot: 'ring2', label: 'Anel II' },
 ];
 const ITEMS = {
-  pineScepter: { name: 'Cetro de Pinho', icon: 'scepter', about: 'Pintado de dourado. A tinta descasca quando você aponta pra alguém.' },
-  crackedOrb: { name: 'Globo Rachado', icon: 'orb', about: 'Representa o mundo. A rachadura também.' },
-  wornMantle: { name: 'Manto Puído', icon: 'mantle', about: 'Era vermelho real. Hoje é vermelho tanto faz.' },
-  tinCrown: { name: 'Coroa de Lata', icon: 'crown', about: 'Brilha bem de longe. De perto, faz barulho.' },
-  familyMedallion: { name: 'Medalhão da Família', icon: 'medallion', about: 'Tem o brasão da casa na frente e o nome de um credor atrás.' },
-  copperRing: { name: 'Anel de Cobre', icon: 'ringCopper', about: 'Deixa o dedo verde. Nobreza tem seu preço.' },
-  boneRing: { name: 'Anel de Osso', icon: 'ringBone', about: 'Ninguém sabe de quem é o osso. Melhor assim.' },
+  pineScepter: { name: 'Cetro de Pinho', slot: 'scepter', tier: 1, price: 0, bonus: {}, icon: 'scepter', about: 'Pintado de dourado. A tinta descasca quando você aponta pra alguém.' },
+  crackedOrb: { name: 'Globo Rachado', slot: 'orb', tier: 1, price: 0, bonus: {}, icon: 'orb', about: 'Representa o mundo. A rachadura também.' },
+  wornMantle: { name: 'Manto Puído', slot: 'mantle', tier: 1, price: 0, bonus: {}, icon: 'mantle', about: 'Era vermelho real. Hoje é vermelho tanto faz.' },
+  tinCrown: { name: 'Coroa de Lata', slot: 'crown', tier: 1, price: 0, bonus: {}, icon: 'crown', about: 'Brilha bem de longe. De perto, faz barulho.' },
+  familyMedallion: { name: 'Medalhão da Família', slot: 'medallion', tier: 1, price: 0, bonus: {}, icon: 'medallion', about: 'Tem o brasão da casa na frente e o nome de um credor atrás.' },
+  copperRing: { name: 'Anel de Cobre', slot: 'ring', tier: 1, price: 0, bonus: {}, icon: 'ringCopper', about: 'Deixa o dedo verde. Nobreza tem seu preço.' },
+  boneRing: { name: 'Anel de Osso', slot: 'ring', tier: 1, price: 0, bonus: {}, icon: 'ringBone', about: 'Ninguém sabe de quem é o osso. Melhor assim.' },
 };
 function BASIC_EQUIPMENT() { return { scepter: 'pineScepter', orb: 'crackedOrb', mantle: 'wornMantle', crown: 'tinCrown', medallion: 'familyMedallion', ring1: 'copperRing', ring2: 'boneRing' }; }
+
+// Equipamento do monarca: 10 tiers por peça. O tier 1 é o que veio com a herança; os outros
+// se compram no Arsenal com o ouro do cofre, e cada nível do Arsenal libera até o seu tierCap.
+// Bônus: atributo principal +2 por tier acima do 1, secundário +1 (Mana vale o triplo).
+const MONARCH_TIER_PRICE = [0, 25, 50, 90, 140, 210, 300, 420, 580, 800];
+const MONARCH_LINES = {
+  scepter: { icon: 'scepter', main: 'MAG', side: 'CHA', items: [
+    ['ashScepter', 'Cetro de Freixo', 'Não é ouro, mas aponta igual.'],
+    ['oldBronzeScepter', 'Cetro de Bronze Velho', 'Herdado de um prefeito que sumiu.'],
+    ['villageJudgeScepter', 'Cetro do Juiz de Aldeia', 'Já condenou três galinhas e um primo.'],
+    ['beatenSilverScepter', 'Cetro de Prata Batida', 'A prata é verdadeira. O brasão, discutível.'],
+    ['mourningValeScepter', 'Cetro do Vale do Luto', 'Os camponeses abaixam a cabeça. Por hábito.'],
+    ['onyxScepter', 'Cetro de Ônix', 'Pesa na mão e na consciência.'],
+    ['baronScepter', 'Cetro do Barão', 'Um barão morreu segurando. Não soltou fácil.'],
+    ['ashenScepter', 'Cetro das Cinzas', 'Esquenta quando alguém mente. Vive quente.'],
+    ['forgottenKingScepter', 'Cetro do Rei Esquecido', 'Mordavia já teve um rei. Ninguém lembra o nome, só o cetro.'],
+  ] },
+  orb: { icon: 'orb', main: 'INT', side: 'WIS', items: [
+    ['blownGlassOrb', 'Globo de Vidro Soprado', 'Mostra o mundo. Embaçado, como ele é.'],
+    ['brassOrb', 'Globo de Latão', 'Gira. Ninguém sabe pra quê.'],
+    ['cartographerOrb', 'Globo do Cartógrafo', 'Tem o mapa da região. Com erros de propósito.'],
+    ['silverOrb', 'Globo de Prata', 'Reflete o rosto do dono. Melhor não olhar muito.'],
+    ['rockCrystalOrb', 'Globo de Cristal de Rocha', 'Prevê o tempo. Sempre chuva.'],
+    ['astrologerOrb', 'Globo do Astrólogo', 'As estrelas dizem que você vai pagar caro por ele.'],
+    ['blackAmberOrb', 'Globo de Âmbar Negro', 'Tem um inseto dentro. Ele pisca.'],
+    ['livingAshOrb', 'Globo das Cinzas Vivas', 'A fumaça lá dentro forma nomes de devedores.'],
+    ['wholeWorldOrb', 'Globo do Mundo Inteiro', 'Contém Mordavia inteira. Ela não sabe.'],
+  ] },
+  mantle: { icon: 'mantle', main: 'MP', side: 'CHA', items: [
+    ['dyedWoolMantle', 'Manto de Lã Tingida', 'Vermelho de beterraba. Desbota na chuva.'],
+    ['marketFeltMantle', 'Manto de Feltro do Mercado', 'Comprado de um mercador que jurou que era nobre.'],
+    ['wornVelvetMantle', 'Manto de Veludo Gasto', 'Veludo de verdade. Gasto de verdade.'],
+    ['foxCollarMantle', 'Manto com Gola de Raposa', 'A raposa ainda tem opinião.'],
+    ['fakeErmineMantle', 'Manto de Arminho Falso', 'Coelho pintado. Ninguém tem coragem de dizer.'],
+    ['councilMantle', 'Manto do Conselho', 'Usado em reuniões longas. Esconde o cochilo.'],
+    ['trueErmineMantle', 'Manto de Arminho Verdadeiro', 'Agora sim. Os coelhos estão aliviados.'],
+    ['goldThreadMantle', 'Manto Bordado a Ouro', 'Cada fio de ouro é um imposto de alguém.'],
+    ['coronationMantle', 'Manto da Coroação', 'Feito para a coroação de um rei que não veio. Serve em você.'],
+  ] },
+  crown: { icon: 'crown', main: 'CHA', side: 'WIS', items: [
+    ['copperDiadem', 'Diadema de Cobre', 'Fica verde na testa. Lembra de onde você veio.'],
+    ['beatenIronCrown', 'Coroa de Ferro Batido', 'O ferreiro bateu com raiva. Dá pra ver.'],
+    ['bronzeCrown', 'Coroa de Bronze', 'Brilha o bastante para ser roubada.'],
+    ['fineSilverCrown', 'Coroa de Prata Fina', 'Fina demais para guerra. Ótima para jantar.'],
+    ['garnetCrown', 'Coroa com Granadas', 'Pedras vermelhas. Dizem que são granadas.'],
+    ['valeCrown', 'Coroa do Vale', 'O povo do Vale do Luto reconhece. E reclama.'],
+    ['oldGoldCrown', 'Coroa de Ouro Velho', 'Ouro antigo, derretido de outras coroas menos sortudas.'],
+    ['ashAndGoldCrown', 'Coroa de Cinzas e Ouro', 'Leve como cinza. Pesada como herança.'],
+    ['mordaviaCrown', 'Coroa de Mordavia', 'A verdadeira. Ou a melhor cópia já feita.'],
+  ] },
+  medallion: { icon: 'medallion', main: 'WIS', side: 'MP', items: [
+    ['pewterMedallion', 'Medalhão de Estanho', 'O brasão está ao contrário. Ninguém percebeu ainda.'],
+    ['engravedCopperMedallion', 'Medalhão de Cobre Gravado', 'Gravado à mão. A mão tremia.'],
+    ['guildMedallion', 'Medalhão da Guilda', 'Abre portas. Algumas.'],
+    ['houseSilverMedallion', 'Medalhão de Prata da Casa', 'O brasão certo, desta vez.'],
+    ['portraitMedallion', 'Medalhão com Retrato', 'Tem o retrato de uma tia. Ela ainda observa.'],
+    ['oathMedallion', 'Medalhão do Juramento', 'Jurado diante de testemunhas. Elas morreram.'],
+    ['baronGoldMedallion', 'Medalhão de Ouro do Barão', 'Prova que você é barão. Ou que roubou um.'],
+    ['ashMedallion', 'Medalhão das Cinzas', 'Guarda as cinzas de um antepassado. Ele pesa.'],
+    ['firstHeirMedallion', 'Medalhão do Primeiro Herdeiro', 'O primeiro dono fundou a casa. O segundo a perdeu.'],
+  ] },
+  ring: { icon: 'ringCopper', main: 'MAG', side: 'INT', items: [
+    ['brassRing', 'Anel de Latão', 'Brilha como ouro por uma semana.'],
+    ['carvedBoneRing', 'Anel de Osso Entalhado', 'Entalhado por um coveiro com tempo livre.', 'ringBone'],
+    ['plainSilverRing', 'Anel de Prata Lisa', 'Liso. Sem brasão, sem dívida.'],
+    ['signetRing', 'Anel de Sinete', 'Sela cartas. As respostas demoram.'],
+    ['jadeRing', 'Anel de Jade', 'Jade de verdade, trazido de longe por alguém que não voltou.'],
+    ['wolfBoneRing', 'Anel de Osso de Lobo', 'Lobo grande. Dedo pequeno.', 'ringBone'],
+    ['rubyGoldRing', 'Anel de Ouro com Rubi', 'O rubi pisca no escuro. Não pergunte.'],
+    ['ashRing', 'Anel das Cinzas', 'Morno o tempo todo. Como uma brasa que não apaga.', 'ringBone'],
+    ['forgottenKingRing', 'Anel do Rei Esquecido', 'Faz par com o cetro. Os dois esperam alguém.'],
+  ] },
+};
+Object.entries(MONARCH_LINES).forEach(([slot, line]) => line.items.forEach(([id, name, about, icon], i) => {
+  const tier = i + 2, step = tier - 1, mana = key => (key === 'MP' ? 3 : 1);
+  ITEMS[id] = { name, slot, tier, price: MONARCH_TIER_PRICE[tier - 1], icon: icon || line.icon, about,
+    bonus: { [line.main]: 2 * step * mana(line.main), [line.side]: step * mana(line.side) } };
+}));
+const monarchEquipment = () => state.equipment || (state.equipment = BASIC_EQUIPMENT());
+const monarchBonus = key => Object.values(monarchEquipment()).reduce((sum, id) => sum + (ITEMS[id]?.bonus?.[key] || 0), 0);
+const monarchBonusText = bonus => Object.entries(bonus).map(([key, value]) => `+${value} ${key}`).join(' ');
+
+// Loja do monarca no Arsenal: uma linha por slot, com o que este Arsenal libera e é melhor que o atual.
+function monarchShopHTML(tierCap) {
+  const equipped = monarchEquipment();
+  const rows = EQUIP_SLOTS.map(({ slot, label }) => {
+    const current = ITEMS[equipped[slot]];
+    const kind = slot.startsWith('ring') ? 'ring' : slot;
+    const options = Object.entries(ITEMS).filter(([, item]) => item.slot === kind && item.tier > (current?.tier || 0) && item.tier <= tierCap).sort((a, b) => a[1].tier - b[1].tier);
+    const affordable = options.filter(([, item]) => state.testMode || item.price <= state.gold);
+    const pick = (affordable[affordable.length - 1] || options[0] || [])[0];
+    return `<div class="monarch-shop-row"><span class="monarch-shop-slot">${current ? pixelIcon(current.icon, 24) : ''}<span><small>${label}</small><b>${current ? `${current.name} · T${current.tier}` : 'Vazio'}</b></span></span>
+      ${options.length ? `<select data-monarch-pick="${slot}" aria-label="Escolher ${label.toLowerCase()}">${options.map(([id, item]) => `<option value="${id}"${id === pick ? ' selected' : ''}>T${item.tier} · ${item.price} ouro · ${item.name} · ${monarchBonusText(item.bonus)}</option>`).join('')}</select>
+      <button type="button" class="monarch-buy" data-monarch-buy="${slot}">Comprar</button>` : `<em>${(current?.tier || 0) >= 10 ? 'Melhor que isso não existe' : 'Nada melhor neste nível'}</em>`}</div>`;
+  });
+  return `<p class="storage-items">O monarca paga com o cofre. A peça antiga vai pro fundo do baú.</p><div class="monarch-shop">${rows.join('')}</div>`;
+}
+
+function buyMonarchItem(slot, id) {
+  const item = ITEMS[id];
+  const current = ITEMS[monarchEquipment()[slot]];
+  const kind = slot.startsWith('ring') ? 'ring' : slot;
+  if (!item || item.slot !== kind || item.tier <= (current?.tier || 0)) return;
+  if (item.tier > armoryTier()) { say('O Arsenal ainda não vende isso. Melhore o Arsenal.'); return; }
+  if (!state.testMode && state.gold < item.price) { say(`Falta ouro. ${item.name} custa ${item.price}.`); return; }
+  if (!state.testMode) state.gold -= item.price;
+  monarchEquipment()[slot] = id;
+  say(`${item.name} agora é do monarca. O cofre emagreceu ${item.price}.`);
+  updateHud();
+  renderPanel();
+}
 
 // ==========================================================================
 // Equipamento de heróis e camponeses. Cada um compra no Arsenal com a própria bolsa, pela ordem
@@ -2062,7 +2177,8 @@ function armoryBoxHTML(armory) {
   const forSale = Object.values(GEAR).filter(item => item.tier <= tierCap).sort((a, b) => (a.peasant === b.peasant ? 0 : a.peasant ? 1 : -1) || a.tier - b.tier || a.price - b.price);
   return `<section class="inspector-section"><h4>Melhoria</h4>
     ${next ? `<button type="button" class="hut-upgrade" data-armory-upgrade="${armory.site}">Nível ${level + 2} · até tier ${next.tierCap} · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. O ferreiro já não dorme.</p>'}</section>
-    <details class="inspector-section"><summary>À venda · ${forSale.length} itens</summary>
+    <section class="inspector-section"><h4>Loja do monarca · até tier ${tierCap}</h4>${monarchShopHTML(tierCap)}</section>
+    <details class="inspector-section"><summary>À venda para heróis e camponeses · ${forSale.length} itens</summary>
     <p class="storage-items">Heróis e camponeses compram sozinhos, com o próprio ouro. O ouro vai pro cofre.</p>
     <ul class="shop-list">${forSale.map(item => `<li><span><b>${item.name}</b><small>${item.peasant ? (item.prof ? item.prof.map(id => PROFESSIONS[id].name).join(', ') : 'Qualquer camponês') : item.classes ? item.classes.join(', ') : 'Qualquer herói'} · ${bonusText(item.bonus)}</small></span><em>${item.price}</em></li>`).join('')}</ul></details>`;
 }
@@ -2142,7 +2258,7 @@ const HEIR_STATS = [
 ];
 function heirAttributesHTML(level) {
   const lv = Math.max(1, Math.min(HEIR_MAX_LEVEL, level));
-  return `<div class="sheet-section-label">ATRIBUTOS</div><dl class="attr-grid heir-attrs">${HEIR_STATS.map(stat => `<div title="${stat.name}"><dt>${stat.key}</dt><dd>${stat.base + stat.per * (lv - 1)}</dd><small>${stat.name}</small></div>`).join('')}</dl>`;
+  return `<div class="sheet-section-label">ATRIBUTOS</div><dl class="attr-grid heir-attrs">${HEIR_STATS.map(stat => { const base = stat.base + stat.per * (lv - 1), extra = monarchBonus(stat.key); return `<div title="${stat.name}: ${base} do nível${extra ? ` + ${extra} do equipamento` : ''}"><dt>${stat.key}</dt><dd>${base + extra}${extra ? `<i>+${extra}</i>` : ''}</dd><small>${stat.name}</small></div>`; }).join('')}</dl>`;
 }
 
 function levelHTML(level, xp) {
@@ -3589,7 +3705,7 @@ const SCREENS = {
       </dl>
       <p class="sheet-about">${heir.about}</p>
       <div class="sheet-section-label">EQUIPAMENTO</div>
-      <div class="equip-grid">${EQUIP_SLOTS.map(({ slot, label }) => { const item = ITEMS[(state.equipment || BASIC_EQUIPMENT())[slot]]; return `<div class="equip-slot" title="${item ? item.about : 'Vazio'}">${item ? pixelIcon(item.icon, 28) : ''}<span><small>${label}</small><b>${item ? item.name : 'Vazio'}</b></span></div>`; }).join('')}</div>
+      <div class="equip-grid">${EQUIP_SLOTS.map(({ slot, label }) => { const item = ITEMS[(state.equipment || BASIC_EQUIPMENT())[slot]]; return `<div class="equip-slot" title="${item ? `${item.about}${Object.keys(item.bonus || {}).length ? ` (${monarchBonusText(item.bonus)})` : ''}` : 'Vazio'}">${item ? pixelIcon(item.icon, 28) : ''}<span><small>${label}${item?.tier ? ` · T${item.tier}` : ''}</small><b>${item ? item.name : 'Vazio'}</b></span></div>`; }).join('')}</div>
     </section>` };
   },
   actor({ id }) {
