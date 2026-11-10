@@ -651,12 +651,25 @@ function renderSites() {
       const label = siteLabel(building);
       const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
       site.classList.toggle('just-built', Date.now() - building.builtAt < 1400);
+      // Upgrade: a animação continua de onde parou mesmo que o mapa seja redesenhado no meio dela.
+      const upgradeAge = Date.now() - (building.upgradedAt || 0);
+      const upgrading = upgradeAge < UPGRADE_FX_MS;
+      site.classList.toggle('just-upgraded', upgrading);
+      site.style.setProperty('--up-delay', `${upgrading ? -upgradeAge : 0}ms`);
       site.dataset.art = art;
       const artAspect = options.buildingArtStyle === 'dark' ? BUILDING_ART_ASPECTS[art] || 1 : art === 'manor' ? 1.5 : 1;
-      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};background-image:url('${buildingImage(siteArt(building))}')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${building.damage > 0 ? `${label} · ${building.ruined ? 'em ruínas' : 'vida'} ${buildingHp(building)}/${buildingMaxHp(building)}` : label}</small>`}`;
+      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};background-image:url('${buildingImage(siteArt(building))}')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${upgrading ? `<span class="upgrade-burst" aria-hidden="true">${'<i></i>'.repeat(8)}<b>${building.upgradeText || 'Melhorado'}</b></span>` : ''}${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${building.damage > 0 ? `${label} · ${building.ruined ? 'em ruínas' : 'vida'} ${buildingHp(building)}/${buildingMaxHp(building)}` : label}</small>`}`;
       site.setAttribute('aria-label', `${label}. Toque para ver opções.`);
     }
   });
+}
+
+// Animação de upgrade: a construção pula, brilha, solta brasas e mostra o que ganhou.
+const UPGRADE_FX_MS = 1800;
+function markUpgrade(building, text) {
+  building.upgradedAt = Date.now();
+  building.upgradeText = text;
+  setTimeout(renderSites, UPGRADE_FX_MS + 60);
 }
 
 // Se a construção cabe neste ponto: dentro do mapa, fora das áreas bloqueadas e longe das outras.
@@ -1114,6 +1127,7 @@ function upgradeHut(site) {
   state.gold -= HUT_UPGRADE.gold;
   state.timber -= HUT_UPGRADE.wood;
   hut.big = true;
+  markUpgrade(hut, 'Casebre Grande');
   for (let i = 0; i < 3; i++) hireWorker(hut, Math.random() < 0.5);
   gainHeirXp(25);
   renderSites(); renderPanel(); updateHud();
@@ -1162,6 +1176,7 @@ function upgradeGuild(site, branch) {
     const hero = recruit(def.heroClass, guild, branch);
     say(hero ? `${def.name} chegou ao nível 3 e forma ${branch}. ${hero.name} ficou alojado fora da guilda.` : 'A guilda não foi ampliada: falta alojamento.');
   }
+  markUpgrade(guild, `Nível ${guild.tier + 1}`);
   renderSites(); renderPanel(); renderHeroes(); updateHud();
 }
 
@@ -1756,6 +1771,7 @@ function upgradeArmory(site) {
   state.gold -= next.gold;
   state.timber -= next.wood;
   armory.level = (armory.level || 0) + 1;
+  markUpgrade(armory, `Nível ${armory.level + 1}`);
   renderSites(); renderPanel(); updateHud();
   say(`Arsenal no nível ${armory.level + 1}. Chegaram itens melhores. Os preços também.`);
 }
@@ -1937,6 +1953,7 @@ function upgradeDepot(site) {
   state.gold -= next.gold;
   state.timber -= next.wood;
   depot.level = (depot.level || 0) + 1;
+  markUpgrade(depot, `Nível ${depot.level + 1}`);
   renderSites(); renderPanel(); updateHud();
   say(`Depósito de Provisões ampliado para ${next.cap} unidades. Os ratos agradecem o espaço extra.`);
 }
@@ -2057,6 +2074,7 @@ function upgradeProducer(site) {
   state.gold -= next.gold;
   state.timber -= next.wood;
   building.level = producerLevel(building) + 1;
+  markUpgrade(building, `Nível ${building.level + 1}`);
   renderSites(); renderPanel(); updateHud();
   say(building.type === 'mill' ? `Moinho no nível ${building.level + 1}: mói ${rateNumber(millRate(building))} de trigo por segundo.` : `${buildingName(building)} no nível ${building.level + 1}: ${rateNumber(farmOutput(building))} por segundo. A terra não pediu, mas aceitou.`);
 }
