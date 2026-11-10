@@ -3737,8 +3737,6 @@ const SCREENS = {
           <img class="heir-detail-portrait" src="${heirPortraitSrc(chosen.id)}" alt="${chosen.name}, fase jovem">
           <span class="eyebrow">${house.name.toUpperCase()}</span><h3>${chosen.name}</h3><p class="heir-motto">“${house.motto}”</p>
           <p>${chosen.about}</p><p class="heir-tie">${chosen.age} anos · ${chosen.tie}</p>
-          <div class="heir-row-label">O QUE EMBER FAZ COM ${chosen.name.split(' ')[0].toUpperCase()}</div>
-          <div class="heir-phases">${[1, 2, 3, 4].map(phase => `<figure><img src="${heirPortraitSrc(chosen.id, phase)}" alt="${chosen.name}, fase ${phase}"><figcaption>${(phase - 1) * HEIR_PHASE_YEARS} anos</figcaption></figure>`).join('')}</div>
         </div>
       </div>
       <div class="menu-actions"><button type="button" class="primary" data-action="choose-heir" data-slot="${slot}">Escolher ${chosen.name.split(' ')[0]}</button><button type="button" data-action="back">Voltar</button></div>
