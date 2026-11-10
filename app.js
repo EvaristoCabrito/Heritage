@@ -604,7 +604,7 @@ function updateHud() {
   const hh = Math.floor(state.minutes / 60) % 24;
   const mm = state.minutes % 60;
   $('#clock').textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-  $('#date').textContent = dateLabel();
+  $('#date').textContent = `${dayPeriod()} · ${dateLabel()}`;
   if (!state.testMode && state.gold >= 600 && !state.won) {
     state.won = true;
     say('Cenário conquistado: o domínio agora paga as próprias dívidas.', 'Os credores receberam a notícia. Infelizmente, também receberam o endereço.');
@@ -1920,6 +1920,9 @@ function gameDate(minutes = state.minutes) {
   return { day: days % DAYS_PER_MONTH + 1, month: Math.floor(days / DAYS_PER_MONTH) % MONTHS_PER_YEAR + 1, year: Math.floor(days / DAYS_PER_YEAR) + 1 };
 }
 const dateLabel = (minutes = state.minutes) => { const d = gameDate(minutes); return `Dia ${d.day} · Mês ${d.month} · Ano ${d.year}`; };
+// Período do dia: madrugada (0h–6h), manhã (6h–12h), tarde (12h–18h), noite (18h–24h).
+const DAY_PERIODS = ['Madrugada', 'Manhã', 'Tarde', 'Noite'];
+const dayPeriod = (minutes = state.minutes) => DAY_PERIODS[Math.floor((minutes % 1440) / 360)];
 // O herdeiro faz aniversário a cada virada de ano: a idade da escolha mais os anos já passados.
 const heirAge = (heir, minutes = state.minutes) => heir.age + gameDate(minutes).year - 1;
 const BIRTHDAY_MSG = [
