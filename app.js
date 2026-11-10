@@ -342,10 +342,10 @@ function initCamera() {
       homeCamera();
     }
   });
-  $('#camera-home').addEventListener('click', () => {
+  $('#camera-home')?.addEventListener('click', () => {
     focusRegion('manor');
   });
-  $('#camera-road').addEventListener('click', () => focusRegion('road'));
+  $('#camera-road')?.addEventListener('click', () => focusRegion('road'));
   $$('.zoom-btn').forEach(button => button.addEventListener('click', () => setZoom(Number(button.dataset.zoom))));
   window.addEventListener('resize', () => { sizeWorld(); renderCamera(); });
   sizeWorld();
