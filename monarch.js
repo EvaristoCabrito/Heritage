@@ -1065,11 +1065,11 @@ const Monarch = (() => {
     document.getElementById('map-scene')?.classList.toggle('monarch-aiming', !!rt.targeting);
     renderBar(false);
   }
-  function sheetHTML() {
+  function sheetHTML(all) {
     if (!state.heir) return '';
     const m = ms();
     const list = unlockedSpells();
-    const next = SPELLS.filter(spell => spell.unlockLevel > level()).slice(0, 3);
+    const next = SPELLS.filter(spell => spell.unlockLevel > level()).slice(0, all ? undefined : 3);
     const row = spell => {
       const st = stats(spell);
       const rank = rankIndex(spell) + 1;
@@ -1079,7 +1079,7 @@ const Monarch = (() => {
     return `<div class="sheet-section-label">MAGIAS DO MONARCA</div>
       <p class="sheet-spell-res">MP ${Math.floor(m.mp)} de ${Math.floor(mpCap())} · Autoridade ${Math.floor(m.authority || 0)} de ${authMax()} · ${auraSlots() ? `até ${auraSlots()} ${auraSlots() === 1 ? 'aura' : 'auras'} ao mesmo tempo` : 'nenhuma aura ainda'}</p>
       <ul class="spell-list">${list.map(row).join('')}</ul>
-      ${next.length ? `<div class="sheet-section-label">PRÓXIMAS</div><ul class="spell-list locked">${next.map(spell => `<li><span class="spell-glyph">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>nível ${spell.unlockLevel}</small><p>${spell.ranks[0].description}</p></div></li>`).join('')}</ul>` : ''}`;
+      ${next.length ? `<div class="sheet-section-label">${all ? 'AINDA BLOQUEADAS' : 'PRÓXIMAS'}</div><ul class="spell-list locked">${next.map(spell => `<li><span class="spell-glyph">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>nível ${spell.unlockLevel}</small><p>${spell.ranks[0].description}</p></div></li>`).join('')}</ul>` : ''}`;
   }
 
   function reset() {

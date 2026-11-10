@@ -11,11 +11,11 @@
     <link rel="preload" as="image" href="public/art/healer-walk-v01.webp">
     <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
     <link rel="preload" as="font" href="public/fonts/PirataOne.ttf" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="app.css?v=308">
-    <script defer src="app.js?v=308"></script>
-    <script defer src="data/monarch-spells.js?v=308"></script>
-    <script defer src="spell-fx.js?v=308"></script>
-    <script defer src="monarch.js?v=308"></script>
+    <link rel="stylesheet" href="app.css?v=309">
+    <script defer src="app.js?v=309"></script>
+    <script defer src="data/monarch-spells.js?v=309"></script>
+    <script defer src="spell-fx.js?v=309"></script>
+    <script defer src="monarch.js?v=309"></script>
   </head>
   <body>
     <div class="game">
@@ -38,6 +38,7 @@
             <button class="speed-btn" data-speed="2" aria-label="Velocidade rápida">2×</button>
             <button class="speed-btn" data-speed="3" aria-label="Velocidade máxima">3×</button>
           </div>
+          <button class="sheet-btn spells-btn" id="spells-btn" type="button" title="Magias do Monarca" aria-label="Abrir as magias do Monarca">✦ MAGIAS</button>
           <button class="sheet-btn" id="sheet-btn" type="button" title="Ficha do herdeiro" aria-label="Abrir a ficha do herdeiro">FICHA</button>
           <button class="menu-btn" id="menu-btn" type="button" title="Menu (Esc)" aria-label="Abrir menu do jogo">MENU</button>
         </div>
@@ -85,7 +86,7 @@
           <section class="command-card">
             <div class="tabs" role="tablist" aria-label="Painel do domínio">
               <button class="tab active" data-tab="build" role="tab" aria-selected="true">CONSTRUIR</button>
-              <button class="tab" data-tab="heroes" role="tab" aria-selected="false">HERÓIS <span class="tab-count">1</span></button>
+              <button class="tab" data-tab="heroes" role="tab" aria-selected="false">HERÓIS</button>
               <button class="tab" data-tab="food" role="tab" aria-selected="false">PROVISÕES</button>
               <button class="tab" data-tab="economy" role="tab" aria-selected="false">ECONOMIA</button>
               <button class="tab" data-tab="market" role="tab" aria-selected="false">MERCADO</button>

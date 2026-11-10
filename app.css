@@ -1093,3 +1093,4 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
   .spell-btn .spell-glyph { font-size: 15px; line-height: 28px; }
   .monarch-res .res { min-width: 70px; }
 }
+.spells-btn { color: #f0d79a; border-color: rgba(214,170,90,.75); }

@@ -595,7 +595,6 @@ function updateHud() {
   $('#worker-count').textContent = workers;
   $('#worker-cap').textContent = workerCap;
   $('#site-count').textContent = state.buildings.length;
-  $('.tab-count').textContent = heroes;
   $('#tax-pct').textContent = `${state.taxPercent}%`;
   $('#tax-preview').textContent = `≈ ${format(dailyTaxEstimate())} de imposto · −${format(dailyWages())} de salários por dia`;
   $('#objective-gold').textContent = state.testMode ? '∞' : format(state.gold);
@@ -3232,6 +3231,16 @@ const SCREENS = {
       <div class="equip-grid">${EQUIP_SLOTS.map(({ slot, label }) => { const item = ITEMS[(state.equipment || BASIC_EQUIPMENT())[slot]]; return `<div class="equip-slot" title="${item ? item.about : 'Vazio'}">${item ? pixelIcon(item.icon, 28) : ''}<span><small>${label}</small><b>${item ? item.name : 'Vazio'}</b></span></div>`; }).join('')}</div>
     </section>` };
   },
+  spells() {
+    const heir = heirById(state.heir);
+    const close = `<div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar magias" title="Fechar magias">×</button></div>`;
+    if (!heir || !window.Monarch) return { cls: 'is-pause', html: `<section class="menu-card sheet">${close}<header class="menu-card-head"><span class="eyebrow">MAGIAS DO MONARCA</span><h2>${heir ? 'Magias não carregadas' : 'Sem herdeiro'}</h2><p>${heir ? 'O grimório não veio junto com o jogo. Alguém usou as páginas para acender a lareira.' : 'Este save é de antes da escolha de herdeiros. Comece um jogo novo e escolha um herdeiro para ter magias.'}</p></header><div class="menu-actions"><button type="button" class="primary" data-action="resume">Voltar ao jogo</button></div></section>` };
+    return { cls: 'is-pause', html: `<section class="menu-card sheet">${close}
+      <div class="sheet-top">${crestSVG(heir.house, 72)}
+        <div><span class="eyebrow">MAGIAS DO MONARCA</span><h2>${heir.name}</h2><p class="heir-motto">Nível ${state.heirLevel} · teclas 1 a 0 lançam pela barra embaixo do mapa</p></div></div>
+      ${Monarch.sheetHTML(true)}
+    </section>` };
+  },
   actor({ id }) {
     const actor = findActor(id);
     if (!actor) return { cls: 'is-pause', html: `<section class="menu-card"><header class="menu-card-head"><span class="eyebrow">FICHA</span><h2>Não está mais aqui</h2><p>Foi embora, morreu ou as duas coisas.</p></header><div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar ao jogo</button></div></section>` };
@@ -3497,6 +3506,7 @@ function initMenus() {
     renderPanel();
   });
   $('#sheet-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('sheet'); });
+  $('#spells-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('spells'); });
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
     if (!$('#menu-layer').hidden) {
