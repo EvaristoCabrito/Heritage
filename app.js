@@ -1545,28 +1545,6 @@ const HEIRS = [
 ];
 const heirById = id => HEIRS.find(heir => heir.id === id) || null;
 
-// Brasão da casa, desenhado em SVG (escudo com divisão heráldica e a inicial da casa).
-function crestSVG(houseId, size = 64) {
-  const h = HOUSES[houseId];
-  if (!h) return '';
-  const [a, b] = h.colors;
-  const shield = 'M4 4H60V34C60 54 46 66 32 72C18 66 4 54 4 34Z';
-  const fields = {
-    pale: `<rect x="0" y="0" width="32" height="76" fill="${a}"/><rect x="32" y="0" width="32" height="76" fill="${b}"/>`,
-    fess: `<rect x="0" y="0" width="64" height="30" fill="${a}"/><rect x="0" y="30" width="64" height="46" fill="${b}"/>`,
-    bend: `<rect x="0" y="0" width="64" height="76" fill="${a}"/><path d="M-6 8L8 -6L74 60L60 74Z" fill="${b}"/>`,
-    chevron: `<rect x="0" y="0" width="64" height="76" fill="${a}"/><path d="M4 50L32 24L60 50V62L32 36L4 62Z" fill="${b}"/>`,
-    quarterly: `<rect x="0" y="0" width="32" height="34" fill="${a}"/><rect x="32" y="0" width="32" height="34" fill="${b}"/><rect x="0" y="34" width="32" height="42" fill="${b}"/><rect x="32" y="34" width="32" height="42" fill="${a}"/>`,
-  };
-  const clip = `crest-${houseId}-${Math.random().toString(36).slice(2, 7)}`;
-  return `<svg class="crest" width="${size}" height="${Math.round(size * 76 / 64)}" viewBox="0 0 64 76" aria-hidden="true">
-    <defs><clipPath id="${clip}"><path d="${shield}"/></clipPath></defs>
-    <g clip-path="url(#${clip})">${fields[h.pattern]}</g>
-    <path d="${shield}" fill="none" stroke="#c9a464" stroke-width="2.4"/>
-    <path d="${shield}" fill="none" stroke="#000" stroke-opacity=".45" stroke-width="1" transform="translate(0 1)"/>
-    <text x="32" y="44" text-anchor="middle" font-family="'Pirata One', Georgia, serif" font-size="30" fill="${h.ink}" stroke="#000" stroke-opacity=".35" stroke-width=".8">${h.letter}</text>
-  </svg>`;
-}
 
 // Nível do herdeiro (1 a 30) e experiência.
 const HEIR_MAX_LEVEL = 30;
@@ -2295,7 +2273,7 @@ function demandsHTML() {
     const when = demand.late ? `ATRASADO · vêm buscar em ${Math.max(0, Math.ceil((demand.due + DEMAND_GRACE - state.minutes) / 60))}h` : `${Math.ceil(left / 60)}h de prazo`;
     const enough = resourceStock(demand.res) >= demand.qty;
     return `<div class="demand${demand.late ? ' late' : ''}${noble.baron ? ' baron' : ''}">
-      <div class="demand-head">${noble.house ? crestSVG(noble.house, 32) : '<span class="baron-seal" aria-hidden="true">B</span>'}<span><b>${noble.name}</b><small>${noble.title}</small></span></div>
+      <div class="demand-head">${noble.house ? '' : '<span class="baron-seal" aria-hidden="true">B</span>'}<span><b>${noble.name}</b><small>${noble.title}</small></span></div>
       <p>${demand.line}</p>
       <div class="demand-foot"><span><b>${demand.qty} de ${resourceName(demand.res)}</b><small>${when} · você tem ${resourceStock(demand.res) === Infinity ? '∞' : format(resourceStock(demand.res))}</small></span>
         <button type="button" class="hut-upgrade" data-deliver="${demand.id}" ${enough ? '' : 'disabled'}>Entregar</button></div></div>`;
@@ -3247,7 +3225,7 @@ const SCREENS = {
   },
   heir({ slot, selected }) {
     const card = (heir, i) => `<button type="button" class="heir-card${i === selected ? ' selected' : ''}" data-action="pick-heir" data-index="${i}" aria-pressed="${i === selected}">
-        ${crestSVG(heir.house, 44)}<b>${heir.name.split(' ')[0]}</b><small>${HOUSES[heir.house].name}</small><small>${heir.age} anos</small></button>`;
+        <b>${heir.name.split(' ')[0]}</b><small>${HOUSES[heir.house].name}</small><small>${heir.age} anos</small></button>`;
     const men = HEIRS.map((heir, i) => ({ heir, i })).filter(entry => entry.heir.gender === 'm');
     const women = HEIRS.map((heir, i) => ({ heir, i })).filter(entry => entry.heir.gender === 'f');
     const chosen = HEIRS[selected];
@@ -3259,7 +3237,6 @@ const SCREENS = {
       <div class="heir-row-label">HERDEIRAS</div>
       <div class="heir-grid">${women.map(entry => card(entry.heir, entry.i)).join('')}</div>
       <div class="heir-detail">
-        ${crestSVG(chosen.house, 76)}
         <div><span class="eyebrow">${house.name.toUpperCase()}</span><h3>${chosen.name}</h3><p class="heir-motto">“${house.motto}”</p>
           <p>${chosen.about}</p><p class="heir-tie">${chosen.age} anos · ${chosen.tie}</p></div>
       </div>
@@ -3272,7 +3249,7 @@ const SCREENS = {
     const house = HOUSES[heir.house];
     return { cls: 'is-pause', html: `<section class="menu-card sheet">
       <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar ficha" title="Fechar ficha">×</button></div>
-      <div class="sheet-top">${crestSVG(heir.house, 96)}
+      <div class="sheet-top">
         <div><span class="eyebrow">FICHA DO HERDEIRO</span><h2>${heir.name}</h2><p class="heir-motto">${house.name} · “${house.motto}”</p></div></div>
       <div class="sheet-level">
         <div class="sheet-level-head"><b>Nível ${state.heirLevel}</b><span>de ${HEIR_MAX_LEVEL}</span><small>${state.heirLevel >= HEIR_MAX_LEVEL ? 'Nível máximo. O tédio também.' : `${state.heirXp} / ${xpToNext(state.heirLevel)} XP`}</small></div>
@@ -3554,6 +3531,11 @@ function initMenus() {
     renderPanel();
   });
   $('#sheet-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('sheet'); });
+  // Fichas fecham com um clique fora delas.
+  $('#menu-layer').addEventListener('click', event => {
+    if (event.target.closest('#menu-panel > *')) return;
+    if (['sheet', 'actor'].includes(menu.stack[menu.stack.length - 1]?.name)) closeMenu();
+  });
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape' || editor.active) return;
     if (!$('#menu-layer').hidden) {
@@ -4030,6 +4012,12 @@ function init() {
     else if (state.placingBounty) { event.preventDefault(); cancelBountyPlacement(); }
   });
   scene.addEventListener('click', event => {
+    // Clique no mapa fora de construções e personagens fecha a janela da construção.
+    if (state.selectedSite != null && state.movingSite == null && !state.selectedBuild && !state.placingBounty && !camera.dragMoved && !event.target.closest('button')) {
+      state.selectedSite = null;
+      renderSites(); renderPanel();
+      return;
+    }
     if ((!state.selectedBuild && state.movingSite == null && !state.placingBounty) || camera.dragMoved || event.target.closest('button')) return;
     const { x, y } = worldPoint(event);
     if (state.placingBounty) placeBountyAt(x, y);

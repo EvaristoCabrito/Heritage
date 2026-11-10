@@ -704,7 +704,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .attr-grid div { padding: 8px 6px; border: 1px solid rgba(206,186,137,.18); border-radius: 5px; background: rgba(10,12,9,.45); text-align: center; }
 .attr-grid dt { color: #8f8a7a; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
 .attr-grid dd { margin: 3px 0 0; color: #f3e1c2; font: 22px 'Newsreader', Georgia, serif; font-variant-numeric: tabular-nums; }
-.sheet-portrait { width: 84px; height: 100px; object-fit: cover; object-position: center 28%; border: 1px solid #a58d59; border-radius: 4px; background: #161714; }
+.sheet-portrait { flex: none; width: 150px; height: 190px; object-fit: cover; object-position: center 28%; border: 1px solid #a58d59; border-radius: 4px; background: #161714; }
 .card-sheet-btn { display: block; margin: 8px 0 0 auto; padding: 3px 8px; border: 1px solid rgba(190,150,95,.55); border-radius: 3px; color: #e2c294; background: #141414; font: 12px 'Pirata One', Georgia, serif; letter-spacing: .14em; cursor: pointer; }
 .card-sheet-btn:hover { border-color: #e2aa64; color: #f0d3a4; }
 .retinue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-bottom: 14px; }
@@ -809,7 +809,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .sheet-close:hover, .sheet-close:focus-visible { color: #211f18; background: var(--gold); outline: none; }
 .sheet-top { gap: 16px; margin: 0 0 12px; padding-right: 28px; }
 .sheet-top > .crest { width: 68px; height: auto; flex: none; }
-.sheet-portrait { width: 64px; height: 76px; }
+.sheet-portrait { width: 150px; height: 190px; }
 .sheet-top h2 { font-size: 34px; }
 .sheet-top .eyebrow { font-size: 11px; }
 .sheet-top .heir-motto { margin-top: 4px; font-size: 14px !important; }
@@ -854,7 +854,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
   .sheet-close-row { top: -16px; margin: -16px -14px 0; }
   .sheet-top { gap: 12px; }
   .sheet-top > .crest { width: 54px; }
-  .sheet-portrait { width: 52px; height: 62px; }
+  .sheet-portrait { width: 100px; height: 126px; }
   .sheet-top h2 { font-size: 28px; }
   .equip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
