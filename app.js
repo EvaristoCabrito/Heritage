@@ -1023,9 +1023,10 @@ function assignBuilders() {
 }
 
 // A cada BUILD_ACTION_SECONDS de obra ou conserto, uma ação de profissão.
-function buildPractice(worker, dt) {
+function buildPractice(worker, dt, repairing) {
+  const every = BUILD_ACTION_SECONDS / (1 + tradeBuildBonus(worker, repairing) / 2);
   worker.buildClock = (worker.buildClock || 0) + dt;
-  while (worker.buildClock >= BUILD_ACTION_SECONDS) { worker.buildClock -= BUILD_ACTION_SECONDS; gainTrade(worker, 'build'); }
+  while (worker.buildClock >= every) { worker.buildClock -= every; gainTrade(worker, 'build'); }
 }
 
 // O camponês trabalha ao lado da obra, na base. O rótulo de progresso fica no alto da obra, longe dele.
@@ -1039,8 +1040,8 @@ function progressConstruction(dt) {
     const spot = buildSpot(building);
     if (!building.underConstruction) {
       if (worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5) {
-        building.damage = Math.max(0, building.damage - REPAIR_RATE * dt * (1 + tradeBuildBonus(worker, true) + gearBonus(worker, 'build')));
-        buildPractice(worker, dt);
+        building.damage = Math.max(0, building.damage - REPAIR_RATE * dt * (1 + tradeBuildBonus(worker, true) / 2 + gearBonus(worker, 'build')));
+        buildPractice(worker, dt, true);
         if (building.damage <= 0) {
           building.damage = 0;
           building.ruined = false;
@@ -1056,8 +1057,8 @@ function progressConstruction(dt) {
       return;
     }
     if (worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5) {
-      building.progress = Math.min(BUILD_TIME, (building.progress || 0) + dt * (1 + tradeBuildBonus(worker, false) + gearBonus(worker, 'build')));
-      buildPractice(worker, dt);
+      building.progress = Math.min(BUILD_TIME, (building.progress || 0) + dt * (1 + tradeBuildBonus(worker, false) / 2 + gearBonus(worker, 'build')));
+      buildPractice(worker, dt, false);
       if (building.progress >= BUILD_TIME) { completeBuilding(building); return; }
     }
     const label = $(`.site[data-site="${building.site}"] .build-progress`);
@@ -1402,7 +1403,7 @@ function animateActors(now) {
         if (onTrail) actor.route.shift(); else actor.finalPoint = null;
         if (!actor.route.length && !actor.finalPoint) {
           // Quem trabalha tem ritmo fixo; quem só anda para um tempo diferente a cada vez, para ninguém andar em fila sincronizada.
-          actor.wait = actor.className === 'Peasant' ? (actor.headingToWork ? 2.3 : 1.8 + Math.random() * 3) : 1.2;
+          actor.wait = actor.className === 'Peasant' ? (actor.headingToWork ? 2.3 / taskSpeed(actor, workplaceOf(actor)) : 1.8 + Math.random() * 3) : 1.2;
           if (actor.className === 'Peasant' && actor.headingToWork && workplaceOf(actor)?.type === 'lumber') gainTrade(actor, 'lumber');
           if (actor.className === 'Peasant' && actor.headingToWork) { actor.actionTime = actor.wait; actor.actionClock = 0; gainActorXp(actor, 13); actor.headingToWork = false; }
           actor.goal = null;
@@ -1752,13 +1753,16 @@ function tradeCombat(actor) {
   return combat;
 }
 const tradeAttribute = (actor, id) => TRADES.reduce((sum, trade) => sum + (tradeEffects(actor, trade.key)[id] || 0), 0);
-// Bônus de produção da profissão ligada a esse trabalho (0,1 = +10%).
+// Bônus total da profissão ligada a esse trabalho (0,1 = +10%). No trabalho ele se divide no meio:
+// metade aumenta a produção do lugar (crewWork) e metade encurta cada tarefa (taskSpeed).
+// Na obra e no conserto é igual: metade no avanço da obra, metade no ritmo de cada ação (buildPractice).
 function tradeWorkBonus(actor, hook) {
   const link = TRADE_HOOKS[hook];
   if (!link) return 0;
   const fx = tradeEffects(actor, link.trade);
   return ((fx.workSpeedPercent || 0) + (fx.yieldPercent || 0) + (fx[HOOK_YIELD[hook]] || 0) - (hook.startsWith('farm:') ? fx.growthTimePercent || 0 : 0)) / 100;
 }
+const taskSpeed = (actor, place) => 1 + (place ? tradeWorkBonus(actor, hookOf(place)) / 2 : 0);
 function tradeBuildBonus(actor, repairing) {
   const fx = tradeEffects(actor, TRADE_HOOKS.build?.trade);
   return ((fx.workSpeedPercent || 0) + (fx.buildSpeedPercent || 0) + (repairing ? fx.repairAmountPercent || 0 : 0)) / 100;
@@ -1869,10 +1873,10 @@ const fitsSlot = (item, actor, slot) => item.slot === slotKind(slot) && (actor.c
 const gearBonus = (actor, key) => Object.values(gearOf(actor)).reduce((sum, id) => sum + (GEAR[id]?.bonus[key] || 0), 0);
 const bonusText = bonus => Object.entries(bonus).map(([key, value]) => ['work', 'speed', 'build'].includes(key) ? `+${Math.round(value * 100)}% ${BONUS_LABELS[key]}` : `+${value} ${BONUS_LABELS[key]}`).join(', ');
 const carryLoad = actor => CARRY_LOAD + gearBonus(actor, 'carry') + Math.floor(skillOf(actor, 'hauling') / 25);
-// Bônus de trabalho de quem está escalado nesta construção (fazenda, moinho ou cabana): equipamento e profissão.
+// Bônus de trabalho de quem está escalado nesta construção (fazenda, moinho ou cabana): equipamento e metade do bônus da profissão.
 function crewWork(building) {
   return state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site)
-    .reduce((sum, worker) => sum + gearBonus(worker, 'work') + tradeWorkBonus(worker, hookOf(building)), 0);
+    .reduce((sum, worker) => sum + gearBonus(worker, 'work') + tradeWorkBonus(worker, hookOf(building)) / 2, 0);
 }
 const armoryTier = () => state.buildings.filter(building => building.type === 'armory' && isDone(building)).reduce((best, armory) => Math.max(best, (armory.level || 0) + 1), 0);
 function bestPurchase(actor, tier) {
@@ -2170,7 +2174,7 @@ function haulRoutine(actor, workplace) {
     }
     actor.task = mill ? (workplace.input > 0 ? 'Moendo trigo no moinho' : 'No moinho, esperando trigo') : `Trabalhando ${workPlaceName(workplace)}`;
     if (!mill || workplace.input > 0) gainTrade(actor, hookOf(workplace));
-    actor.wait = 3; actor.actionTime = 3; actor.actionClock = 0;
+    actor.wait = 3 / taskSpeed(actor, workplace); actor.actionTime = actor.wait; actor.actionClock = 0;
     return;
   }
   if (isAt(actor, store)) {
