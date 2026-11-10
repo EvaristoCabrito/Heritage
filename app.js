@@ -3867,21 +3867,10 @@ const SCREENS = {
       <header class="menu-card-head"><span class="eyebrow">DIA ${day} · ${clock}</span><h2>Pausado</h2></header>
       <nav class="menu-list compact" aria-label="Menu de pausa">
         <button type="button" class="primary" data-action="resume">Voltar ao jogo</button>
-        <button type="button" data-action="save">Salvar</button>
+        <button type="button" data-action="save">Salvar jogo</button>
         <button type="button" data-action="load">Carregar jogo</button>
         <button type="button" data-action="options">Opções</button>
-        <button type="button" data-action="debug">Debug</button>
-        <button type="button" data-action="quit">Voltar ao menu principal</button>
-      </nav>
-    </section>` };
-  },
-  quit() {
-    return { cls: 'is-pause', html: `<section class="menu-card narrow">
-      <header class="menu-card-head"><span class="eyebrow">SAIR</span><h2>Voltar ao menu principal?</h2><p>O que não foi salvo vai ser perdido. A fazenda não vai sentir sua falta.</p></header>
-      <nav class="menu-list compact">
-        <button type="button" class="primary" data-action="save-quit">Salvar e sair</button>
-        <button type="button" data-action="quit-nosave">Sair sem salvar</button>
-        <button type="button" data-action="back">Cancelar</button>
+        <button type="button" data-action="save-quit">Voltar ao menu principal</button>
       </nav>
     </section>` };
   },
@@ -4034,9 +4023,7 @@ function initMenus() {
       }
       case 'confirm-yes': { const run = menu.pending; menu.pending = null; run?.(); break; }
       case 'save': say(writeSave(game.slot) ? 'Jogo salvo.' : 'Não deu pra salvar. O navegador recusou.'); renderMenu(); break;
-      case 'quit': showScreen('quit'); break;
       case 'save-quit': writeSave(game.slot); toTitle(); break;
-      case 'quit-nosave': toTitle(); break;
     }
   });
   $('#menu-btn').addEventListener('click', openPause);
