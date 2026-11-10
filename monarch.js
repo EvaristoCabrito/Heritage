@@ -799,8 +799,173 @@ const Monarch = (() => {
     const n = fieldNums(spell);
     const run = MECHANIC[spell.mechanic];
     if (run) run(spell, n, target);
+    const sig = SIGNATURE[spell.key];
+    const at = target || rt.hover || { x: m.x, y: m.y };
+    if (sig) later(sig[0], () => sig[1](at.x, at.y, spell.radius || 2.5, spell));
     renderPanel(true);
   }
+
+  // ----- Assinatura visual de cada magia de campo -----
+  // Cada uma tem um desenho só dela, no ponto onde cai, por cima do efeito base da mecânica.
+  // [atraso até o impacto em segundos, desenho(x, y, raio)]
+  const S = SpellFX.SHAPE;
+  const ringOf = (x, y, r, n, fn) => { for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; fn(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.9, a, i); } };
+  const SIGNATURE = {
+    // 1. Fagulha: redemoinho de brasas que sobe em espiral.
+    fagulha: [0.38, (x, y) => {
+      FX.custom(0.9, (k, t) => { for (let i = 0; i < 6; i++) { const a = t * 9 + i * 1.05; D.glow('sky', x + Math.cos(a) * (1.2 - k), y - 1 - k * 4 + Math.sin(a) * 0.4, 0.45, i % 2 ? C.flame : C.ember, 1 - k); } });
+      emit(x, y - 0.5, { color: C.flame, count: 26, speed: 3, size: 0.3, up: 6, gravity: 5, life: 0.9, shape: S.star });
+      FX.custom(0.7, (k, t) => D.wisp(x, y - 1.6, 0.9, 2.6 * (1 - k * 0.6), C.fire, 1 - k, t));
+    }],
+    // 2. Toque Restaurador: pétalas verdes que sobem num anel de folhas.
+    'toque-restaurador': [0, (x, y) => {
+      FX.sigil(x, y, 2.2, C.emerald, 1.2, 5, 'ground', 0.6);
+      FX.custom(1.2, (k, t) => ringOf(x, y - k * 5, 1.4 * (1 - k * 0.5), 5, (px, py, a) => D.wisp(px, py - 1, 0.35, 0.8, C.heal, 1 - k, a + t)));
+      emit(x, y - 1, { color: C.white, count: 12, speed: 0.6, size: 0.25, up: 5, life: 1.2, shape: S.star });
+    }],
+    // 3. Míssil Mágico: runa arcana que gira e estoura em estrelas.
+    'missil-magico': [0.5, (x, y) => {
+      FX.custom(0.8, (k, t) => D.rune(x, y - BODY, 1.6 * (1 + k), C.arcane, 1 - k, t * 4));
+      emit(x, y - BODY, { color: C.arcane, count: 24, speed: 6, size: 0.35, up: 1, life: 0.6, shape: S.star });
+      FX.shockwave(x, y, 2, C.violet, 0.5);
+    }],
+    // 4. Dardo Venenoso: respingo verde que pinga e deixa poça borbulhando.
+    'dardo-venenoso': [0.3, (x, y) => {
+      emit(x, y - BODY, { color: C.poison, count: 22, speed: 4, size: 0.35, up: 4, gravity: 12, life: 0.8 });
+      FX.custom(2.2, (k, t) => { D.zone(x, y, 1.6, C.toxic, 0.7 * (1 - k), 0.08, 9, t * 0.3); if (Math.random() < 0.25) emit(x + rand(-1.2, 1.2), y + rand(-0.6, 0.6), { color: C.poison, count: 1, speed: 0.1, size: 0.3, up: 1.5, life: 0.5 }); });
+    }],
+    // 5. Bola de Fogo: anel de fogo no chão, chão queimado e coluna de fumaça.
+    'bola-de-fogo': [0.55, (x, y, r) => {
+      FX.custom(1.0, (k, t) => ringOf(x, y, r * (0.5 + k * 0.6), 10, (px, py, a) => D.wisp(px, py - 1, 0.6, 2.2 * (1 - k), C.fire, 1 - k, a + t)));
+      FX.custom(2.6, k => D.darkZone(x, y - k * 9, r * (0.5 + k), C.smoke, 0.5 * (1 - k)));
+      FX.custom(3, k => D.zone(x, y, r * 0.8, C.ember, 0.35 * (1 - k), 0.1, 10, 0));
+    }],
+    // 6. Fraqueza: correntes de runas violetas que descem e prendem o chão.
+    fraqueza: [0, (x, y, r) => {
+      FX.custom(1.4, (k, t) => ringOf(x, y, r * 0.8, 6, (px, py, a) => D.rune(px, py - 6 * (1 - Math.min(1, k * 2)), 0.9, C.violet, 1 - k, a + t)));
+      FX.custom(1.4, (k, t) => D.ring(x, y, r * 0.8, C.darkViolet, 0.9 * (1 - k), 0.06, 6, t * 0.4));
+    }],
+    // 7. Cadeia de Relâmpagos: estrela elétrica com raios em leque saindo do alvo.
+    'cadeia-de-relampagos': [0, (x, y) => {
+      FX.custom(0.5, (k, t) => ringOf(x, y - BODY, 0, 6, (px, py, a) => D.segment('sky', px, py, px + Math.cos(a) * 4, py + Math.sin(a) * 2.5, C.lightning, 1 - k, 2, 0.4, t * 9 + a)));
+      FX.custom(0.4, (k, t) => D.star(x, y - BODY, 2.2 * (1 - k * 0.5), C.white, 1 - k, t * 6));
+    }],
+    // 8. Nevasca: floco de neve gigante no chão e neve caindo em espiral.
+    nevasca: [0, (x, y, r) => {
+      FX.custom(2.5, (k, t) => D.sigil('ground', x, y, r * 0.9, C.ice, 0.8 * Math.min(1, (1 - k) * 3), 6, t * 0.3));
+      FX.custom(2.5, (k, t) => { for (let i = 0; i < 3; i++) emit(x + rand(-r, r), y + rand(-r, r) * 0.8, { color: C.white, count: 1, h: 14, up: -4, speed: 1, angle: 0.5, spread: 0.4, size: 0.25, life: 1.2, drag: 0.5, shape: S.star }); });
+    }],
+    // 9. Onda de Cura: três anéis verdes que se abrem um depois do outro.
+    'onda-de-cura': [0, (x, y, r) => {
+      [0, 0.25, 0.5].forEach(d => later(d, () => FX.shockwave(x, y, r, C.heal, 0.8)));
+      FX.custom(1.3, (k, t) => D.zone(x, y, r * ease3(k), C.emerald, 0.35 * (1 - k), 0.04, 5, t));
+      emit(x, y, { color: C.heal, count: 30, ring: r * 0.7, speed: 0.4, size: 0.35, up: 4, life: 1.2, shape: S.wisp });
+    }],
+    // 10. Nuvem Tóxica: bolhas verdes que estouram na nuvem.
+    'nuvem-toxica': [0, (x, y, r) => {
+      FX.custom(3, (k, t) => { if (Math.random() < 0.5) { const p = inDisk(x, y, r * 0.8); FX.custom(0.5, kk => D.ring(p.x, p.y - 0.5, 0.5 + kk * 0.6, C.poison, 1 - kk, 0.2, 0, 0)); } });
+    }],
+    // 11. Lança de Gelo: cristais pontudos que brotam do chão em volta do alvo.
+    'lanca-de-gelo': [0.3, (x, y) => {
+      ringOf(x, y, 1.3, 7, (px, py, a, i) => later(i * 0.03, () => FX.custom(1.1, k => D.beam(px, py, 0.35, 2.2 * Math.min(1, k * 6) * (1 - k * 0.3), C.ice, 1 - k * k, a))));
+      FX.custom(1.1, k => D.hex(x, y - BODY, 2, C.frost, 1 - k, x));
+    }],
+    // 12. Relâmpago: o chão racha em estrela e solta faíscas por um tempo.
+    relampago: [0, (x, y, r) => {
+      FX.custom(1.2, (k, t) => { D.sigil('ground', x, y, r, C.lightning, 1 - k, 4, t * 2); if (Math.random() < 0.4) { const p = inDisk(x, y, r); D.segment('sky', p.x, p.y, p.x + rand(-1, 1), p.y - rand(1, 2.5), C.white, 1 - k, 2, 0.2, t * 9); } });
+    }],
+    // 13. Maldição da Carne: gotas de sangue que escorrem e uma caveira de runa.
+    'maldicao-da-carne': [0.3, (x, y) => {
+      FX.custom(1.6, (k, t) => D.rune(x, y - HEAD - 1.4, 1.3, C.blood, Math.min(1, (1 - k) * 2), Math.sin(t * 2) * 0.3));
+      emit(x, y - BODY, { color: C.blood, count: 18, speed: 1.2, size: 0.3, up: 1, gravity: 10, life: 1, shape: S.wisp });
+      FX.custom(1.6, k => D.darkZone(x, y, 1.6, C.blood, 0.5 * (1 - k)));
+    }],
+    // 14. Regeneração: espiral de folhas subindo e um broto de luz.
+    regeneracao: [0, (x, y, r) => {
+      FX.custom(2, (k, t) => { for (let i = 0; i < 8; i++) { const a = t * 3 + i * 0.785, h = ((i / 8 + k) % 1) * 7; D.wisp(x + Math.cos(a) * r * 0.5, y - h + Math.sin(a) * r * 0.25, 0.3, 0.6, C.heal, 1 - k, i); } });
+      FX.beam(x, y, 0.5, 7, C.emerald, 1.4);
+    }],
+    // 15. Meteoro: cratera com pedras voando e brasa no fundo.
+    meteoro: [1.0, (x, y, r) => {
+      emit(x, y - 0.5, { color: C.smoke, count: 18, speed: r * 2.5, size: 0.5, up: 7, gravity: 14, life: 1, shape: S.glow, layer: 'sky' });
+      emit(x, y - 0.5, { color: C.ember, count: 24, speed: r * 3, size: 0.25, up: 9, gravity: 16, life: 1.1, shape: S.star });
+      FX.custom(3, k => D.zone(x, y, r * 0.55, C.fire, 0.55 * (1 - k), 0.12, 12, 0));
+    }],
+    // 16. Dreno de Vida: redemoinho vermelho que puxa para dentro.
+    'dreno-de-vida': [0, (x, y) => {
+      FX.custom(1.1, (k, t) => { for (let i = 0; i < 10; i++) { const a = -t * 7 + i * 0.63, d = 3 * (1 - k) + 0.3; D.glow('sky', x + Math.cos(a) * d, y - BODY + Math.sin(a) * d * 0.5, 0.35, C.crimson, 1 - k * 0.5); } });
+      FX.custom(1.1, (k, t) => D.ring(x, y, 3 * (1 - k) + 0.4, C.blood, 0.8, 0.08, 0, t));
+    }],
+    // 17. Chuva de Fogo: círculo de fogo no chão e gotas de fogo caindo.
+    'chuva-de-fogo': [0, (x, y, r) => {
+      FX.custom(2.4, (k, t) => D.sigil('ground', x, y, r, C.fire, 0.7 * Math.min(1, (1 - k) * 3), 8, t * 0.5));
+      FX.custom(2.4, () => { if (Math.random() < 0.6) { const p = inDisk(x, y, r); emit(p.x, p.y, { color: C.flame, count: 1, h: 16, up: -10, speed: 0.4, size: 0.4, life: 0.9, drag: 0.2, shape: S.wisp }); } });
+    }],
+    // 18. Ruína: rachaduras violetas e pedras de runa que sobem e caem.
+    ruina: [0, (x, y, r) => {
+      FX.cracks(x, y, r, C.violet, 1.6);
+      ringOf(x, y, r * 0.6, 5, (px, py, a, i) => later(i * 0.08, () => FX.custom(1.2, k => D.rune(px, py - Math.sin(k * Math.PI) * 4, 0.9, C.darkViolet, 1 - k, a))));
+    }],
+    // 19. Tempestade de Raios: nuvem escura com clarões.
+    'tempestade-de-raios': [0, (x, y, r) => {
+      FX.custom(2.8, (k, t) => { D.darkZone(x, y - 14, r * 1.3, C.shadow, 0.7 * Math.min(1, (1 - k) * 3)); if (Math.sin(t * 17) > 0.92) D.glow('sky', x + rand(-r, r), y - 14, r * 0.7, C.lightning, 0.6); });
+    }],
+    // 20. Ressurreição: coluna dourada, coroa e penas caindo.
+    ressurreicao: [0, (x, y) => {
+      FX.beam(x, y, 1.6, 22, C.holy, 1.8);
+      FX.custom(1.8, (k, t) => D.crown(x, y - 10 - k * 3, 2, C.gold, Math.min(1, (1 - k) * 2)));
+      FX.custom(1.8, () => { if (Math.random() < 0.5) emit(x + rand(-3, 3), y + rand(-1, 1), { color: C.paleGold, count: 1, h: 12, up: -2, speed: 0.5, size: 0.35, life: 1.4, drag: 1, shape: S.wisp }); });
+    }],
+    // 21. Praga: enxame de moscas pretas rodando.
+    praga: [0, (x, y, r) => {
+      FX.custom(2.4, (k, t) => { for (let i = 0; i < 24; i++) { const a = t * (2 + i % 5) + i * 2.4, d = r * (0.3 + (i % 7) / 9); D.glow('sky', x + Math.cos(a) * d, y - 2 - Math.sin(a * 1.7) * 1.2 + Math.sin(a) * d * 0.4, 0.18, C.toxic, 1 - k); } });
+    }],
+    // 22. Explosão Solar: sol branco-dourado com raios girando.
+    'explosao-solar': [0.55, (x, y, r) => {
+      FX.custom(1.1, (k, t) => { D.star(x, y - 3, r * 1.4 * (0.6 + k * 0.6), C.paleGold, 1 - k, t * 1.5); D.glow('sky', x, y - 3, r * 1.2 * (1 - k * 0.5), C.white, 1 - k); });
+      FX.shockwave(x, y, r * 1.5, C.gold, 0.8);
+    }],
+    // 23. Enxame de Mísseis: sinete arcano de oito pontas no alvo.
+    'enxame-de-misseis': [0.5, (x, y) => {
+      FX.sigil(x, y, 3, C.arcane, 1.3, 8, 'ground', 2);
+      FX.custom(1.3, (k, t) => ringOf(x, y - BODY, 2.5 * (1 - k), 8, (px, py, a) => D.star(px, py, 0.5, C.violet, 1 - k, t * 5 + a)));
+    }],
+    // 24. Fonte da Vida: jorro de água e luz que sobe e cai.
+    'fonte-da-vida': [0, (x, y, r) => {
+      FX.custom(2.2, () => emit(x, y - 0.5, { color: Math.random() < 0.5 ? C.heal : C.frost, count: 3, speed: r * 0.5, size: 0.3, up: 9, gravity: 10, life: 1.2 }));
+      FX.custom(2.2, (k, t) => D.ring(x, y, r * 0.6, C.emerald, 0.7 * (1 - k), 0.05, 12, t * 0.3));
+    }],
+    // 25. Inferno: colunas de fogo que brotam em volta.
+    inferno: [0, (x, y, r) => {
+      ringOf(x, y, r * 0.7, 7, (px, py, a, i) => later(i * 0.1, () => FX.custom(1.4, (k, t) => D.wisp(px, py - 2, 1, 4.5 * Math.sin(k * Math.PI), i % 2 ? C.flame : C.fire, 1, a + t))));
+      FX.custom(2, (k, t) => D.wisp(x, y - 3, 1.8, 6 * Math.sin(k * Math.PI), C.fire, 1, t));
+    }],
+    // 26. Zero Absoluto: domo de gelo que congela e racha.
+    'zero-absoluto': [0, (x, y, r) => {
+      FX.custom(1.8, (k, t) => D.dome(x, y, r * Math.min(1, k * 4), C.ice, 0.7 * (1 - k), 1, t));
+      later(0.9, () => FX.cracks(x, y, r, C.white, 1.2));
+    }],
+    // 27. Fúria dos Céus: três colunas de luz descendo em sequência.
+    'furia-dos-ceus': [0, (x, y, r) => {
+      [0, 0.18, 0.36].forEach((d, i) => later(d, () => { const p = inDisk(x, y, r * 0.6); FX.beam(p.x, p.y, 1.2, 26, i === 1 ? C.white : C.lightning, 0.6); FX.shockwave(p.x, p.y, 2.5, C.lightning, 0.5); }));
+    }],
+    // 28. Eclipse: disco escuro no céu com coroa de luz.
+    eclipse: [0, (x, y) => {
+      FX.custom(3, (k, t) => { const a = Math.min(1, k * 4) * Math.min(1, (1 - k) * 3); D.darkZone(x, y - 18, 7, C.shadow, 0.95 * a); D.ring(x, y - 18, 7.4, C.gold, 0.8 * a, 0.08, 0, t * 0.2); D.glow('sky', x, y - 18, 11, C.paleGold, 0.25 * a); });
+    }],
+    // 29. Cataclismo: chão rachando em lava e rochas subindo.
+    cataclismo: [1.0, (x, y, r) => {
+      FX.cracks(x, y, r * 1.4, C.ember, 2.5);
+      FX.custom(3.5, k => D.zone(x, y, r * 1.1, C.fire, 0.5 * (1 - k), 0.15, 14, 0));
+      ringOf(x, y, r * 0.8, 9, (px, py, a, i) => later(i * 0.06, () => emit(px, py, { color: C.smoke, count: 4, speed: 1, size: 0.6, up: 10, gravity: 18, life: 1.2 })));
+    }],
+    // 30. Milagre: coroa de luz enorme e estrelas caindo do céu.
+    milagre: [0, (x, y) => {
+      FX.custom(2.6, (k, t) => { const a = Math.min(1, k * 4) * Math.min(1, (1 - k) * 2); D.crown(x, y - 16, 4, C.gold, a); D.glow('sky', x, y - 16, 9, C.holy, 0.4 * a); });
+      FX.custom(2.6, () => { if (Math.random() < 0.7) emit(x + rand(-10, 10), y + rand(-5, 5), { color: C.paleGold, count: 1, h: 20, up: -6, speed: 0.3, size: 0.3, life: 1.2, drag: 0.4, shape: S.star }); });
+    }],
+  };
+  const ease3 = k => 1 - Math.pow(1 - k, 3);
 
   const MECHANIC = {
     // Projétil único num inimigo.
