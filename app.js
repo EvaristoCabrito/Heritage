@@ -3658,6 +3658,7 @@ const SCREENS = {
         <button type="button" data-action="options">Opções</button>
         <button type="button" data-action="debug">Debug</button>
       </nav>
+      <p class="title-save">${latest ? `Slot ${latest.slot} · ${slotSummary(latest.record)}` : 'Nenhum jogo salvo ainda.'}</p>
       ${debug.testMode ? '<footer class="title-footer"><span class="tag-test">MODO TESTE LIGADO</span></footer>' : ''}
     </div>` };
   },
@@ -3686,14 +3687,16 @@ const SCREENS = {
       <div class="menu-actions"><button type="button" class="primary" data-action="load-slot" data-slot="${latest.slot}">Continuar</button><button type="button" data-action="load">Outros saves</button><button type="button" data-action="back">Voltar</button></div>
     </section>` };
   },
-  // Um menu de saves só, igual não importa de onde foi aberto: jogo salvo continua, espaço vazio começa um novo.
-  saves() {
+  // Um menu de saves só, com a mesma cara de onde for aberto. Vindo de Novo jogo, qualquer slot começa um jogo novo;
+  // vindo de Continuar ou Carregar, jogo salvo continua e espaço vazio começa um novo.
+  saves({ mode }) {
+    const fresh = mode === 'new';
     const slots = allSaves().map(({ slot, record }) => {
       const side = record ? `<span class="slot-actions"><button type="button" class="slot-delete" data-action="new-slot" data-slot="${slot}">Novo jogo</button><button type="button" class="slot-delete" data-action="delete-slot" data-slot="${slot}">Apagar</button></span>` : '';
-      return `<div class="save-slot${record ? '' : ' empty'}${game.slot === slot ? ' current' : ''}"><button type="button" class="slot-main" data-action="${record ? 'load-slot' : 'new-slot'}" data-slot="${slot}">${saveCard(slot, record)}</button>${side}</div>`;
+      return `<div class="save-slot${record ? '' : ' empty'}${game.slot === slot ? ' current' : ''}"><button type="button" class="slot-main" data-action="${record && !fresh ? 'load-slot' : 'new-slot'}" data-slot="${slot}">${saveCard(slot, record)}</button>${side}</div>`;
     }).join('');
     return { cls: menuMode(), html: `<section class="menu-card wide">
-      <header class="menu-card-head"><span class="eyebrow">SAVES</span><h2>Jogos salvos</h2><p>Clique num jogo para continuar. Clique num espaço vazio para começar um novo.</p></header>
+      <header class="menu-card-head"><span class="eyebrow">SAVES</span><h2>Jogos salvos</h2><p>${fresh ? 'Clique num espaço para começar um jogo novo nele.' : 'Clique num jogo para continuar. Clique num espaço vazio para começar um novo.'}</p></header>
       <div class="save-list">${slots}</div>
       <div class="menu-actions"><button type="button" data-action="back">Voltar</button></div>
     </section>` };
@@ -3973,7 +3976,8 @@ function initMenus() {
     }
     switch (button.dataset.action) {
       case 'continue': showScreen('continue'); break;
-      case 'new': case 'load': showScreen('saves'); break;
+      case 'new': showScreen('saves', { mode: 'new' }); break;
+      case 'load': showScreen('saves', { mode: 'load' }); break;
       case 'nobles': showScreen('nobles'); break;
       case 'economy': showScreen('economy'); break;
       case 'options': showScreen('options'); break;
