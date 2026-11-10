@@ -10,6 +10,7 @@ const SpellFX = (() => {
   const FLOATS = 12; // x, y, u, v, r, g, b, a, shape, p0, p1, p2
   const CORNERS = [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]];
   const MAX_QUADS = 12000;
+  const FX_GROW = 2.2; // quanto os efeitos crescem em relação ao tamanho do jogo
   const COLORS = {
     gold: [1, 0.8, 0.38], paleGold: [1, 0.93, 0.68], holy: [1, 0.97, 0.86], crimson: [1, 0.22, 0.16], blood: [0.75, 0.05, 0.08],
     violet: [0.66, 0.42, 1], darkViolet: [0.42, 0.16, 0.78], astral: [0.45, 0.82, 1], frost: [0.55, 0.78, 1], emerald: [0.45, 1, 0.6],
@@ -252,7 +253,9 @@ const SpellFX = (() => {
     const index = layer.counts[blend];
     if (index >= MAX_QUADS) return;
     const [cx, cy] = px(x, y);
-    const w = ux(hw), h = uy(hh);
+    // Efeitos maiores para serem vistos no mapa; linhas (raios, ligações) mantêm o comprimento certo.
+    const grow = shape === SHAPE.segment ? 1 : FX_GROW;
+    const w = ux(hw) * grow, h = uy(hh) * (shape === SHAPE.segment ? 1 : grow);
     if (cx + w + h < 0 || cy + w + h < 0 || cx - w - h > view.backW || cy - w - h > view.backH) return;
     const c = Math.cos(rot), s = Math.sin(rot);
     let o = index * 6 * FLOATS;

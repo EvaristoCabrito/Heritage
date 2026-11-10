@@ -3750,7 +3750,7 @@ const SCREENS = {
     const men = all.filter(entry => entry.gender === 'm').length;
     const card = entry => `<article class="noble-roster-card"><img src="${entry.src}" alt="${entry.name}"><div class="noble-roster-copy"><b>${entry.name}</b><small>${entry.title}</small><small class="noble-house">${HOUSES[entry.house].name} · “${HOUSES[entry.house].motto}”</small></div></article>`;
     return { cls: 'is-title', html: `<section class="menu-card nobles-screen">
-      <header class="menu-card-head"><span class="eyebrow">NOBRES</span><h2>Nobres e linhagens</h2><p>${all.length} personagens · ${men} homens · ${all.length - men} mulheres. Os retratos avançam a cada ${HEIR_PHASE_YEARS} anos de jogo.</p></header>
+      <header class="menu-card-head"><span class="eyebrow">NOBRES</span><h2>Nobres e linhagens</h2><p>${all.length} personagens · ${men} homens · ${all.length - men} mulheres.</p></header>
       <div class="noble-roster">${all.map(card).join('')}</div>
       <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
     </section>` };
@@ -4150,3 +4150,24 @@ function init() {
 }
 
 init();
+
+// Desenvolvimento em localhost: quando o código do jogo muda, salva a partida, recarrega e volta nela sozinho.
+(function liveReload() {
+  if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+  const RESUME_KEY = 'mordavia.resume';
+  try {
+    const resume = Number(sessionStorage.getItem(RESUME_KEY));
+    sessionStorage.removeItem(RESUME_KEY);
+    if (resume && readSave(resume)) loadGame(resume);
+  } catch {}
+  let seen = null;
+  setInterval(async () => {
+    try {
+      const stamp = await (await fetch('/__version', { cache: 'no-store' })).text();
+      if (seen === null) { seen = stamp; return; }
+      if (stamp === seen) return;
+      if (game.slot) { writeSave(game.slot); sessionStorage.setItem(RESUME_KEY, String(game.slot)); }
+      location.reload();
+    } catch {}
+  }, 1500);
+})();

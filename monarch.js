@@ -318,20 +318,19 @@ const Monarch = (() => {
     let targetId = null;
     if (spell.target === 'inimigo_unico') {
       const enemy = nearest(rt.enemies, point.x, point.y, 4);
-      if (!enemy) { say('Escolha um inimigo: clique em cima dele.'); return true; }
-      if (spell.key === 'edito-de-servidao') {
+      if (enemy && spell.key === 'edito-de-servidao') {
         const e = effects(spell);
         if (enemy.boss) { say('Chefes não se ajoelham. Pelo menos não para você.'); return true; }
         if ((enemy.level || 1) > level() + e.maxTargetLevelAboveCaster) { say(`${enemy.name} é forte demais para servir. Por enquanto.`); return true; }
       }
-      targetId = enemy.id;
+      targetId = enemy?.id || null;
     }
-    const enemy = targetId ? rt.enemies.find(other => other.id === targetId) : null;
+    // Sem inimigo perto, a magia sai no chão do mesmo jeito. Ela continua escolhida para o próximo tiro.
+    const enemy = (targetId ? rt.enemies.find(other => other.id === targetId) : null) || (spell.target === 'inimigo_unico' ? ghostAt(point) : null);
     const spot = enemy || point;
     m.pending = null; m.goal = null; m.walkTo = null;
     m.x = spot.x; m.y = spot.y;
-    rt.targeting = null;
-    refreshCursor();
+    if (spell.activation === 'alternavel') { rt.targeting = null; refreshCursor(); }
     const reason = canCast(spell);
     if (reason) { say(reason); return true; }
     if (spell.activation === 'alternavel') toggleAura(spell);
@@ -657,8 +656,10 @@ const Monarch = (() => {
     if (enemy.hp <= 0) killBySpell(enemy);
   }
   // Dano direto de magia: armadura conta, e Fraqueza/Ruína fazem o alvo apanhar mais.
+  // Alvo de mentira no chão, para a magia sair onde clicou mesmo sem ninguém ali. Não leva dano nem efeito.
+  const ghostAt = point => ({ id: 'ghost', name: '', x: point.x, y: point.y, alive: true, ghost: true });
   function hit(enemy, amount, spell) {
-    if (!enemy.alive) return 0;
+    if (!enemy.alive || enemy.ghost) return 0;
     let value = amount;
     if (spell?.execute && hpOf(enemy) < maxHpOf(enemy) * spell.execute.belowHpPercent / 100) value *= 1 + spell.execute.bonusPercent / 100;
     if (enemy.mfx?.weaken?.taken) value *= 1 + enemy.mfx.weaken.taken / 100;
@@ -680,7 +681,7 @@ const Monarch = (() => {
   }
   // Os efeitos que vêm junto com o dano: lentidão, atordoar, congelar, enfraquecer, queimar, empurrar.
   function riders(enemy, spell, n, from) {
-    if (!enemy.alive) return;
+    if (!enemy.alive || enemy.ghost) return;
     if (spell.slow) keep(enemy, 'slow', spell.slow.durationSeconds, { v: spell.slow.percent });
     if (spell.stunSeconds) keep(enemy, 'stun', spell.stunSeconds);
     if (spell.freezeSeconds && (!spell.freezeChancePercent || Math.random() * 100 < spell.freezeChancePercent)) freeze(enemy, spell.freezeSeconds);
@@ -777,16 +778,11 @@ const Monarch = (() => {
   }
   function fieldClick(point) {
     const spell = fieldByKey[rt.targeting.key];
+    // Atira onde clicar: se tiver alguém perto, pega nele; se não, a magia sai no chão do mesmo jeito.
+    // A magia continua escolhida para o próximo tiro, até Esc ou clique direito.
     let target = point;
-    if (spell.target === 'inimigo') {
-      target = nearest(fEnemies(), point.x, point.y, 5);
-      if (!target) { say(`${spell.name}: clique em cima de um inimigo.`); return; }
-    } else if (spell.target === 'aliado') {
-      target = nearest(fAllies(), point.x, point.y, 5);
-      if (!target) { say(`${spell.name}: clique em cima de um aliado.`); return; }
-    }
-    rt.targeting = null;
-    refreshCursor();
+    if (spell.target === 'inimigo') target = nearest(fEnemies(), point.x, point.y, 5) || ghostAt(point);
+    else if (spell.target === 'aliado') target = nearest(fAllies(), point.x, point.y, 5) || ghostAt(point);
     const reason = fieldCanCast(spell);
     if (reason) { say(reason); return; }
     fieldCast(spell, target);
