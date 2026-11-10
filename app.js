@@ -604,6 +604,7 @@ function updateHud() {
   const hh = Math.floor(state.minutes / 60) % 24;
   const mm = state.minutes % 60;
   $('#clock').textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  $('#date').textContent = dateLabel();
   if (!state.testMode && state.gold >= 600 && !state.won) {
     state.won = true;
     say('Cenário conquistado: o domínio agora paga as próprias dívidas.', 'Os credores receberam a notícia. Infelizmente, também receberam o endereço.');
@@ -1429,7 +1430,8 @@ function tick() {
   state.minutes += state.speed;
   if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) {
     gainHeirXp(40); collectTaxes();
-    if (Math.floor(state.minutes / 1440) % 7 === 0) applyWeeklyMood();
+    if (Math.floor(state.minutes / 1440) % DAYS_PER_WEEK === 0) applyWeeklyMood();
+    if (Math.floor(state.minutes / 1440) % DAYS_PER_YEAR === 0) newYear();
   }
   // Heróis ganham experiência só em combate (golpes e curas). Aqui chegam os bandos e todos se recuperam.
   combatTick(state.speed);
@@ -1906,6 +1908,29 @@ const taxMood = () => Math.round(10 - (state.taxPercent ?? 10));
 // na direção da média da semana (50 + efeitos), no estilo de turno do Lords of the Realm.
 const MOOD_WEEKLY_STEP = 10;
 const moodWeekAverage = () => (state.moodTime > 0 ? state.moodSum / state.moodTime : state.moodTarget ?? state.happiness);
+// Calendário: usa o mesmo relógio (state.minutes) e a mesma semana de 7 dias da felicidade.
+// Um mês tem 4 semanas e um ano tem 12 meses. O jogo começa no dia 1 do mês 1 do ano 1.
+const DAYS_PER_WEEK = 7;
+const WEEKS_PER_MONTH = 4;
+const MONTHS_PER_YEAR = 12;
+const DAYS_PER_MONTH = DAYS_PER_WEEK * WEEKS_PER_MONTH;
+const DAYS_PER_YEAR = DAYS_PER_MONTH * MONTHS_PER_YEAR;
+function gameDate(minutes = state.minutes) {
+  const days = Math.floor(minutes / 1440);
+  return { day: days % DAYS_PER_MONTH + 1, month: Math.floor(days / DAYS_PER_MONTH) % MONTHS_PER_YEAR + 1, year: Math.floor(days / DAYS_PER_YEAR) + 1 };
+}
+const dateLabel = (minutes = state.minutes) => { const d = gameDate(minutes); return `Dia ${d.day} · Mês ${d.month} · Ano ${d.year}`; };
+// O herdeiro faz aniversário a cada virada de ano: a idade da escolha mais os anos já passados.
+const heirAge = (heir, minutes = state.minutes) => heir.age + gameDate(minutes).year - 1;
+const BIRTHDAY_MSG = [
+  (n, a) => `Ano novo. ${n} fez ${a} anos. A festa foi cancelada por falta de convidados.`,
+  (n, a) => `Ano novo. ${n} fez ${a} anos. Os credores mandaram um cartão. Com juros.`,
+  (n, a) => `Ano novo. ${n} fez ${a} anos. O espelho foi o primeiro a notar.`,
+];
+function newYear() {
+  const heir = heirById(state.heir);
+  if (heir) say(pick(BIRTHDAY_MSG)(heir.name.split(' ')[0], heirAge(heir)), `${heir.name.split(' ')[0]} fez ${heirAge(heir)} anos.`);
+}
 const nextMoodDay = () => (Math.floor(Math.floor(state.minutes / 1440) / 7) + 1) * 7 + 1;
 function applyWeeklyMood() {
   const average = moodWeekAverage();
@@ -3204,7 +3229,7 @@ const SCREENS = {
       </div>
       ${heirAttributesHTML(state.heirLevel)}
       <dl class="sheet-facts">
-        <div><dt>Idade</dt><dd>${heir.age} anos</dd></div>
+        <div><dt>Idade</dt><dd>${heirAge(heir)} anos</dd></div>
         <div><dt>Parentesco</dt><dd>${heir.tie}</dd></div>
       </dl>
       <p class="sheet-about">${heir.about}</p>
