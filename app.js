@@ -3,7 +3,7 @@ const BUILDINGS = [
   { id: 'mill', name: 'Moinho', glyph: 'M', cost: 155, wood: 10, detail: 'Mói o trigo em farinha. Trigo cru não alimenta ninguém. As pás giram; a vila, nem tanto.', gold: 0.4, grain: 0, people: 0 },
   { id: 'hut', name: 'Casebre Pequeno', glyph: 'C', cost: 60, wood: 4, detail: 'Moradia para 2 camponeses. Amplia para Casebre Grande, com 5. Eles não tinham pra onde ir mesmo.', gold: 0, grain: 0, people: 0, housing: 2 },
   { id: 'depot', name: 'Depósito de Provisões', glyph: 'D', cost: 70, wood: 6, detail: 'Guarda mais 30 unidades de comida, armas e itens. Amplia para 45, 70 e 100. Os ratos aprovam.', gold: 0, grain: 0, people: 0 },
-  { id: 'lumber', name: 'Cabana do Lenhador', glyph: 'L', cost: 80, wood: 2, detail: 'Coloque de 1 a 3 camponeses para cortar lenha: 0,1, 0,3 ou 0,5 de madeira por segundo.', gold: 0, grain: 0, people: 0 },
+  { id: 'lumber', name: 'Cabana do Lenhador', glyph: 'L', cost: 80, wood: 2, detail: 'Coloque de 1 a 3 camponeses para cortar lenha: 0,05, 0,15 ou 0,25 de madeira por segundo.', gold: 0, grain: 0, people: 0 },
   { id: 'market', name: 'Mercado', glyph: 'M', cost: 100, wood: 6, detail: 'Venda o que sobra e compre o que falta. Os mercadores cobram o dobro pra vender e pagam a metade pra comprar.', gold: 0, grain: 0, people: 0 },
   { id: 'tavern', name: 'Taverna', glyph: 'T', cost: 145, wood: 9, detail: 'Uma cama para um herói. Também recebe visitantes e serve bebida, que rende imposto.', gold: 1.15, grain: 0, people: 0 },
   { id: 'hotel', name: 'Hotel de Estrada', glyph: 'H', cost: 170, wood: 11, detail: 'Mais 4 camas para heróis. Os lençóis são trocados uma vez por viúva.', gold: 0.85, grain: 0, people: 0 },
@@ -17,11 +17,11 @@ const BUILDINGS = [
 ];
 const FARM_TYPES = [
   // grain: produção por segundo nos níveis 1, 2 e 3 da fazenda.
-  { id: 'garlic', name: 'Alho', art: 'farm-garlic', grain: [0.15, 0.25, 0.4], gold: 0.9 },
-  { id: 'wheat', name: 'Trigo', art: 'farm-wheat', grain: [0.225, 0.375, 0.6], gold: 0.55 },
-  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', grain: [0.195, 0.33, 0.525], gold: 0.75 },
-  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', grain: [0.19, 0.315, 0.5], gold: 0.65 },
-  { id: 'milk', name: 'Leite', art: 'farm-milk', grain: [0.205, 0.345, 0.55], gold: 0.6 },
+  { id: 'garlic', name: 'Alho', art: 'farm-garlic', grain: [0.075, 0.125, 0.2], gold: 0.9 },
+  { id: 'wheat', name: 'Trigo', art: 'farm-wheat', grain: [0.1125, 0.1875, 0.3], gold: 0.55 },
+  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', grain: [0.05, 0.083, 0.132], gold: 0.75 },
+  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', grain: [0.1, 0.166, 0.264], gold: 0.65 },
+  { id: 'milk', name: 'Leite', art: 'farm-milk', grain: [0.1025, 0.1725, 0.275], gold: 0.6 },
 ];
 const farmType = id => FARM_TYPES.find(type => type.id === id) || FARM_TYPES[1];
 // A colheita fica na fazenda (até FARM_STOCK_CAP) até um camponês carregar CARRY_LOAD por viagem para o depósito.
@@ -30,7 +30,7 @@ const FARM_STOCK_CAP = 10;
 const MANOR_DOOR = { x: 42, y: 39 };
 // Fazendas e moinhos sobem até o nível 3. O moinho melhorado mói mais rápido, sem exagero.
 const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 90, wood: 6 }, { gold: 160, wood: 10 }];
-const MILL_RATE = [0.45, 0.6, 0.8]; // trigo moído em farinha por segundo, por nível
+const MILL_RATE = [0.225, 0.3, 0.4]; // trigo moído em farinha por segundo, por nível
 // Arte por nível: quando houver desenho do upgrade, liste aqui. Ex.: 'farm-garlic': [null, 'farm-garlic-l2', 'farm-garlic-l3']
 const LEVEL_ART = {};
 const producerLevel = building => Math.min(PRODUCER_LEVELS.length - 1, building?.level || 0);
@@ -110,13 +110,7 @@ const freeLodging = () => {
     && ((building.type === 'hotel' && state.heroes.filter(hero => hero.alive && hero.homeSite === building.site).length < 4)
       || (building.type === 'tavern' && !state.heroes.some(hero => hero.alive && hero.homeSite === building.site)))) || null;
 };
-// Construção livre: estas áreas da arte não aceitam obra (coordenadas em % do mapa, no pé da construção).
-const BLOCKED_AREAS = [
-  { x0: 0, x1: 50, y0: 0, y1: 43, why: 'Em cima do casarão não dá.' },
-  { x0: 68, x1: 100, y0: 0, y1: 29, why: 'As ruínas não aceitam obra. Nem visita.' },
-  { x0: 0, x1: 100, y0: 0, y1: 16, why: 'A floresta não deixa. Ela tem dono.' },
-  { x0: 0, x1: 100, y0: 96, y1: 109, why: 'A passagem entre as regiões deve ficar livre.' },
-];
+// Construção livre: vai onde o jogador colocar. Só não pode sair do mapa nem encostar em outra construção.
 const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
   farm: 'farm-wheat', mill: 'mill-body', hut: 'hut', depot: 'depot', lumber: 'lumber', market: 'market', tavern: 'tavern', hotel: 'hotel', warrior: 'guild', archer: 'archer', lancer: 'lancer',
@@ -360,12 +354,18 @@ function initCamera() {
 
 // Mensagens ficam na tela até o jogador clicar. Repetida vira contador; acima de TOAST_MAX, sai a mais antiga.
 const TOAST_MAX = 6;
+const TOAST_SECONDS = 15;   // cada aviso some sozinho depois disso
+function dismissToastLater(item) {
+  clearTimeout(item.dismissTimer);
+  item.dismissTimer = setTimeout(() => { item.remove(); updateToastClear(); }, TOAST_SECONDS * 1000);
+}
 function say(message, event = message) {
   const toast = $('#toast');
   const last = [...toast.querySelectorAll('.toast-msg')].pop();
   if (last && last.dataset.text === message) {
     last.dataset.count = String(Number(last.dataset.count || 1) + 1);
     last.querySelector('em').textContent = `×${last.dataset.count}`;
+    dismissToastLater(last);
   } else {
     const item = document.createElement('button');
     item.type = 'button';
@@ -376,6 +376,7 @@ function say(message, event = message) {
     item.querySelector('span').textContent = message;
     item.addEventListener('click', () => { item.remove(); updateToastClear(); });
     toast.insertBefore(item, toast.querySelector('.toast-clear'));
+    dismissToastLater(item);
     while (toast.querySelectorAll('.toast-msg').length > TOAST_MAX) toast.querySelector('.toast-msg').remove();
   }
   updateToastClear();
@@ -451,7 +452,7 @@ function marketPanelHTML() {
 }
 
 // Cabana do Lenhador: até 3 camponeses escalados pelo painel.
-const LUMBER_RATE = [0, 0.1, 0.3, 0.5];
+const LUMBER_RATE = [0, 0.05, 0.15, 0.25];
 const lumberCrew = camp => state.workers.filter(worker => worker.alive && worker.workplace && worker.workplace.site === camp.site);
 function freeWorkers() {
   return state.workers.filter(worker => worker.alive && worker.buildSite == null && worker.workplace?.type !== 'lumber');
@@ -476,9 +477,7 @@ function setLumberCrew(site, change) {
 }
 function lumberBoxHTML(camp) {
   const crew = lumberCrew(camp);
-  const rate = LUMBER_RATE[crew.length].toFixed(1).replace('.', ',');
-  return `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>Cabana do Lenhador</b><small>${crew.length} de 3 camponeses · ${rate} de madeira por segundo</small></div>
-    <p class="storage-items">${crew.length ? crew.map(worker => worker.name).join(', ') : 'Ninguém trabalhando. Sem lenhador, sem lenha.'}</p>
+  return `<section class="inspector-section"><h4>Equipe</h4>
     <div class="guild-branches"><button type="button" class="hut-upgrade" data-lumber="${camp.site}" data-change="1" ${crew.length >= 3 ? 'disabled' : ''}>+1 camponês</button><button type="button" class="hut-upgrade" data-lumber="${camp.site}" data-change="-1" ${crew.length ? '' : 'disabled'}>−1 camponês</button></div></section>`;
 }
 
@@ -492,7 +491,7 @@ function rates() {
       sum.people += def.people;
     }
     return sum;
-  }, { gold: 0, grain: 0, timber: 0.28, people: 0 });
+  }, { gold: 0, grain: 0, timber: 0.14, people: 0 });
   sum.timber += state.buildings.filter(building => building.type === 'lumber' && isDone(building)).reduce((total, camp) => total + LUMBER_RATE[lumberCrew(camp).length] * (1 + crewWork(camp)), 0);
   // Farinha: o moinho só mói o trigo que existe; sem estoque, fica limitado ao que as fazendas colhem.
   sum.grain += (state.food.wheat || 0) > 0.5 ? millCapacity() : Math.min(millCapacity(), foodProduction().wheat);
@@ -584,7 +583,7 @@ function updateHud() {
   $('#gold-rate').textContent = `${goldNet < 0 ? '−' : '+'}${format(Math.abs(goldNet))}/dia`;
   $('#grain-rate').textContent = `${r.grain < 0 ? '−' : '+'}${Math.abs(r.grain).toFixed(1).replace('.', ',')}/s`;
   $('#grain-rate').classList.toggle('negative', r.grain < 0);
-  $('#timber-rate').textContent = `+${r.timber.toFixed(1).replace('.', ',')}/s`;
+  $('#timber-rate').textContent = `+${rateNumber(r.timber)}/s`;
   // Personagens: quantos existem e quantos o domínio comporta.
   const heroes = state.heroes.filter(hero => hero.alive).length;
   const heroCap = heroCapacity();
@@ -639,7 +638,7 @@ function renderSites() {
       site.type = 'button';
       site.className = 'site built';
       site.dataset.site = String(idx);
-      layer.insertBefore(site, $('#hero-layer'));
+      layer.append(site);
     }
     site.style.setProperty('--x', `${building.x}%`);
     site.style.setProperty('--y', `${building.y / 2}%`);
@@ -663,12 +662,11 @@ function renderSites() {
 // Se a construção cabe neste ponto: dentro do mapa, fora das áreas bloqueadas e longe das outras.
 function placementProblem(x, y, ignoreSite = null) {
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
-  const blocked = BLOCKED_AREAS.find(area => x >= area.x0 && x <= area.x1 && y >= area.y0 && y <= area.y1);
-  if (blocked) return blocked.why;
   const crowded = state.buildings.some(building => building.site !== ignoreSite && Math.hypot(building.x - x, (building.y - y) * MAP_RATIO) < BUILD_SPACING);
   if (crowded) return 'Encostado demais em outra construção.';
   return null;
 }
+
 
 function worldPoint(event) {
   const rect = $('#map-world').getBoundingClientRect();
@@ -789,16 +787,17 @@ function renderPanel() {
     const selectedGuild = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && isDone(building) && BUILDINGS.find(item => item.id === building.type)?.heroClass);
     const farmChoice = state.selectedBuild === 'farm' || !!selectedFarm;
     const currentFarmType = selectedFarm ? farmType(selectedFarm.produce).id : state.selectedFarmType;
-    host.innerHTML = `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
-      ${selectedBuilding ? buildingInfoHTML(selectedBuilding) : ''}
-      ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
-        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0])} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small></span></button>`).join('')}</div></section>` : ''}
+    const inspectorActions = selectedBuilding ? `${selectedFarm ? `<section class="inspector-section" aria-label="Tipo de fazenda"><h4>Produção</h4>
+        <div class="farm-type-grid compact">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="+${rateNumber(type.grain[producerLevel(selectedFarm)])} por segundo"><img src="public/art/${type.art}-v01.webp" alt=""><b>${type.name}</b></button>`).join('')}</div></section>` : ''}
       ${selectedProducer ? producerBoxHTML(selectedProducer) : ''}
-      ${selectedArmory ? armoryBoxHTML(selectedArmory) : ''}
-      ${selectedHut ? `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>${selectedHut.big ? 'Casebre Grande' : 'Casebre Pequeno'}</b><small>${selectedHut.big ? '5 moradores. Não cabe mais ninguém. Nem com boa vontade.' : '2 moradores'}</small></div>${selectedHut.big ? '' : `<button type="button" class="hut-upgrade" data-hut-upgrade="${selectedHut.site}">Ampliar para Casebre Grande · ${costHTML(HUT_UPGRADE.gold, HUT_UPGRADE.wood)} · +3 moradores</button>`}</section>` : ''}
+      ${selectedHut && !selectedHut.big ? `<section class="inspector-section"><h4>Ampliação</h4><button type="button" class="hut-upgrade" data-hut-upgrade="${selectedHut.site}">Casebre Grande · +3 moradores · ${costHTML(HUT_UPGRADE.gold, HUT_UPGRADE.wood)}</button></section>` : ''}
       ${selectedGuild ? guildBoxHTML(selectedGuild) : ''}
       ${selectedDepot ? depotBoxHTML(selectedDepot) : ''}
       ${selectedLumber ? lumberBoxHTML(selectedLumber) : ''}
+      ${selectedArmory ? armoryBoxHTML(selectedArmory) : ''}` : '';
+    host.innerHTML = selectedBuilding ? buildingInfoHTML(selectedBuilding, inspectorActions) : `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
+      ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
+        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0])} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small></span></button>`).join('')}</div></section>` : ''}
       <div class="build-grid">${BUILDINGS.map(item => `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira">
         <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${item.detail}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`).join('')}</div>
       <p class="build-note">A moeda é o custo em ouro e a lenha é o custo em madeira.</p>`;
@@ -823,6 +822,7 @@ function renderPanel() {
   $$('[data-diet]', host).forEach(button => button.addEventListener('click', () => { state.diet[button.dataset.diet] = !state.diet[button.dataset.diet]; renderPanel(); }));
   $$('[data-trade]', host).forEach(button => button.addEventListener('click', () => trade(button.dataset.trade, Number(button.dataset.amount))));
   $$('[data-lumber]', host).forEach(button => button.addEventListener('click', () => setLumberCrew(Number(button.dataset.lumber), Number(button.dataset.change))));
+  $$('[data-inspector-close]', host).forEach(button => button.addEventListener('click', () => { if (state.movingSite != null) cancelMove(); state.selectedSite = null; renderSites(); renderPanel(); }));
   $$('[data-move-site]', host).forEach(button => button.addEventListener('click', () => (state.movingSite === Number(button.dataset.moveSite) ? cancelMove() : startMove(Number(button.dataset.moveSite)))));
   $$('[data-open-market]', host).forEach(button => button.addEventListener('click', () => { state.tab = 'market'; $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); renderPanel(); }));
   $$('[data-bounty-amount]', host).forEach(button => button.addEventListener('click', () => { state.bountyAmount = Number(button.dataset.bountyAmount); renderPanel(); }));
@@ -840,18 +840,16 @@ function renderPanel() {
   $$('[data-actor-sheet]', host).forEach(button => button.addEventListener('click', () => { menu.stack = []; showScreen('actor', { id: button.dataset.actorSheet }); }));
 }
 
-// Quadro de informações: o que a construção faz agora, quem está nela e o botão de mudar de lugar.
-function buildingInfoHTML(building) {
+// Inspetor da construção selecionada, no padrão dos jogos de construir cidade: quem é, vida, o que faz,
+// as ações dela e, por último, pequeno no rodapé, mudar de lugar.
+function buildingInfoHTML(building, actions = '') {
   const def = BUILDINGS.find(item => item.id === building.type);
   const alive = state.workers.filter(worker => worker.alive);
   const workersHere = alive.filter(worker => worker.buildSite == null && workplaceOf(worker)?.site === building.site);
   const names = list => list.length ? list.map(actor => actor.name).join(', ') : 'ninguém';
   const lines = [];
   const repairer = needsBuilder(building) && building.builderId != null ? findActor(building.builderId) : null;
-  lines.push(['Vida', `${buildingHp(building)} de ${buildingMaxHp(building)}${building.ruined ? ' · em ruínas, parada' : building.damage > 0 ? ' · danificada' : ''}`]);
   if (building.damage > 0) lines.push(['Conserto', repairer ? `${repairer.name} está consertando` : 'Esperando um camponês livre']);
-  if (building.ruined) return `<section class="farm-selector hut-box building-info"><div class="farm-selector-heading"><b>${siteLabel(building)}</b><small>Em ruínas</small></div>
-    <dl class="info-lines">${lines.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl></section>`;
   if (building.type === 'farm') {
     lines.push(['Produz', `${rateNumber(farmOutput(building))} de ${farmType(building.produce).name.toLowerCase()} por segundo${building.produce === 'wheat' ? ' (vai pro moinho)' : ''}`]);
     lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
@@ -872,7 +870,7 @@ function buildingInfoHTML(building) {
     lines.push(['Ocupação total', `${Math.floor(storedUnits())} de ${storageCap()}`]);
   } else if (building.type === 'lumber') {
     const crew = lumberCrew(building);
-    lines.push(['Produz', `${LUMBER_RATE[crew.length].toFixed(1).replace('.', ',')} de madeira por segundo`]);
+    lines.push(['Produz', `${rateNumber(LUMBER_RATE[crew.length])} de madeira por segundo`]);
     lines.push(['Lenhadores', `${crew.length} de 3: ${names(crew)}`]);
   } else if (building.type === 'market') {
     lines.push(['Faz', 'Compra e vende comida e madeira a preço fixo']);
@@ -893,10 +891,24 @@ function buildingInfoHTML(building) {
     lines.push(['Heróis daqui', `${recruits.length}: ${names(recruits)}`]);
   }
   const moving = state.movingSite === building.site;
-  return `<section class="farm-selector hut-box building-info"><div class="farm-selector-heading"><b>${siteLabel(building)}</b><small>${def.name === siteLabel(building) ? 'Informações' : def.name}</small></div>
-    <dl class="info-lines">${lines.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>
-    <div class="guild-branches">${building.type === 'market' ? '<button type="button" class="hut-upgrade" data-open-market>Abrir o Mercado</button>' : ''}<button type="button" class="hut-upgrade" data-move-site="${building.site}">${moving ? 'Cancelar mudança' : 'Mudar de lugar'}</button></div>
-    ${moving ? '<p class="storage-items">Toque no novo lugar no mapa. Esc cancela.</p>' : ''}</section>`;
+  const hp = buildingHp(building), maxHp = buildingMaxHp(building);
+  const level = ['farm', 'mill'].includes(building.type) ? `Nível ${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`
+    : building.type === 'armory' ? `Nível ${(building.level || 0) + 1} de ${ARMORY_LEVELS.length}`
+    : building.type === 'depot' ? `Nível ${(building.level || 0) + 1} de ${STORAGE_LEVELS.length}`
+    : def.heroClass ? `Nível ${guildTier(building) + 1} de 3` : building.type === 'hut' ? (building.big ? 'Grande' : 'Pequeno') : '';
+  const stats = building.ruined ? [['Estado', 'Em ruínas, parada'], ...lines] : lines.filter(([label]) => label !== 'Nível');
+  return `<section class="inspector" aria-label="${siteLabel(building)}">
+    <button type="button" class="inspector-back" data-inspector-close>‹ Construções</button>
+    <header class="inspector-id">
+      <img class="inspector-thumb" src="${buildingImage(siteArt(building))}" alt="">
+      <div><h3>${siteLabel(building)}</h3><small>${[def.name === siteLabel(building) ? '' : def.name, level].filter(Boolean).join(' · ')}</small></div>
+    </header>
+    <div class="inspector-hp${building.ruined ? ' ruined' : building.damage > 0 ? ' hurt' : ''}" title="Vida da construção"><span>Vida</span><i style="--hp:${Math.round(hp / maxHp * 100)}%"></i><b>${hp} / ${maxHp}</b></div>
+    <dl class="inspector-stats">${stats.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>
+    ${building.ruined ? '' : actions}
+    ${building.type === 'market' && !building.ruined ? '<section class="inspector-section"><button type="button" class="hut-upgrade" data-open-market>Abrir o Mercado</button></section>' : ''}
+    <footer class="inspector-foot">${moving ? '<span>Toque no novo lugar no mapa. Esc cancela.</span>' : ''}<button type="button" class="move-site-btn" data-move-site="${building.site}">${moving ? 'Cancelar mudança' : 'Mudar de lugar'}</button></footer>
+  </section>`;
 }
 
 // Mudar de lugar: a construção pronta vai inteira para outro ponto livre, sem custo.
@@ -1164,7 +1176,7 @@ function guildBoxHTML(guild) {
   else if (tier === 1) actions = `<p class="storage-items">Nível 3: escolha a especialização (${costHTML(cost.gold, cost.wood)}). Chega um herói especializado; os anteriores ficam como são.</p>
       <div class="guild-branches">${PRESTIGE[def.heroClass].map(path => `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" data-branch="${path}" ${freeLodging() ? '' : 'disabled'}>${path} · +1 ${path}</button>`).join('')}</div>`;
   else actions = `<p class="storage-items">Especializada em ${guild.branch}. Guilda no nível máximo.</p>`;
-  return `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>${name}</b><small>Nível ${tier + 1} de 3 · ${members}/1 morador na guilda</small></div>${actions}</section>`;
+  return `<section class="inspector-section"><h4>Melhoria · ${members}/1 morador na guilda</h4>${actions}</section>`;
 }
 
 function assignPrestige(hero) {
@@ -1240,6 +1252,30 @@ function workerDestination(actor) {
   return nearestNode(workplace);
 }
 
+// Cada personagem anda na própria faixa da trilha: um desvio fixo, tirado do id, para ninguém andar em cima do outro.
+function laneOffset(actor) {
+  if (!actor.lane) {
+    let hash = 0;
+    for (const ch of String(actor.id)) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
+    hash >>>= 0;
+    const angle = (hash % 360) * Math.PI / 180, radius = 0.7 + (Math.floor(hash / 360) % 100) / 100 * 1.3;
+    actor.lane = { x: Math.round(Math.cos(angle) * radius * 100) / 100, y: Math.round(Math.sin(angle) * radius * 100) / 100 };
+  }
+  return actor.lane;
+}
+
+// Camponês sem trabalho passeia pela vila: escolhe um ponto da trilha que nenhum outro ocioso escolheu
+// e para um pouco fora dela. Ficam longe do covil e da estrada velha.
+const IDLE_NODES = [1, 2, 3, 4, 5, 6, 10, 12];
+function idleSpot(actor) {
+  const taken = state.workers.filter(other => other !== actor && other.alive && other.idleNode != null).map(other => other.idleNode);
+  const free = IDLE_NODES.filter(node => !taken.includes(node) && node !== actor.idleNode);
+  const node = pick(free.length ? free : IDLE_NODES.filter(node => node !== actor.idleNode));
+  const base = PATH_NODES[node], angle = Math.random() * Math.PI * 2, radius = 2 + Math.random() * 3;
+  actor.idleNode = node;
+  return { node, point: { x: Math.max(2, Math.min(98, base.x + Math.cos(angle) * radius)), y: Math.min(198, base.y + Math.sin(angle) * radius) } };
+}
+
 function nextActorGoal(actor) {
   if (actor.className === 'Peasant') {
     if (actor.buildSite != null) {
@@ -1268,6 +1304,16 @@ function nextActorGoal(actor) {
     if (job && ['farm', 'mill'].includes(job.type) && isDone(job)) { haulRoutine(actor, job); return; }
     const home = homeOf(actor);
     const workplace = actor.workTrip ? null : workplaceOf(actor);
+    if (!workplace && !job && !actor.workTrip) {
+      const spot = idleSpot(actor);
+      actor.task = 'À toa, sem fazenda pra trabalhar';
+      routeActor(actor, spot.node);
+      actor.finalPoint = spot.point;
+      actor.headingToWork = false;
+      actor.workTrip = true;
+      return;
+    }
+    if (workplace || job) actor.idleNode = null;
     actor.task = workplace ? (workplace.type === 'lumber' ? 'Cortando lenha na Cabana do Lenhador' : `Indo trabalhar ${workPlaceName(workplace)}`) : home ? 'Voltando pra casa' : job ? 'Voltando pro casarão' : 'À toa, sem fazenda pra trabalhar';
     const target = actor.workTrip ? home : workplace;
     routeActor(actor, actor.workTrip ? (home ? nearestNode(home) : 0) : workerDestination(actor));
@@ -1306,7 +1352,7 @@ function animateActors(now) {
   if (!game.running) { requestAnimationFrame(animateActors); return; }
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   [...state.heroes, ...state.workers].filter(actor => actor.alive).forEach(actor => {
-    if (actor.className !== 'Peasant' && heroCombatStep(actor, delta, reducedMotion)) return;
+    if (actor.className === 'Peasant' ? peasantDefenseStep(actor, delta, reducedMotion) : heroCombatStep(actor, delta, reducedMotion)) return;
     const construction = actor.className === 'Peasant' && actor.buildSite != null
       ? state.buildings.find(building => building.site === actor.buildSite && needsBuilder(building))
       : null;
@@ -1333,7 +1379,8 @@ function animateActors(now) {
     let moved = false;
     while (remaining > 0 && (actor.route.length || actor.finalPoint)) {
       const onTrail = actor.route.length > 0;
-      const node = onTrail ? PATH_NODES[actor.route[0]] : actor.finalPoint;
+      const lane = onTrail ? laneOffset(actor) : null;
+      const node = onTrail ? { x: PATH_NODES[actor.route[0]].x + lane.x, y: Math.min(198, PATH_NODES[actor.route[0]].y + lane.y) } : actor.finalPoint;
       const dx = node.x - actor.x, dy = node.y - actor.y;
       const distance = Math.hypot(dx, dy);
       if (distance < 0.001) { if (onTrail) actor.route.shift(); else actor.finalPoint = null; continue; }
@@ -1348,7 +1395,8 @@ function animateActors(now) {
         actor.x = node.x; actor.y = node.y;
         if (onTrail) actor.route.shift(); else actor.finalPoint = null;
         if (!actor.route.length && !actor.finalPoint) {
-          actor.wait = actor.className === 'Peasant' ? 2.3 : 1.2;
+          // Quem trabalha tem ritmo fixo; quem só anda para um tempo diferente a cada vez, para ninguém andar em fila sincronizada.
+          actor.wait = actor.className === 'Peasant' ? (actor.headingToWork ? 2.3 : 1.8 + Math.random() * 3) : 1.2;
           if (actor.className === 'Peasant' && actor.headingToWork && workplaceOf(actor)?.type === 'lumber') gainSkill(actor, 'woodcutting', 0.3);
           if (actor.className === 'Peasant' && actor.headingToWork) { actor.actionTime = actor.wait; actor.actionClock = 0; gainActorXp(actor, 13); actor.headingToWork = false; }
           actor.goal = null;
@@ -1368,7 +1416,7 @@ function tick() {
   if (!game.running) return;
   state.ticks++;
   state.playSeconds = (state.playSeconds || 0) + 1;
-  if (options.autosave && state.playSeconds % (options.autosave * 60) === 0 && writeSave(game.slot)) say(`Salvo sozinho no slot ${game.slot}.`);
+  if (options.autosave && state.playSeconds % (options.autosave * 60) === 0) writeSave(game.slot);
   const r = rates();
   feedWorkers(state.speed);
   progressConstruction(state.speed);
@@ -1379,7 +1427,10 @@ function tick() {
   accrueTavern(state.speed);
   if (state.minutes % 60 < state.speed) { shopAtArmory(); processDemands(); processBounties(); }
   state.minutes += state.speed;
-  if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) { gainHeirXp(40); collectTaxes(); }
+  if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) {
+    gainHeirXp(40); collectTaxes();
+    if (Math.floor(state.minutes / 1440) % 7 === 0) applyWeeklyMood();
+  }
   // Heróis ganham experiência só em combate (golpes e curas). Aqui chegam os bandos e todos se recuperam.
   combatTick(state.speed);
   const hasTavern = state.buildings.some(building => building.type === 'tavern' && isDone(building));
@@ -1711,10 +1762,11 @@ function armoryBoxHTML(armory) {
   const level = armory.level || 0;
   const next = ARMORY_LEVELS[level + 1];
   const forSale = Object.values(GEAR).filter(item => item.tier <= level + 1).sort((a, b) => (a.peasant === b.peasant ? 0 : a.peasant ? 1 : -1) || a.tier - b.tier || a.price - b.price);
-  return `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>À venda no Arsenal</b><small>nível ${level + 1} de ${ARMORY_LEVELS.length} · ${forSale.length} itens</small></div>
-    ${next ? `<button type="button" class="hut-upgrade" data-armory-upgrade="${armory.site}">Melhorar para nível ${level + 2} · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. O ferreiro já não dorme.</p>'}
-    <p class="storage-items">Heróis e camponeses compram sozinhos, com o próprio ouro, o que acham mais importante. O ouro vai pro cofre.</p>
-    <ul class="shop-list">${forSale.map(item => `<li><span><b>${item.name}</b><small>${item.peasant ? (item.prof ? item.prof.map(id => PROFESSIONS[id].name).join(', ') : 'Qualquer camponês') : item.classes ? item.classes.join(', ') : 'Qualquer herói'} · ${bonusText(item.bonus)}</small></span><em>${item.price}</em></li>`).join('')}</ul></section>`;
+  return `<section class="inspector-section"><h4>Melhoria</h4>
+    ${next ? `<button type="button" class="hut-upgrade" data-armory-upgrade="${armory.site}">Nível ${level + 2} · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. O ferreiro já não dorme.</p>'}</section>
+    <details class="inspector-section"><summary>À venda · ${forSale.length} itens</summary>
+    <p class="storage-items">Heróis e camponeses compram sozinhos, com o próprio ouro. O ouro vai pro cofre.</p>
+    <ul class="shop-list">${forSale.map(item => `<li><span><b>${item.name}</b><small>${item.peasant ? (item.prof ? item.prof.map(id => PROFESSIONS[id].name).join(', ') : 'Qualquer camponês') : item.classes ? item.classes.join(', ') : 'Qualquer herói'} · ${bonusText(item.bonus)}</small></span><em>${item.price}</em></li>`).join('')}</ul></details>`;
 }
 function gearHTML(actor) {
   if (actor.className === 'Bandit' || actor.className === 'Monster') return '';
@@ -1724,31 +1776,38 @@ function gearHTML(actor) {
   }).join('')}</div>`;
 }
 
-// Tabelas de atributos do Ember Ashes (content/data/battle-rules.json, classes): uma linha por nivel, 1 a 30,
-// [Vida, Ataque, Magia, Defesa, Destreza]; mov = Movimento.
+// Tabelas de atributos de combate: [Vida, Ataque, Magia, Defesa, Destreza] no nível 1; mov = Movimento.
+// Todas as classes crescem no mesmo ritmo (+16% do valor inicial por nível, até o nível 30). Assim o equilíbrio
+// entre classes é o mesmo no nível 1 e no 30, e só a diferença de nível muda quem leva vantagem.
+// Referência contra um Salteador do mesmo nível (golpes para matá-lo / golpes que ele precisa):
+// Warrior 3/12, Heavy Knight 4/18, Paladin 4/13, Lancer 3/8, Archer 3/5, Assassin 2/5, Mage 2/4, Healer 7/7, Camponês −/5.
+const STAT_GROWTH = 0.16;
+const statTable = (mov, base) => ({
+  mov, stats: Array.from({ length: 30 }, (_, i) => base.map(value => Math.round(value * (1 + STAT_GROWTH * i)))),
+});
 const EMBER_CLASSES = {
-  swordsman: { mov: 5, stats: [[34,9,0,6,3],[38,11,0,8,4],[42,13,0,10,5],[46,15,0,12,6],[50,17,0,14,7],[54,19,0,16,8],[58,21,0,18,9],[62,23,0,20,10],[66,25,0,22,11],[70,27,0,24,12],[74,29,0,26,13],[78,31,0,28,14],[82,33,0,30,15],[86,35,0,32,16],[90,37,0,34,17],[94,39,0,36,18],[98,41,0,38,19],[102,43,0,40,20],[106,45,0,42,21],[110,47,0,44,22],[114,49,0,46,23],[118,51,0,48,24],[122,53,0,50,25],[126,55,0,52,26],[130,57,0,54,27],[134,59,0,56,28],[138,61,0,58,29],[142,63,0,60,30],[146,65,0,62,31],[150,67,0,64,32]] },
-  archer: { mov: 6, stats: [[24,8,0,3,4],[27,10,0,4,5],[30,12,0,5,6],[33,14,0,6,7],[36,16,0,7,8],[39,18,0,8,9],[42,20,0,9,10],[45,22,0,10,11],[48,24,0,11,12],[51,26,0,12,13],[54,28,0,13,14],[57,30,0,14,15],[60,32,0,15,16],[63,34,0,16,17],[66,36,0,17,18],[69,38,0,18,19],[72,40,0,19,20],[75,42,0,20,21],[78,44,0,21,22],[81,46,0,22,23],[84,48,0,23,24],[87,50,0,24,25],[90,52,0,25,26],[93,54,0,26,27],[96,56,0,27,28],[99,58,0,28,29],[102,60,0,29,30],[105,62,0,30,31],[108,64,0,31,32],[111,66,0,32,33]] },
-  lancer: { mov: 5, stats: [[26,8,0,4,3],[30,10,0,6,4],[34,12,0,8,5],[38,14,0,10,6],[42,16,0,12,7],[46,18,0,14,8],[50,20,0,16,9],[54,22,0,18,10],[58,24,0,20,11],[62,26,0,22,12],[66,28,0,24,13],[70,30,0,26,14],[74,32,0,28,15],[78,34,0,30,16],[82,36,0,32,17],[86,38,0,34,18],[90,40,0,36,19],[94,42,0,38,20],[98,44,0,40,21],[102,46,0,42,22],[106,48,0,44,23],[110,50,0,46,24],[114,52,0,48,25],[118,54,0,50,26],[122,56,0,52,27],[126,58,0,54,28],[130,60,0,56,29],[134,62,0,58,30],[138,64,0,60,31],[142,66,0,62,32]] },
-  mage: { mov: 5, stats: [[22,3,10,2,6],[25,3,13,3,9],[28,3,16,4,12],[31,3,19,5,15],[34,3,22,6,18],[37,3,25,7,21],[40,3,28,8,24],[43,3,31,9,27],[46,3,34,10,30],[49,3,37,11,33],[52,3,40,12,36],[55,3,43,13,39],[58,3,46,14,42],[61,3,49,15,45],[64,3,52,16,48],[67,3,55,17,51],[70,3,58,18,54],[73,3,61,19,57],[76,3,64,20,60],[79,3,67,21,63],[82,3,70,22,66],[85,3,73,23,69],[88,3,76,24,72],[91,3,79,25,75],[94,3,82,26,78],[97,3,85,27,81],[100,3,88,28,84],[103,3,91,29,87],[106,3,94,30,90],[109,3,97,31,93]] },
-  conjurer: { mov: 5, stats: [[18,3,10,2,9],[20,3,13,3,13],[22,3,16,4,17],[24,3,19,5,21],[26,3,22,6,25],[28,3,25,7,29],[30,3,28,8,33],[32,3,31,9,37],[34,3,34,10,41],[36,3,37,11,45],[38,3,40,12,49],[40,3,43,13,53],[42,3,46,14,57],[44,3,49,15,61],[46,3,52,16,65],[48,3,55,17,69],[50,3,58,18,73],[52,3,61,19,77],[54,3,64,20,81],[56,3,67,21,85],[58,3,70,22,89],[60,3,73,23,93],[62,3,76,24,97],[64,3,79,25,101],[66,3,82,26,105],[68,3,85,27,109],[70,3,88,28,113],[72,3,91,29,117],[74,3,94,30,121],[76,3,97,31,125]] },
-  healer: { mov: 5, stats: [[26,4,8,3,6],[29,4,9,5,8],[32,4,10,7,10],[35,4,11,9,12],[38,4,12,11,14],[41,4,13,13,16],[44,4,14,15,18],[47,4,15,17,20],[50,4,16,19,22],[53,4,17,21,24],[56,4,18,23,26],[59,4,19,25,28],[62,4,20,27,30],[65,4,21,29,32],[68,4,22,31,34],[71,4,23,33,36],[74,4,24,35,38],[77,4,25,37,40],[80,4,26,39,42],[83,4,27,41,44],[86,4,28,43,46],[89,4,29,45,48],[92,4,30,47,50],[95,4,31,49,52],[98,4,32,51,54],[101,4,33,53,56],[104,4,34,55,58],[107,4,35,57,60],[110,4,36,59,62],[113,4,37,61,64]] },
-  paladin: { mov: 5, stats: [[30,6,4,7,5],[35,7,5,10,7],[40,8,6,13,9],[45,9,7,16,11],[50,10,8,19,13],[55,11,9,22,15],[60,12,10,25,17],[65,13,11,28,19],[70,14,12,31,21],[75,15,13,34,23],[80,16,14,37,25],[85,17,15,40,27],[90,18,16,43,29],[95,19,17,46,31],[100,20,18,49,33],[105,21,19,52,35],[110,22,20,55,37],[115,23,21,58,39],[120,24,22,61,41],[125,25,23,64,43],[130,26,24,67,45],[135,27,25,70,47],[140,28,26,73,49],[145,29,27,76,51],[150,30,28,79,53],[155,31,29,82,55],[160,32,30,85,57],[165,33,31,88,59],[170,34,32,91,61],[175,35,33,94,63]] },
-  heavyKnight: { mov: 4, stats: [[32,7,0,9,3],[37,8,0,12,4],[42,9,0,15,5],[47,10,0,18,6],[52,11,0,21,7],[57,12,0,24,8],[62,13,0,27,9],[67,14,0,30,10],[72,15,0,33,11],[77,16,0,36,12],[82,17,0,39,13],[87,18,0,42,14],[92,19,0,45,15],[97,20,0,48,16],[102,21,0,51,17],[107,22,0,54,18],[112,23,0,57,19],[117,24,0,60,20],[122,25,0,63,21],[127,26,0,66,22],[132,27,0,69,23],[137,28,0,72,24],[142,29,0,75,25],[147,30,0,78,26],[152,31,0,81,27],[157,32,0,84,28],[162,33,0,87,29],[167,34,0,90,30],[172,35,0,93,31],[177,36,0,96,32]] },
-  ranger: { mov: 6, stats: [[24,8,0,3,4],[27,10,0,4,5],[30,12,0,5,6],[33,14,0,6,7],[36,16,0,7,8],[39,18,0,8,9],[42,20,0,9,10],[45,22,0,10,11],[48,24,0,11,12],[51,26,0,12,13],[54,28,0,13,14],[57,30,0,14,15],[60,32,0,15,16],[63,34,0,16,17],[66,36,0,17,18],[69,38,0,18,19],[72,40,0,19,20],[75,42,0,20,21],[78,44,0,21,22],[81,46,0,22,23],[84,48,0,23,24],[87,50,0,24,25],[90,52,0,25,26],[93,54,0,26,27],[96,56,0,27,28],[99,58,0,28,29],[102,60,0,29,30],[105,62,0,30,31],[108,64,0,31,32],[111,66,0,32,33]] },
-  assassin: { mov: 6, stats: [[20,9,0,2,3],[23,12,0,3,4],[26,15,0,4,5],[29,18,0,5,6],[32,21,0,6,7],[35,24,0,7,8],[38,27,0,8,9],[41,30,0,9,10],[44,33,0,10,11],[47,36,0,11,12],[50,39,0,12,13],[53,42,0,13,14],[56,45,0,14,15],[59,48,0,15,16],[62,51,0,16,17],[65,54,0,17,18],[68,57,0,18,19],[71,60,0,19,20],[74,63,0,20,21],[77,66,0,21,22],[80,69,0,22,23],[83,72,0,23,24],[86,75,0,24,25],[89,78,0,25,26],[92,81,0,26,27],[95,84,0,27,28],[98,87,0,28,29],[101,90,0,29,30],[104,93,0,30,31],[107,96,0,31,32]] },
-  templar: { mov: 5, stats: [[26,8,0,4,3],[30,10,0,6,4],[34,12,0,8,5],[38,14,0,10,6],[42,16,0,12,7],[46,18,0,14,8],[50,20,0,16,9],[54,22,0,18,10],[58,24,0,20,11],[62,26,0,22,12],[66,28,0,24,13],[70,30,0,26,14],[74,32,0,28,15],[78,34,0,30,16],[82,36,0,32,17],[86,38,0,34,18],[90,40,0,36,19],[94,42,0,38,20],[98,44,0,40,21],[102,46,0,42,22],[106,48,0,44,23],[110,50,0,46,24],[114,52,0,48,25],[118,54,0,50,26],[122,56,0,52,27],[126,58,0,54,28],[130,60,0,56,29],[134,62,0,58,30],[138,64,0,60,31],[142,66,0,62,32]] },
-  elementalist: { mov: 5, stats: [[22,3,10,2,6],[25,3,13,3,9],[28,3,16,4,12],[31,3,19,5,15],[34,3,22,6,18],[37,3,25,7,21],[40,3,28,8,24],[43,3,31,9,27],[46,3,34,10,30],[49,3,37,11,33],[52,3,40,12,36],[55,3,43,13,39],[58,3,46,14,42],[61,3,49,15,45],[64,3,52,16,48],[67,3,55,17,51],[70,3,58,18,54],[73,3,61,19,57],[76,3,64,20,60],[79,3,67,21,63],[82,3,70,22,66],[85,3,73,23,69],[88,3,76,24,72],[91,3,79,25,75],[94,3,82,26,78],[97,3,85,27,81],[100,3,88,28,84],[103,3,91,29,87],[106,3,94,30,90],[109,3,97,31,93]] },
-  warlock: { mov: 5, stats: [[22,3,10,2,6],[25,3,13,3,9],[28,3,16,4,12],[31,3,19,5,15],[34,3,22,6,18],[37,3,25,7,21],[40,3,28,8,24],[43,3,31,9,27],[46,3,34,10,30],[49,3,37,11,33],[52,3,40,12,36],[55,3,43,13,39],[58,3,46,14,42],[61,3,49,15,45],[64,3,52,16,48],[67,3,55,17,51],[70,3,58,18,54],[73,3,61,19,57],[76,3,64,20,60],[79,3,67,21,63],[82,3,70,22,66],[85,3,73,23,69],[88,3,76,24,72],[91,3,79,25,75],[94,3,82,26,78],[97,3,85,27,81],[100,3,88,28,84],[103,3,91,29,87],[106,3,94,30,90],[109,3,97,31,93]] },
-  sorcerer: { mov: 5, stats: [[18,3,10,2,9],[20,3,13,3,13],[22,3,16,4,17],[24,3,19,5,21],[26,3,22,6,25],[28,3,25,7,29],[30,3,28,8,33],[32,3,31,9,37],[34,3,34,10,41],[36,3,37,11,45],[38,3,40,12,49],[40,3,43,13,53],[42,3,46,14,57],[44,3,49,15,61],[46,3,52,16,65],[48,3,55,17,69],[50,3,58,18,73],[52,3,61,19,77],[54,3,64,20,81],[56,3,67,21,85],[58,3,70,22,89],[60,3,73,23,93],[62,3,76,24,97],[64,3,79,25,101],[66,3,82,26,105],[68,3,85,27,109],[70,3,88,28,113],[72,3,91,29,117],[74,3,94,30,121],[76,3,97,31,125]] },
-  necromancer: { mov: 5, stats: [[18,3,10,2,9],[20,3,13,3,13],[22,3,16,4,17],[24,3,19,5,21],[26,3,22,6,25],[28,3,25,7,29],[30,3,28,8,33],[32,3,31,9,37],[34,3,34,10,41],[36,3,37,11,45],[38,3,40,12,49],[40,3,43,13,53],[42,3,46,14,57],[44,3,49,15,61],[46,3,52,16,65],[48,3,55,17,69],[50,3,58,18,73],[52,3,61,19,77],[54,3,64,20,81],[56,3,67,21,85],[58,3,70,22,89],[60,3,73,23,93],[62,3,76,24,97],[64,3,79,25,101],[66,3,82,26,105],[68,3,85,27,109],[70,3,88,28,113],[72,3,91,29,117],[74,3,94,30,121],[76,3,97,31,125]] },
-  bishop: { mov: 5, stats: [[26,4,8,3,6],[29,4,9,5,8],[32,4,10,7,10],[35,4,11,9,12],[38,4,12,11,14],[41,4,13,13,16],[44,4,14,15,18],[47,4,15,17,20],[50,4,16,19,22],[53,4,17,21,24],[56,4,18,23,26],[59,4,19,25,28],[62,4,20,27,30],[65,4,21,29,32],[68,4,22,31,34],[71,4,23,33,36],[74,4,24,35,38],[77,4,25,37,40],[80,4,26,39,42],[83,4,27,41,44],[86,4,28,43,46],[89,4,29,45,48],[92,4,30,47,50],[95,4,31,49,52],[98,4,32,51,54],[101,4,33,53,56],[104,4,34,55,58],[107,4,35,57,60],[110,4,36,59,62],[113,4,37,61,64]] },
-  cleric: { mov: 5, stats: [[26,4,8,3,6],[29,4,9,5,8],[32,4,10,7,10],[35,4,11,9,12],[38,4,12,11,14],[41,4,13,13,16],[44,4,14,15,18],[47,4,15,17,20],[50,4,16,19,22],[53,4,17,21,24],[56,4,18,23,26],[59,4,19,25,28],[62,4,20,27,30],[65,4,21,29,32],[68,4,22,31,34],[71,4,23,33,36],[74,4,24,35,38],[77,4,25,37,40],[80,4,26,39,42],[83,4,27,41,44],[86,4,28,43,46],[89,4,29,45,48],[92,4,30,47,50],[95,4,31,49,52],[98,4,32,51,54],[101,4,33,53,56],[104,4,34,55,58],[107,4,35,57,60],[110,4,36,59,62],[113,4,37,61,64]] },
-  peasant1: { mov: 4, stats: [[12,2,0,1,0],[14,3,0,2,0],[16,4,0,3,0],[18,5,0,4,0],[20,6,0,5,0],[22,7,0,6,0],[24,8,0,7,0],[26,9,0,8,0],[28,10,0,9,0],[30,11,0,10,0],[32,12,0,11,0],[34,13,0,12,0],[36,14,0,13,0],[38,15,0,14,0],[40,16,0,15,0],[42,17,0,16,0],[44,18,0,17,0],[46,19,0,18,0],[48,20,0,19,0],[50,21,0,20,0],[52,22,0,21,0],[54,23,0,22,0],[56,24,0,23,0],[58,25,0,24,0],[60,26,0,25,0],[62,27,0,26,0],[64,28,0,27,0],[66,29,0,28,0],[68,30,0,29,0],[70,31,0,30,0]] },
-  villagerF1: { mov: 4, stats: [[9,1,0,0,1],[11,2,0,0,2],[13,3,0,0,3],[15,4,0,0,4],[17,5,0,0,5],[19,6,0,0,6],[21,7,0,0,7],[23,8,0,0,8],[25,9,0,0,9],[27,10,0,0,10],[29,11,0,0,11],[31,12,0,0,12],[33,13,0,0,13],[35,14,0,0,14],[37,15,0,0,15],[39,16,0,0,16],[41,17,0,0,17],[43,18,0,0,18],[45,19,0,0,19],[47,20,0,0,20],[49,21,0,0,21],[51,22,0,0,22],[53,23,0,0,23],[55,24,0,0,24],[57,25,0,0,25],[59,26,0,0,26],[61,27,0,0,27],[63,28,0,0,28],[65,29,0,0,29],[67,30,0,0,30]] },
-  captain: { mov: 4, stats: [[60,11,0,7,4],[64,13,0,9,5],[68,15,0,11,6],[72,17,0,13,7],[76,19,0,15,8],[80,21,0,17,9],[84,23,0,19,10],[88,25,0,21,11],[92,27,0,23,12],[96,29,0,25,13],[100,31,0,27,14],[104,33,0,29,15],[108,35,0,31,16],[112,37,0,33,17],[116,39,0,35,18],[120,41,0,37,19],[124,43,0,39,20],[128,45,0,41,21],[132,47,0,43,22],[136,49,0,45,23],[140,51,0,47,24],[144,53,0,49,25],[148,55,0,51,26],[152,57,0,53,27],[156,59,0,55,28],[160,61,0,57,29],[164,63,0,59,30],[168,65,0,61,31],[172,67,0,63,32],[176,69,0,65,33]] },
-  rogue: { mov: 6, stats: [[22,7,0,2,3],[25,9,0,3,4],[28,11,0,4,5],[31,13,0,5,6],[34,15,0,6,7],[37,17,0,7,8],[40,19,0,8,9],[43,21,0,9,10],[46,23,0,10,11],[49,25,0,11,12],[52,27,0,12,13],[55,29,0,13,14],[58,31,0,14,15],[61,33,0,15,16],[64,35,0,16,17],[67,37,0,17,18],[70,39,0,18,19],[73,41,0,19,20],[76,43,0,20,21],[79,45,0,21,22],[82,47,0,22,23],[85,49,0,23,24],[88,51,0,24,25],[91,53,0,25,26],[94,55,0,26,27],[97,57,0,27,28],[100,59,0,28,29],[103,61,0,29,30],[106,63,0,30,31],[109,65,0,31,32]] },
-  brigandCrossbowman: { mov: 3, stats: [[25,7,0,2,5],[28,9,0,3,6],[31,11,0,4,7],[34,13,0,5,8],[37,15,0,6,9],[40,17,0,7,10],[43,19,0,8,11],[46,21,0,9,12],[49,23,0,10,13],[52,25,0,11,14],[55,27,0,12,15],[58,29,0,13,16],[61,31,0,14,17],[64,33,0,15,18],[67,35,0,16,19],[70,37,0,17,20],[73,39,0,18,21],[76,41,0,19,22],[79,43,0,20,23],[82,45,0,21,24],[85,47,0,22,25],[88,49,0,23,26],[91,51,0,24,27],[94,53,0,25,28],[97,55,0,26,29],[100,57,0,27,30],[103,59,0,28,31],[106,61,0,29,32],[109,63,0,30,33],[112,65,0,31,34]] },
+  swordsman: statTable(5, [40, 11, 0, 10, 4]),
+  archer: statTable(6, [26, 11, 0, 4, 8]),
+  lancer: statTable(5, [34, 11, 0, 7, 5]),
+  mage: statTable(5, [22, 3, 14, 3, 6]),
+  conjurer: statTable(5, [20, 3, 12, 2, 8]),
+  healer: statTable(5, [30, 6, 8, 6, 6]),
+  paladin: statTable(5, [42, 9, 6, 11, 4]),
+  heavyKnight: statTable(4, [50, 10, 0, 15, 3]),
+  ranger: statTable(6, [28, 12, 0, 5, 9]),
+  assassin: statTable(6, [26, 15, 0, 4, 12]),
+  templar: statTable(5, [36, 11, 4, 9, 4]),
+  elementalist: statTable(5, [24, 3, 16, 3, 7]),
+  warlock: statTable(5, [24, 3, 17, 3, 6]),
+  sorcerer: statTable(5, [22, 3, 14, 3, 9]),
+  necromancer: statTable(5, [24, 3, 14, 4, 7]),
+  bishop: statTable(5, [30, 5, 11, 6, 7]),
+  cleric: statTable(5, [36, 9, 8, 9, 5]),
+  peasant1: statTable(4, [24, 4, 0, 4, 2]),
+  villagerF1: statTable(4, [22, 3, 0, 3, 5]),
+  captain: statTable(4, [60, 11, 0, 7, 4]),
+  rogue: statTable(6, [25, 8, 0, 3, 5]),
+  brigandCrossbowman: statTable(3, [20, 9, 0, 2, 6]),
 };
 
 // Cada classe do jogo usa a tabela da classe equivalente do Ember. Sentinel não existe no Ember e usa a do Lanceiro;
@@ -1829,20 +1888,35 @@ function actorOrigin(actor) {
 // e cardápio servido. Carne e variedade alegram; ração pequena e fome entristecem.
 // ==========================================================================
 const FOOD_TYPES = [
-  { id: 'flour', name: 'Farinha', art: 'mill-body', mood: 3, note: 'Sai do moinho. Eles que cozinhem em casa.' },
+  { id: 'flour', name: 'Farinha', art: 'mill-body', mood: 2, note: 'Sai do moinho. Eles que cozinhem em casa.' },
   { id: 'wheat', name: 'Trigo', art: 'farm-wheat', raw: true, note: 'Cru não serve pra nada. Vai pro moinho virar farinha.' },
   { id: 'garlic', name: 'Alho', art: 'farm-garlic', mood: 1, note: 'Afasta strigoi. E todo o resto também.' },
-  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', meat: true, mood: 4, note: 'Carne. Deixa os camponeses mais felizes.' },
-  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', mood: 2, note: 'Variedade. Os camponeses notam.' },
-  { id: 'milk', name: 'Leite', art: 'farm-milk', mood: 2, note: 'Variedade. Às vezes azeda antes.' },
+  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', meat: true, mood: 2, note: 'Carne. Deixa os camponeses mais felizes.' },
+  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', mood: 1, note: 'Variedade. Os camponeses notam.' },
+  { id: 'milk', name: 'Leite', art: 'farm-milk', mood: 1, note: 'Variedade. Às vezes azeda antes.' },
 ];
 const RATIONS = [
-  { label: 'Nenhuma', mult: 0, mood: -40 }, { label: 'Meia', mult: 0.5, mood: -15 }, { label: 'Normal', mult: 1, mood: 0 },
-  { label: 'Dobrada', mult: 2, mood: 10 }, { label: 'Tripla', mult: 3, mood: 20 },
+  { label: 'Nenhuma', mult: 0, mood: -20 }, { label: 'Meia', mult: 0.5, mood: -8 }, { label: 'Normal', mult: 1, mood: 0 },
+  { label: 'Dobrada', mult: 2, mood: 5 }, { label: 'Tripla', mult: 3, mood: 10 },
 ];
 // Imposto: 0% alegra, 10% é neutro, 20% entristece.
 const TAX_MAX = 20;
-const taxMood = () => Math.round((10 - (state.taxPercent ?? 10)) * 2);
+const taxMood = () => Math.round(10 - (state.taxPercent ?? 10));
+// Felicidade muda uma vez por semana, à meia-noite do 7º dia: anda até MOOD_WEEKLY_STEP pontos
+// na direção da média da semana (50 + efeitos), no estilo de turno do Lords of the Realm.
+const MOOD_WEEKLY_STEP = 10;
+const moodWeekAverage = () => (state.moodTime > 0 ? state.moodSum / state.moodTime : state.moodTarget ?? state.happiness);
+const nextMoodDay = () => (Math.floor(Math.floor(state.minutes / 1440) / 7) + 1) * 7 + 1;
+function applyWeeklyMood() {
+  const average = moodWeekAverage();
+  const change = Math.round(Math.max(-MOOD_WEEKLY_STEP, Math.min(MOOD_WEEKLY_STEP, average - state.happiness)));
+  state.happiness = Math.max(0, Math.min(100, state.happiness + change));
+  state.moodSum = 0;
+  state.moodTime = 0;
+  say(change ? `Fim da semana: felicidade ${change > 0 ? '+' : '−'}${Math.abs(change)}, agora ${Math.round(state.happiness)}. ${change > 0 ? 'Ninguém agradeceu.' : 'Ninguém se surpreendeu.'}` : `Fim da semana: a felicidade ficou em ${Math.round(state.happiness)}.`);
+  updateHud();
+  if (state.tab === 'food') renderPanel();
+}
 const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, eggs: 0, milk: 0 });
 // O casarão guarda 200 unidades. Cada Depósito de Provisões construído soma 30, e amplia para 45, 70 e 100.
 // Guardam comida, armas e itens; madeira e ouro ficam fora.
@@ -1868,8 +1942,8 @@ function upgradeDepot(site) {
 function depotBoxHTML(depot) {
   const level = depot.level || 0;
   const next = STORAGE_LEVELS[level + 1];
-  return `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>Depósito de Provisões</b><small>${depotCap(depot)} unidades · nível ${level + 1} de ${STORAGE_LEVELS.length}</small></div>
-    ${next ? `<button type="button" class="hut-upgrade" data-depot-upgrade="${depot.site}">Ampliar para ${next.cap} unidades · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Tamanho máximo. Agora só falta ter o que guardar.</p>'}</section>`;
+  return `<section class="inspector-section"><h4>Ampliação</h4>
+    ${next ? `<button type="button" class="hut-upgrade" data-depot-upgrade="${depot.site}">${next.cap} unidades · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Tamanho máximo. Agora só falta ter o que guardar.</p>'}</section>`;
 }
 const totalFood = () => FOOD_TYPES.reduce((sum, food) => sum + (state.food?.[food.id] || 0), 0);
 const eaters = () => state.workers.filter(worker => worker.alive).length;
@@ -1971,8 +2045,8 @@ function producerBoxHTML(building) {
   const mill = building.type === 'mill';
   const rateAt = lv => mill ? MILL_RATE[lv] : farmType(building.produce).grain[lv];
   const unit = mill ? 'de trigo moído em farinha por segundo' : `de ${farmType(building.produce).name.toLowerCase()} por segundo`;
-  return `<section class="farm-selector hut-box"><div class="farm-selector-heading"><b>Melhoria</b><small>nível ${level + 1} de ${PRODUCER_LEVELS.length} · ${rateNumber(rateAt(level))} ${unit}</small></div>
-    ${next ? `<button type="button" class="hut-upgrade" data-producer-upgrade="${building.site}">Melhorar para nível ${level + 2} · ${rateNumber(rateAt(level + 1))}/s · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. Mais que isso, só com milagre.</p>'}</section>`;
+  return `<section class="inspector-section"><h4>Melhoria</h4>
+    ${next ? `<button type="button" class="hut-upgrade" data-producer-upgrade="${building.site}">Nível ${level + 2} · ${rateNumber(rateAt(level + 1))}/s · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. Mais que isso, só com milagre.</p>'}</section>`;
 }
 function upgradeProducer(site) {
   const building = state.buildings.find(item => item.site === site && ['farm', 'mill'].includes(item.type) && isDone(item));
@@ -1991,7 +2065,7 @@ function happinessLabel(value) {
   return value < 20 ? 'Revoltados' : value < 40 ? 'Infelizes' : value < 60 ? 'Conformados' : value < 80 ? 'Contentes' : 'Felizes';
 }
 
-// Uma vez por segundo de jogo: produz, serve a mesa e move a felicidade em direção ao alvo.
+// Uma vez por segundo de jogo: produz, serve a mesa e anota o alvo de felicidade da semana.
 function feedWorkers(dt) {
   state.buildings.filter(building => building.type === 'farm' && isDone(building)).forEach(farm => {
     farm.stock = Math.min(FARM_STOCK_CAP, (farm.stock || 0) + farmOutput(farm) * (1 + crewWork(farm)) * dt);
@@ -2017,11 +2091,12 @@ function feedWorkers(dt) {
     ration: ration.mood,
     food: ration.mult > 0 ? [...eaten].reduce((sum, id) => sum + (FOOD_TYPES.find(food => food.id === id)?.mood || 0), 0) : 0,
     tax: taxMood(),
-    hunger: demand > 0 ? -Math.round(40 * (1 - fulfilled)) : 0,
+    hunger: demand > 0 ? -Math.round(20 * (1 - fulfilled)) : 0,
   } : { ration: 0, food: 0, tax: 0, hunger: 0 };
   const target = Math.max(0, Math.min(100, 50 + parts.ration + parts.food + parts.tax + parts.hunger));
-  const step = 0.5 * dt;
-  state.happiness = Math.max(0, Math.min(100, state.happiness + Math.max(-step, Math.min(step, target - state.happiness))));
+  // Não muda agora: acumula o alvo para a média da semana (ver applyWeeklyMood).
+  state.moodSum = (state.moodSum || 0) + target * dt;
+  state.moodTime = (state.moodTime || 0) + dt;
   state.moodParts = parts;
   state.moodTarget = target;
   if (fulfilled < 0.999 && eaters() && !state.hungerWarned) { state.hungerWarned = true; say('A comida não deu pra todo mundo. Os camponeses estão passando fome. Por enquanto, reclamam baixinho.'); }
@@ -2356,7 +2431,7 @@ function renderBountyFlags() {
       flag = document.createElement('div');
       flag.className = 'bounty-flag';
       flag.dataset.bounty = bounty.id;
-      layer.insertBefore(flag, $('#hero-layer'));
+      layer.append(flag);
     }
     flag.style.setProperty('--x', `${bounty.x}%`);
     flag.style.setProperty('--y', `${bounty.y / 2}%`);
@@ -2434,16 +2509,16 @@ function foodPanelHTML() {
         <img src="public/art/${food.art}-v01.webp" alt=""><span class="food-name"><b>${food.name}</b><small>${food.note}</small></span>
         <span class="food-stock"><b>${format(stock)}</b><small>${food.id === 'flour' ? (milling ? `até +${rateNumber(milling)}/s` : 'sem moinho') : prod[food.id] ? `+${rateNumber(prod[food.id])}/s${food.raw && milling ? ` · moinho −${rateNumber(milling)}/s` : ''}` : 'sem produção'}</small></span>
         ${food.raw ? '<button type="button" disabled>PRO MOINHO</button>' : `<button type="button" data-diet="${food.id}" class="${on ? 'on' : ''}">${on ? 'SERVINDO' : 'GUARDADO'}</button>`}</div>`; }).join('')}</div>
-    <div class="mood-box"><div class="mood-head"><span>FELICIDADE</span><b>${Math.round(state.happiness)}</b><em>${happinessLabel(state.happiness)}</em><small>indo para ${Math.round(state.moodTarget ?? state.happiness)}</small></div>
+    <div class="mood-box"><div class="mood-head"><span>FELICIDADE</span><b>${Math.round(state.happiness)}</b><em>${happinessLabel(state.happiness)}</em><small>média da semana ${Math.round(moodWeekAverage())} · muda no dia ${nextMoodDay()}</small></div>
       <div class="mood-bar"><i style="width:${Math.round(state.happiness)}%"></i></div>
       <dl class="mood-parts"><div><dt>Ração</dt><dd>${signed(parts.ration)}</dd></div><div><dt>Comida</dt><dd>${signed(parts.food)}</dd></div><div><dt>Imposto</dt><dd>${signed(parts.tax)}</dd></div><div><dt>Fome</dt><dd>${signed(parts.hunger)}</dd></div></dl></div>
     <div class="mood-rules"><div class="food-label">O QUE MUDA A FELICIDADE</div>
-      <p>A felicidade parte de 50 e anda devagar até o alvo, que é 50 somado a estes efeitos:</p>
+      <p>A felicidade muda uma vez por semana, à meia-noite do 7º dia: anda até ${MOOD_WEEKLY_STEP} pontos na direção da média da semana, que é 50 somado a estes efeitos:</p>
       <dl>
-        <div><dt>Ração</dt><dd>Nenhuma −40 · Meia −15 · Normal 0 · Dobrada +10 · Tripla +20</dd></div>
-        <div><dt>Comida</dt><dd>Cada alimento servido soma: alho +1 · farinha +3 · bacon +4 · ovos +2 · leite +2</dd></div>
-        <div><dt>Imposto</dt><dd>0% +20 · 5% +10 · 10% 0 · 15% −10 · 20% −20</dd></div>
-        <div><dt>Fome</dt><dd>Quando a comida servida não dá pra todos: até −40</dd></div>
+        <div><dt>Ração</dt><dd>Nenhuma −20 · Meia −8 · Normal 0 · Dobrada +5 · Tripla +10</dd></div>
+        <div><dt>Comida</dt><dd>Cada alimento servido soma: alho +1 · farinha +2 · bacon +2 · ovos +1 · leite +1</dd></div>
+        <div><dt>Imposto</dt><dd>0% +10 · 5% +5 · 10% 0 · 15% −5 · 20% −10</dd></div>
+        <div><dt>Fome</dt><dd>Quando a comida servida não dá pra todos: até −20</dd></div>
       </dl>
       <p>Só conta o que está marcado como SERVINDO e tem estoque. Trigo cru não vai pra mesa: o moinho transforma em farinha.</p></div>`;
 }
@@ -2453,11 +2528,12 @@ function foodPanelHTML() {
 // ==========================================================================
 // Ladrões e combate automático. Ladrões chegam pela estrada velha a cada 6 horas de jogo,
 // vão roubar uma construção e fogem. Heróis que os veem lutam sozinhos (idle combat).
-// Dano e experiência seguem o Ember: ataque − defesa (magia para magos) e 13 + 3 × (nível do alvo − nível de quem bate).
+// Dano proporcional (ver strike); experiência segue o Ember: 13 + 3 × (nível do alvo − nível de quem bate).
 // ==========================================================================
 // Caveiras: toda noite, às 22h, o cemitério dos Wilds (ponta sul da estrada velha) solta uma.
 // Ela sobe a estrada devagar até a cidade; chegando, ataca as construções até alguém derrubar.
-const SKELETON_TABLE = { mov: 3, stats: Array.from({ length: 30 }, (_, i) => [30 + 6 * i, 7 + 2 * i, 0, 4 + i, 2 + Math.floor(i / 2)]) };
+// Mais dura que um Salteador: um herói sozinho do mesmo nível luta parelho; dois resolvem.
+const SKELETON_TABLE = statTable(3, [44, 12, 0, 6, 2]);
 const SKELETON_PATH = [18, 17, 16, 15, 14, 13, 12, 5, 4, 2, 1];
 const SKELETON_SPEED = 0.5; // bem mais lenta que gente: dá tempo de pagar alguém pra ir atrás
 const SKELETON_NAMES = ['do Coveiro Esquecido', 'Sem Lápide', 'da Cova Rasa', 'do Velório Barato', 'Que Ninguém Chorou', 'do Jazigo Vendido', 'da Vala Comum'];
@@ -2627,12 +2703,20 @@ function killActor(victim, killer) {
   if (state.tab === 'heroes') renderPanel();
 }
 
-// Um golpe: dano pelo Ember; heróis ganham experiência a cada golpe, mais 25% quando matam.
+// Destreza: quem é mais ágil que o outro desvia mais e acha mais pontos fracos. Iguais: 5%; teto de 30%.
+const dexChance = (mine, theirs) => Math.max(0, Math.min(0.3, (40 * mine / Math.max(1, mine + theirs) - 15) / 100));
+
+// Um golpe: dano proporcional (ataque² / (ataque + defesa)), então defesa alta reduz o dano mas nunca zera;
+// magia ignora metade da defesa. Destreza dá crítico (×1,5) e esquiva. Heróis ganham experiência a cada golpe, mais 25% quando matam.
 function strike(attacker, defender) {
   const a = statsOf(attacker), d = statsOf(defender);
   const magic = MAGIC_CLASSES.includes(classOf(attacker));
-  const raw = magic ? a.mag - Math.floor(d.def / 2) : a.atk - d.def;
-  const damage = Math.max(1, Math.round(raw * (0.8 + Math.random() * 0.4)));
+  const power = magic ? a.mag : a.atk;
+  const guard = magic ? d.def / 2 : d.def;
+  const raw = power * power / Math.max(1, power + guard);
+  const crit = Math.random() < dexChance(a.dex, d.dex);
+  const dodged = Math.random() < dexChance(d.dex, a.dex);
+  const damage = dodged ? 0 : Math.max(1, Math.round(raw * (crit ? 1.5 : 1) * (0.8 + Math.random() * 0.4)));
   defender.hp = hpOf(defender) - damage;
   defender.calm = 5;
   attacker.calm = 5;
@@ -2687,6 +2771,20 @@ function heroCombatStep(hero, delta, reducedMotion) {
     if (heal) healHit(hero, target); else strike(hero, target);
   }
   animateAttack(hero, delta, reducedMotion);
+  return true;
+}
+
+// Camponês: não caça ladrão, mas depois de apanhar revida quem estiver colado nele. Bate fraco.
+function peasantDefenseStep(worker, delta, reducedMotion) {
+  worker.calm = Math.max(0, (worker.calm || 0) - delta);
+  worker.cooldown = (worker.cooldown || 0) - delta;
+  if (!worker.calm) return false;
+  const foe = (state.bandits || []).filter(bandit => bandit.alive && distanceTo(worker, bandit) < MELEE_RANGE + 0.5)
+    .sort((x, y) => distanceTo(worker, x) - distanceTo(worker, y))[0];
+  if (!foe) return false;
+  faceToward(worker, foe);
+  if (worker.cooldown <= 0) { worker.cooldown = ATTACK_COOLDOWN; worker.attackAnim = 0.5; worker.actionClock = 0; strike(worker, foe); }
+  animateAttack(worker, delta, reducedMotion);
   return true;
 }
 
