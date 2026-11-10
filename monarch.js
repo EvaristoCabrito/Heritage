@@ -44,6 +44,11 @@ const Monarch = (() => {
   const level = () => Math.max(1, Math.min(DATA.maxLevel, state.heirLevel || 1));
   const heirStat = key => { const stat = HEIR_STATS.find(item => item.key === key); return stat ? stat.base + stat.per * (level() - 1) : 0; };
   const mag = () => heirStat('MAG');
+  // Atributo do nível mais o do equipamento.
+  const statTotal = key => heirStat(key) + (typeof monarchBonus === 'function' ? monarchBonus(key) : 0);
+  // Recuperação de MP por segundo: Sabedoria é a principal, Inteligência ajuda. Em combate, metade.
+  // Nível 1 (WIS 7, INT 9) ~1,1 MP/s; nível 30 (WIS 65, INT 67) ~9,2 MP/s.
+  const mpRegen = (fighting = false) => (statTotal('WIS') * 0.10 + statTotal('INT') * 0.04) * (fighting ? 0.5 : 1);
   const isUnlocked = spell => level() >= spell.unlockLevel && !(spell.replacedBySpellId && level() >= byId[spell.replacedBySpellId].unlockLevel);
   const rankIndex = spell => { let index = -1; spell.ranks.forEach((rank, i) => { if (rank.level <= level()) index = i; }); return index; };
   function stats(spell) {
@@ -1517,7 +1522,7 @@ const Monarch = (() => {
   function resourceStep(dt) {
     const m = ms();
     const fighting = rt.enemies.length > 0;
-    m.mp = Math.min(mpCap(), m.mp + maxMp() * (fighting ? 1.5 : 4) / 100 * dt);
+    m.mp = Math.min(mpCap(), m.mp + mpRegen(fighting) * dt);
     Object.keys(m.cd).forEach(key => { m.cd[key] = Math.max(0, m.cd[key] - dt); if (!m.cd[key]) delete m.cd[key]; });
   }
   function moveStep(dt) {
@@ -1786,7 +1791,7 @@ const Monarch = (() => {
       return `<li><span class="spell-glyph" style="--accent:${ACCENT[spell.type] || '#e9d08f'}">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>rank ${rank}/${spell.ranks.length}</small><p>${spell.ranks[rank - 1].description}</p><small>${cost || 'sem custo'} · recarga ${st.cooldownSeconds} s${st.castRange ? ` · alcance ${st.castRange} m` : ''}${st.auraRadius ? ` · raio ${st.auraRadius} m` : ''}</small></div></li>`;
     };
     return `<div class="sheet-section-label">MAGIAS DO MONARCA</div>
-      <p class="sheet-spell-res">MP ${Math.floor(m.mp)} de ${Math.floor(mpCap())} · ${auraSlots() ? `até ${auraSlots()} ${auraSlots() === 1 ? 'aura' : 'auras'} ao mesmo tempo` : 'nenhuma aura ainda'}</p>
+      <p class="sheet-spell-res">MP ${Math.floor(m.mp)} de ${Math.floor(mpCap())} · recupera ${mpRegen().toFixed(1).replace('.', ',')} MP/s (metade em combate) · ${auraSlots() ? `até ${auraSlots()} ${auraSlots() === 1 ? 'aura' : 'auras'} ao mesmo tempo` : 'nenhuma aura ainda'}</p>
       <ul class="spell-list">${list.map(row).join('')}</ul>
       <div class="sheet-section-label">MAGIAS DE CAMPO</div>
       <ul class="spell-list">${FIELD.filter(fieldUnlocked).map(spell => `<li><span class="spell-glyph" style="--accent:${SCHOOL_HEX[spell.school]}">${FIELD_GLYPH[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>nível ${spell.unlockLevel}</small><p>${fieldText(spell)}</p><small>${spell.manaCost} MP · recarga ${spell.cooldownSeconds} s</small></div></li>`).join('')}</ul>
