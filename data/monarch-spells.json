@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "classId": "monarch",
   "className": "Monarca",
   "role": "Comando, aura e controle de campo",
@@ -11,9 +11,9 @@
   },
   "resources": {
     "mana": {
-      "name": "Mana",
-      "max": "100 + 12 × nível + 2 × mag",
-      "regen": "0,5% do máximo por segundo em combate, 2% fora de combate"
+      "name": "Mana (MP)",
+      "max": "MP do herdeiro: 30 + 6 × (nível − 1), menos a reserva das auras ligadas",
+      "regen": "1,5% do máximo por segundo com inimigos no mapa, 4% sem inimigos"
     },
     "authority": {
       "name": "Autoridade",
@@ -85,7 +85,9 @@
     "auras": "Auras são alternáveis: manaCost é pago ao ligar e manaReservePercent fica reservado enquanto ela estiver ativa. O número de auras ligadas ao mesmo tempo segue auraSlotsByLevel.",
     "sharedSlot": "Magias com auraSlotShared ocupam o slot da aura indicada e somam os efeitos dela.",
     "bosses": "Chefes recebem metade da duração de atordoamento, derrubada, enraizamento e silêncio, e são imunes a conversão.",
-    "cooldownReductionCap": 40
+    "cooldownReductionCap": 40,
+    "position": "O Monarca anda pelo mapa. Magias com castRange > 0 miram um ponto ou alvo; se estiver longe, ele caminha até ficar ao alcance e conjura. Magias com castRange 0 saem de onde ele está.",
+    "monarchTargetable": "O Monarca não luta e os inimigos não o atacam; o perigo é para quem ele comanda."
   },
   "spells": [
     {
@@ -409,7 +411,7 @@
             "absorbPercent": 25,
             "absorbRangeMeters": 6
           },
-          "description": "Invoca um espírito guardião (200 + 15 × nível de vida) que ataca o alvo indicado e absorve 25% do dano recebido pelo Monarca a até 6 m."
+          "description": "Invoca um espírito guardião (200 + 15 × nível de vida) que ataca o alvo indicado e absorve 25% do dano recebido por aliados a até 6 m dele."
         },
         {
           "level": 11,
@@ -425,7 +427,7 @@
             "absorbPercent": 30,
             "absorbRangeMeters": 6
           },
-          "description": "Vassalo com 350 + 18 × nível de vida, dura 60 s e absorve 30% do dano. No nível 15 vira a Guarda Real."
+          "description": "Vassalo com 350 + 18 × nível de vida, dura 60 s e absorve 30% do dano dos aliados a até 6 m. No nível 15 vira a Guarda Real."
         }
       ]
     },

@@ -1038,3 +1038,58 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .wanted-tag { position: absolute; left: 50%; top: -18px; transform: translateX(-50%); padding: 0 5px; border: 1px solid rgba(201,163,90,.8); border-radius: 3px; color: #f4e3b0; background: rgba(26,20,12,.92); font-size: 10px; pointer-events: none; }
 .monster-row .hunt-btn { width: auto; height: 30px; padding: 0 10px; font-size: 12px; }
 
+
+/* ==========================================================================
+   Monarca: efeitos em WebGL, o herdeiro no mapa, invocações e a barra de magias.
+   ========================================================================== */
+.spell-fx { position: absolute; left: 0; top: 0; pointer-events: none; }
+.monarch-layer { position: absolute; z-index: 6; inset: 0; pointer-events: none; }
+.monarch-token { position: absolute; display: grid; justify-items: center; padding: 0; border: 0; background: transparent; transform: translate(-50%, -100%); cursor: pointer; pointer-events: auto; filter: drop-shadow(0 3px 3px rgba(6,6,4,.85)); }
+.monarch-token .monarch-standard { display: grid; place-items: center; width: 34px; height: 40px; border: 1px solid rgba(240,210,140,.75); border-radius: 4px 4px 14px 14px; background: linear-gradient(180deg, rgba(48,38,22,.92), rgba(18,15,10,.92)); box-shadow: 0 0 12px rgba(255,205,110,.45), inset 0 0 0 2px rgba(0,0,0,.35); }
+.monarch-token .crest { width: 24px; height: auto; }
+.monarch-token .monarch-name { margin-top: 2px; padding: 1px 5px; border: 1px solid rgba(220,196,147,.5); border-radius: 3px; color: #f6e7c4; background: rgba(17,20,16,.85); font-size: 8px; white-space: nowrap; }
+.monarch-token.moving .monarch-standard { animation: monarch-bob .5s ease-in-out infinite alternate; }
+.monarch-token.majesty .monarch-standard { border-color: #ffe7a3; box-shadow: 0 0 22px rgba(255,220,130,.9), inset 0 0 0 2px rgba(0,0,0,.3); }
+@keyframes monarch-bob { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+.character.summon { pointer-events: none; opacity: .88; filter: drop-shadow(0 0 6px rgba(110,200,255,.85)) saturate(.5) hue-rotate(170deg) brightness(1.25); }
+.character.converted { filter: drop-shadow(0 0 6px rgba(170,110,255,.9)) hue-rotate(230deg) saturate(1.3); }
+.map-scene.monarch-aiming { cursor: crosshair; }
+.map-scene.monarch-aiming .character { cursor: crosshair; }
+
+.monarch-bar { position: absolute; z-index: 7; left: 50%; bottom: 8px; transform: translateX(-50%); display: grid; gap: 5px; width: max-content; max-width: calc(100% - 24px); padding: 6px 8px 7px; border: 1px solid rgba(214,184,117,.38); border-radius: 8px; background: linear-gradient(180deg, rgba(30,27,20,.9), rgba(13,13,10,.92)); box-shadow: 0 6px 18px rgba(0,0,0,.55); }
+.monarch-bar[hidden] { display: none; }
+.monarch-res { display: flex; align-items: center; gap: 8px; }
+.monarch-res .res { position: relative; flex: 1 1 120px; min-width: 96px; height: 13px; overflow: hidden; border: 1px solid rgba(214,184,117,.3); border-radius: 3px; background: rgba(0,0,0,.5); }
+.monarch-res .res i, .monarch-res .res em { position: absolute; top: 0; bottom: 0; left: 0; display: block; }
+.monarch-res .res-mp i { background: linear-gradient(90deg, #2c5fa8, #6fb3ff); }
+.monarch-res .res-mp em { left: auto; right: 0; background: repeating-linear-gradient(135deg, rgba(120,140,180,.35) 0 3px, rgba(40,48,64,.35) 3px 6px); }
+.monarch-res .res-auth i { background: linear-gradient(90deg, #8a5a14, #f0c65a); }
+.monarch-res .res span { position: relative; display: block; padding: 0 5px; color: #fff4dc; font: 700 8.5px/13px 'Figtree', sans-serif; letter-spacing: .04em; text-shadow: 0 1px 1px #000; white-space: nowrap; }
+.monarch-res .aura-slots { color: var(--gold); font-size: 9px; letter-spacing: .06em; white-space: nowrap; }
+.spell-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: min(760px, calc(100vw - 48px)); }
+.spell-btn { --accent: #e9d08f; --cd: 0; position: relative; width: 34px; height: 34px; padding: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 6px; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--accent) 28%, #1b1a15), #121210 75%); color: var(--accent); cursor: pointer; }
+.spell-btn .spell-glyph { position: relative; z-index: 1; font-size: 17px; line-height: 32px; text-shadow: 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent); }
+.spell-btn .spell-cd { position: absolute; inset: 0; z-index: 2; background: conic-gradient(rgba(5,5,4,.78) calc(var(--cd) * 360deg), transparent 0); pointer-events: none; }
+.spell-btn .spell-hotkey { position: absolute; z-index: 3; right: 2px; bottom: 0; color: #d9cfb6; font: 700 8px 'Figtree', sans-serif; text-shadow: 0 1px 1px #000; }
+.spell-btn:hover { border-color: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 45%, transparent); }
+.spell-btn.poor .spell-glyph { opacity: .38; }
+.spell-btn.is-aura { border-radius: 50%; }
+.spell-btn.on { border-color: #fff0c2; box-shadow: 0 0 0 1px var(--accent), 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent); }
+.spell-btn.targeting { border-color: #9df0b3; box-shadow: 0 0 0 2px rgba(157,240,179,.6); }
+.spell-btn.spell-move { --accent: #cdbf9d; }
+.map-scene:has(.monarch-bar:not([hidden])) .toast { bottom: 108px; }
+.map-scene:has(.monarch-bar:not([hidden])) .map-footer { display: none; }
+
+.sheet-spell-res { margin: 0 0 8px; color: #b8ad93; font-size: 12px; }
+.spell-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.spell-list li { display: grid; grid-template-columns: 30px 1fr; gap: 9px; align-items: start; padding: 7px 9px; border: 1px solid rgba(206,186,137,.16); border-radius: 5px; background: rgba(10,12,9,.45); }
+.spell-list .spell-glyph { --accent: #e9d08f; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 6px; color: var(--accent); font-size: 16px; }
+.spell-list b { color: #f3e1c2; font: 15px 'Newsreader', Georgia, serif; }
+.spell-list small { color: #8f8a7a; font-size: 10.5px; }
+.spell-list p { margin: 2px 0 3px; color: #d7cfbd; font-size: 12px; line-height: 1.35; }
+.spell-list.locked li { opacity: .55; }
+@media (max-width: 640px) {
+  .spell-btn { width: 30px; height: 30px; }
+  .spell-btn .spell-glyph { font-size: 15px; line-height: 28px; }
+  .monarch-res .res { min-width: 70px; }
+}

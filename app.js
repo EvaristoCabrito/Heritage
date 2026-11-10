@@ -692,7 +692,7 @@ function showPlacementPreview(event) {
 function renderHeroes() {
   const layer = $('#hero-layer');
   const active = new Set();
-  [...state.heroes, ...state.workers, ...(state.bandits || [])].filter(actor => actor.alive).forEach(actor => {
+  [...state.heroes, ...state.workers, ...(state.bandits || []), ...(window.Monarch?.summons() || [])].filter(actor => actor.alive).forEach(actor => {
     active.add(String(actor.id));
     let token = [...layer.children].find(node => node.dataset.actor === String(actor.id));
     if (!token) {
@@ -718,7 +718,7 @@ function renderHeroes() {
     }
     if (token.parentElement !== layer) layer.append(token);
     const hurt = actor.hp != null && actor.hp < maxHpOf(actor);
-    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
+    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${actor.summon ? ' summon' : ''}${actor.mfx?.convert ? ' converted' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
     if (hurt) token.style.setProperty('--hp', `${Math.max(0, Math.round(hpOf(actor) / maxHpOf(actor) * 100))}%`);
     token.style.left = `${actor.x}%`;
     token.style.top = `${actor.y / 2}%`;
@@ -1352,6 +1352,7 @@ function animateActors(now) {
   if (!game.running) { requestAnimationFrame(animateActors); return; }
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   [...state.heroes, ...state.workers].filter(actor => actor.alive).forEach(actor => {
+    if (actor.className !== 'Peasant' && window.Monarch?.chargeStep(actor, delta, reducedMotion)) return;
     if (actor.className === 'Peasant' ? peasantDefenseStep(actor, delta, reducedMotion) : heroCombatStep(actor, delta, reducedMotion)) return;
     const construction = actor.className === 'Peasant' && actor.buildSite != null
       ? state.buildings.find(building => building.site === actor.buildSite && needsBuilder(building))
@@ -1375,7 +1376,7 @@ function animateActors(now) {
     }
     if (!actor.route) actor.route = [];
     if (!actor.route.length && !actor.finalPoint) nextActorGoal(actor);
-    let remaining = (actor.className === 'Peasant' ? 3.1 : 4.2) * (1 + gearBonus(actor, 'speed')) * delta;
+    let remaining = (actor.className === 'Peasant' ? 3.1 : 4.2) * (1 + gearBonus(actor, 'speed')) * delta * (window.Monarch?.moveMul(actor) ?? 1);
     let moved = false;
     while (remaining > 0 && (actor.route.length || actor.finalPoint)) {
       const onTrail = actor.route.length > 0;
@@ -1407,7 +1408,12 @@ function animateActors(now) {
     actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
     actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
   });
-  (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => (bandit.className === 'Monster' ? monsterStep : banditStep)(bandit, delta, reducedMotion));
+  (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => {
+    // Atordoado, derrubado, empurrado ou convertido pelo Monarca: quem decide o passo é ele.
+    if (window.Monarch?.enemyStep(bandit, delta, reducedMotion)) return;
+    (bandit.className === 'Monster' ? monsterStep : banditStep)(bandit, delta, reducedMotion);
+  });
+  window.Monarch?.step(delta, reducedMotion);
   renderHeroes();
   requestAnimationFrame(animateActors);
 }
@@ -2558,8 +2564,8 @@ function skeletonEta(monster) {
 function monsterStep(monster, delta, reducedMotion) {
   monster.cooldown = (monster.cooldown || 0) - delta;
   monster.calm = Math.max(0, (monster.calm || 0) - delta);
-  const heroes = state.heroes.filter(hero => hero.alive && distanceTo(monster, hero) < 6);
-  const foe = heroes.sort((x, y) => distanceTo(monster, x) - distanceTo(monster, y))[0] || state.workers.find(worker => worker.alive && distanceTo(monster, worker) < 2.5) || null;
+  const heroes = [...state.heroes, ...(window.Monarch?.allyTargets() || [])].filter(hero => hero.alive && distanceTo(monster, hero) < 6);
+  const foe = window.Monarch?.tauntTarget(monster) || heroes.sort((x, y) => distanceTo(monster, x) - distanceTo(monster, y))[0] || state.workers.find(worker => worker.alive && distanceTo(monster, worker) < 2.5) || null;
   if (foe) {
     if (distanceTo(monster, foe) > MELEE_RANGE) { animateWalk(monster, moveToward(monster, foe, 1.4 * delta) > 0, delta, reducedMotion); return; }
     faceToward(monster, foe);
@@ -2613,10 +2619,12 @@ const DEATH_MSG = [
 const isBandit = actor => actor.className === 'Bandit';
 const classOf = actor => actor.prestige || actor.className;
 // Atributos de luta: os da classe no nível, mais o equipamento.
+// Invocações do Monarca trazem os próprios atributos (fixedStats); auras e debuffs dele entram por último.
 const statsOf = actor => {
-  const base = attributesAt(tableFor(actor), actor.level || 1);
-  if (!actor.gear) return base;
-  return { ...base, hp: base.hp + gearBonus(actor, 'hp'), atk: base.atk + gearBonus(actor, 'atk'), mag: base.mag + gearBonus(actor, 'mag'), def: base.def + gearBonus(actor, 'def'), dex: base.dex + gearBonus(actor, 'dex') };
+  const raw = actor.fixedStats ? { ...actor.fixedStats } : attributesAt(tableFor(actor), actor.level || 1);
+  const base = !actor.gear ? raw
+    : { ...raw, hp: raw.hp + gearBonus(actor, 'hp'), atk: raw.atk + gearBonus(actor, 'atk'), mag: raw.mag + gearBonus(actor, 'mag'), def: raw.def + gearBonus(actor, 'def'), dex: raw.dex + gearBonus(actor, 'dex') };
+  return window.Monarch ? Monarch.statMods(actor, base) : base;
 };
 const maxHpOf = actor => statsOf(actor).hp;
 const hpOf = actor => (actor.hp == null ? maxHpOf(actor) : actor.hp);
@@ -2627,7 +2635,9 @@ function moveToward(actor, target, step) {
   const dx = target.x - actor.x, dy = target.y - actor.y;
   const distance = Math.hypot(dx, dy);
   if (distance < 0.001) return 0;
-  const move = Math.min(distance, step);
+  // Lentidão, raízes, atordoamento e pressa vêm das magias do Monarca.
+  const move = Math.min(distance, step * (window.Monarch?.moveMul(actor) ?? 1));
+  if (move <= 0) return 0;
   actor.x += dx / distance * move;
   actor.y += dy / distance * move;
   actor.facing = dy < -0.2 ? 'back' : dy > 0.2 ? 'front' : (actor.facing || 'front');
@@ -2675,6 +2685,7 @@ function lootText(loot) {
 }
 
 function killActor(victim, killer) {
+  if (victim.summon) { window.Monarch?.summonDied(victim); return; }
   victim.alive = false;
   victim.hp = 0;
   if (isBandit(victim)) {
@@ -2709,26 +2720,32 @@ const dexChance = (mine, theirs) => Math.max(0, Math.min(0.3, (40 * mine / Math.
 // Um golpe: dano proporcional (ataque² / (ataque + defesa)), então defesa alta reduz o dano mas nunca zera;
 // magia ignora metade da defesa. Destreza dá crítico (×1,5) e esquiva. Heróis ganham experiência a cada golpe, mais 25% quando matam.
 function strike(attacker, defender) {
+  if (window.Monarch?.blocksAttack(attacker)) return;
   const a = statsOf(attacker), d = statsOf(defender);
   const magic = MAGIC_CLASSES.includes(classOf(attacker));
   const power = magic ? a.mag : a.atk;
   const guard = magic ? d.def / 2 : d.def;
   const raw = power * power / Math.max(1, power + guard);
-  const crit = Math.random() < dexChance(a.dex, d.dex);
-  const dodged = Math.random() < dexChance(d.dex, a.dex);
-  const damage = dodged ? 0 : Math.max(1, Math.round(raw * (crit ? 1.5 : 1) * (0.8 + Math.random() * 0.4)));
+  // Ordem de Aniquilação: crítico garantido, que também não pode ser esquivado.
+  const boost = window.Monarch?.strikeBoost(attacker, defender) || null;
+  const crit = boost?.crit || Math.random() < dexChance(a.dex, d.dex);
+  const dodged = !boost?.crit && Math.random() < dexChance(d.dex, a.dex);
+  let damage = dodged ? 0 : Math.max(1, Math.round(raw * (crit ? 1.5 + (boost?.critBonus || 0) : 1) * (0.8 + Math.random() * 0.4)));
+  if (window.Monarch) damage = Monarch.adjustDamage(attacker, defender, damage, magic);
+  if (!attacker.alive) return; // refletido pelo Santuário do Trono
   defender.hp = hpOf(defender) - damage;
   defender.calm = 5;
   attacker.calm = 5;
   const killed = defender.hp <= 0;
-  if (!isHostile(attacker) && attacker.className !== 'Peasant') {
+  if (!isHostile(attacker) && attacker.className !== 'Peasant' && !attacker.summon) {
     let xp = Math.max(1, 13 + 3 * ((defender.level || 1) - (attacker.level || 1)));
     if (killed) xp = Math.floor(xp * 1.25);
     const before = attacker.level || 1;
     gainActorXp(attacker, xp);
     checkPrestige(attacker, before);
   }
-  if (killed) killActor(defender, attacker);
+  window.Monarch?.afterStrike(attacker, defender, damage, killed);
+  if (killed && defender.alive) killActor(defender, attacker);
 }
 
 function healHit(healer, patient) {
@@ -2743,7 +2760,7 @@ function healHit(healer, patient) {
 // Herói: procura ladrão (ou ferido, se for curandeiro) por perto; se achar, larga o resto e luta.
 function heroCombatStep(hero, delta, reducedMotion) {
   hero.calm = Math.max(0, (hero.calm || 0) - delta);
-  const bandits = (state.bandits || []).filter(bandit => bandit.alive);
+  const bandits = (state.bandits || []).filter(bandit => bandit.alive && !bandit.mfx?.convert);
   let target = null, heal = false;
   if (HEALER_CLASSES.includes(classOf(hero))) {
     const wounded = state.heroes.filter(other => other.alive && other !== hero && hpOf(other) < maxHpOf(other) * 0.7 && distanceTo(hero, other) < AGGRO_RANGE);
@@ -2756,7 +2773,7 @@ function heroCombatStep(hero, delta, reducedMotion) {
   if (!target) { if (hero.combatTarget) { hero.combatTarget = null; hero.route = []; hero.finalPoint = null; } return false; }
   if (!hero.combatTarget) { hero.route = []; hero.finalPoint = null; hero.wait = 0; }
   hero.combatTarget = target.id;
-  hero.cooldown = (hero.cooldown || 0) - delta;
+  hero.cooldown = (hero.cooldown || 0) - delta * (window.Monarch?.attackRate(hero) ?? 1);
   const range = heal ? SHOT_RANGE : RANGED_CLASSES.includes(classOf(hero)) ? SHOT_RANGE : MELEE_RANGE;
   if (distanceTo(hero, target) > range) {
     const moved = moveToward(hero, target, 4.2 * delta);
@@ -2779,7 +2796,7 @@ function peasantDefenseStep(worker, delta, reducedMotion) {
   worker.calm = Math.max(0, (worker.calm || 0) - delta);
   worker.cooldown = (worker.cooldown || 0) - delta;
   if (!worker.calm) return false;
-  const foe = (state.bandits || []).filter(bandit => bandit.alive && distanceTo(worker, bandit) < MELEE_RANGE + 0.5)
+  const foe = (state.bandits || []).filter(bandit => bandit.alive && !bandit.mfx?.convert && distanceTo(worker, bandit) < MELEE_RANGE + 0.5)
     .sort((x, y) => distanceTo(worker, x) - distanceTo(worker, y))[0];
   if (!foe) return false;
   faceToward(worker, foe);
@@ -2793,8 +2810,9 @@ function banditStep(bandit, delta, reducedMotion) {
   bandit.cooldown = (bandit.cooldown || 0) - delta;
   bandit.calm = Math.max(0, (bandit.calm || 0) - delta);
   const range = bandit.kind === 'crossbow' ? SHOT_RANGE : MELEE_RANGE;
-  const heroes = state.heroes.filter(hero => hero.alive && distanceTo(bandit, hero) < (bandit.kind === 'crossbow' ? SHOT_RANGE + 2 : 7));
-  let foe = heroes.sort((x, y) => distanceTo(bandit, x) - distanceTo(bandit, y))[0] || null;
+  const heroes = [...state.heroes, ...(window.Monarch?.allyTargets() || [])].filter(hero => hero.alive && distanceTo(bandit, hero) < (bandit.kind === 'crossbow' ? SHOT_RANGE + 2 : 7));
+  // Provocação da Guarda Real: o ladrão só enxerga o guarda.
+  let foe = window.Monarch?.tauntTarget(bandit) || heroes.sort((x, y) => distanceTo(bandit, x) - distanceTo(bandit, y))[0] || null;
   if (!foe && bandit.kind === 'sword') foe = state.workers.find(worker => worker.alive && distanceTo(bandit, worker) < 3) || null;
   if (foe) {
     if (distanceTo(bandit, foe) > range) {
@@ -3013,6 +3031,7 @@ function startGame(newState, slot) {
   closeMenu();
   sizeWorld();
   homeCamera();
+  window.Monarch?.reset();
   renderSites(); renderHeroes(); renderPanel(); updateHud();
   $('#event-line').textContent = state.ticks ? 'De volta ao Vale do Luto.' : 'A herança foi aceita. Os credores já estão a caminho.';
   writeSave(slot);
@@ -3203,6 +3222,7 @@ const SCREENS = {
         <div class="xp-bar"><i style="width:${state.heirLevel >= HEIR_MAX_LEVEL ? 100 : Math.round(state.heirXp / xpToNext(state.heirLevel) * 100)}%"></i></div>
       </div>
       ${heirAttributesHTML(state.heirLevel)}
+      ${window.Monarch ? Monarch.sheetHTML() : ''}
       <dl class="sheet-facts">
         <div><dt>Idade</dt><dd>${heir.age} anos</dd></div>
         <div><dt>Parentesco</dt><dd>${heir.tie}</dd></div>
