@@ -195,7 +195,7 @@ function newGameState(testMode = false, heir = null) {
     gold: 240, grain: 58, timber: 30,
     food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, eggs: 0, milk: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, eggs: true, milk: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
-    tab: 'build', won: false,
+    tab: 'build', won: false, goalStep: 0, goalKills: 0,
     bandits: [], nextRaidAt: 720,
     testMode, heir, heirLevel: 1, heirXp: 0, equipment: BASIC_EQUIPMENT(), stash: null, playSeconds: 0,
     buildings: [],
@@ -598,17 +598,46 @@ function updateHud() {
   $('.tab-count').textContent = heroes;
   $('#tax-pct').textContent = `${state.taxPercent}%`;
   $('#tax-preview').textContent = `≈ ${format(dailyTaxEstimate())} de imposto · −${format(dailyWages())} de salários por dia`;
-  $('#objective-gold').textContent = state.testMode ? '∞' : format(state.gold);
-  const pct = Math.min(100, state.gold / 6);
-  $('#objective-bar').style.width = `${pct}%`;
+  updateGoal();
   const hh = Math.floor(state.minutes / 60) % 24;
   const mm = state.minutes % 60;
   $('#clock').textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-  if (!state.testMode && state.gold >= 600 && !state.won) {
+  if (!state.testMode && (state.goalStep || 0) >= SCENARIO_GOALS.length && !state.won) {
     state.won = true;
     say('Cenário conquistado: o domínio agora paga as próprias dívidas.', 'Os credores receberam a notícia. Infelizmente, também receberam o endereço.');
     if (!state.retinue && game.slot) { menu.stack = []; showScreen('scenarioEnd', { servants: [], protectors: [] }); }
   }
+}
+
+// Objetivos do Cenário 01, um depois do outro. O cenário termina quando o último é cumprido.
+const SCENARIO_GOALS = [
+  { title: 'Acumule 600 moedas',
+    progress: () => ({ have: state.gold, need: 600, text: `${state.testMode ? '∞' : format(state.gold)} / 600` }),
+    done: ['Dívidas quitadas. Os credores foram embora decepcionados.', 'Agora os mortos do vale querem a parte deles. Abata 4 caveiras ou ladrões.'] },
+  { title: 'Noites de Ossos: abata 4 caveiras ou ladrões',
+    progress: () => ({ have: state.goalKills || 0, need: 4, text: `${Math.min(4, state.goalKills || 0)} / 4 abatidos` }),
+    done: ['Os mortos do Vale do Luto aprenderam a ficar deitados. Pelo menos estes.', 'Último desafio: 10 camponeses e uma Taverna de pé. Gente feliz não pega forcado.'] },
+  { title: 'Pão, Cerveja e Gente: 10 camponeses e uma Taverna',
+    progress: () => {
+      const people = state.workers.filter(worker => worker.alive).length;
+      const tavern = state.buildings.some(building => building.type === 'tavern' && isDone(building));
+      return { have: Math.min(10, people) + (tavern ? 1 : 0), need: 11, text: `${Math.min(10, people)} / 10 · ${tavern ? 'taverna aberta' : 'sem taverna'}` };
+    },
+    done: ['A Taverna lotou e ninguém foi enforcado esta semana. Recorde no Vale do Luto.', 'O vale funciona. Mal, mas funciona.'] },
+];
+function updateGoal() {
+  const step = Math.min(state.goalStep || 0, SCENARIO_GOALS.length - 1);
+  const goal = SCENARIO_GOALS[step];
+  const { have, need, text } = goal.progress();
+  $('#objective-title').textContent = goal.title;
+  $('#objective-step').textContent = `${step + 1} de ${SCENARIO_GOALS.length}`;
+  $('#objective-text').textContent = text;
+  $('#objective-bar').style.width = `${Math.max(0, Math.min(100, have / need * 100))}%`;
+  if (state.testMode || (state.goalStep || 0) >= SCENARIO_GOALS.length || have < need) return;
+  state.goalStep = (state.goalStep || 0) + 1;
+  if (state.goalStep === 1) state.goalKills = 0;
+  say(...goal.done);
+  if (state.goalStep < SCENARIO_GOALS.length) updateGoal();
 }
 
 const BRANCH_NAMES = { Bishop: 'Templo Bishop', Cleric: 'Treino Cleric', Elementalist: 'Torre dos Elementalistas', Warlock: 'Torre dos Arcanistas' };
@@ -2696,6 +2725,7 @@ function lootText(loot) {
 function killActor(victim, killer) {
   victim.alive = false;
   victim.hp = 0;
+  if (state.goalStep === 1 && ['Bandit', 'Monster'].includes(victim.className)) state.goalKills = (state.goalKills || 0) + 1;
   if (isBandit(victim)) {
     let back = '';
     if (victim.loot?.gold) { if (!state.testMode) state.gold += victim.loot.gold; back = ` Recuperou ${victim.loot.gold} de ouro.`; }
@@ -2924,7 +2954,7 @@ function serializeState() {
 
 function hydrateState(data) {
   const loaded = Object.assign(newGameState(!!data.testMode), data);
-  loaded.buildings.forEach(building => { building.builtAt = 0; });
+  loaded.buildings.forEach(building => { building.builtAt = 0; building.upgradedAt = 0; });
   if (!data.food) loaded.food = { ...emptyFood(), wheat: data.grain || 0 };
   if (loaded.food.flour == null) loaded.food.flour = 0;
   if (loaded.diet && loaded.diet.flour == null) loaded.diet.flour = true;
@@ -2941,6 +2971,8 @@ function hydrateState(data) {
   if (loaded.nextDemandAt == null) loaded.nextDemandAt = loaded.minutes + 600;
   loaded.taxPercent = Math.min(TAX_MAX, loaded.taxPercent);
   if (loaded.tavernTab == null) loaded.tavernTab = 0;
+  // Saves de antes dos objetivos em sequência: quem já tinha vencido fica com todos cumpridos.
+  if (data.goalStep == null) loaded.goalStep = loaded.won ? SCENARIO_GOALS.length : 0;
   loaded.nextBuildingId = Math.max(loaded.nextBuildingId || 1, ...loaded.buildings.map(building => building.site + 1));
   if (loaded.tab === 'contracts') loaded.tab = 'build';
   loaded.workers.forEach(worker => {
