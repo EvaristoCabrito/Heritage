@@ -88,7 +88,8 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .site-layer { position: absolute; z-index: 4; inset: 0; }
 .site-layer { pointer-events: none; }
 .lair-marker:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
-.hero-layer { position: absolute; inset: 0; pointer-events: none; }
+/* Personagens ficam sempre por cima de construções e árvores, inteiros e opacos. */
+.hero-layer { position: absolute; z-index: 6; inset: 0; pointer-events: none; }
 .site { position: absolute; left: var(--x); top: var(--y); display: flex; flex-direction: column; align-items: center; gap: 4px; transform: translate(-50%,-50%); min-width: 66px; padding: 0; border: 0; background: transparent; color: #e4d7b7; cursor: pointer; pointer-events: auto; text-shadow: 0 1px 6px #12120f, 0 1px 2px #000; transition: transform .18s, filter .18s; }
 .site:hover, .site:focus-visible { transform: translate(-50%,-54%) scale(1.06); filter: brightness(1.25); outline: none; }
 .site-ring { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid rgba(230,203,141,.8); border-radius: 50%; color: #f0d99e; background: rgba(27,31,24,.66); box-shadow: 0 0 0 5px rgba(213,185,124,.12), 0 4px 12px #10110e; font: 18px 'Figtree', sans-serif; }
@@ -901,7 +902,40 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .info-lines div { display: flex; justify-content: space-between; gap: 12px; }
 .info-lines dt { color: #9d9583; font-size: 12px; white-space: nowrap; }
 .info-lines dd { margin: 0; color: #ece2cb; font-size: 12px; text-align: right; }
-.building-info .guild-branches { display: flex; gap: 8px; }
+/* Inspetor da construção selecionada: identidade, vida, números, ações; mudar de lugar fica pequeno no rodapé. */
+.inspector { display: flex; flex-direction: column; gap: 12px; }
+.inspector-back { align-self: flex-start; padding: 2px 0; border: 0; color: var(--muted); background: none; font: 11px 'Figtree', sans-serif; letter-spacing: .04em; cursor: pointer; }
+.inspector-back:hover, .inspector-back:focus-visible { color: var(--gold); outline: none; }
+.inspector-id { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; gap: 10px; }
+.inspector-thumb { width: 56px; height: 56px; object-fit: contain; border: 1px solid var(--line); border-radius: 4px; background: rgba(15,17,14,.6); }
+.inspector-id h3 { margin: 0; color: #eadbb9; font: 17px/1.15 'Newsreader', Georgia, serif; }
+.inspector-id small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+.inspector-hp { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 11px; }
+.inspector-hp span { color: var(--muted); }
+.inspector-hp i { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #7fbf5a var(--hp), rgba(255,255,255,.08) var(--hp)); }
+.inspector-hp.hurt i { background: linear-gradient(90deg, #d0a23f var(--hp), rgba(255,255,255,.08) var(--hp)); }
+.inspector-hp.ruined i { background: linear-gradient(90deg, #b8432c var(--hp), rgba(255,255,255,.08) var(--hp)); }
+.inspector-hp b { color: #ece2cb; font-weight: 600; font-variant-numeric: tabular-nums; }
+.inspector-stats { display: grid; gap: 0; margin: 0; border-top: 1px solid var(--line); }
+.inspector-stats div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.inspector-stats dt { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.inspector-stats dd { margin: 0; color: #ece2cb; font-size: 11px; text-align: right; }
+.inspector-section { display: flex; flex-direction: column; gap: 6px; }
+.inspector-section h4, .inspector-section summary { margin: 0; color: var(--gold); font: 700 9px 'Figtree', sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+.inspector-section summary { cursor: pointer; }
+.inspector-section .storage-items { margin: 0; font-size: 11px; }
+.inspector .hut-upgrade { height: 30px; padding: 0 10px; font: 600 12px 'Figtree', sans-serif; letter-spacing: .02em; }
+.inspector .hut-upgrade .cost-pair { font-size: 11px; }
+.inspector .guild-branches { gap: 6px; }
+.farm-type-grid.compact { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.farm-type-grid.compact .farm-type { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 0; padding: 4px 2px; }
+.farm-type-grid.compact .farm-type img { width: 30px; height: 30px; }
+.farm-type-grid.compact .farm-type b { font-size: 10px; }
+.farm-type-grid.compact .farm-type:last-child:nth-child(odd) { grid-column: auto; }
+.inspector-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--line); }
+.inspector-foot span { margin-right: auto; color: var(--muted); font-size: 10px; }
+.move-site-btn { flex: none; height: 22px; padding: 0 8px; border: 1px solid rgba(220,196,147,.25); border-radius: 3px; color: #a49d8c; background: transparent; font: 10px 'Figtree', sans-serif; letter-spacing: .03em; cursor: pointer; }
+.move-site-btn:hover, .move-site-btn:focus-visible { color: #f1e7d2; border-color: rgba(220,196,147,.6); outline: none; }
 .site.moving { opacity: .35; }
 
 /* Equipamento: ícone provisório até chegar o desenho de cada item. */

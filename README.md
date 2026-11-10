@@ -27,7 +27,7 @@ Ouro e madeira infinitos existem só no **modo teste**, ligado pela tela de Debu
 ## O que dá para experimentar
 
 - Mercado (100 de ouro, 6 de madeira): depois de pronto, a aba Mercado vende e compra trigo, farinha, alho, ovos, leite, bacon e madeira, de 1 em 1 ou de 10 em 10. Preços fixos; comprar custa o dobro de vender. A comida comprada precisa caber no Depósito de Provisões. Armas e itens ainda não existem para negociar.
-- Cabana do Lenhador (80 de ouro, 2 de madeira): toque nela e escale de 1 a 3 camponeses livres. Com 1 rende 0,1 de madeira por segundo, com 2 rende 0,3 e com 3 rende 0,5. Os escalados trabalham lá em vez da fazenda.
+- Cabana do Lenhador (80 de ouro, 2 de madeira): toque nela e escale de 1 a 3 camponeses livres. Com 1 rende 0,05 de madeira por segundo, com 2 rende 0,15 e com 3 rende 0,25. Os escalados trabalham lá em vez da fazenda.
 - Toda construção é uma obra: depois de paga, um camponês livre vai até o local e precisa trabalhar lá um minuto de jogo. Só então ela passa a valer (produção, heróis, moradores, depósito). Sem camponês livre, a obra espera.
 - Construir onde quiser: escolha a carta e uma prévia da obra segue o cursor. Ela fica dourada onde dá e vermelha onde não dá (casarão, ruínas, floresta do topo, borda do mapa ou encostada em outra construção). Toque para erguer; `Esc`, botão direito ou tocar de novo na carta cancela.
 - Tocar em qualquer construção pronta abre o quadro de informações no painel (o que produz, nível, quem trabalha ou mora nela) e o botão Mudar de lugar: toque no novo ponto livre do mapa; Esc ou botão direito cancela. A mudança não custa nada.
@@ -71,7 +71,7 @@ Ouro e madeira infinitos existem só no **modo teste**, ligado pela tela de Debu
 - `outputs/portrait-gallery-v01.html` — galeria offline dos vinte retratos para revisão.
 
 O cenário tem fumaça e luz discretas em movimento, as novas obras aparecem com uma animação curta, e os marcadores dos heróis se deslocam entre destinos. A opção de reduzir movimento do sistema desliga essas animações.
-O moinho custa 155 moedas e 10 de madeira e mói 0,45 de trigo em farinha por segundo (0,6 no nível 2 e 0,8 no nível 3); suas pás acompanham a velocidade I, II ou III do jogo.
+O moinho custa 155 moedas e 10 de madeira e mói 0,225 de trigo em farinha por segundo (0,3 no nível 2 e 0,4 no nível 3); suas pás acompanham a velocidade I, II ou III do jogo.
 As construções usam coordenadas da imagem inteira em todas as larguras de tela, para que os prédios continuem sobre o chão ao abrir em celular ou computador. A câmera mostra uma parte do cenário por vez e pode ser movida sem alterar os percursos dos personagens. As artes experimentais de regiões e covis desta etapa foram preservadas como arquivos separados, mas não são usadas no jogo.
 As cartas do menu mostram miniaturas das onze construções. Cada tipo de fazenda mostra diretamente seu rendimento de provisões e ouro; o painel de construção mostra a produção atual quando uma fazenda existente é selecionada.
 Os personagens seguem pontos de passagem; a posição vertical define se aparecem à frente ou atrás de uma construção. O painel da companhia mostra seus retratos.
