@@ -178,7 +178,7 @@ function writeStore(key, value) {
 // Opções do jogador e do debug ficam salvas no navegador.
 const options = readStore(OPTIONS_KEY, { startZoom: 0, names: 'selected', autosave: 3, buildingArtStyle: 'dark' });
 if (options.zoomVersion !== 3 || ![0, 1, 2].includes(options.startZoom)) { options.startZoom = 0; options.zoomVersion = 3; }
-// Som: 1 ligado, 0 desligado. O jogo ainda não toca áudio; todo som futuro deve respeitar esta opção.
+// Som: 1 ligado, 0 desligado. A música (syncMusic) respeita esta opção; todo som futuro também deve.
 if (![0, 1].includes(options.sound)) options.sound = 1;
 if (!['dark', 'color'].includes(options.buildingArtStyle)) options.buildingArtStyle = 'dark';
 // Modo teste: ouro e madeira infinitos. Só existe ligado pela tela de Debug.
@@ -3043,7 +3043,71 @@ function setTestMode(on) {
 function applyOptions() {
   document.body.classList.toggle('names-always', options.names === 'always');
   document.documentElement.style.setProperty('--mill-sails-image', `url('${buildingImage('mill-sails')}')`);
+  syncMusic();
 }
+
+// Música. Telas de título, slots, herdeiro e introdução: o tema, em loop.
+// No mapa 1: as faixas do ciclo 01 em ordem aleatória, sem fim e sem repetir a mesma em seguida.
+// Arquivos em Opus (public/music), convertidos dos MP3 da pasta Music.
+const MUSIC = {
+  theme: ['public/music/main-theme.webm'],
+  map1: ['public/music/cycle01-01.webm', 'public/music/cycle01-02.webm'],
+};
+const MUSIC_VOLUME = 0.55;
+const music = { audio: null, mode: null, queue: [], last: null };
+
+function nextMusicTrack() {
+  if (!music.queue.length) {
+    const list = [...MUSIC[music.mode]];
+    for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+    if (list.length > 1 && list[0] === music.last) list.push(list.shift());
+    music.queue = list;
+  }
+  return (music.last = music.queue.shift());
+}
+
+function fadeMusic(audio, to, ms, done) {
+  clearInterval(audio.fadeTimer);
+  const from = audio.volume;
+  const start = performance.now();
+  audio.fadeTimer = setInterval(() => {
+    const t = Math.min(1, (performance.now() - start) / ms);
+    audio.volume = from + (to - from) * t;
+    if (t < 1) return;
+    clearInterval(audio.fadeTimer);
+    done?.();
+  }, 50);
+}
+
+function playMusic() {
+  const audio = music.audio;
+  if (!audio || !audio.paused) return;
+  // O navegador bloqueia som até o primeiro clique ou tecla; aí tenta de novo.
+  audio.play().then(() => fadeMusic(audio, MUSIC_VOLUME, 1500)).catch(() => {});
+}
+
+function startMusicTrack() {
+  const audio = new Audio(nextMusicTrack());
+  audio.volume = 0;
+  audio.loop = MUSIC[music.mode].length === 1;
+  audio.addEventListener('ended', () => { if (music.audio === audio) startMusicTrack(); });
+  music.audio = audio;
+  playMusic();
+}
+
+function syncMusic() {
+  const mode = options.sound ? (game.slot ? 'map1' : 'theme') : null;
+  if (mode === music.mode) { playMusic(); return; }
+  const old = music.audio;
+  if (old) fadeMusic(old, 0, 1200, () => { old.pause(); old.removeAttribute('src'); old.load(); });
+  music.audio = null;
+  music.mode = mode;
+  music.queue = [];
+  music.last = null;
+  if (mode) startMusicTrack();
+}
+
+['pointerdown', 'keydown'].forEach(type => document.addEventListener(type, playMusic, true));
 
 const menu = { stack: [], pending: null };
 
@@ -3326,6 +3390,7 @@ function renderMenu() {
   layer.hidden = false;
   $('#menu-panel').innerHTML = html;
   fitMenu();
+  syncMusic();
   $('#menu-panel button:not([disabled])')?.focus({ preventScroll: true });
 }
 
@@ -3356,6 +3421,7 @@ function closeMenu() {
   menu.stack = [];
   $('#menu-layer').hidden = true;
   if (game.slot) game.running = true;
+  syncMusic();
 }
 
 function goBack() {
