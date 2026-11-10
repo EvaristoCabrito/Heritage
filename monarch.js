@@ -244,7 +244,6 @@ const Monarch = (() => {
     if (spell.activation === 'alternavel' && m.auras.includes(spell.key)) return null;
     if ((m.cd[spell.key] || 0) > 0) return `${spell.name}: em recarga (${Math.ceil(m.cd[spell.key])} s).`;
     if (m.mp < st.manaCost) return `${spell.name}: falta mana. O sangue azul não paga contas.`;
-    if ((m.authority || 0) < st.authorityCost) return `${spell.name}: falta autoridade. Ninguém obedece a quem ainda não mandou nada.`;
     if (spell.activation === 'alternavel') {
       if (spell.auraSlotShared && !m.auras.includes(spell.auraSlotShared)) return `${spell.name}: ligue antes a ${byKey[spell.auraSlotShared].name}.`;
       if (!spell.auraSlotShared && slotsUsed() >= auraSlots()) return `Sem espaço para mais auras (${auraSlots()} ao mesmo tempo). Desligue uma.`;
@@ -255,25 +254,23 @@ const Monarch = (() => {
     const m = ms();
     const st = stats(spell);
     m.mp -= st.manaCost;
-    m.authority = Math.max(0, (m.authority || 0) - st.authorityCost);
-    if (st.authorityGain) gainAuth(st.authorityGain);
     m.cd[spell.key] = st.cooldownSeconds;
   }
   const needsTarget = spell => stats(spell).castRange > 0;
 
+  // Botão ✦ MAGIA: escolhe a magia na lista e depois clica no mapa onde ela sai.
   function press(key) {
     if (!active()) return;
-    const m = ms();
-    if (key === 'move') { rt.targeting = rt.targeting?.key === 'move' ? null : { key: 'move' }; refreshCursor(); return; }
     const spell = byKey[key];
     if (!spell) return;
     if (rt.channel?.key === key) { endChannel(); return; }
+    if (spell.activation === 'alternavel' && ms().auras.includes(key)) { toggleAura(spell); return; }
+    if (currentMap !== 'city') { say('As magias só saem em City. Volte para lá.'); return; }
     const reason = canCast(spell);
     if (reason) { say(reason); return; }
-    if (spell.activation === 'alternavel') { toggleAura(spell); return; }
-    if (needsTarget(spell)) { rt.targeting = rt.targeting?.key === key ? null : { key }; refreshCursor(); return; }
-    m.pending = null;
-    cast(spell, { x: m.x, y: m.y });
+    rt.targeting = rt.targeting?.key === key ? null : { key };
+    if (rt.targeting) say(`${spell.name}: clique no mapa onde ela vai sair. Botão direito ou Esc cancela.`);
+    refreshCursor();
   }
   function toggleAura(spell) {
     const m = ms();
@@ -283,6 +280,7 @@ const Monarch = (() => {
     } else {
       pay(spell);
       m.auras.push(spell.key);
+      castBurst(spell, m.x, m.y);
       FX.shockwave(m.x, m.y, radiusOf(spell), auraColor(spell.key), 0.8);
       emit(m.x, m.y - BODY, { color: auraColor(spell.key), count: 20, speed: 4, size: 0.4, up: 3 });
       say(`${spell.name} ligada.`);
@@ -306,32 +304,33 @@ const Monarch = (() => {
     rt.channel = null;
   }
 
-  // Clique no mapa com uma magia escolhida: guarda o pedido; o Monarca anda até ficar ao alcance.
+  // Clique no mapa com uma magia escolhida: ela sai ali, na hora. Não há ninguém andando até lá.
   function onMapClick(point) {
     const t = rt.targeting;
     if (!t) return false;
-    const m = ms();
-    if (t.key === 'move') {
-      m.goal = point; m.pending = null; rt.targeting = null; refreshCursor();
-      FX.sigil(point.x, point.y, 1.4, C.gold, 0.7, 4);
-      return true;
-    }
     const spell = byKey[t.key];
-    let targetId = null;
+    rt.targeting = null;
+    refreshCursor();
+    if (!spell) return true;
+    const reason = canCast(spell);
+    if (reason) { say(reason); return true; }
+    let enemy = null;
     if (spell.target === 'inimigo_unico') {
-      const enemy = nearest(rt.enemies, point.x, point.y, 4);
-      if (!enemy) { say('Escolha um inimigo: clique em cima dele.'); return true; }
+      enemy = nearest(rt.enemies, point.x, point.y, 6);
+      if (!enemy) { say(`${spell.name} precisa de um inimigo: clique em cima dele.`); rt.targeting = { key: spell.key }; refreshCursor(); return true; }
       if (spell.key === 'edito-de-servidao') {
         const e = effects(spell);
         if (enemy.boss) { say('Chefes não se ajoelham. Pelo menos não para você.'); return true; }
         if ((enemy.level || 1) > level() + e.maxTargetLevelAboveCaster) { say(`${enemy.name} é forte demais para servir. Por enquanto.`); return true; }
       }
-      targetId = enemy.id;
     }
-    m.pending = { key: spell.key, x: point.x, y: point.y, targetId };
-    m.goal = null;
-    rt.targeting = null;
-    refreshCursor();
+    // As magias que saem "do Monarca" (auras, pulsos) saem do ponto clicado.
+    const m = ms();
+    m.x = spell.target === 'linha' ? point.x - stats(spell).lineLength / 2 : point.x;
+    m.y = point.y;
+    m.pending = null; m.goal = null; m.walkTo = null;
+    if (spell.activation === 'alternavel') toggleAura(spell);
+    else cast(spell, enemy ? { x: enemy.x, y: enemy.y, enemy } : { x: point.x, y: point.y });
     return true;
   }
   function pendingStep() {
@@ -341,7 +340,8 @@ const Monarch = (() => {
     const spell = byKey[p.key];
     const target = p.targetId ? rt.enemies.find(enemy => enemy.id === p.targetId) : null;
     if ((p.targetId || spell.target === 'inimigo_unico') && !target) { m.pending = null; m.walkTo = null; return; }
-    const spot = target || p;
+    const ally = p.allyId != null ? rt.allies.find(actor => actor.alive && String(actor.id) === String(p.allyId)) : null;
+    const spot = target || ally || p;
     const range = stats(spell).castRange;
     if (Math.hypot(spot.x - m.x, spot.y - m.y) > range) { m.walkTo = spot; return; }
     m.pending = null;
@@ -351,8 +351,23 @@ const Monarch = (() => {
     cast(spell, { x: spot.x, y: spot.y, enemy: target });
   }
 
+  // Toda magia que sai tem um estouro grande e visível no ponto clicado: coluna de luz, clarão, ondas, runa e faíscas.
+  const BURST_COLOR = { ordem: 'gold', aura: 'paleGold', edito: 'violet', onda: 'holy', invocacao: 'astral', decreto: 'steel', marca: 'crimson', ataque: 'ember', zona: 'violet', canalizacao: 'holy', controle: 'frost', grito: 'ember', pacto: 'blood', suprema: 'holy' };
+  function castBurst(spell, x, y) {
+    const color = C[BURST_COLOR[spell.type]] || C.gold;
+    const r = Math.max(7, (radiusOf(spell) || 0) * 1.4);
+    FX.beam(x, y, 2.6, 30, color, 1.1);
+    FX.flash(x, y - BODY, r, color, 0.7);
+    FX.flash(x, y - BODY, r * 0.45, C.white, 0.35);
+    FX.shockwave(x, y, r * 1.5, color, 1.1);
+    FX.shockwave(x, y, r * 0.9, C.white, 0.7, 'ground', 0.8);
+    FX.sigil(x, y, r, color, 2.2, 8);
+    emit(x, y - 1, { color, count: 70, speed: r * 1.1, size: 0.9, up: 7, life: 1.4 });
+    emit(x, y - 1, { color: C.white, count: 25, speed: r * 0.6, size: 0.6, up: 10, life: 1 });
+  }
   function cast(spell, target) {
     if (rt.channel && spell.key !== rt.channel.key) endChannel();
+    castBurst(spell, target.x, target.y);
     if (spell.activation === 'canalizada') { startChannel(spell); return; }
     pay(spell);
     const handler = CAST[spell.key];
@@ -372,6 +387,7 @@ const Monarch = (() => {
       FX.sigil(t.x, t.y, st.auraRadius, C.gold, 1.0, 6);
       FX.shockwave(t.x, t.y, st.auraRadius, C.paleGold, 0.6);
       if (!chosen.length) say('A ordem ecoou no vazio. Ninguém por perto para obedecer.');
+      else say(`Ordem de Comando: ${chosen.map(ally => ally.name).join(', ')} ${chosen.length === 1 ? 'bate' : 'batem'} ${e.nextAttackDamagePercent}% mais forte no próximo golpe.`);
     },
     'edito-de-contencao'(spell, st, e) {
       const m = ms();
@@ -860,7 +876,7 @@ const Monarch = (() => {
     rt.summons = rt.summons.filter(s => s.alive);
     // Pela borda: aura desligada se o nível caiu (save antigo) ou se a Presença saiu.
     m.auras = m.auras.filter(key => isUnlocked(byKey[key]) && (!byKey[key].auraSlotShared || m.auras.includes(byKey[key].auraSlotShared)));
-    renderToken();
+    if (token) token.hidden = true;
     drawFrame(dt, reducedMotion);
     rt.barClock -= dt;
     if (rt.barClock <= 0) { rt.barClock = 0.1; renderBar(false); }
@@ -970,16 +986,13 @@ const Monarch = (() => {
       else {
         const spell = byKey[aim.key];
         const st = stats(spell);
-        const inRange = Math.hypot(h.x - m.x, h.y - m.y) <= st.castRange;
-        D.ring(m.x, m.y, st.castRange, C.paleGold, 0.4, 0.012, 48, t * 0.02);
-        const color = inRange ? C.emerald : C.gold;
+        const color = C.emerald;
         if (spell.target === 'inimigo_unico') {
           const enemy = nearest(rt.enemies, h.x, h.y, 4);
           if (enemy) { D.ring(enemy.x, enemy.y, 1.8, C.crimson, 0.95, 0.12, 8, t * 0.5); D.rune(enemy.x, enemy.y - HEAD - 1.2, 0.8, C.crimson, 0.8, t); }
           else D.sigil('ground', h.x, h.y, 1.2, color, 0.5, 4, t);
         } else if (spell.target === 'linha') {
-          let dx = h.x - m.x, dy = h.y - m.y; const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
-          D.segment('ground', m.x, m.y, m.x + dx * st.lineLength, m.y + dy * st.lineLength, C.astral, 0.35, 0, st.lineWidth / 2, t);
+          D.segment('ground', h.x - st.lineLength / 2, h.y, h.x + st.lineLength / 2, h.y, C.astral, 0.35, 0, st.lineWidth / 2, t);
         } else {
           const r = spell.key === 'ordem-de-investida' ? st.targetAreaRadius : st.auraRadius || 2;
           D.ring(h.x, h.y, r, color, 0.85, 0.04, 12, t * 0.1);
@@ -1021,47 +1034,67 @@ const Monarch = (() => {
     if (bar) bar.hidden = true;
     if (token) token.hidden = true;
   }
+  // A autoridade saiu do jogo: as frases sobre ela somem das descrições.
+  const plain = text => String(text || '').split(/(?<=\.)\s+/).filter(part => !/autoridade/i.test(part)).join(' ');
   const spellTitle = spell => {
     const st = stats(spell);
     const rank = rankIndex(spell) + 1;
-    const cost = [st.manaCost ? `${st.manaCost} MP` : '', st.authorityCost ? `${st.authorityCost} de autoridade` : '', st.manaReservePercent ? `reserva ${st.manaReservePercent}% do MP` : ''].filter(Boolean).join(' · ') || 'sem custo';
+    const cost = [st.manaCost ? `${st.manaCost} MP` : '', st.manaReservePercent ? `reserva ${st.manaReservePercent}% do MP` : ''].filter(Boolean).join(' · ') || 'sem custo';
     const reach = [st.castRange ? `alcance ${st.castRange} m` : 'sai do Monarca', st.auraRadius ? `raio ${st.auraRadius} m` : ''].filter(Boolean).join(' · ');
-    return `${spell.name} (rank ${rank}/${spell.ranks.length})\n${spell.ranks[rank - 1].description}\n${cost} · recarga ${st.cooldownSeconds} s · ${reach}`;
+    return `${spell.name} (rank ${rank}/${spell.ranks.length})\n${plain(spell.ranks[rank - 1].description)}\n${cost} · recarga ${st.cooldownSeconds} s · ${reach}`;
   };
+  // Posição do botão ✦ MAGIA: canto esquerdo por padrão; se o jogador arrastar, fica onde ele soltar (fração do espaço livre).
+  const BAR_POS_KEY = 'wf-monarch-bar-pos';
+  let barPos = null;
+  try { barPos = JSON.parse(localStorage.getItem(BAR_POS_KEY) || 'null'); } catch { barPos = null; }
+  function placeBar() {
+    if (!bar || bar.hidden || !barPos) return;
+    const scene = document.getElementById('map-scene');
+    const room = { x: Math.max(0, scene.clientWidth - bar.offsetWidth), y: Math.max(0, scene.clientHeight - bar.offsetHeight) };
+    bar.classList.add('placed');
+    bar.style.left = `${Math.round(barPos.x * room.x)}px`;
+    bar.style.top = `${Math.round(barPos.y * room.y)}px`;
+  }
   function renderBar(force) {
     if (!bar) return;
     if (!active()) { bar.hidden = true; return; }
+    const wasHidden = bar.hidden;
     bar.hidden = false;
+    if (wasHidden) placeBar();
     const m = ms();
+    bar.querySelector('.spell-open small').textContent = `MP ${Math.floor(m.mp)}/${Math.floor(mpCap())}`;
+    const aiming = rt.targeting && byKey[rt.targeting.key];
+    bar.querySelector('.spell-open b').textContent = aiming ? 'CLIQUE NO MAPA' : '✦ MAGIA';
+    bar.classList.toggle('aiming', !!aiming);
+    const menuEl = bar.querySelector('.spell-menu');
+    if (menuEl.hidden) return;
     const list = unlockedSpells();
     const key = `${level()}:${list.map(spell => spell.key).join(',')}`;
-    if (key !== rt.barKey) {
+    if (key !== rt.barKey || force) {
       rt.barKey = key;
-      bar.querySelector('.spell-row').innerHTML = `<button type="button" class="spell-btn spell-move" data-spell="move" title="Mover o Monarca (ou clique direito no mapa)"><span class="spell-glyph">➤</span></button>`
-        + list.map((spell, i) => `<button type="button" class="spell-btn${spell.activation === 'alternavel' ? ' is-aura' : ''}" data-spell="${spell.key}" style="--accent:${ACCENT[spell.type] || '#e9d08f'}" title="${spellTitle(spell).replace(/"/g, '&quot;')}"><span class="spell-glyph">${GLYPHS[spell.key] || '✦'}</span><i class="spell-cd"></i>${i < 10 ? `<b class="spell-hotkey">${(i + 1) % 10}</b>` : ''}</button>`).join('');
-    } else if (force) {
-      bar.querySelectorAll('.spell-btn[data-spell]').forEach(button => { const spell = byKey[button.dataset.spell]; if (spell) button.title = spellTitle(spell); });
+      menuEl.innerHTML = list.map(spell => `<button type="button" class="spell-item" data-spell="${spell.key}" style="--accent:${ACCENT[spell.type] || '#e9d08f'}" title="${spellTitle(spell).replace(/"/g, '&quot;')}">
+          <span class="spell-glyph">${GLYPHS[spell.key] || '✦'}</span><span class="spell-text"><b>${spell.name}</b><small></small></span></button>`).join('')
+        || '<p class="spell-empty">Nenhuma magia ainda.</p>';
     }
-    const cap = mpCap(), max = maxMp();
-    bar.querySelector('.res-mp i').style.width = `${Math.round(m.mp / Math.max(1, max) * 100)}%`;
-    bar.querySelector('.res-mp em').style.width = `${Math.round(reservedMp() / Math.max(1, max) * 100)}%`;
-    bar.querySelector('.res-mp span').textContent = `MP ${Math.floor(m.mp)}/${Math.floor(cap)}`;
-    bar.querySelector('.res-auth i').style.width = `${Math.round((m.authority || 0) / authMax() * 100)}%`;
-    bar.querySelector('.res-auth span').textContent = `Autoridade ${Math.floor(m.authority || 0)}/${authMax()}`;
-    bar.querySelector('.aura-slots').textContent = auraSlots() ? `Auras ${slotsUsed()}/${auraSlots()}` : '';
-    bar.querySelectorAll('.spell-btn[data-spell]').forEach(button => {
-      const k = button.dataset.spell;
-      if (k === 'move') { button.classList.toggle('targeting', rt.targeting?.key === 'move'); return; }
-      const spell = byKey[k];
-      if (!spell) return;
+    menuEl.querySelectorAll('.spell-item').forEach(button => {
+      const spell = byKey[button.dataset.spell];
       const st = stats(spell);
-      const cd = m.cd[k] || 0;
-      button.style.setProperty('--cd', cd ? (cd / Math.max(0.1, st.cooldownSeconds)).toFixed(3) : 0);
-      button.classList.toggle('cooling', cd > 0);
-      button.classList.toggle('on', m.auras.includes(k) || rt.channel?.key === k);
-      button.classList.toggle('targeting', rt.targeting?.key === k || m.pending?.key === k);
-      button.classList.toggle('poor', !m.auras.includes(k) && (m.mp < st.manaCost || (m.authority || 0) < st.authorityCost));
+      const cd = m.cd[spell.key] || 0;
+      const on = m.auras.includes(spell.key) || rt.channel?.key === spell.key;
+      button.querySelector('small').textContent = on ? 'Ligada · clique para desligar' : cd > 0 ? `Recarga ${Math.ceil(cd)} s` : `${st.manaCost} MP`;
+      button.classList.toggle('on', on);
+      button.classList.toggle('poor', !on && (cd > 0 || m.mp < st.manaCost));
     });
+  }
+  function toggleMenu(open) {
+    const menuEl = bar.querySelector('.spell-menu');
+    menuEl.hidden = open == null ? !menuEl.hidden : !open;
+    if (!menuEl.hidden) {
+      const scene = document.getElementById('map-scene');
+      bar.classList.toggle('menu-up', bar.offsetTop + bar.offsetHeight / 2 > scene.clientHeight / 2);
+      rt.barKey = '';
+    }
+    renderBar(true);
   }
   function refreshCursor() {
     document.getElementById('map-scene')?.classList.toggle('monarch-aiming', !!rt.targeting);
@@ -1075,13 +1108,13 @@ const Monarch = (() => {
     const row = spell => {
       const st = stats(spell);
       const rank = rankIndex(spell) + 1;
-      const cost = [st.manaCost ? `${st.manaCost} MP` : '', st.authorityCost ? `${st.authorityCost} Aut.` : '', st.manaReservePercent ? `reserva ${st.manaReservePercent}%` : ''].filter(Boolean).join(' · ');
-      return `<li><span class="spell-glyph" style="--accent:${ACCENT[spell.type] || '#e9d08f'}">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>rank ${rank}/${spell.ranks.length}</small><p>${spell.ranks[rank - 1].description}</p><small>${cost || 'sem custo'} · recarga ${st.cooldownSeconds} s${st.castRange ? ` · alcance ${st.castRange} m` : ''}${st.auraRadius ? ` · raio ${st.auraRadius} m` : ''}</small></div></li>`;
+      const cost = [st.manaCost ? `${st.manaCost} MP` : '', st.manaReservePercent ? `reserva ${st.manaReservePercent}%` : ''].filter(Boolean).join(' · ');
+      return `<li><span class="spell-glyph" style="--accent:${ACCENT[spell.type] || '#e9d08f'}">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>rank ${rank}/${spell.ranks.length}</small><p>${plain(spell.ranks[rank - 1].description)}</p><small>${cost || 'sem custo'} · recarga ${st.cooldownSeconds} s${st.castRange ? ` · alcance ${st.castRange} m` : ''}${st.auraRadius ? ` · raio ${st.auraRadius} m` : ''}</small></div></li>`;
     };
     return `<div class="sheet-section-label">MAGIAS DO MONARCA</div>
-      <p class="sheet-spell-res">MP ${Math.floor(m.mp)} de ${Math.floor(mpCap())} · Autoridade ${Math.floor(m.authority || 0)} de ${authMax()} · ${auraSlots() ? `até ${auraSlots()} ${auraSlots() === 1 ? 'aura' : 'auras'} ao mesmo tempo` : 'nenhuma aura ainda'}</p>
+      <p class="sheet-spell-res">MP ${Math.floor(m.mp)} de ${Math.floor(mpCap())} · ${auraSlots() ? `até ${auraSlots()} ${auraSlots() === 1 ? 'aura' : 'auras'} ao mesmo tempo` : 'nenhuma aura ainda'}</p>
       <ul class="spell-list">${list.map(row).join('')}</ul>
-      ${next.length ? `<div class="sheet-section-label">${all ? 'AINDA BLOQUEADAS' : 'PRÓXIMAS'}</div><ul class="spell-list locked">${next.map(spell => `<li><span class="spell-glyph">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>nível ${spell.unlockLevel}</small><p>${spell.ranks[0].description}</p></div></li>`).join('')}</ul>` : ''}`;
+      ${next.length ? `<div class="sheet-section-label">${all ? 'AINDA BLOQUEADAS' : 'PRÓXIMAS'}</div><ul class="spell-list locked">${next.map(spell => `<li><span class="spell-glyph">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>nível ${spell.unlockLevel}</small><p>${plain(spell.ranks[0].description)}</p></div></li>`).join('')}</ul>` : ''}`;
   }
 
   function reset() {
@@ -1104,14 +1137,47 @@ const Monarch = (() => {
     bar.className = 'monarch-bar';
     bar.id = 'monarch-bar';
     bar.hidden = true;
-    bar.innerHTML = `<div class="monarch-res"><div class="res res-mp"><em></em><i></i><span></span></div><div class="res res-auth"><i></i><span></span></div><small class="aura-slots"></small></div><div class="spell-row"></div>`;
+    bar.innerHTML = `<button type="button" class="spell-open" title="Magias: clique para escolher. Arraste para mudar o botão de lugar."><b>✦ MAGIA</b><small></small></button><div class="spell-menu" hidden></div>`;
     scene.append(bar);
-    bar.addEventListener('pointerdown', event => event.stopPropagation());
+    let dragged = false;
+    bar.addEventListener('pointerdown', event => {
+      event.stopPropagation();
+      if (event.button !== 0 || event.target.closest('.spell-menu')) return;
+      const box = bar.getBoundingClientRect();
+      const start = { x: event.clientX, y: event.clientY, dx: event.clientX - box.left, dy: event.clientY - box.top };
+      dragged = false;
+      const moveBar = ev => {
+        if (!dragged && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < 5) return;
+        if (!dragged) { dragged = true; bar.classList.add('dragging'); bar.setPointerCapture?.(ev.pointerId); toggleMenu(false); }
+        const area = scene.getBoundingClientRect();
+        const room = { x: Math.max(1, area.width - bar.offsetWidth), y: Math.max(1, area.height - bar.offsetHeight) };
+        barPos = { x: Math.min(1, Math.max(0, (ev.clientX - start.dx - area.left) / room.x)), y: Math.min(1, Math.max(0, (ev.clientY - start.dy - area.top) / room.y)) };
+        placeBar();
+      };
+      const stop = () => {
+        bar.classList.remove('dragging');
+        window.removeEventListener('pointermove', moveBar);
+        window.removeEventListener('pointerup', stop);
+        window.removeEventListener('pointercancel', stop);
+        try { if (dragged && barPos) localStorage.setItem(BAR_POS_KEY, JSON.stringify(barPos)); } catch {}
+      };
+      window.addEventListener('pointermove', moveBar);
+      window.addEventListener('pointerup', stop);
+      window.addEventListener('pointercancel', stop);
+    });
+    window.addEventListener('resize', placeBar);
     bar.addEventListener('click', event => {
       event.stopPropagation();
-      const button = event.target.closest('.spell-btn');
-      if (button) press(button.dataset.spell);
+      if (dragged) { dragged = false; return; }
+      if (event.target.closest('.spell-open')) {
+        if (rt.targeting) { rt.targeting = null; refreshCursor(); return; }
+        toggleMenu();
+        return;
+      }
+      const item = event.target.closest('.spell-item');
+      if (item) { toggleMenu(false); press(item.dataset.spell); }
     });
+    document.addEventListener('pointerdown', event => { if (bar && !bar.contains(event.target) && !bar.querySelector('.spell-menu').hidden) toggleMenu(false); });
     scene.addEventListener('pointermove', event => { rt.hover = worldPoint(event); });
     scene.addEventListener('click', event => {
       if (!rt.targeting || !active() || camera.dragMoved || event.target.closest('.monarch-bar, .map-tools')) return;
@@ -1120,12 +1186,10 @@ const Monarch = (() => {
       onMapClick(worldPoint(event));
     }, true);
     scene.addEventListener('contextmenu', event => {
-      if (!active() || state.selectedBuild || state.movingSite != null || state.placingBounty) return;
+      if (!active() || !rt.targeting) return;
       event.preventDefault();
-      if (rt.targeting) { rt.targeting = null; refreshCursor(); return; }
-      const m = ms();
-      m.goal = worldPoint(event); m.pending = null; m.walkTo = null;
-      FX.sigil(m.goal.x, m.goal.y, 1.4, C.gold, 0.7, 4);
+      rt.targeting = null;
+      refreshCursor();
     });
     window.addEventListener('keydown', event => {
       if (!active() || !document.getElementById('menu-layer')?.hidden) return;

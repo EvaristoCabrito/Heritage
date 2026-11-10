@@ -3772,7 +3772,7 @@ const SCREENS = {
     if (!heir || !window.Monarch) return { cls: 'is-pause', html: `<section class="menu-card sheet">${close}<header class="menu-card-head"><span class="eyebrow">MAGIAS DO MONARCA</span><h2>${heir ? 'Magias não carregadas' : 'Sem herdeiro'}</h2><p>${heir ? 'O grimório não veio junto com o jogo. Alguém usou as páginas para acender a lareira.' : 'Este save é de antes da escolha de herdeiros. Comece um jogo novo e escolha um herdeiro para ter magias.'}</p></header><div class="menu-actions"><button type="button" class="primary" data-action="resume">Voltar ao jogo</button></div></section>` };
     return { cls: 'is-pause', html: `<section class="menu-card sheet">${close}
       <div class="sheet-top">${crestSVG(heir.house, 72)}
-        <div><span class="eyebrow">MAGIAS DO MONARCA</span><h2>${heir.name}</h2><p class="heir-motto">Nível ${state.heirLevel} · teclas 1 a 0 lançam pela barra embaixo do mapa</p></div></div>
+        <div><span class="eyebrow">MAGIAS DO MONARCA</span><h2>${heir.name}</h2><p class="heir-motto">Nível ${state.heirLevel} · clique em ✦ MAGIA no mapa, escolha a magia e clique onde ela vai sair</p></div></div>
       ${Monarch.sheetHTML(true)}
     </section>` };
   },
