@@ -575,6 +575,7 @@ function updateHud() {
   $('#happiness-label').textContent = happinessLabel(state.happiness);
   $('#favor').textContent = Math.round(state.favor ?? 50);
   $('#favor-label').textContent = `${favorLabel(state.favor ?? 50)}${state.demands?.length ? ` · ${state.demands.length} ${state.demands.length === 1 ? 'tributo' : 'tributos'}` : ''}`;
+  renderDemandAlerts();
   $('#favor').closest('.stat').dataset.mood = (state.favor ?? 50) < 40 ? 'low' : (state.favor ?? 50) < 60 ? 'mid' : 'high';
   $('#happiness').closest('.stat').dataset.mood = state.happiness < 40 ? 'low' : state.happiness < 60 ? 'mid' : 'high';
   $('#timber').textContent = format(state.timber);
@@ -2145,9 +2146,9 @@ function newDemand() {
   const day = Math.floor(state.minutes / 1440);
   const qty = Math.round(DEMAND_BASE[res] * (1 + day * 0.15) * (baron ? 2 : 1));
   const demand = { id: `demand-${Date.now()}-${Math.floor(Math.random() * 1000)}`, noble: noble.id, res, qty, line: pick(noble.lines),
-    created: state.minutes, due: state.minutes + (baron ? 1080 : 1440), late: false };
+    created: state.minutes, due: state.minutes + (baron ? 3240 : 4320), late: false };
   state.demands.push(demand);
-  say(`${noble.name} exige ${qty} de ${resourceName(res)} em ${baron ? 18 : 24} horas. ${demand.line}`, `${noble.name} mandou um mensageiro. Veja na aba Economia.`);
+  say(`${noble.name} exige ${qty} de ${resourceName(res)} em ${baron ? 54 : 72} horas. ${demand.line}`, `${noble.name} mandou um mensageiro. Veja na aba Economia.`);
   if (state.tab === 'economy') renderPanel();
 }
 function deliverDemand(id) {
@@ -2215,6 +2216,16 @@ function processDemands() {
   });
   nobleRaid();
   updateHud();
+}
+// Aviso fixo no canto do mapa: cada tributo pendente, com o prazo. Clicar abre a aba Economia.
+function renderDemandAlerts() {
+  const host = $('#demand-alerts');
+  const html = (state.demands || []).map(demand => {
+    const noble = nobleOf(demand);
+    const hours = Math.max(0, Math.ceil(((demand.late ? demand.due + DEMAND_GRACE : demand.due) - state.minutes) / 60));
+    return `<button type="button" class="demand-alert${demand.late ? ' late' : ''}" data-demand-open title="Ver na aba Economia"><b>${noble.name}</b> quer ${demand.qty} de ${resourceName(demand.res)}<small>${demand.late ? `ATRASADO · vêm buscar em ${hours}h` : `${hours}h de prazo`}</small></button>`;
+  }).join('');
+  if (host.dataset.html !== html) { host.dataset.html = html; host.innerHTML = html; }
 }
 function demandsHTML() {
   const favor = Math.round(state.favor ?? 50);
@@ -3471,6 +3482,12 @@ function initMenus() {
   }));
   $('#favor').closest('.stat').addEventListener('click', () => {
     if (!game.slot) return;
+    state.tab = 'economy';
+    $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
+    renderPanel();
+  });
+  $('#demand-alerts').addEventListener('click', event => {
+    if (!event.target.closest('[data-demand-open]') || !game.slot) return;
     state.tab = 'economy';
     $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
     renderPanel();

@@ -1038,3 +1038,11 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .wanted-tag { position: absolute; left: 50%; top: -18px; transform: translateX(-50%); padding: 0 5px; border: 1px solid rgba(201,163,90,.8); border-radius: 3px; color: #f4e3b0; background: rgba(26,20,12,.92); font-size: 10px; pointer-events: none; }
 .monster-row .hunt-btn { width: auto; height: 30px; padding: 0 10px; font-size: 12px; }
 
+/* Tributos dos nobres: aviso fixo no canto do mapa. */
+.demand-alerts { position: absolute; z-index: 6; top: 12px; left: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; max-width: min(320px, calc(100% - 80px)); pointer-events: none; }
+.demand-alert { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; padding: 5px 9px; border: 1px solid rgba(214,184,117,.5); border-left: 3px solid var(--gold); border-radius: 3px; color: #efe3c6; background: rgba(22,24,20,.92); box-shadow: 0 4px 12px rgba(0,0,0,.4); font: 11px 'Figtree', sans-serif; text-align: left; cursor: pointer; pointer-events: auto; }
+.demand-alert b { color: #f0dfb4; font-weight: 600; }
+.demand-alert small { color: var(--gold); font-size: 9px; letter-spacing: .08em; }
+.demand-alert:hover { border-color: var(--gold); }
+.demand-alert.late { border-color: rgba(194,116,91,.7); border-left-color: var(--danger); }
+.demand-alert.late small { color: #e7a58d; }
