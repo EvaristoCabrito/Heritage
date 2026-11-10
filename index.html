@@ -11,8 +11,8 @@
     <link rel="preload" as="image" href="public/art/healer-walk-v01.webp">
     <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
     <link rel="preload" as="font" href="public/fonts/PirataOne.ttf" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="app.css?v=307">
-    <script defer src="app.js?v=307"></script>
+    <link rel="stylesheet" href="app.css?v=311">
+    <script defer src="app.js?v=311"></script>
   </head>
   <body>
     <div class="game">
@@ -21,6 +21,8 @@
           <div class="stat resource-stat" title="Ouro. Vem dos impostos, cobrados à meia-noite (camponeses e taverna)." aria-label="Ouro"><img class="hud-icon" src="public/art/icon-coin-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="gold">240</strong><em id="gold-rate" class="visually-hidden">+2/dia</em></span></div>
           <div class="stat resource-stat" title="Comida guardada. Clique para abrir a lista de alimentos." aria-label="Comida"><img class="hud-icon" src="public/art/icon-provisions-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong><span id="grain">58</span><i>/<span id="storage-cap">100</span></i></strong><em id="grain-rate" class="visually-hidden">+0/s</em></span></div>
           <div class="stat resource-stat" title="Madeira e quanto rende por segundo" aria-label="Madeira"><img class="hud-icon" src="public/art/icon-logs-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="timber">30</strong><em id="timber-rate">+0/s</em></span></div>
+          <div class="stat resource-stat" title="Metal" aria-label="Metal"><img class="hud-icon" src="public/art/icon-metal-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><small>METAL</small><strong>—</strong></span></div>
+          <div class="stat resource-stat" title="Pedras" aria-label="Pedras"><img class="hud-icon" src="public/art/icon-stone-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><small>PEDRAS</small><strong>—</strong></span></div>
           <div class="stat mood resource-stat" title="Felicidade dos camponeses, de 0 a 100. Comida servida e imposto baixo aumentam; ração pequena, imposto alto e fome diminuem." aria-label="Felicidade dos camponeses"><img class="hud-icon" src="public/art/icon-happiness-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="happiness">50</strong><em id="happiness-label" class="visually-hidden">Conformados</em></span></div>
           <div class="stat mood favor" title="Favor dos nobres, de 0 a 100. Tributos entregues no prazo aumentam; atraso diminui. Abaixo de 20, eles atacam. Clique para ver os tributos."><small>FAVOR</small><strong id="favor">50</strong><em id="favor-label">Tolerado</em></div>
           <div class="stat" title="Alojamento: Warrior inicial (1); cada guilda, +1 morador; hotel, +4 camas; taverna, +1 cama"><small>HERÓIS</small><strong><span id="hero-count">1</span><i>/<span id="hero-cap">1</span></i></strong></div>
@@ -41,28 +43,29 @@
       </header>
 
       <main class="stage">
-        <section class="map-scene" id="map-scene" tabindex="0" aria-label="Mapa do domínio. Arraste para explorar; use as setas do teclado ou a roda do mouse para mover a câmera.">
-          <div class="map-world" id="map-world">
+        <section class="map-scene" id="map-scene" tabindex="0" aria-label="Mapa de City. Alterne para Wilds pelo ícone. Arraste para explorar; use as setas do teclado ou a roda do mouse para mover a câmera.">
+          <div class="map-world" id="map-world" data-map="city">
             <div class="map-region manor-region">
-              <img class="map-art" src="public/art/mordavia-map.webp" alt="Mapa contínuo do Vale do Luto" draggable="false">
-              <div class="map-atmosphere" aria-hidden="true"><span class="manor-smoke smoke-a"></span><span class="manor-smoke smoke-b"></span></div>
+              <img class="map-art" src="public/art/mordavia-map.webp" alt="Mapa de City" draggable="false">
+              <div class="map-atmosphere" aria-hidden="true"><span class="manor-smoke smoke-a"></span><span class="manor-smoke smoke-b"></span><span class="manor-smoke smoke-c"></span><span class="manor-smoke smoke-d"></span></div>
             </div>
             <div class="site-layer" id="site-layer" aria-label="Construções do domínio">
               <div class="placement-preview" id="placement-preview" aria-hidden="true"></div>
             </div>
+            <div class="lair-layer" id="lair-layer" aria-label="Covis e cemiterios"></div>
             <img class="tree-foreground manor-trees" src="public/art/mordavia-forest-layer.png" alt="" draggable="false">
             <div id="hero-layer" class="hero-layer" aria-label="Personagens do domínio"></div>
           </div>
           <div class="map-vignette"></div>
           <div class="map-tools">
-            <button class="camera-home" id="camera-home" type="button" aria-label="Centralizar câmera no casarão" title="Voltar ao casarão">⌂</button>
-            <button class="camera-road" id="camera-road" type="button" aria-label="Centralizar câmera na Estrada Velha" title="Ir para a Estrada Velha">↓</button>
+            <button class="camera-wilds" id="camera-wilds" type="button" aria-label="Ir para Wilds" title="Ir para Wilds">WILDS</button>
             <div class="zoom-control" role="group" aria-label="Nível de zoom">
               <button class="zoom-btn active" type="button" data-zoom="0" aria-label="Zoom 1: visão ampla" aria-pressed="true" title="Ampla">1</button>
               <button class="zoom-btn" type="button" data-zoom="1" aria-label="Zoom 2: visão normal" aria-pressed="false" title="Normal">2</button>
               <button class="zoom-btn" type="button" data-zoom="2" aria-label="Zoom 3: visão próxima" aria-pressed="false" title="Próxima">3</button>
             </div>
           </div>
+          <aside class="site-inspector" id="site-inspector" aria-label="Construção selecionada" hidden></aside>
           <div class="map-footer">
             <span class="map-footnote"><span class="map-key"></span> ARRASTE PARA EXPLORAR · CONSTRUA ONDE QUISER</span>
           </div>

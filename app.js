@@ -47,7 +47,7 @@ const GUILD_FOR = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', 'Bla
 const CLASS_ART = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', 'Black Mage': 'black-mage', Conjurer: 'conjurer', Healer: 'healer', Peasant: 'peasant' };
 const PORTRAIT_ART = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', 'Black Mage': 'black-mage', Conjurer: 'conjurer', Healer: 'healer' };
 const PRESTIGE_ART = { Paladin: 'paladin', 'Heavy Knight': 'heavy-knight', Ranger: 'ranger', Assassin: 'assassin', Sentinel: 'sentinel', Templar: 'templar', Elementalist: 'elementalist', Warlock: 'warlock', Sorcerer: 'sorcerer', Necromancer: 'necromancer', Bishop: 'bishop', Cleric: 'cleric' };
-const actorArt = actor => PRESTIGE_ART[actor.prestige] || actor.spriteId || (actor.kind === 'skeleton' ? 'skeleton-v02' : actor.kind === 'zombie' ? 'zombie-v01' : null) || CLASS_ART[actor.className];
+const actorArt = actor => PRESTIGE_ART[actor.prestige] || actor.spriteId || (actor.kind === 'skeleton' ? 'skeleton-v02' : actor.kind === 'zombie' ? 'zombie-v01' : actor.kind === 'wolf' ? 'mordavian-wolf-v01' : actor.kind === 'goblin' ? 'mordavian-goblin-v01' : actor.kind === 'troll' ? 'mordavian-troll-v01' : null) || CLASS_ART[actor.className];
 const actorPortrait = actor => PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || 'male-peasant';
 const actorSheet = actor => actor.action === 'build' ? 'build' : actor.action === 'action' && !actor.prestige ? 'action' : 'walk';
 // Nomes, manias e falas vindos do Herança de Cinzas original.
@@ -121,6 +121,13 @@ const PHOTOREAL_BUILDING_ART = new Set([
   'mill-body', 'mill-sails', 'hut', 'hut-big', 'depot', 'lumber', 'market',
   'tavern', 'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'manor',
 ]);
+// Artes de obra: o sprite final existente continua sendo a fase completa.
+// Para adicionar uma construção nova, inclua a chave aqui e os arquivos -early/-mid.
+const CONSTRUCTION_STAGE_ART = new Set([
+  'farm-garlic', 'farm-wheat', 'farm-bacon', 'farm-eggs', 'farm-milk',
+  'mill-body', 'hut', 'hut-big', 'depot', 'lumber', 'market', 'tavern',
+  'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory',
+]);
 const BUILDING_ART_ASPECTS = {
   'farm-garlic': 1.5, 'farm-wheat': 1.5, 'farm-bacon': 1.5, 'farm-eggs': 1.5, 'farm-milk': 1.5,
   'mill-body': 1105 / 1424, 'mill-sails': 1312 / 1199, hut: 1.5, 'hut-big': 1.5,
@@ -128,7 +135,13 @@ const BUILDING_ART_ASPECTS = {
   archer: 1199 / 1312, lancer: 1.5, tower: 1202 / 1308, conjurer: 1312 / 1199,
   healer: 1.5, armory: 1.5, manor: 1.5,
 };
-const buildingImage = art => {
+const buildingImage = (art, constructionStage = null, building = null) => {
+  if (art === 'armory' && constructionStage && building?.armoryUpgradeTo >= 2 && building.armoryUpgradeTo <= 4) {
+    return `public/art/armory-upgrade-phases-v01/armory-upgrade-to-level-0${building.armoryUpgradeTo}-${constructionStage}-v01.png`;
+  }
+  if (constructionStage && CONSTRUCTION_STAGE_ART.has(art)) {
+    return `public/art/buildings-construction-dark-v01/${art}-${constructionStage}.webp`;
+  }
   if (!PHOTOREAL_BUILDING_ART.has(art)) return `public/art/${art}-v01.webp`;
   if (options.buildingArtStyle === 'color') {
     return `public/art/buildings-color-v02/${art}.webp`;
@@ -146,7 +159,7 @@ const PATH_NODES = [
   { x: 90, y: 52, links: [8, 11] },
   { x: 91, y: 29, links: [7, 9] },
   { x: 85, y: 21, links: [8] },                 // Ruínas do covil
-  { x: 62, y: 67, links: [3, 11] },           // Contorno sul do lote direito
+  { x: 62, y: 67, links: [3, 11] },             // Contorno sul do lote direito
   { x: 90, y: 67, links: [10, 7] },
   { x: 42, y: 99, links: [5, 13] },
   { x: 54, y: 107, links: [12, 14] },
@@ -154,7 +167,7 @@ const PATH_NODES = [
   { x: 39, y: 137, links: [14, 16] },
   { x: 45, y: 153, links: [15, 17] },
   { x: 56, y: 171, links: [16, 18] },
-  { x: 44, y: 190, links: [17] },
+  { x: 44, y: 190, links: [17] },               // Final da estrada velha
 ];
 const PATROLS = {
   Warrior: [0, 3, 6, 1, 5],
@@ -199,6 +212,17 @@ function newGameState(testMode = false, heir = null) {
     bandits: [], nextRaidAt: 720,
     testMode, heir, heirLevel: 1, heirXp: 0, equipment: BASIC_EQUIPMENT(), stash: null, playSeconds: 0,
     buildings: [],
+    lairs: [
+      { id: 'cemetery-l1', name: 'Cemiterio level 1', kind: 'cemetery', level: 1, art: 'mordavia-cemetery-l1-v01.png', mapId: 'city', x: 44, y: 190, active: true },
+      { id: 'wolf-den-1', name: 'Covil de lobos 1', kind: 'wolf-den', level: 1, art: 'mordavia-wolf-den-l1-v01.png', mapId: 'wilds', x: 82, y: 173, active: true, nextSpawnAt: 380 + 2880 },
+      { id: 'wolf-den-2', name: 'Covil de lobos 2', kind: 'wolf-den', level: 1, art: 'mordavia-wolf-den-l1-v01.png', mapId: 'wilds', x: 91, y: 184, active: true, nextSpawnAt: 380 + 2880 },
+      { id: 'cemetery-l2', name: 'Cemiterio level 2', kind: 'cemetery', level: 2, art: 'mordavia-cemetery-l2-v01.png', mapId: 'wilds', x: 44, y: 190, active: false },
+      { id: 'wolf-den-l2', name: 'Covil de lobos level 2', kind: 'wolf-den', level: 2, art: 'mordavia-wolf-den-l2-v01.png', mapId: 'wilds', x: 82, y: 173, active: false, nextScenario: true },
+      { id: 'goblin-den-l1', name: 'Covil goblin level 1', kind: 'goblin-den', level: 1, art: 'mordavia-goblin-den-l1-v01.png', mapId: 'wilds', x: 82, y: 24, active: true, nextSpawnAt: 380 + 2880 },
+      { id: 'goblin-den-l2', name: 'Covil goblin level 2', kind: 'goblin-den', level: 2, art: 'mordavia-goblin-den-l2-v01.png', mapId: 'wilds', x: 34, y: 118, active: false, nextScenario: true },
+      { id: 'troll-den-l1', name: 'Covil de trolls level 1', kind: 'troll-den', level: 1, art: 'mordavia-troll-den-l1-v01.png', mapId: 'wilds', x: 90, y: 34, active: true, nextSpawnAt: 380 + 2880 },
+      { id: 'troll-den-l2', name: 'Covil de trolls level 2', kind: 'troll-den', level: 2, art: 'mordavia-troll-den-l1-v01.png', mapId: 'wilds', x: 62, y: 162, active: false, nextScenario: true },
+    ],
     heroes: [
       { id: 'warrior-manor', name: 'Bogdan Sem Sorte', className: 'Warrior', trait: 'Valente', level: 1, xp: 0, x: 42, y: 39, alive: true, home: 'manor', purse: HERO_START_PURSE, gear: { weapon: 'rustySword' } },
     ],
@@ -218,10 +242,14 @@ const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const format = n => Math.floor(n).toLocaleString('pt-BR');
 
 // A câmera percorre o mundo sem alterar as coordenadas dos lotes e personagens.
-// Zoom do jogo: 1 = ampla (100%, o padrão), 2 = normal (130%), 3 = próxima (160%).
+// Zoom do jogo: ampla preenche a tela; normal aproxima 30%; próxima aproxima 60%.
 const ZOOM_LEVELS = [1, 1.3, 1.6];
-const MAP_RATIO = 1312 / 1199;
-const camera = { x: 0.5, y: 0.08, zoom: 0, drag: null };
+const MAP_WORLD_HEIGHT = 2624;
+const MAP_RATIO = MAP_WORLD_HEIGHT / 1199;
+const WORLD_Y_UNITS = 200 * MAP_WORLD_HEIGHT / 2452;
+const Y_TO_X_SCALE = MAP_WORLD_HEIGHT / WORLD_Y_UNITS * 100 / 1199;
+let currentMap = 'city';
+const camera = { x: 0.5, y: 0, zoom: 0, drag: null };
 const clampCamera = value => Math.max(0, Math.min(1, value));
 
 function cameraBounds() {
@@ -246,7 +274,7 @@ function homeCamera() {
   const scene = $('#map-scene');
   const world = $('#map-world');
   camera.x = 0.5;
-  camera.y = 0.08;
+  camera.y = 0;
   renderCamera();
 }
 
@@ -268,12 +296,18 @@ function setZoom(index) {
   const scene = $('#map-scene');
   const world = $('#map-world');
   const oldBounds = cameraBounds();
-  const centerX = (oldBounds.x * camera.x + scene.clientWidth / 2) / (world.offsetWidth * ZOOM_LEVELS[camera.zoom]);
-  const centerY = (oldBounds.y * camera.y + scene.clientHeight / 2) / (world.offsetHeight * ZOOM_LEVELS[camera.zoom]);
+  const oldScale = ZOOM_LEVELS[camera.zoom];
+  const oldSlackX = Math.max(0, (scene.clientWidth - world.offsetWidth * oldScale) / 2);
+  const oldSlackY = Math.max(0, (scene.clientHeight - world.offsetHeight * oldScale) / 2);
+  const centerX = (scene.clientWidth / 2 - oldSlackX + oldBounds.x * camera.x) / (world.offsetWidth * oldScale);
+  const centerY = (scene.clientHeight / 2 - oldSlackY + oldBounds.y * camera.y) / (world.offsetHeight * oldScale);
   camera.zoom = index;
   const bounds = cameraBounds();
-  camera.x = bounds.x ? clampCamera((centerX * world.offsetWidth * ZOOM_LEVELS[index] - scene.clientWidth / 2) / bounds.x) : 0.5;
-  camera.y = bounds.y ? clampCamera((centerY * world.offsetHeight * ZOOM_LEVELS[index] - scene.clientHeight / 2) / bounds.y) : 0;
+  const newScale = ZOOM_LEVELS[index];
+  const newSlackX = Math.max(0, (scene.clientWidth - world.offsetWidth * newScale) / 2);
+  const newSlackY = Math.max(0, (scene.clientHeight - world.offsetHeight * newScale) / 2);
+  camera.x = bounds.x ? clampCamera((newSlackX + centerX * world.offsetWidth * newScale - scene.clientWidth / 2) / bounds.x) : 0.5;
+  camera.y = bounds.y ? clampCamera((newSlackY + centerY * world.offsetHeight * newScale - scene.clientHeight / 2) / bounds.y) : 0;
   $$('.zoom-btn').forEach(button => {
     const active = Number(button.dataset.zoom) === index;
     button.classList.toggle('active', active);
@@ -283,13 +317,33 @@ function setZoom(index) {
 }
 
 function focusRegion(name) {
-  if (name !== 'road') { homeCamera(); return; }
+  if (name === 'manor') { homeCamera(); return; }
+  if (name === 'wilds') { switchMap('wilds'); return; }
   const scene = $('#map-scene');
   const world = $('#map-world');
   const bounds = cameraBounds();
-  const desiredCenter = world.offsetHeight * ZOOM_LEVELS[camera.zoom] * 0.75;
+  const desiredCenter = world.offsetHeight * ZOOM_LEVELS[camera.zoom] * 0.72;
   camera.y = bounds.y ? clampCamera((desiredCenter - scene.clientHeight / 2) / bounds.y) : 0;
   renderCamera();
+}
+
+function switchMap(name) {
+  currentMap = name === 'wilds' ? 'wilds' : 'city';
+  const wilds = currentMap === 'wilds';
+  $('#map-world').dataset.map = currentMap;
+  $('.map-art').src = wilds ? 'public/art/mordavia-wilds-map.webp' : 'public/art/mordavia-map.webp';
+  $('.tree-foreground').src = wilds ? 'public/art/mordavia-wilds-forest-layer.png' : 'public/art/mordavia-forest-layer.png';
+  $('.map-art').alt = wilds ? 'Mapa dos Wilds' : 'Mapa de City';
+  const button = $('#camera-wilds');
+  button.textContent = wilds ? 'CITY' : 'WILDS';
+  button.title = wilds ? 'Voltar para City' : 'Abrir Wilds';
+  button.setAttribute('aria-label', button.title);
+  camera.x = 0.5;
+  camera.y = 0;
+  sizeWorld();
+  renderCamera();
+  renderLairs();
+  renderHeroes();
 }
 
 function moveCamera(dx, dy) {
@@ -342,10 +396,11 @@ function initCamera() {
       homeCamera();
     }
   });
-  $('#camera-home').addEventListener('click', () => {
+  $('#camera-home')?.addEventListener('click', () => {
     focusRegion('manor');
   });
-  $('#camera-road').addEventListener('click', () => focusRegion('road'));
+  $('#camera-road')?.addEventListener('click', () => focusRegion('road'));
+  $('#camera-wilds').addEventListener('click', () => switchMap(currentMap === 'city' ? 'wilds' : 'city'));
   $$('.zoom-btn').forEach(button => button.addEventListener('click', () => setZoom(Number(button.dataset.zoom))));
   window.addEventListener('resize', () => { sizeWorld(); renderCamera(); });
   sizeWorld();
@@ -641,7 +696,7 @@ function renderSites() {
       layer.append(site);
     }
     site.style.setProperty('--x', `${building.x}%`);
-    site.style.setProperty('--y', `${building.y / 2}%`);
+    site.style.setProperty('--y', `${building.y / WORLD_Y_UNITS * 100}%`);
     site.classList.toggle('selected', state.selectedSite === idx);
     site.classList.toggle('constructing', !!building.underConstruction);
     site.classList.toggle('moving', state.movingSite === idx);
@@ -650,19 +705,44 @@ function renderSites() {
     {
       const label = siteLabel(building);
       const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
+      const constructionStage = building.underConstruction
+        ? ((building.progress || 0) < BUILD_TIME / 2 ? 'early' : 'mid')
+        : null;
       site.classList.toggle('just-built', Date.now() - building.builtAt < 1400);
       site.dataset.art = art;
-      const artAspect = options.buildingArtStyle === 'dark' ? BUILDING_ART_ASPECTS[art] || 1 : art === 'manor' ? 1.5 : 1;
-      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};background-image:url('${buildingImage(siteArt(building))}')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${building.damage > 0 ? `${label} · ${building.ruined ? 'em ruínas' : 'vida'} ${buildingHp(building)}/${buildingMaxHp(building)}` : label}</small>`}`;
+      const artAspect = options.buildingArtStyle === 'dark' || constructionStage ? BUILDING_ART_ASPECTS[art] || 1 : art === 'manor' ? 1.5 : 1;
+      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};background-image:url('${buildingImage(siteArt(building), constructionStage, building)}')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${building.damage > 0 ? `${label} · ${building.ruined ? 'em ruínas' : 'vida'} ${buildingHp(building)}/${buildingMaxHp(building)}` : label}</small>`}`;
       site.setAttribute('aria-label', `${label}. Toque para ver opções.`);
     }
   });
+  renderLairs();
 }
 
 // Se a construção cabe neste ponto: dentro do mapa, fora das áreas bloqueadas e longe das outras.
+
+function renderLairs() {
+  const layer = $('#lair-layer');
+  if (!layer) return;
+  const visibleIds = new Set();
+  (state.lairs || []).filter(lair => lair.active).forEach(lair => {
+    visibleIds.add(lair.id);
+    let marker = $(`.lair-marker[data-lair="${lair.id}"]`, layer);
+    if (!marker) { marker = document.createElement('div'); marker.className = 'lair-marker'; marker.dataset.lair = lair.id; layer.append(marker); }
+    marker.style.left = `${lair.x}%`;
+    marker.style.top = `${lair.y / WORLD_Y_UNITS * 100}%`;
+    marker.style.zIndex = String(Math.round(lair.y * 10));
+    marker.hidden = (lair.mapId || 'city') !== currentMap;
+    marker.classList.toggle('level-two', lair.level >= 2);
+    marker.setAttribute('aria-label', lair.name);
+    const image = `public/art/${lair.art}`;
+    if (marker.dataset.image !== image) { marker.innerHTML = `<img src="${image}" alt=""><small>${lair.name}</small>`; marker.dataset.image = image; }
+  });
+  $$('.lair-marker', layer).filter(marker => !visibleIds.has(marker.dataset.lair)).forEach(marker => marker.remove());
+}
+
 function placementProblem(x, y, ignoreSite = null) {
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
-  const crowded = state.buildings.some(building => building.site !== ignoreSite && Math.hypot(building.x - x, (building.y - y) * MAP_RATIO) < BUILD_SPACING);
+  const crowded = state.buildings.some(building => building.site !== ignoreSite && Math.hypot(building.x - x, (building.y - y) * Y_TO_X_SCALE) < BUILD_SPACING);
   if (crowded) return 'Encostado demais em outra construção.';
   return null;
 }
@@ -670,7 +750,7 @@ function placementProblem(x, y, ignoreSite = null) {
 
 function worldPoint(event) {
   const rect = $('#map-world').getBoundingClientRect();
-  return { x: (event.clientX - rect.left) / rect.width * 100, y: (event.clientY - rect.top) / rect.height * 200 };
+  return { x: (event.clientX - rect.left) / rect.width * 100, y: (event.clientY - rect.top) / rect.height * WORLD_Y_UNITS };
 }
 
 function showPlacementPreview(event) {
@@ -682,7 +762,7 @@ function showPlacementPreview(event) {
   const art = moving ? siteArt(moving) : item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id];
   preview.hidden = false;
   preview.style.setProperty('--x', `${x}%`);
-  preview.style.setProperty('--y', `${y / 2}%`);
+  preview.style.setProperty('--y', `${y / WORLD_Y_UNITS * 100}%`);
   preview.style.zIndex = String(Math.round(y * 10) + 1);
   preview.dataset.art = art;
   preview.style.backgroundImage = `url('${buildingImage(art)}')`;
@@ -692,7 +772,7 @@ function showPlacementPreview(event) {
 function renderHeroes() {
   const layer = $('#hero-layer');
   const active = new Set();
-  [...state.heroes, ...state.workers, ...(state.bandits || [])].filter(actor => actor.alive).forEach(actor => {
+  [...state.heroes, ...state.workers, ...(state.bandits || [])].filter(actor => actor.alive && (actor.mapId || 'city') === currentMap).forEach(actor => {
     active.add(String(actor.id));
     let token = [...layer.children].find(node => node.dataset.actor === String(actor.id));
     if (!token) {
@@ -702,7 +782,7 @@ function renderHeroes() {
       token.setAttribute('aria-label', `${actor.name}, ${actor.className}`);
       const art = actorArt(actor);
       token.innerHTML = art
-        ? `<span class="character-sprite" style="background-image:url('public/art/${art}-walk-v01.${art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') ? 'png' : 'webp'}')" aria-hidden="true"></span><span class="character-name">${actor.name}</span>`
+        ? `<span class="character-sprite" style="background-image:url('public/art/${art}-walk-v01.${art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp'}')" aria-hidden="true"></span><span class="character-name">${actor.name}</span>`
         : actor.className === 'Monster' ? `<span class="monster-skull" aria-hidden="true">☠</span><span class="character-name">${actor.name}</span>`
         : `<span class="hero-face">${actor.className[0]}</span><span class="character-name">${actor.name}</span>`;
       token.addEventListener('click', () => {
@@ -718,10 +798,10 @@ function renderHeroes() {
     }
     if (token.parentElement !== layer) layer.append(token);
     const hurt = actor.hp != null && actor.hp < maxHpOf(actor);
-    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
+    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${actor.kind === 'wolf' ? ' wolf' : actor.kind === 'goblin' ? ' goblin' : actor.kind === 'troll' ? ' troll' : actor.kind === 'zombie' ? ' zombie' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
     if (hurt) token.style.setProperty('--hp', `${Math.max(0, Math.round(hpOf(actor) / maxHpOf(actor) * 100))}%`);
     token.style.left = `${actor.x}%`;
-    token.style.top = `${actor.y / 2}%`;
+    token.style.top = `${actor.y / WORLD_Y_UNITS * 100}%`;
     token.style.zIndex = String(Math.round(actor.y * 10));
     token.dataset.facing = actor.facing || 'front';
     token.dataset.side = actor.side || 'right';
@@ -732,8 +812,9 @@ function renderHeroes() {
       // A caminhada de costas tem uma tira própria: a cesta permanece na mesma mão
       // e os quatro quadros mantêm a passada alternada sem espelhar metade do ciclo.
       const backWalk = art === 'peasant' && sheet === 'walk' && token.dataset.facing === 'back';
-      const extension = (art === 'peasant' && sheet === 'build') || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') ? 'png' : 'webp';
-      const spriteFile = backWalk ? 'peasant-walk-back-v02.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : `${art}-${sheet}-v01.${extension}`;
+      const verticalTrollWalk = actor.kind === 'troll' && sheet === 'walk' && ['up', 'down'].includes(actor.walkDirection);
+      const extension = (art === 'peasant' && sheet === 'build') || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp';
+      const spriteFile = backWalk ? 'peasant-walk-back-v02.png' : verticalTrollWalk ? 'mordavian-troll-v01-walk-vertical-v01.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : `${art}-${sheet}-v01.${extension}`;
       if (token.dataset.spriteFile !== spriteFile) {
         $('.character-sprite', token).style.backgroundImage = `url('public/art/${spriteFile}')`;
         token.dataset.spriteFile = spriteFile;
@@ -741,7 +822,8 @@ function renderHeroes() {
         token.dataset.art = art;
       }
       token.dataset.backWalk = backWalk ? 'true' : 'false';
-      token.style.setProperty('--sprite-scale-x', !backWalk && token.dataset.side === 'left' ? -1 : 1);
+      token.dataset.verticalWalk = verticalTrollWalk ? 'true' : 'false';
+      const flipSprite = !verticalTrollWalk && token.dataset.side === 'left'; token.style.setProperty('--sprite-scale-x', flipSprite ? -1 : 1);
     }
     token.style.setProperty('--frame-x', `${(actor.frame || 0) * 100 / 3}%`);
     // Recompensa pela cabeça: a placa acompanha a caveira.
@@ -774,9 +856,9 @@ function workerCard(worker) {
   </article>`;
 }
 
-function renderPanel() {
-  const host = $('#panel-view');
-  if (state.tab === 'build') {
+// A ficha da construção abre num menu próprio em cima do mapa (mover, melhorar, demolir).
+// A aba Construir fica sempre com a lista de construções.
+function inspectorHTML() {
     const selectedFarm = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'farm' && isDone(building));
     const selectedBuilding = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && !building.underConstruction);
     const selectedArmory = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'armory' && isDone(building));
@@ -785,7 +867,6 @@ function renderPanel() {
     const selectedLumber = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'lumber' && isDone(building));
     const selectedDepot = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'depot' && isDone(building));
     const selectedGuild = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && isDone(building) && BUILDINGS.find(item => item.id === building.type)?.heroClass);
-    const farmChoice = state.selectedBuild === 'farm' || !!selectedFarm;
     const currentFarmType = selectedFarm ? farmType(selectedFarm.produce).id : state.selectedFarmType;
     const inspectorActions = selectedBuilding ? `${selectedFarm ? `<section class="inspector-section" aria-label="Tipo de fazenda"><h4>Produção</h4>
         <div class="farm-type-grid compact">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="+${rateNumber(type.grain[producerLevel(selectedFarm)])} por segundo"><img src="public/art/${type.art}-v01.webp" alt=""><b>${type.name}</b></button>`).join('')}</div></section>` : ''}
@@ -795,27 +876,21 @@ function renderPanel() {
       ${selectedDepot ? depotBoxHTML(selectedDepot) : ''}
       ${selectedLumber ? lumberBoxHTML(selectedLumber) : ''}
       ${selectedArmory ? armoryBoxHTML(selectedArmory) : ''}` : '';
-    host.innerHTML = selectedBuilding ? buildingInfoHTML(selectedBuilding, inspectorActions) : `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
-      ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
-        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0])} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small></span></button>`).join('')}</div></section>` : ''}
-      <div class="build-grid">${BUILDINGS.map(item => `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira">
-        <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${item.detail}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`).join('')}</div>
-      <p class="build-note">A moeda é o custo em ouro e a lenha é o custo em madeira.</p>`;
-  } else if (state.tab === 'heroes') {
-    host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
-      ${bountyPanelHTML()}
-      <div class="hero-list">${state.heroes.filter(h => h.alive).map(heroCard).join('') || '<div class="empty-state">Nenhum herói. Ninguém foi corajoso, ou burro, o bastante.<br>Construa uma taverna ou guilda.</div>'}</div>
-      <div class="panel-title worker-heading"><h3>Trabalhadores</h3><span>${state.workers.filter(worker => worker.alive).length} no domínio</span></div>
-      <div class="hero-list">${state.workers.filter(worker => worker.alive).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Até eles desistiram.<br>Construa um casebre.</div>'}</div>
-      <p class="build-note">Você não manda nos heróis. Eles fazem o que querem.</p>`;
-  } else if (state.tab === 'food') {
-    host.innerHTML = foodPanelHTML();
-  } else if (state.tab === 'economy') {
-    host.innerHTML = economyPanelHTML();
-  } else if (state.tab === 'market') {
-    host.innerHTML = marketPanelHTML();
-  }
+  return selectedBuilding ? buildingInfoHTML(selectedBuilding, inspectorActions) : '';
+}
+
+function renderInspector() {
+  const box = $('#site-inspector');
+  if (!box) return;
+  const html = inspectorHTML();
+  box.hidden = !html;
+  box.innerHTML = html;
+  if (html) bindPanel(box);
+}
+
+function bindPanel(host) {
   $$('.build-card', host).forEach(button => button.addEventListener('click', () => chooseBuild(button.dataset.build)));
+  $$('[data-build-cat]', host).forEach(button => button.addEventListener('click', () => { state.buildCategory = button.dataset.buildCat; renderPanel(); }));
   $$('[data-farm-type]', host).forEach(button => button.addEventListener('click', () => chooseFarmType(button.dataset.farmType)));
   $$('[data-guild-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeGuild(Number(button.dataset.guildUpgrade), button.dataset.branch || null)));
   $$('[data-ration]', host).forEach(button => button.addEventListener('click', () => { state.ration = Number(button.dataset.ration); say(`Ração ${RATIONS[state.ration].label.toLowerCase()}.`); renderPanel(); updateHud(); }));
@@ -838,6 +913,46 @@ function renderPanel() {
   $$('[data-hut-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeHut(Number(button.dataset.hutUpgrade))));
   $$('[data-profession]', host).forEach(select => select.addEventListener('change', () => setProfession(select.dataset.profession, select.value)));
   $$('[data-actor-sheet]', host).forEach(button => button.addEventListener('click', () => { menu.stack = []; showScreen('actor', { id: button.dataset.actorSheet }); }));
+  $$('[data-demolish]', host).forEach(button => button.addEventListener('click', () => demolishBuilding(Number(button.dataset.demolish))));
+}
+
+// A aba Construir separa as construções por tipo, senão ninguém acha nada.
+const BUILD_CATEGORIES = [
+  { id: 'houses', name: 'Casas', types: ['hut', 'depot'] },
+  { id: 'production', name: 'Produção', types: ['farm', 'mill', 'lumber', 'market'] },
+  { id: 'guilds', name: 'Guildas', types: ['warrior', 'archer', 'lancer', 'conjurer', 'healer', 'armory', 'tavern', 'hotel'] },
+];
+const buildCategoryOf = id => BUILD_CATEGORIES.find(category => category.types.includes(id))?.id || (BUILDINGS.find(item => item.id === id)?.heroClass ? 'guilds' : 'houses');
+
+function renderPanel() {
+  const host = $('#panel-view');
+  if (state.tab === 'build') {
+    const selectedFarm = null;
+    const farmChoice = state.selectedBuild === 'farm';
+    const currentFarmType = state.selectedFarmType;
+    host.innerHTML = `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
+      ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
+        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0])} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small></span></button>`).join('')}</div></section>` : ''}
+      <div class="build-cats" role="tablist" aria-label="Tipos de construção">${BUILD_CATEGORIES.map(category => `<button type="button" class="build-cat${(state.buildCategory || 'houses') === category.id ? ' active' : ''}" data-build-cat="${category.id}" role="tab" aria-selected="${(state.buildCategory || 'houses') === category.id}">${category.name}</button>`).join('')}</div>
+      <div class="build-grid">${BUILDINGS.filter(item => buildCategoryOf(item.id) === (state.buildCategory || 'houses')).map(item => `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira">
+        <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${item.detail}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`).join('')}</div>
+      <p class="build-note">A moeda é o custo em ouro e a lenha é o custo em madeira.</p>`;
+  } else if (state.tab === 'heroes') {
+    host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
+      ${bountyPanelHTML()}
+      <div class="hero-list">${state.heroes.filter(h => h.alive).map(heroCard).join('') || '<div class="empty-state">Nenhum herói. Ninguém foi corajoso, ou burro, o bastante.<br>Construa uma taverna ou guilda.</div>'}</div>
+      <div class="panel-title worker-heading"><h3>Trabalhadores</h3><span>${state.workers.filter(worker => worker.alive).length} no domínio</span></div>
+      <div class="hero-list">${state.workers.filter(worker => worker.alive).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Até eles desistiram.<br>Construa um casebre.</div>'}</div>
+      <p class="build-note">Você não manda nos heróis. Eles fazem o que querem.</p>`;
+  } else if (state.tab === 'food') {
+    host.innerHTML = foodPanelHTML();
+  } else if (state.tab === 'economy') {
+    host.innerHTML = economyPanelHTML();
+  } else if (state.tab === 'market') {
+    host.innerHTML = marketPanelHTML();
+  }
+  bindPanel(host);
+  renderInspector();
 }
 
 // Inspetor da construção selecionada, no padrão dos jogos de construir cidade: quem é, vida, o que faz,
@@ -883,7 +998,7 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['Heróis no domínio', `${state.heroes.filter(hero => hero.alive).length} de ${heroCapacity()}`]);
   } else if (building.type === 'armory') {
     const geared = [...state.heroes, ...state.workers].filter(actor => actor.alive && Object.keys(gearOf(actor)).length).length;
-    lines.push(['Vende', `Equipamento até o nível ${(building.level || 0) + 1}`]);
+    lines.push(['Vende', `Equipamento até o tier ${ARMORY_LEVELS[Math.min(building.level || 0, ARMORY_LEVELS.length - 1)].tierCap}`]);
     lines.push(['Equipados', `${geared} personagens`]);
   } else if (def.heroClass) {
     const recruits = state.heroes.filter(hero => hero.alive && hero.guildSite === building.site);
@@ -898,7 +1013,7 @@ function buildingInfoHTML(building, actions = '') {
     : def.heroClass ? `Nível ${guildTier(building) + 1} de 3` : building.type === 'hut' ? (building.big ? 'Grande' : 'Pequeno') : '';
   const stats = building.ruined ? [['Estado', 'Em ruínas, parada'], ...lines] : lines.filter(([label]) => label !== 'Nível');
   return `<section class="inspector" aria-label="${siteLabel(building)}">
-    <button type="button" class="inspector-back" data-inspector-close>‹ Construções</button>
+    <button type="button" class="inspector-back" data-inspector-close aria-label="Fechar" title="Fechar">×</button>
     <header class="inspector-id">
       <img class="inspector-thumb" src="${buildingImage(siteArt(building))}" alt="">
       <div><h3>${siteLabel(building)}</h3><small>${[def.name === siteLabel(building) ? '' : def.name, level].filter(Boolean).join(' · ')}</small></div>
@@ -907,8 +1022,40 @@ function buildingInfoHTML(building, actions = '') {
     <dl class="inspector-stats">${stats.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>
     ${building.ruined ? '' : actions}
     ${building.type === 'market' && !building.ruined ? '<section class="inspector-section"><button type="button" class="hut-upgrade" data-open-market>Abrir o Mercado</button></section>' : ''}
-    <footer class="inspector-foot">${moving ? '<span>Toque no novo lugar no mapa. Esc cancela.</span>' : ''}<button type="button" class="move-site-btn" data-move-site="${building.site}">${moving ? 'Cancelar mudança' : 'Mudar de lugar'}</button></footer>
+    <footer class="inspector-foot">${moving ? '<span>Toque no novo lugar no mapa. Esc cancela.</span>' : ''}<button type="button" class="move-site-btn" data-move-site="${building.site}">${moving ? 'Cancelar mudança' : 'Mudar de lugar'}</button>${moving ? '' : `<button type="button" class="demolish-btn${state.demolishArmed === building.site ? ' armed' : ''}" data-demolish="${building.site}">${state.demolishArmed === building.site ? 'Confirmar demolição' : 'Demolir'}</button>`}</footer>
   </section>`;
+}
+
+// Demolir: primeiro clique arma, segundo confirma. Não devolve ouro nem madeira.
+// Quem morava, trabalhava ou se hospedava ali fica sem o lugar e volta para o casarão.
+function demolishBuilding(site) {
+  const building = state.buildings.find(item => item.site === site);
+  if (!building) return;
+  if (state.demolishArmed !== site) {
+    state.demolishArmed = site;
+    renderPanel();
+    say(`${siteLabel(building)}: clique de novo em Confirmar demolição. Não tem volta nem reembolso.`);
+    return;
+  }
+  state.demolishArmed = null;
+  state.buildings = state.buildings.filter(item => item !== building);
+  [...state.heroes, ...state.workers].forEach(actor => {
+    let touched = false;
+    if (actor.homeSite === site) { actor.homeSite = null; touched = true; }
+    if (actor.guildSite === site) { actor.guildSite = null; touched = true; }
+    if (actor.jobSite === site) { actor.jobSite = null; touched = true; }
+    if (actor.buildSite === site) { actor.buildSite = null; touched = true; }
+    if (actor.recruitedFromSite === site) actor.recruitedFromSite = null;
+    if (actor.workplace === building || actor.workplace?.site === site) { actor.workplace = null; touched = true; }
+    if (actor.tavernSpot?.site === site) { actor.tavernSpot = null; touched = true; }
+    if (touched) { actor.route = []; actor.finalPoint = null; actor.wait = 0; actor.workTrip = false; }
+  });
+  (state.bandits || []).forEach(monster => { if (monster.targetSite === site) monster.targetSite = null; });
+  if (state.selectedSite === site) state.selectedSite = null;
+  if (state.movingSite === site) state.movingSite = null;
+  assignBuilders();
+  renderSites(); renderPanel(); renderHeroes(); updateHud();
+  say(`${siteLabel(building)}: demolido. Os vizinhos levaram as tábuas antes da poeira baixar.`);
 }
 
 // Mudar de lugar: a construção pronta vai inteira para outro ponto livre, sem custo.
@@ -1050,9 +1197,11 @@ function progressConstruction(dt) {
       return;
     }
     if (worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5) {
-      building.progress = Math.min(BUILD_TIME, (building.progress || 0) + dt * (1 + skillOf(worker, 'building') / 100 + gearBonus(worker, 'build')));
+      const previousProgress = building.progress || 0;
+      building.progress = Math.min(BUILD_TIME, previousProgress + dt * (1 + skillOf(worker, 'building') / 100 + gearBonus(worker, 'build')));
       gainSkill(worker, 'building', 0.02 * dt);
       if (building.progress >= BUILD_TIME) { completeBuilding(building); return; }
+      if (previousProgress < BUILD_TIME / 2 && building.progress >= BUILD_TIME / 2) renderSites();
     }
     const label = $(`.site[data-site="${building.site}"] .build-progress`);
     if (label) label.textContent = constructionLabel(building);
@@ -1061,12 +1210,29 @@ function progressConstruction(dt) {
 
 function constructionLabel(building) {
   const worker = building.builderId != null ? findActor(building.builderId) : null;
-  return `Em obra · ${Math.floor((building.progress || 0) / BUILD_TIME * 100)}%${worker ? '' : ' · sem camponês'}`;
+  const work = building.armoryUpgradeTo ? `Reforma do Arsenal · nível ${building.armoryUpgradeTo} · ` : 'Em obra · ';
+  return `${work}${Math.floor((building.progress || 0) / BUILD_TIME * 100)}%${worker ? '' : ' · sem camponês'}`;
 }
 
 function completeBuilding(building) {
   const item = BUILDINGS.find(entry => entry.id === building.type);
   const worker = building.builderId != null ? findActor(building.builderId) : null;
+  if (building.type === 'armory' && building.armoryUpgradeTo) {
+    const level = building.armoryUpgradeTo;
+    building.level = level - 1;
+    delete building.armoryUpgradeTo;
+    building.underConstruction = false;
+    building.progress = BUILD_TIME;
+    building.builtAt = Date.now();
+    building.builderId = null;
+    if (worker) { worker.buildSite = null; worker.route = []; worker.finalPoint = null; worker.wait = 0; }
+    gainHeirXp(25);
+    assignBuilders();
+    renderSites(); renderPanel(); updateHud();
+    setTimeout(() => $(`.site[data-site="${building.site}"]`)?.classList.remove('just-built'), 1400);
+    say(`Reforma concluída. Arsenal no nível ${level}, equipamento até tier ${ARMORY_LEVELS[level - 1].tierCap}.`);
+    return;
+  }
   building.underConstruction = false;
   building.progress = BUILD_TIME;
   building.builtAt = Date.now();
@@ -1458,6 +1624,8 @@ const HOUSES = {
     about: 'Caçadores de lobo das montanhas. Dizem que há lobo no sangue deles. Eles não negam.' },
   montalvo: { name: 'Casa Montalvo', motto: 'Tudo tem preço. Inclusive o luto.', colors: ['#21412a', '#b48c3c'], ink: '#f4e3b0', pattern: 'bend', letter: 'M',
     about: 'Mercadores de sal, de grão e de dívidas alheias. Ficaram ricos e faliram tantas vezes que perderam a conta.' },
+  salazar: { name: 'Casa Salazar', motto: 'A chama recorda o sangue.', colors: ['#7a2d1d', '#c19a4a'], ink: '#f4e3b0', pattern: 'quarterly', letter: 'S',
+    about: 'Uma linhagem ibérica antiga, moldada por séculos de encontros entre povos latinos, ibéricos e norte-africanos do Mediterrâneo.' },
   lucerna: { name: 'Casa Lucerna', motto: 'Enterramos todo mundo. Um dia, a gente também.', colors: ['#3d2549', '#d9cfb6'], ink: '#2a1a31', pattern: 'chevron', letter: 'L',
     about: 'Coveiros, carpideiras e padres de aluguel. Nenhuma família de Mordavia conhece tantos mortos pelo nome.' },
   kastrell: { name: 'Casa Kastrell', motto: 'Prontos pra guerra. A guerra é que se atrasou.', colors: ['#1e2f50', '#8d939d'], ink: '#efe6d2', pattern: 'quarterly', letter: 'K',
@@ -1470,11 +1638,13 @@ const HEIRS = [
   { id: 'mircea', name: 'Teodoro Montalvo', house: 'montalvo', gender: 'm', age: 22, tie: 'Credor do falecido. Também é parente.', about: 'Sabe o preço de tudo. O valor, ele cobra à parte.' },
   { id: 'toma', name: 'Inácio Lucerna', house: 'lucerna', gender: 'm', age: 21, tie: 'Enterrou o falecido. E o pai dele.', about: 'Coveiro de terceira geração. Os clientes nunca reclamam.' },
   { id: 'petru', name: 'Darian Kastrell', house: 'kastrell', gender: 'm', age: 18, tie: 'Afilhado do falecido.', about: 'Treinado pra guerra desde criança. A guerra nunca veio buscar ele.' },
+  { id: 'rodrigo-salazar', name: 'Rodrigo Salazar', house: 'salazar', gender: 'm', age: 24, tie: 'Descendente de um ramo antigo da família Salazar.', about: 'Criado entre brasões, veludos e histórias de uma linhagem que atravessou o mar antes de se fixar em Mordávia.' },
   { id: 'ileana', name: 'Odette Vaelmont', house: 'vaelmont', gender: 'f', age: 17, tie: 'Sobrinha do falecido.', about: 'Herdou o orgulho da família. Só o orgulho. O resto foi penhorado.' },
   { id: 'doina', name: 'Wren Grenholt', house: 'grenholt', gender: 'f', age: 16, tie: 'Prima distante. A uma distância segura.', about: 'Uiva na lua cheia. Jura que é canto.' },
   { id: 'viorica', name: 'Lavinia Montalvo', house: 'montalvo', gender: 'f', age: 18, tie: 'Viúva do sobrinho do falecido.', about: 'Já faliu três vezes. Na prática, é uma especialista.' },
   { id: 'zoia', name: 'Amara Lucerna', house: 'lucerna', gender: 'f', age: 17, tie: 'Parente, segundo os mortos.', about: 'Conversa com os mortos. Eles respondem mais que os vivos.' },
   { id: 'anca', name: 'Rowena Kastrell', house: 'kastrell', gender: 'f', age: 16, tie: 'Neta do irmão do falecido.', about: 'Duelou com metade da corte. A outra metade foi embora do reino.' },
+  { id: 'isabel-salazar', name: 'Isabel Salazar', house: 'salazar', gender: 'f', age: 21, tie: 'Descendente do mesmo ramo antigo da família Salazar.', about: 'Aprendeu que a elegância também é uma armadura — e que uma família sobrevive melhor quando sabe mudar sem esquecer de onde veio.' },
 ];
 const heirById = id => HEIRS.find(heir => heir.id === id) || null;
 
@@ -1573,7 +1743,7 @@ function BASIC_EQUIPMENT() { return { scepter: 'pineScepter', orb: 'crackedOrb',
 // ==========================================================================
 // Equipamento de heróis e camponeses. Cada um compra no Arsenal com a própria bolsa, pela ordem
 // de prioridade que acha mais importante; o ouro da venda vai pro cofre do monarca.
-// O nível do Arsenal libera itens melhores (nível 1, 2 e 3).
+// Cada nível do Arsenal libera o teto de tier definido em ARMORY_LEVELS.
 // ==========================================================================
 const HERO_SLOTS = [
   { slot: 'weapon', label: 'Arma' }, { slot: 'offhand', label: 'Mão secundária' }, { slot: 'head', label: 'Cabeça' }, { slot: 'body', label: 'Armadura' },
@@ -1703,7 +1873,12 @@ function setProfession(id, profession) {
   say(worker.profession ? `${worker.name} agora é ${professionName(worker).toLowerCase()}. Ninguém perguntou se queria.` : `${worker.name} ficou sem profissão. Vai fazer o que aparecer.`);
 }
 const PEASANT_PRIORITY = ['tool', 'clothes', 'feet', 'hands', 'head'];
-const ARMORY_LEVELS = [{ gold: 0, wood: 0 }, { gold: 120, wood: 8 }, { gold: 200, wood: 14 }];
+const ARMORY_LEVELS = [
+  { gold: 0, wood: 0, tierCap: 3 },
+  { gold: 120, wood: 8, tierCap: 5 },
+  { gold: 200, wood: 14, tierCap: 8 },
+  { gold: 360, wood: 24, tierCap: 10 },
+];
 const BONUS_LABELS = { atk: 'Ataque', def: 'Defesa', mag: 'Magia', hp: 'Vida', dex: 'Destreza', work: 'trabalho', carry: 'carga', speed: 'passo', build: 'obra' };
 const gearOf = actor => actor.gear || (actor.gear = {});
 const slotsFor = actor => actor.className === 'Peasant' ? PEASANT_SLOTS : HERO_SLOTS;
@@ -1717,7 +1892,8 @@ function crewWork(building) {
   return state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site)
     .reduce((sum, worker) => sum + gearBonus(worker, 'work') + skillOf(worker, SKILL_OF_TYPE[building.type]) / 200, 0);
 }
-const armoryTier = () => state.buildings.filter(building => building.type === 'armory' && isDone(building)).reduce((best, armory) => Math.max(best, (armory.level || 0) + 1), 0);
+const armoryTier = () => state.buildings.filter(building => building.type === 'armory' && isDone(building))
+  .reduce((best, armory) => Math.max(best, ARMORY_LEVELS[Math.min(armory.level || 0, ARMORY_LEVELS.length - 1)].tierCap), 0);
 function bestPurchase(actor, tier) {
   const order = actor.className === 'Peasant' ? PEASANT_PRIORITY.filter(slot => actor.profession || slot !== 'tool') : (SLOT_PRIORITY[actor.trait] || SLOT_PRIORITY.default);
   for (const slot of order) {
@@ -1749,21 +1925,28 @@ function shopAtArmory() {
 }
 function upgradeArmory(site) {
   const armory = state.buildings.find(building => building.site === site && building.type === 'armory' && isDone(building));
-  const next = armory && ARMORY_LEVELS[(armory.level || 0) + 1];
+  const nextIndex = (armory?.level || 0) + 1;
+  const next = armory && ARMORY_LEVELS[nextIndex];
   if (!next) return;
   if (state.gold < next.gold || state.timber < next.wood) { say('Falta ouro ou madeira. O ferreiro vai continuar vendendo sucata.'); return; }
   state.gold -= next.gold;
   state.timber -= next.wood;
-  armory.level = (armory.level || 0) + 1;
+  armory.armoryUpgradeTo = nextIndex + 1;
+  armory.underConstruction = true;
+  armory.progress = 0;
+  armory.builderId = null;
+  assignBuilders();
   renderSites(); renderPanel(); updateHud();
-  say(`Arsenal no nível ${armory.level + 1}. Chegaram itens melhores. Os preços também.`);
+  const worker = armory.builderId != null ? findActor(armory.builderId) : null;
+  say(worker ? `Reforma do Arsenal para o nível ${nextIndex + 1} iniciada. ${worker.name} vai trabalhar nela.` : `Reforma do Arsenal para o nível ${nextIndex + 1} iniciada. Falta um camponês livre para a obra.`);
 }
 function armoryBoxHTML(armory) {
   const level = armory.level || 0;
   const next = ARMORY_LEVELS[level + 1];
-  const forSale = Object.values(GEAR).filter(item => item.tier <= level + 1).sort((a, b) => (a.peasant === b.peasant ? 0 : a.peasant ? 1 : -1) || a.tier - b.tier || a.price - b.price);
+  const tierCap = ARMORY_LEVELS[Math.min(level, ARMORY_LEVELS.length - 1)].tierCap;
+  const forSale = Object.values(GEAR).filter(item => item.tier <= tierCap).sort((a, b) => (a.peasant === b.peasant ? 0 : a.peasant ? 1 : -1) || a.tier - b.tier || a.price - b.price);
   return `<section class="inspector-section"><h4>Melhoria</h4>
-    ${next ? `<button type="button" class="hut-upgrade" data-armory-upgrade="${armory.site}">Nível ${level + 2} · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. O ferreiro já não dorme.</p>'}</section>
+    ${next ? `<button type="button" class="hut-upgrade" data-armory-upgrade="${armory.site}">Nível ${level + 2} · até tier ${next.tierCap} · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. O ferreiro já não dorme.</p>'}</section>
     <details class="inspector-section"><summary>À venda · ${forSale.length} itens</summary>
     <p class="storage-items">Heróis e camponeses compram sozinhos, com o próprio ouro. O ouro vai pro cofre.</p>
     <ul class="shop-list">${forSale.map(item => `<li><span><b>${item.name}</b><small>${item.peasant ? (item.prof ? item.prof.map(id => PROFESSIONS[id].name).join(', ') : 'Qualquer camponês') : item.classes ? item.classes.join(', ') : 'Qualquer herói'} · ${bonusText(item.bonus)}</small></span><em>${item.price}</em></li>`).join('')}</ul></details>`;
@@ -2132,6 +2315,13 @@ const BARON = { id: 'baron', name: 'O Barão das Cinzas', house: null, title: 'S
   lines: ['Ninguém viu o rosto dele. Quem viu não comenta. Quem comenta não é mais visto.', 'O mensageiro chegou com o cabelo chamuscado e pediu pra não ser o próximo.', 'A carta veio selada com cera preta. Ainda estava quente.'],
   paid: 'O Barão das Cinzas aceitou o tributo. Ninguém se queimou hoje. Ainda.', late: 'Cheiro de fumaça no vento. O Barão das Cinzas não manda segundo aviso.' };
 const DEMAND_BASE = { gold: 30, timber: 15, flour: 15, garlic: 10, bacon: 6, eggs: 8, milk: 8, wheat: 15 };
+// Para a cronologia dos herdeiros, um ano ficcional equivale a 360 dias de jogo.
+const GAME_YEAR_MINUTES = 360 * 1440;
+const HEIR_PHASE_YEARS = 25;
+const heirYearsElapsed = (minutes = state.minutes) => Math.min(75, Math.floor(Math.max(0, minutes) / (GAME_YEAR_MINUTES * HEIR_PHASE_YEARS)) * HEIR_PHASE_YEARS);
+const heirPhase = (minutes = state.minutes) => Math.min(4, 1 + Math.floor(heirYearsElapsed(minutes) / HEIR_PHASE_YEARS));
+const heirAge = (heir, minutes = state.minutes) => heir.age + heirYearsElapsed(minutes);
+const heirPortraitSrc = (id, phase = 1) => `public/art/heir-portraits-v01/${id}-phase-${phase}.webp`;
 const resourceName = id => id === 'gold' ? 'ouro' : id === 'timber' ? 'madeira' : foodName(id);
 const resourceStock = id => id === 'gold' ? (state.testMode ? Infinity : state.gold) : id === 'timber' ? state.timber : (state.food[id] || 0);
 const nobleOf = demand => demand.noble === 'baron' ? BARON : NOBLES.find(noble => noble.id === demand.noble) || BARON;
@@ -2225,7 +2415,7 @@ function demandsHTML() {
     const when = demand.late ? `ATRASADO · vêm buscar em ${Math.max(0, Math.ceil((demand.due + DEMAND_GRACE - state.minutes) / 60))}h` : `${Math.ceil(left / 60)}h de prazo`;
     const enough = resourceStock(demand.res) >= demand.qty;
     return `<div class="demand${demand.late ? ' late' : ''}${noble.baron ? ' baron' : ''}">
-      <div class="demand-head">${noble.house ? crestSVG(noble.house, 32) : '<span class="baron-seal" aria-hidden="true">B</span>'}<span><b>${noble.name}</b><small>${noble.title}</small></span></div>
+      <div class="demand-head">${noble.house ? `<img class="noble-portrait" src="public/art/noble-portraits-v01/${noble.house}-phase-1.webp" alt="" decoding="async">` : '<span class="baron-seal" aria-hidden="true">B</span>'}<span><b>${noble.name}</b><small>${noble.title}</small></span></div>
       <p>${demand.line}</p>
       <div class="demand-foot"><span><b>${demand.qty} de ${resourceName(demand.res)}</b><small>${when} · você tem ${resourceStock(demand.res) === Infinity ? '∞' : format(resourceStock(demand.res))}</small></span>
         <button type="button" class="hut-upgrade" data-deliver="${demand.id}" ${enough ? '' : 'disabled'}>Entregar</button></div></div>`;
@@ -2434,7 +2624,7 @@ function renderBountyFlags() {
       layer.append(flag);
     }
     flag.style.setProperty('--x', `${bounty.x}%`);
-    flag.style.setProperty('--y', `${bounty.y / 2}%`);
+    flag.style.setProperty('--y', `${bounty.y / WORLD_Y_UNITS * 100}%`);
     flag.style.zIndex = String(Math.round(bounty.y * 10) + 2);
     flag.classList.toggle('taken', !!bountyTaker(bounty));
     flag.innerHTML = `<i aria-hidden="true"></i><span>${bounty.reward}</span>`;
@@ -2542,13 +2732,32 @@ function spawnSkeleton() {
   const day = Math.floor(state.minutes / 1440) + 1;
   const start = PATH_NODES[SKELETON_PATH[0]];
   state.bandits.push({
-    id: `skeleton-${Date.now()}`, className: 'Monster', kind: 'skeleton', spriteId: 'skeleton-v02', name: `Caveira ${pick(SKELETON_NAMES)}`,
+    id: `skeleton-${Date.now()}`, className: 'Monster', kind: 'skeleton', spriteId: 'skeleton-v02', mapId: 'city', name: `Caveira ${pick(SKELETON_NAMES)}`,
     level: Math.min(HEIR_MAX_LEVEL, day), alive: true, x: start.x, y: Math.min(198, start.y + 2), leg: 0, mode: 'walk', bornAt: state.minutes,
   });
   say('O cemitério dos Wilds soltou uma caveira. Ela vem subindo a estrada velha, devagar. Dá tempo de pagar alguém pra ir atrás.', 'Uma caveira vem pela estrada velha.');
   if (state.tab === 'heroes') renderPanel();
 }
 // Quanto falta (em minutos de jogo, na velocidade 1) para a caveira chegar à cidade.
+
+function spawnWolf(lair) {
+  const n = (state.bandits || []).filter(actor => actor.kind === 'wolf' && actor.lairId === lair.id).length + 1;
+  state.bandits.push({ id: `wolf-${lair.id}-${state.minutes}`, className: 'Monster', kind: 'wolf', spriteId: 'mordavian-wolf-v01', mapId: 'wilds', lairId: lair.id, name: `Lobo mordaviano ${n}`, level: 1, alive: true, x: lair.x, y: lair.y, mode: 'approach-road', bornAt: state.minutes });
+  say(`Um novo lobo mordaviano saiu de ${lair.name} e desce em direcao a Estrada Velha.`);
+}
+function spawnLairCreature(lair) {
+  const kind = lair.kind === 'goblin-den' ? 'goblin' : 'troll';
+  const spriteId = kind === 'goblin' ? 'mordavian-goblin-v01' : 'mordavian-troll-v01';
+  const n = (state.bandits || []).filter(actor => actor.kind === kind && actor.lairId === lair.id).length + 1;
+  state.bandits.push({ id: `${kind}-${lair.id}-${state.minutes}`, className: 'Monster', kind, spriteId, mapId: 'wilds', lairId: lair.id, name: `${kind === 'goblin' ? 'Goblin' : 'Troll'} ${n}`, level: lair.level || 1, alive: true, x: lair.x, y: lair.y, mode: 'approach-road', bornAt: state.minutes });
+  say(`Um ${kind === 'goblin' ? 'goblin' : 'troll'} saiu de ${lair.name} e avanca pela Estrada Velha.`);
+}
+function spawnZombie() {
+  const lair = (state.lairs || []).find(item => item.active && item.kind === 'cemetery' && item.level === 2);
+  if (!lair) return;
+  state.bandits.push({ id: `zombie-${Date.now()}`, className: 'Monster', kind: 'zombie', spriteId: 'zombie-v01', mapId: lair.mapId || 'wilds', lairId: lair.id, name: 'Zumbi da cova funda', level: Math.min(HEIR_MAX_LEVEL, Math.floor(state.minutes / 1440) + 1), alive: true, x: lair.x, y: lair.y, mode: 'approach-road', leg: 0, bornAt: state.minutes });
+  say('Uma cova funda se abriu. Um zumbi saiu do cemiterio level 2.');
+}
 function skeletonEta(monster) {
   if (monster.mode !== 'walk') return 0;
   let dist = 0, from = monster;
@@ -2558,13 +2767,19 @@ function skeletonEta(monster) {
 function monsterStep(monster, delta, reducedMotion) {
   monster.cooldown = (monster.cooldown || 0) - delta;
   monster.calm = Math.max(0, (monster.calm || 0) - delta);
-  const heroes = state.heroes.filter(hero => hero.alive && distanceTo(monster, hero) < 6);
-  const foe = heroes.sort((x, y) => distanceTo(monster, x) - distanceTo(monster, y))[0] || state.workers.find(worker => worker.alive && distanceTo(monster, worker) < 2.5) || null;
+  const heroes = state.heroes.filter(hero => hero.alive && (hero.mapId || 'city') === (monster.mapId || 'city') && distanceTo(monster, hero) < 6);
+  const foe = heroes.sort((x, y) => distanceTo(monster, x) - distanceTo(monster, y))[0] || state.workers.find(worker => worker.alive && (worker.mapId || 'city') === (monster.mapId || 'city') && distanceTo(monster, worker) < 2.5) || null;
   if (foe) {
     if (distanceTo(monster, foe) > MELEE_RANGE) { animateWalk(monster, moveToward(monster, foe, 1.4 * delta) > 0, delta, reducedMotion); return; }
     faceToward(monster, foe);
     if (monster.cooldown <= 0) { monster.cooldown = ATTACK_COOLDOWN; monster.attackAnim = 0.5; monster.actionClock = 0; strike(monster, foe); }
     animateAttack(monster, delta, reducedMotion);
+    return;
+  }
+  if (monster.mode === 'approach-road') {
+    const exit = { x: PATH_NODES[18].x, y: PATH_NODES[18].y };
+    animateWalk(monster, moveToward(monster, exit, SKELETON_SPEED * delta) > 0, delta, reducedMotion);
+    if (distanceTo(monster, exit) < 0.5) { monster.mapId = 'city'; monster.mode = 'walk'; monster.leg = 0; monster.x = exit.x; monster.y = exit.y; }
     return;
   }
   if (monster.mode === 'walk') {
@@ -2627,6 +2842,7 @@ function moveToward(actor, target, step) {
   const dx = target.x - actor.x, dy = target.y - actor.y;
   const distance = Math.hypot(dx, dy);
   if (distance < 0.001) return 0;
+  if (actor.kind === 'troll') actor.walkDirection = Math.abs(dy) > Math.abs(dx) ? (dy < 0 ? 'up' : 'down') : 'side';
   const move = Math.min(distance, step);
   actor.x += dx / distance * move;
   actor.y += dy / distance * move;
@@ -2872,7 +3088,14 @@ function combatTick(minutesPassed) {
   if (state.nextRaidAt == null) state.nextRaidAt = 720;
   if (state.minutes >= state.nextRaidAt) { spawnBandits(); state.nextRaidAt += RAID_EVERY; }
   const night = Math.floor(state.minutes / 1440);
-  if (state.minutes % 1440 >= 1320 && state.lastSkeletonDay !== night) { state.lastSkeletonDay = night; spawnSkeleton(); }
+  if (state.minutes % 1440 >= 1320 && state.lastSkeletonDay !== night && (state.lairs || []).some(lair => lair.active && lair.kind === 'cemetery' && lair.level === 1)) { state.lastSkeletonDay = night; spawnSkeleton(); }
+  (state.lairs || []).filter(lair => lair.active && lair.kind === 'wolf-den').forEach(lair => {
+    if (state.minutes >= lair.nextSpawnAt) { spawnWolf(lair); lair.nextSpawnAt += 2880; }
+  });
+  (state.lairs || []).filter(lair => lair.active && ['goblin-den', 'troll-den'].includes(lair.kind)).forEach(lair => {
+    if (state.minutes >= lair.nextSpawnAt) { spawnLairCreature(lair); lair.nextSpawnAt += 2880; }
+  });
+  if (state.minutes % 1440 >= 1320 && state.lastZombieDay !== night && (state.lairs || []).some(lair => lair.active && lair.kind === 'cemetery' && lair.level === 2)) { state.lastZombieDay = night; spawnZombie(); }
   state.bandits = (state.bandits || []).filter(bandit => bandit.alive);
   [...state.heroes, ...state.workers].filter(actor => actor.alive && actor.hp != null && (actor.calm || 0) <= 0).forEach(actor => {
     actor.hp = Math.min(maxHpOf(actor), actor.hp + maxHpOf(actor) * 0.03 * minutesPassed);
@@ -2905,12 +3128,18 @@ function serializeState() {
 
 function hydrateState(data) {
   const loaded = Object.assign(newGameState(!!data.testMode), data);
+  const defaultLairs = newGameState(!!data.testMode).lairs;
+  loaded.lairs = defaultLairs.map(base => ({ ...base, ...(Array.isArray(data.lairs) ? data.lairs.find(lair => lair.id === base.id) : null) }));
+  ['goblin-den-l1', 'troll-den-l1'].forEach(id => { const lair = loaded.lairs.find(item => item.id === id); if (lair) lair.active = true; });
   loaded.buildings.forEach(building => { building.builtAt = 0; });
   if (!data.food) loaded.food = { ...emptyFood(), wheat: data.grain || 0 };
   if (loaded.food.flour == null) loaded.food.flour = 0;
   if (loaded.diet && loaded.diet.flour == null) loaded.diet.flour = true;
   if (!Array.isArray(loaded.items)) loaded.items = [];
   if (!Array.isArray(loaded.bandits)) loaded.bandits = [];
+  (loaded.lairs || []).filter(lair => lair.active && ['wolf-den', 'goblin-den', 'troll-den'].includes(lair.kind)).forEach(lair => {
+    if (!Number.isFinite(lair.nextSpawnAt)) lair.nextSpawnAt = loaded.minutes + 2880;
+  });
   if (data.nextRaidAt == null) loaded.nextRaidAt = loaded.minutes + RAID_EVERY;
   loaded.bandits.forEach(bandit => { bandit.route = []; bandit.finalPoint = null; });
   if (loaded.taxPercent == null) loaded.taxPercent = 10;
@@ -3004,6 +3233,7 @@ function saveCard(slot, record) {
 function startGame(newState, slot) {
   state = newState;
   game.slot = slot;
+  switchMap('city');
   $('#hero-layer').innerHTML = '';
   $$('.speed-btn').forEach(button => button.classList.toggle('active', Number(button.dataset.speed) === state.speed));
   $('#map-scene').style.setProperty('--mill-spin-duration', `${8 / state.speed}s`);
@@ -3107,6 +3337,7 @@ const SCREENS = {
         ${latest ? '<button type="button" data-action="load">Carregar jogo</button>' : ''}
         <button type="button" data-action="options">Opções</button>
         <button type="button" data-action="debug">Debug</button>
+        <a class="menu-gallery-link" href="outputs/npc-portrait-gallery-v01.html" target="_blank" rel="noopener">Galeria de retratos · 161 referências</a>
       </nav>
       <p class="title-save">${latest ? `Slot ${latest.slot} · ${slotSummary(latest.record)}` : 'Nenhum jogo salvo ainda.'}</p>
       <footer class="title-footer"><span>O SAVE FICA NESTE NAVEGADOR</span>${debug.testMode ? '<span class="tag-test">MODO TESTE LIGADO</span>' : ''}</footer>
@@ -3171,7 +3402,7 @@ const SCREENS = {
   },
   heir({ slot, selected }) {
     const card = (heir, i) => `<button type="button" class="heir-card${i === selected ? ' selected' : ''}" data-action="pick-heir" data-index="${i}" aria-pressed="${i === selected}">
-        ${crestSVG(heir.house, 44)}<b>${heir.name.split(' ')[0]}</b><small>${HOUSES[heir.house].name}</small><small>${heir.age} anos</small></button>`;
+        <img class="heir-card-portrait" src="${heirPortraitSrc(heir.id)}" alt="Retrato jovem de ${heir.name}" loading="lazy" decoding="async"><b>${heir.name.split(' ')[0]}</b><small>${HOUSES[heir.house].name}</small><small>${heir.age} anos</small></button>`;
     const men = HEIRS.map((heir, i) => ({ heir, i })).filter(entry => entry.heir.gender === 'm');
     const women = HEIRS.map((heir, i) => ({ heir, i })).filter(entry => entry.heir.gender === 'f');
     const chosen = HEIRS[selected];
@@ -3183,7 +3414,7 @@ const SCREENS = {
       <div class="heir-row-label">HERDEIRAS</div>
       <div class="heir-grid">${women.map(entry => card(entry.heir, entry.i)).join('')}</div>
       <div class="heir-detail">
-        ${crestSVG(chosen.house, 76)}
+        <img class="heir-detail-portrait" src="${heirPortraitSrc(chosen.id)}" alt="${chosen.name}, fase jovem" decoding="async">
         <div><span class="eyebrow">${house.name.toUpperCase()}</span><h3>${chosen.name}</h3><p class="heir-motto">“${house.motto}”</p>
           <p>${chosen.about}</p><p class="heir-tie">${chosen.age} anos · ${chosen.tie}</p></div>
       </div>
@@ -3194,17 +3425,19 @@ const SCREENS = {
     const heir = heirById(state.heir);
     if (!heir) return { cls: 'is-pause', html: `<section class="menu-card"><header class="menu-card-head"><span class="eyebrow">FICHA DO HERDEIRO</span><h2>Herdeiro desconhecido</h2><p>Este save é de antes da escolha de herdeiros. Ninguém lembra quem assinou a herança.</p></header><div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar ao jogo</button></div></section>` };
     const house = HOUSES[heir.house];
+    const phase = heirPhase();
+    const elapsed = heirYearsElapsed();
     return { cls: 'is-pause', html: `<section class="menu-card sheet">
       <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar ficha" title="Fechar ficha">×</button></div>
-      <div class="sheet-top">${crestSVG(heir.house, 96)}
-        <div><span class="eyebrow">FICHA DO HERDEIRO</span><h2>${heir.name}</h2><p class="heir-motto">${house.name} · “${house.motto}”</p></div></div>
+      <div class="sheet-top"><img class="sheet-portrait" src="${heirPortraitSrc(heir.id, phase)}" alt="${heir.name}, fase ${phase}">
+        <div><span class="eyebrow">FICHA DO HERDEIRO · FASE ${phase} DE 4</span><h2>${heir.name}</h2><p class="heir-motto">${house.name} · “${house.motto}”</p><p class="heir-age">${heirAge(heir)} anos · ${elapsed ? `${elapsed} anos de Ember` : 'sem corrupção de Ember'}</p></div></div>
       <div class="sheet-level">
         <div class="sheet-level-head"><b>Nível ${state.heirLevel}</b><span>de ${HEIR_MAX_LEVEL}</span><small>${state.heirLevel >= HEIR_MAX_LEVEL ? 'Nível máximo. O tédio também.' : `${state.heirXp} / ${xpToNext(state.heirLevel)} XP`}</small></div>
         <div class="xp-bar"><i style="width:${state.heirLevel >= HEIR_MAX_LEVEL ? 100 : Math.round(state.heirXp / xpToNext(state.heirLevel) * 100)}%"></i></div>
       </div>
       ${heirAttributesHTML(state.heirLevel)}
       <dl class="sheet-facts">
-        <div><dt>Idade</dt><dd>${heir.age} anos</dd></div>
+        <div><dt>Idade</dt><dd>${heirAge(heir)} anos</dd></div>
         <div><dt>Parentesco</dt><dd>${heir.tie}</dd></div>
       </dl>
       <p class="sheet-about">${heir.about}</p>
@@ -3477,6 +3710,11 @@ function initMenus() {
     renderPanel();
   });
   $('#sheet-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('sheet'); });
+  // Fichas fecham com um clique fora delas.
+  $('#menu-layer').addEventListener('click', event => {
+    if (event.target.closest('#menu-panel > *')) return;
+    if (['sheet', 'actor'].includes(menu.stack[menu.stack.length - 1]?.name)) closeMenu();
+  });
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
     if (!$('#menu-layer').hidden) {
@@ -3491,6 +3729,9 @@ function initMenus() {
       cancelMove();
     } else if (state.placingBounty) {
       cancelBountyPlacement();
+    } else if (state.selectedSite != null) {
+      state.selectedSite = null; state.demolishArmed = null;
+      renderSites(); renderPanel();
     } else {
       event.preventDefault();
       openPause();
@@ -3504,6 +3745,8 @@ function initMenus() {
 function init() {
   initCamera();
   const scene = $('#map-scene');
+  // O menu da construção fica em cima do mapa: cliques, arrasto e rolagem nele não mexem no mapa.
+  ['pointerdown', 'click', 'wheel', 'contextmenu'].forEach(type => $('#site-inspector').addEventListener(type, event => event.stopPropagation()));
   scene.addEventListener('pointermove', event => { if (state.selectedBuild || state.movingSite != null) showPlacementPreview(event); });
   scene.addEventListener('pointerleave', () => { $('#placement-preview').hidden = true; });
   scene.addEventListener('contextmenu', event => {
@@ -3512,6 +3755,12 @@ function init() {
     else if (state.placingBounty) { event.preventDefault(); cancelBountyPlacement(); }
   });
   scene.addEventListener('click', event => {
+    // Clique no mapa fora de construções e personagens fecha o menu da construção.
+    if (state.selectedSite != null && state.movingSite == null && !state.selectedBuild && !state.placingBounty && !camera.dragMoved && !event.target.closest('button')) {
+      state.selectedSite = null; state.demolishArmed = null;
+      renderSites(); renderPanel();
+      return;
+    }
     if ((!state.selectedBuild && state.movingSite == null && !state.placingBounty) || camera.dragMoved || event.target.closest('button')) return;
     const { x, y } = worldPoint(event);
     if (state.placingBounty) placeBountyAt(x, y);
@@ -3531,12 +3780,11 @@ function init() {
       state.selectedBuild = null;
       state.selectedSite = idx;
       const def = BUILDINGS.find(item => item.id === building.type);
+      state.demolishArmed = null;
       renderSites();
-      state.tab = 'build';
-      $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
       if (def.id === 'farm') state.selectedFarmType = farmType(building.produce).id;
       renderPanel();
-      $('#panel-view').scrollTop = 0;
+      $('#site-inspector').scrollTop = 0;
       if (def.id === 'market') {
         say('Mercado: venda o que sobra, compre o que falta.');
       } else if (def.id === 'hut' || def.id === 'depot' || def.id === 'lumber') {

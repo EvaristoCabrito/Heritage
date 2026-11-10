@@ -56,27 +56,29 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .map-scene { isolation: isolate; position: relative; width: 100%; max-width: 100%; margin: 0 auto; overflow: hidden; aspect-ratio: 1199 / 1312; min-height: 0; border: 1px solid rgba(202,184,141,.26); border-radius: 8px; background: #24291f; box-shadow: 0 18px 45px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.04); cursor: grab; touch-action: none; }
 .map-scene.dragging { cursor: grabbing; }
 .map-scene:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
-.map-world { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1199 / 2452; transform-origin: top left; transform: translate3d(var(--camera-x, 0px), var(--camera-y, 0px), 0) scale(var(--zoom, 1)); will-change: transform; }
+.map-world { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1199 / 2624; transform-origin: top left; transform: translate3d(var(--camera-x, 0px), var(--camera-y, 0px), 0) scale(var(--zoom, 1)); will-change: transform; }
 .map-region { position: absolute; left: 0; width: 100%; height: 100%; }
 .manor-region { top: 0; }
 .road-region { top: 50%; }
-.map-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; user-select: none; pointer-events: none; }
-.tree-foreground { position: absolute; z-index: 5; left: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; user-select: none; }
+.map-art { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill; user-select: none; pointer-events: none; }
+#map-world[data-map="wilds"] .map-art { top: 0; }
+.tree-foreground { position: absolute; z-index: 5; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; user-select: none; }
+#map-world[data-map="wilds"] .tree-foreground { top: 0; }
 .manor-trees { top: 0; }
 .road-trees { top: 46.5%; }
-.map-atmosphere { position: absolute; inset: 0; z-index: 6; pointer-events: none; overflow: hidden; }
-.map-atmosphere .manor-smoke { position: absolute; left: 36.7%; bottom: 94%; width: 7%; aspect-ratio: 2 / 3; background: url('public/art/manor-smoke.webp') center / contain no-repeat; transform-origin: 50% 100%; opacity: 0; animation: manor-smoke-rise 5.8s ease-out infinite; }
-.map-atmosphere .smoke-b { animation-delay: -2.9s; }
-@keyframes manor-smoke-rise { 0% { opacity: 0; transform: translateX(-50%) scale(.48); } 18% { opacity: .58; } 56% { opacity: .46; transform: translate(-33%,-36%) scale(.85); } 100% { opacity: 0; transform: translate(-18%,-78%) scale(1.18); } }
+.map-atmosphere { position: absolute; inset: 0 0 auto; height: 93.45%; z-index: 6; pointer-events: none; overflow: hidden; }
+.map-atmosphere .manor-smoke { position: absolute; left: 36.7%; bottom: 94%; width: 5.4%; aspect-ratio: 2 / 3; background: url('public/art/manor-smoke-v02.png') center / contain no-repeat; transform-origin: 50% 100%; opacity: 0; mix-blend-mode: screen; filter: blur(.45px) saturate(.72); animation: manor-smoke-rise var(--smoke-duration, 8.2s) cubic-bezier(.28,.58,.45,1) infinite; }
+.map-atmosphere .smoke-b { left: 37.1%; width: 4.8%; --smoke-duration: 7.4s; --wind-a: 2px; --wind-b: 8px; --wind-c: 13px; animation-delay: -2.1s; }
+.map-atmosphere .smoke-c { left: 36.2%; width: 4.2%; --smoke-duration: 9.1s; --wind-a: -3px; --wind-b: -8px; --wind-c: -12px; animation-delay: -5.6s; }
+.map-atmosphere .smoke-d { left: 36.8%; width: 5%; --smoke-duration: 8.7s; --wind-a: 1px; --wind-b: 5px; --wind-c: 9px; animation-delay: -7.3s; }
+@keyframes manor-smoke-rise { 0% { opacity: 0; transform: translate(-50%,0) scale(.24,.42); } 9% { opacity: .09; } 32% { opacity: .23; transform: translate(calc(-50% + var(--wind-a, -2px)),-32%) scale(.62,.78); } 67% { opacity: .14; transform: translate(calc(-50% + var(--wind-b, -6px)),-82%) scale(.96,1.12); } 100% { opacity: 0; transform: translate(calc(-50% + var(--wind-c, -11px)),-142%) scale(1.2,1.34); } }
 .map-vignette { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(10,13,10,.61) 0%, transparent 19%, transparent 69%, rgba(9,12,9,.49) 100%), linear-gradient(90deg, rgba(11,14,11,.12), transparent 24%, transparent 76%, rgba(11,14,11,.12)); }
 .map-title { position: absolute; z-index: 2; left: 18px; top: 15px; display: flex; flex-direction: column; gap: 3px; text-shadow: 0 2px 8px #000; }
 .map-title span { font: 17px 'Newsreader', Georgia, serif; letter-spacing: .11em; }
 .map-title small { color: #d4c9ae; font-size: 8px; letter-spacing: .16em; }
-.camera-home { position: absolute; z-index: 6; top: 12px; right: 12px; width: 30px; height: 30px; border: 1px solid rgba(226,201,151,.55); border-radius: 4px; color: #f4ead4; background: rgba(26,28,23,.84); font: 22px Georgia,serif; line-height: 1; cursor: pointer; }
-.camera-home:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
-.camera-road { position: absolute; z-index: 6; top: 48px; right: 12px; width: 30px; height: 30px; border: 1px solid rgba(226,201,151,.55); border-radius: 4px; color: #f4ead4; background: rgba(26,28,23,.84); font: 20px Georgia,serif; line-height: 1; cursor: pointer; }
-.camera-road:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
-.zoom-control { position: absolute; z-index: 6; top: 84px; right: 12px; display: grid; gap: 3px; padding: 3px; border: 1px solid rgba(226,201,151,.45); border-radius: 4px; background: rgba(26,28,23,.84); }
+.camera-wilds { position: absolute; z-index: 6; top: 12px; right: 12px; height: 30px; padding: 0 8px; border: 1px solid rgba(226,201,151,.55); border-radius: 4px; color: #f4ead4; background: rgba(26,28,23,.84); font: 600 10px 'Figtree',sans-serif; letter-spacing: .12em; line-height: 1; cursor: pointer; }
+.camera-wilds:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
+.zoom-control { position: absolute; z-index: 6; top: 120px; right: 12px; display: grid; gap: 3px; padding: 3px; border: 1px solid rgba(226,201,151,.45); border-radius: 4px; background: rgba(26,28,23,.84); }
 .zoom-btn { width: 24px; height: 24px; border: 0; border-radius: 2px; color: #e8ddc5; background: transparent; font: 11px 'Figtree',sans-serif; cursor: pointer; }
 .zoom-btn.active { color: #211f18; background: var(--gold); }
 .zoom-btn:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
@@ -87,6 +89,12 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 @keyframes pulse { 50% { box-shadow: 0 0 0 9px rgba(170,77,50,.06), 0 0 19px #b3573c; } }
 .site-layer { position: absolute; z-index: 4; inset: 0; }
 .site-layer { pointer-events: none; }
+.lair-layer { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
+.lair-marker { position: absolute; display: grid; justify-items: center; gap: 3px; width: clamp(70px, 11vw, 126px); transform: translate(-50%,-72%); filter: drop-shadow(2px 5px 4px rgba(0,0,0,.75)); }
+.lair-marker[hidden] { display: none; }
+.lair-marker img { display: block; width: 100%; max-height: 115px; object-fit: contain; }
+.lair-marker small { padding: 2px 4px; border: 1px solid rgba(190,168,128,.45); border-radius: 3px; color: #e8dec8; background: rgba(13,15,13,.86); font-size: 7px; white-space: nowrap; text-shadow: 0 1px 3px #000; }
+.lair-marker.level-two img { transform: scale(1.14); }
 .lair-marker:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
 /* Personagens ficam sempre por cima de construções e árvores, inteiros e opacos. */
 .hero-layer { position: absolute; z-index: 6; inset: 0; pointer-events: none; }
@@ -98,6 +106,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .site.built { min-width: 0; transform: translate(-50%,-88%); cursor: pointer; }
 .site.built:hover, .site.built:focus-visible { transform: translate(-50%,-91%) scale(1.04); }
 .building-art { position: relative; display: block; width: clamp(78px, 13vw, 132px); aspect-ratio: var(--art-aspect, 1); background-size: contain; background-repeat: no-repeat; background-position: center bottom; filter: drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
+.site.constructing .building-art::before, .site.constructing .building-art::after { content: none; animation: none; }
 .site[data-art="mill-body"] .building-art { width: clamp(45px, 7.5vw, 75px); }
 .mill-sails { position: absolute; z-index: 1; left: 47%; top: 51%; display: block; width: 96%; aspect-ratio: 1; background: var(--mill-sails-image) center / contain no-repeat; transform-origin: 50% 50%; animation: mill-turn var(--mill-spin-duration, 8s) linear infinite; pointer-events: none; }
 @keyframes mill-turn { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
@@ -114,6 +123,12 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .site.selected .site-ring { outline: 2px solid #f4da9a; outline-offset: 3px; }
 .character { position: absolute; display: block; width: clamp(30px, 5vw, 52px); aspect-ratio: 1; padding: 0; border: 0; background: transparent; transform: translate(-50%,-96%); cursor: pointer; pointer-events: auto; filter: drop-shadow(0 3px 2px rgba(8,10,8,.8)); }
 .character.worker { width: clamp(27px, 4.4vw, 46px); }
+.character.wolf { width: clamp(44px, 6vw, 68px); aspect-ratio: 1.65; }
+.character.wolf .character-sprite { width: 100%; aspect-ratio: 1.65; background-size: 400% 100%; background-position: var(--frame-x, 0%) 50%; }
+.character.troll { width: clamp(38px, 5.5vw, 62px); aspect-ratio: .78; }
+.character.troll .character-sprite { width: 100%; height: 100%; aspect-ratio: .78; background-size: 400% 100%; background-position: var(--frame-x, 0%) 50%; }
+.character.troll[data-vertical-walk="true"] { aspect-ratio: 2 / 3; }
+.character.troll[data-vertical-walk="true"] .character-sprite { aspect-ratio: 2 / 3; background-size: 400% 200%; }
 .character::before { content: ''; position: absolute; left: 25%; bottom: 1%; width: 50%; height: 9%; border-radius: 50%; background: rgba(10,12,10,.42); filter: blur(3px); }
 .character-sprite { position: relative; display: block; width: 100%; aspect-ratio: 1; background-repeat: no-repeat; background-size: 400% 200%; background-position: var(--frame-x, 0%) 0%; transform: scaleX(var(--sprite-scale-x, 1)); }
 .character[data-facing="back"] .character-sprite { background-position-y: 100%; }
@@ -276,7 +291,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
   .speed-control { gap: 1px; padding: 2px; }
   .speed-btn { width: 25px; height: 23px; }
   .map-scene { aspect-ratio: 1199 / 1312; border-radius: 5px; }
-  .camera-home { top: 8px; right: 8px; }
+  .camera-wilds { top: 8px; right: 8px; }
   .zoom-control { top: 44px; right: 8px; }
   .map-title { left: 10px; top: 11px; }
   .map-title span { font-size: 13px; }
@@ -332,7 +347,7 @@ body { overflow: hidden; }
 .hud-brand .sigil { width: 36px; height: 36px; font-size: 18px; }
 .hud-brand h1 { margin: 0; font: 18px/1.1 'Newsreader', Georgia, serif; white-space: nowrap; }
 .hud-brand .eyebrow { margin-top: 3px; font-size: 9px; letter-spacing: .14em; white-space: nowrap; }
-.hud-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); overflow: hidden; }
+.hud-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); overflow: hidden; }
 .hud-stats .stat { justify-content: center; gap: 2px; padding: 6px 12px; background: transparent; border-left: 1px solid rgba(206,186,137,.14); }
 .hud-stats .stat:first-child { border-left: 0; }
 .hud-stats .stat small { font-size: 9px; letter-spacing: .1em; }
@@ -353,8 +368,8 @@ body { overflow: hidden; }
 .stage .map-scene { width: 100%; height: 100%; max-width: none; margin: 0; aspect-ratio: auto; border-radius: 7px; }
 .stage .map-world { width: 100%; height: auto; }
 .map-tools { position: absolute; z-index: 6; top: 12px; right: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.map-tools .camera-home, .map-tools .zoom-control { position: static; }
-.map-tools .camera-home { width: 36px; height: 36px; font-size: 22px; }
+.map-tools .camera-wilds, .map-tools .zoom-control { position: static; }
+.map-tools .camera-wilds { min-width: 36px; height: 36px; }
 .map-tools .zoom-btn { width: 30px; height: 30px; font-size: 13px; }
 .map-footer { position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 14px 10px; background: linear-gradient(transparent, rgba(9,11,9,.72)); pointer-events: none; }
 .map-footer .map-footnote { position: static; font-size: 10px; }
@@ -425,9 +440,9 @@ body { overflow: hidden; }
   .hud-brand .brand-copy { min-width: 0; }
   .hud-brand h1, .hud-brand .eyebrow { overflow: hidden; text-overflow: ellipsis; }
   .hud-time { min-height: 50px; }
-  .hud-stats { order: 3; flex: 1 1 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .hud-stats .stat:nth-child(5) { border-left: 0; }
-  .hud-stats .stat:nth-child(n+5) { border-top: 1px solid rgba(206,186,137,.14); }
+  .hud-stats { order: 3; flex: 1 1 100%; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .hud-stats .stat:nth-child(6) { border-left: 0; }
+  .hud-stats .stat:nth-child(n+6) { border-top: 1px solid rgba(206,186,137,.14); }
   .stage { grid-template-columns: 1fr; }
   .stage .map-scene { height: auto; aspect-ratio: 1199 / 1312; }
   .panel-view { overflow: visible; }
@@ -475,6 +490,8 @@ body { overflow: hidden; }
 .title-logo .title-epigraph { max-width: 520px; margin: 18px 0 0; color: #b9b09a; font: italic 16px/1.5 Georgia, serif; }
 .menu-list { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .menu-list button { position: relative; min-width: 260px; padding: 10px 18px 10px 22px; border: 0; border-left: 2px solid transparent; color: #e6dcc4; background: transparent; font: 26px 'Newsreader', Georgia, serif; text-align: left; letter-spacing: .03em; cursor: pointer; transition: color .15s, background .15s, border-color .15s, padding .15s; }
+.menu-list .menu-gallery-link { position: relative; min-width: 260px; padding: 10px 18px 10px 22px; border-left: 2px solid transparent; color: #bdb2a0; font: 17px 'Newsreader', Georgia, serif; text-align: left; letter-spacing: .02em; text-decoration: none; transition: color .15s, background .15s, border-color .15s, padding .15s; }
+.menu-list .menu-gallery-link:hover, .menu-list .menu-gallery-link:focus-visible { padding-left: 30px; border-left-color: var(--gold); color: #f6d998; background: linear-gradient(90deg, rgba(214,184,117,.16), transparent); outline: none; }
 .menu-list button:hover:not([disabled]), .menu-list button:focus-visible { padding-left: 30px; border-left-color: var(--gold); color: #f6d998; background: linear-gradient(90deg, rgba(214,184,117,.16), transparent); outline: none; }
 .menu-list button[disabled] { color: #5f5d53; cursor: default; }
 .menu-list.compact { align-items: stretch; }
@@ -621,17 +638,20 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 /* Escolha do herdeiro e ficha do personagem. */
 .sheet-btn { height: 32px; padding: 0 14px; border: 1px solid rgba(190,150,95,.6); border-radius: 3px; color: #e2c294; background: linear-gradient(180deg, #232323 0%, #0a0a0a 55%, #1a1a1a 100%); font: 16px 'Pirata One', Georgia, serif; letter-spacing: .17em; box-shadow: 0 0 0 1px #000; cursor: pointer; }
 .sheet-btn:hover { border-color: rgba(226,170,100,.9); color: #f0d3a4; }
+.noble-portrait { flex: none; width: 40px; height: 40px; object-fit: cover; object-position: center 22%; border: 1px solid rgba(206,184,135,.45); border-radius: 4px; background: #171612; }
 .crest { flex: none; display: block; filter: drop-shadow(0 3px 6px rgba(0,0,0,.6)); }
 .menu-card.heir-screen { width: min(980px, 100%); }
 .heir-row-label { margin: 4px 0 6px; color: var(--gold); font: 700 10px 'Figtree', sans-serif; letter-spacing: .2em; }
-.heir-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.heir-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
 .heir-card { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 6px 9px; border: 1px solid rgba(193,176,135,.22); border-radius: 6px; color: #e6dcc4; background: rgba(15,17,14,.6); text-align: center; cursor: pointer; transition: border-color .15s, background .15s, transform .12s; }
 .heir-card:hover, .heir-card:focus-visible { border-color: rgba(226,170,100,.8); background: rgba(60,48,30,.35); outline: none; transform: translateY(-1px); }
 .heir-card.selected { border-color: #e08a3c; background: linear-gradient(180deg, rgba(120,50,18,.45), rgba(40,22,12,.5)); box-shadow: 0 0 14px rgba(255,110,30,.25); }
+.heir-card-portrait { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; object-position: center 24%; border: 1px solid rgba(206,184,135,.4); border-radius: 4px; background: #171612; }
 .heir-card .crest { margin-bottom: 4px; }
 .heir-card b { font: 600 16px 'Newsreader', Georgia, serif; color: #f2e6c8; }
 .heir-card small { color: #a59d89; font-size: 11px; line-height: 1.3; }
 .heir-detail { display: flex; gap: 18px; align-items: flex-start; margin-top: 4px; padding: 14px 16px; border: 1px solid rgba(206,186,137,.2); border-radius: 7px; background: rgba(10,12,9,.45); }
+.heir-detail-portrait { width: 150px; height: 150px; flex: none; object-fit: cover; object-position: center 24%; border: 1px solid rgba(206,184,135,.45); border-radius: 4px; background: #171612; }
 .heir-detail h3 { margin: 4px 0 2px; color: #f3e1c2; font: 30px/1.05 'Pirata One', Georgia, serif; letter-spacing: .01em; }
 .heir-detail p { margin: 6px 0 0; color: #cfc4ab; font-size: 14px; line-height: 1.5; }
 .heir-motto { color: #d6b875 !important; font: italic 15px 'Newsreader', Georgia, serif !important; }
@@ -640,6 +660,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .sheet-top { display: flex; align-items: center; gap: 18px; margin-bottom: 14px; }
 .sheet-top h2 { margin: 4px 0 0; color: #f3e1c2; font: 40px/1 'Pirata One', Georgia, serif; letter-spacing: .01em; }
 .sheet-top .heir-motto { margin: 6px 0 0; }
+.sheet-top .heir-age { margin: 5px 0 0; color: #b6aa91; font-size: 12px; }
 .sheet-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 12px; padding: 12px 14px; border: 1px solid rgba(206,186,137,.16); border-radius: 6px; background: rgba(10,12,9,.4); }
 .sheet-facts.domain { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 14px; }
 .sheet-facts dt { color: #8f8a7a; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
@@ -678,7 +699,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .attr-grid div { padding: 8px 6px; border: 1px solid rgba(206,186,137,.18); border-radius: 5px; background: rgba(10,12,9,.45); text-align: center; }
 .attr-grid dt { color: #8f8a7a; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
 .attr-grid dd { margin: 3px 0 0; color: #f3e1c2; font: 22px 'Newsreader', Georgia, serif; font-variant-numeric: tabular-nums; }
-.sheet-portrait { width: 84px; height: 100px; object-fit: cover; object-position: center 28%; border: 1px solid #a58d59; border-radius: 4px; background: #161714; }
+.sheet-portrait { flex: none; width: 150px; height: 150px; object-fit: cover; object-position: center 28%; border: 1px solid #a58d59; border-radius: 4px; background: #161714; }
 .card-sheet-btn { display: block; margin: 8px 0 0 auto; padding: 3px 8px; border: 1px solid rgba(190,150,95,.55); border-radius: 3px; color: #e2c294; background: #141414; font: 12px 'Pirata One', Georgia, serif; letter-spacing: .14em; cursor: pointer; }
 .card-sheet-btn:hover { border-color: #e2aa64; color: #f0d3a4; }
 .retinue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-bottom: 14px; }
@@ -741,7 +762,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .guild-branches .hut-upgrade { font-size: 14px; }
 
 /* Obra em andamento. */
-.site.constructing .building-art { opacity: .5; filter: grayscale(.85) sepia(.35) brightness(.8) drop-shadow(2px 7px 4px rgba(9,11,8,.6)); }
+.site.constructing .building-art { opacity: 1; filter: drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
 .site.constructing .building-art::before, .site.constructing .building-art::after { display: none; }
 .site.constructing small { border-style: dashed; color: #f0c98a; }
 /* Na obra, o rótulo de progresso sobe para o alto da construção: o camponês trabalha na base e não o cobre.
@@ -783,7 +804,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .sheet-close:hover, .sheet-close:focus-visible { color: #211f18; background: var(--gold); outline: none; }
 .sheet-top { gap: 16px; margin: 0 0 12px; padding-right: 28px; }
 .sheet-top > .crest { width: 68px; height: auto; flex: none; }
-.sheet-portrait { width: 64px; height: 76px; }
+.sheet-portrait { width: 150px; height: 150px; }
 .sheet-top h2 { font-size: 34px; }
 .sheet-top .eyebrow { font-size: 11px; }
 .sheet-top .heir-motto { margin-top: 4px; font-size: 14px !important; }
@@ -828,15 +849,17 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
   .sheet-close-row { top: -16px; margin: -16px -14px 0; }
   .sheet-top { gap: 12px; }
   .sheet-top > .crest { width: 54px; }
-  .sheet-portrait { width: 52px; height: 62px; }
+  .sheet-portrait { width: 100px; height: 100px; }
   .sheet-top h2 { font-size: 28px; }
   .equip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .heir-screen .heir-grid { gap: 7px; margin-bottom: 9px; }
 .heir-screen .heir-row-label { margin: 2px 0 5px; }
 .heir-screen .heir-card { padding: 8px 6px 7px; gap: 2px; }
+.heir-screen .heir-card-portrait { height: auto; }
 .heir-screen .heir-card .crest { width: 40px; height: auto; margin-bottom: 3px; }
 .heir-screen .heir-detail { padding: 10px 14px; margin-top: 2px; }
+.heir-screen .heir-detail-portrait { width: 130px; height: 130px; }
 .heir-screen .heir-detail .crest { width: 66px; height: auto; }
 .heir-screen .menu-actions { margin-top: 14px; }
 
@@ -907,6 +930,19 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .inspector { display: flex; flex-direction: column; gap: 12px; }
 .inspector-back { align-self: flex-start; padding: 2px 0; border: 0; color: var(--muted); background: none; font: 11px 'Figtree', sans-serif; letter-spacing: .04em; cursor: pointer; }
 .inspector-back:hover, .inspector-back:focus-visible { color: var(--gold); outline: none; }
+/* Abas de tipo dentro de Construir: Casas, Produção, Guildas. */
+.build-cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 0 0 10px; padding: 3px; border: 1px solid var(--line); border-radius: 6px; background: rgba(12,13,11,.55); }
+.build-cat { padding: 7px 4px; border: 1px solid transparent; border-radius: 4px; color: var(--muted); background: transparent; font: 700 10px 'Figtree', sans-serif; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.build-cat:hover { color: #e9d9b5; }
+.build-cat.active { border-color: rgba(214,184,117,.55); color: #f1dfb4; background: rgba(214,184,117,.14); }
+/* Menu da construção: janela em cima do mapa; a aba Construir continua com a lista. */
+.site-inspector { position: absolute; z-index: 7; top: 12px; left: 12px; width: min(340px, calc(100% - 80px)); max-height: calc(100% - 70px); overflow-y: auto; padding: 14px 14px 12px; border: 1px solid rgba(206,186,137,.38); border-radius: 7px; background: var(--panel-2); box-shadow: 0 14px 34px rgba(0,0,0,.55); color: #e4d7b7; cursor: default; overscroll-behavior: contain; }
+.site-inspector[hidden] { display: none; }
+.site-inspector .inspector-back { position: absolute; top: 6px; right: 8px; z-index: 1; width: 26px; height: 26px; padding: 0; color: var(--muted); font: 22px/1 'Figtree', sans-serif; letter-spacing: 0; }
+.site-inspector .inspector-id { padding-right: 24px; }
+.demolish-btn { padding: 6px 10px; border: 1px solid rgba(190,80,60,.55); border-radius: 4px; color: #e7a593; background: rgba(60,18,12,.55); font: 600 11px 'Figtree', sans-serif; cursor: pointer; }
+.demolish-btn:hover { border-color: #d0614a; color: #ffc2b0; }
+.demolish-btn.armed { border-color: #e0573c; color: #fff; background: #8a2414; }
 .inspector-id { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; gap: 10px; }
 .inspector-thumb { width: 56px; height: 56px; object-fit: contain; border: 1px solid var(--line); border-radius: 4px; background: rgba(15,17,14,.6); }
 .inspector-id h3 { margin: 0; color: #eadbb9; font: 17px/1.15 'Newsreader', Georgia, serif; }
@@ -1038,3 +1074,16 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .wanted-tag { position: absolute; left: 50%; top: -18px; transform: translateX(-50%); padding: 0 5px; border: 1px solid rgba(201,163,90,.8); border-radius: 3px; color: #f4e3b0; background: rgba(26,20,12,.92); font-size: 10px; pointer-events: none; }
 .monster-row .hunt-btn { width: auto; height: 30px; padding: 0 10px; font-size: 12px; }
 
+
+#map-world[data-map="wilds"] #site-layer, #map-world[data-map="wilds"] .map-atmosphere { display: none; }
+
+/* Cursores do Ember: a seta em tudo e a manopla enquanto o mapa é arrastado. */
+html, body, body *, body *::before, body *::after {
+  cursor: url("public/ui/cursors/pointer.svg") 0 0, auto !important;
+}
+input[type="number"], input[type="text"], textarea {
+  cursor: text !important;
+}
+.map-scene.dragging, .map-scene.dragging * {
+  cursor: url("public/ui/cursors/grab.svg") 13 13, grabbing !important;
+}
