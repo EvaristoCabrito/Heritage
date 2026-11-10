@@ -25,9 +25,14 @@ Use este procedimento para mapas futuros do jogo. A arte é fotorealista e acomp
 
 ## 4. Montar e integrar
 
-- Ordem ativa: **mapa principal (2 painéis) + Wilds (2 painéis)**.
-- Dimensões finais: **1199 × 5248 px** para base e camada de árvores; cada painel mede **1199 × 1312 px**.
-- Arquivos ativos: `public/art/mordavia-map.webp` e `public/art/mordavia-forest-layer.png`.
+- Há conjuntos de mapa por fase. O **Map 1** mantém as rotas originais de City e Wilds. Ao confirmar a passagem do Cenário 1 para a fase seguinte, o jogo passa ao **Map 2**, que contém City tropical e Wilds/Quarry tropical. Dentro de cada conjunto, o botão alterna City/Wilds; nunca empilhe as regiões nem prolongue um mapa além de dois painéis.
+- Cada mapa usa exatamente duas camadas pareadas: uma base sem árvores e uma imagem PNG RGBA contendo apenas as copas/árvores com alfa real. A composição visual é feita pelo jogo; não grave as árvores na base.
+- Dimensões finais de cada base e de sua camada de árvores: **1199 × 2624 px**; cada painel de tela mede **1199 × 1312 px**.
+- Pares do Map 2, preservando os assets originais do Map 1:
+  - City: `public/art/mordavia-map02-city-v01.png` + `public/art/mordavia-map02-city-trees-v01.png`.
+  - Wilds/Quarry: `public/art/mordavia-map02-wilds-v01.png` + `public/art/mordavia-map02-wilds-trees-v01.png`.
+- Preserve as versões anteriores no projeto. Para atualizar um mapa, crie um novo par versionado e altere somente a rota daquele mapa.
+- Covis e outros marcadores precisam respeitar o conjunto de mapa e ficar em terreno firme, fora de pontes, travessias e caminhos.
 - Atualize a proporção do mapa, limites verticais, pontos de passagem e câmera regional. Preserve coordenadas já salvas usando `WORLD_Y_UNITS = 200 * MAP_WORLD_HEIGHT / 2452` e posicione elementos com `y / WORLD_Y_UNITS * 100%`.
 - Mantenha atalhos de câmera para casarão, Estrada Velha e Wilds.
 
@@ -46,4 +51,4 @@ Use este procedimento para mapas futuros do jogo. A arte é fotorealista e acomp
 
 ## Registro desta versão
 
-Mapa principal e Wilds foram gerados como panoramas contínuos separados, cada um normalizado para 1199 × 2624 e dividido uma única vez em y=1312. O mapa ativo combina os quatro painéis em 1199 × 5248. Os Wilds incluem pedreira e mina de metais preciosos no primeiro painel e deixam o segundo livre. A fumaça do casarão usa sprite transparente com quatro camadas animadas em CSS.
+O Map 1 continua com seus arquivos e rotas originais. Após confirmar a passagem de fase, o Map 2 carrega City tropical ou Wilds/Quarry, cada um com sua própria base de 1199 × 2624 e camada de árvores. Cada panorama corresponde a duas telas, com divisão em y=1312. Wilds/Quarry tem a pedreira e a mina no painel superior e terreno livre no inferior. City mantém o casarão arruinado acima e áreas abertas para construção. Os covis existentes ficam no Map 1; nenhum covil é colocado sobre ponte ou travessia no Map 2.

@@ -5,7 +5,11 @@
     "atk": "Ataque",
     "mag": "Magia",
     "def": "Defesa",
-    "dex": "Destreza"
+    "dex": "Destreza",
+    "mp": "Mana",
+    "cha": "Carisma",
+    "int": "Inteligência",
+    "wis": "Sabedoria"
   },
   "slots": {
     "armor": "Armadura",
@@ -8801,6 +8805,1374 @@
           "setPrice": {
             "buy": 8255,
             "sell": 4130
+          }
+        }
+      ]
+    },
+    {
+      "id": "monarch",
+      "name": "Monarca",
+      "gameClasses": [
+        "Heir"
+      ],
+      "primaryAttributes": [
+        "mp",
+        "mag"
+      ],
+      "secondaryAttributes": [
+        "cha",
+        "int",
+        "wis"
+      ],
+      "tiers": [
+        {
+          "id": "monarch-t01",
+          "tier": 1,
+          "tierLabel": "Inicial",
+          "rarity": "comum",
+          "setName": "Herdeiro sem Coroa",
+          "requiredLevel": 1,
+          "about": "A roupa foi feita para o herdeiro. O resto da corte ficou com as cortinas.",
+          "pieces": [
+            {
+              "id": "monarch-t01-armor",
+              "slot": "armor",
+              "slotLabel": "Armadura",
+              "name": "Manto Remendado do Herdeiro",
+              "kind": "cloth",
+              "icon": {
+                "id": "monarch-t01-armor",
+                "path": "public/art/equipment/icon-monarch-t01-armor-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 1,
+              "primary": {
+                "mp": 5,
+                "mag": 1
+              },
+              "secondary": {
+                "int": 1,
+                "wis": 2
+              },
+              "scaling": {
+                "perLevel": {
+                  "mp": 0.2,
+                  "mag": 0.04,
+                  "int": 0.04,
+                  "wis": 0.08
+                },
+                "capLevel": 6
+              },
+              "price": {
+                "buy": 20,
+                "sell": 10
+              }
+            },
+            {
+              "id": "monarch-t01-mainHand",
+              "slot": "mainHand",
+              "slotLabel": "Arma principal",
+              "name": "Bastão de Carvalho da Regência",
+              "kind": "staff",
+              "icon": {
+                "id": "monarch-t01-mainHand",
+                "path": "public/art/equipment/icon-monarch-t01-mainHand-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 1,
+              "primary": {
+                "mag": 3,
+                "int": 2
+              },
+              "secondary": {
+                "mp": 2
+              },
+              "scaling": {
+                "perLevel": {
+                  "mag": 0.12,
+                  "int": 0.08,
+                  "mp": 0.08
+                },
+                "capLevel": 6
+              },
+              "price": {
+                "buy": 20,
+                "sell": 10
+              }
+            },
+            {
+              "id": "monarch-t01-accessory",
+              "slot": "accessory",
+              "slotLabel": "Acessório",
+              "name": "Sinete de Latão do Salão",
+              "kind": "ring",
+              "icon": {
+                "id": "monarch-t01-accessory",
+                "path": "public/art/equipment/icon-monarch-t01-accessory-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 1,
+              "primary": {
+                "cha": 2,
+                "wis": 2
+              },
+              "secondary": {
+                "mp": 3,
+                "mag": 1
+              },
+              "scaling": {
+                "perLevel": {
+                  "cha": 0.08,
+                  "wis": 0.08,
+                  "mp": 0.12,
+                  "mag": 0.04
+                },
+                "capLevel": 6
+              },
+              "price": {
+                "buy": 10,
+                "sell": 5
+              }
+            }
+          ],
+          "setBonus": {
+            "name": "Herdeiro sem Coroa",
+            "tiers": [
+              {
+                "pieces": 2,
+                "stats": {
+                  "mpPercent": 5
+                }
+              },
+              {
+                "pieces": 3,
+                "stats": {
+                  "mag": 1,
+                  "cha": 1,
+                  "manaRegenPercent": 3
+                },
+                "effect": "Recupera mana 3% mais rápido e fortalece seus feitiços."
+              }
+            ]
+          },
+          "setPrice": {
+            "buy": 50,
+            "sell": 25
+          }
+        },
+        {
+          "id": "monarch-t02",
+          "tier": 2,
+          "tierLabel": "Básico",
+          "rarity": "comum",
+          "setName": "Regência Velada",
+          "requiredLevel": 4,
+          "about": "Uma corte silenciosa ainda é uma corte.",
+          "pieces": [
+            {
+              "id": "monarch-t02-armor",
+              "slot": "armor",
+              "slotLabel": "Armadura",
+              "name": "Manto do Conselho Sombrio",
+              "kind": "cloth",
+              "icon": {
+                "id": "monarch-t02-armor",
+                "path": "public/art/equipment/icon-monarch-t02-armor-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 4,
+              "primary": {
+                "mp": 8,
+                "mag": 2
+              },
+              "secondary": {
+                "int": 2,
+                "wis": 3
+              },
+              "scaling": {
+                "perLevel": {
+                  "mp": 0.32,
+                  "mag": 0.08,
+                  "int": 0.08,
+                  "wis": 0.12
+                },
+                "capLevel": 9
+              },
+              "price": {
+                "buy": 45,
+                "sell": 22
+              }
+            },
+            {
+              "id": "monarch-t02-mainHand",
+              "slot": "mainHand",
+              "slotLabel": "Arma principal",
+              "name": "Cetro do Conselho",
+              "kind": "scepter",
+              "icon": {
+                "id": "monarch-t02-mainHand",
+                "path": "public/art/equipment/icon-monarch-t02-mainHand-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 4,
+              "primary": {
+                "mag": 6,
+                "int": 3
+              },
+              "secondary": {
+                "mp": 4
+              },
+              "scaling": {
+                "perLevel": {
+                  "mag": 0.24,
+                  "int": 0.12,
+                  "mp": 0.16
+                },
+                "capLevel": 9
+              },
+              "price": {
+                "buy": 40,
+                "sell": 20
+              }
+            },
+            {
+              "id": "monarch-t02-accessory",
+              "slot": "accessory",
+              "slotLabel": "Acessório",
+              "name": "Medalhão da Regência",
+              "kind": "amulet",
+              "icon": {
+                "id": "monarch-t02-accessory",
+                "path": "public/art/equipment/icon-monarch-t02-accessory-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 4,
+              "primary": {
+                "cha": 3,
+                "wis": 3
+              },
+              "secondary": {
+                "mp": 5,
+                "mag": 2
+              },
+              "scaling": {
+                "perLevel": {
+                  "cha": 0.12,
+                  "wis": 0.12,
+                  "mp": 0.2,
+                  "mag": 0.08
+                },
+                "capLevel": 9
+              },
+              "price": {
+                "buy": 20,
+                "sell": 10
+              }
+            }
+          ],
+          "setBonus": {
+            "name": "Regência Velada",
+            "tiers": [
+              {
+                "pieces": 2,
+                "stats": {
+                  "mpPercent": 7
+                }
+              },
+              {
+                "pieces": 3,
+                "stats": {
+                  "mag": 2,
+                  "cha": 1,
+                  "manaRegenPercent": 5
+                },
+                "effect": "Recupera mana 5% mais rápido e fortalece seus feitiços."
+              }
+            ]
+          },
+          "setPrice": {
+            "buy": 105,
+            "sell": 52
+          }
+        },
+        {
+          "id": "monarch-t03",
+          "tier": 3,
+          "tierLabel": "Reforçado",
+          "rarity": "incomum",
+          "setName": "Coroa Recuperada",
+          "requiredLevel": 7,
+          "about": "A primeira coroa voltou. O trono ainda range.",
+          "pieces": [
+            {
+              "id": "monarch-t03-armor",
+              "slot": "armor",
+              "slotLabel": "Armadura",
+              "name": "Túnica Bordada da Casa",
+              "kind": "cloth",
+              "icon": {
+                "id": "monarch-t03-armor",
+                "path": "public/art/equipment/icon-monarch-t03-armor-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 7,
+              "primary": {
+                "mp": 11,
+                "mag": 3
+              },
+              "secondary": {
+                "int": 3,
+                "wis": 4
+              },
+              "scaling": {
+                "perLevel": {
+                  "mp": 0.44,
+                  "mag": 0.12,
+                  "int": 0.12,
+                  "wis": 0.16
+                },
+                "capLevel": 12
+              },
+              "price": {
+                "buy": 90,
+                "sell": 45
+              }
+            },
+            {
+              "id": "monarch-t03-mainHand",
+              "slot": "mainHand",
+              "slotLabel": "Arma principal",
+              "name": "Cetro de Bronze de Mordavia",
+              "kind": "scepter",
+              "icon": {
+                "id": "monarch-t03-mainHand",
+                "path": "public/art/equipment/icon-monarch-t03-mainHand-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 7,
+              "primary": {
+                "mag": 9,
+                "int": 4
+              },
+              "secondary": {
+                "mp": 6
+              },
+              "scaling": {
+                "perLevel": {
+                  "mag": 0.36,
+                  "int": 0.16,
+                  "mp": 0.24
+                },
+                "capLevel": 12
+              },
+              "price": {
+                "buy": 80,
+                "sell": 40
+              }
+            },
+            {
+              "id": "monarch-t03-accessory",
+              "slot": "accessory",
+              "slotLabel": "Acessório",
+              "name": "Anel da Primeira Coroa",
+              "kind": "ring",
+              "icon": {
+                "id": "monarch-t03-accessory",
+                "path": "public/art/equipment/icon-monarch-t03-accessory-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 7,
+              "primary": {
+                "cha": 4,
+                "wis": 4
+              },
+              "secondary": {
+                "mp": 7,
+                "mag": 3
+              },
+              "scaling": {
+                "perLevel": {
+                  "cha": 0.16,
+                  "wis": 0.16,
+                  "mp": 0.28,
+                  "mag": 0.12
+                },
+                "capLevel": 12
+              },
+              "price": {
+                "buy": 45,
+                "sell": 22
+              }
+            }
+          ],
+          "setBonus": {
+            "name": "Coroa Recuperada",
+            "tiers": [
+              {
+                "pieces": 2,
+                "stats": {
+                  "mpPercent": 9
+                }
+              },
+              {
+                "pieces": 3,
+                "stats": {
+                  "mag": 3,
+                  "cha": 2,
+                  "manaRegenPercent": 7
+                },
+                "effect": "Recupera mana 7% mais rápido e fortalece seus feitiços."
+              }
+            ]
+          },
+          "setPrice": {
+            "buy": 215,
+            "sell": 107
+          }
+        },
+        {
+          "id": "monarch-t04",
+          "tier": 4,
+          "tierLabel": "Veterano",
+          "rarity": "incomum",
+          "setName": "Trono de Cinzas",
+          "requiredLevel": 10,
+          "about": "O luto da corte virou uniforme.",
+          "pieces": [
+            {
+              "id": "monarch-t04-armor",
+              "slot": "armor",
+              "slotLabel": "Armadura",
+              "name": "Casaca de Luto Real",
+              "kind": "brigandine",
+              "icon": {
+                "id": "monarch-t04-armor",
+                "path": "public/art/equipment/icon-monarch-t04-armor-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 10,
+              "primary": {
+                "mp": 14,
+                "mag": 4
+              },
+              "secondary": {
+                "int": 4,
+                "wis": 5
+              },
+              "scaling": {
+                "perLevel": {
+                  "mp": 0.56,
+                  "mag": 0.16,
+                  "int": 0.16,
+                  "wis": 0.2
+                },
+                "capLevel": 15
+              },
+              "price": {
+                "buy": 170,
+                "sell": 85
+              }
+            },
+            {
+              "id": "monarch-t04-mainHand",
+              "slot": "mainHand",
+              "slotLabel": "Arma principal",
+              "name": "Cetro das Cinzas",
+              "kind": "scepter",
+              "icon": {
+                "id": "monarch-t04-mainHand",
+                "path": "public/art/equipment/icon-monarch-t04-mainHand-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 10,
+              "primary": {
+                "mag": 12,
+                "int": 5
+              },
+              "secondary": {
+                "mp": 8
+              },
+              "scaling": {
+                "perLevel": {
+                  "mag": 0.48,
+                  "int": 0.2,
+                  "mp": 0.32
+                },
+                "capLevel": 15
+              },
+              "price": {
+                "buy": 155,
+                "sell": 77
+              }
+            },
+            {
+              "id": "monarch-t04-accessory",
+              "slot": "accessory",
+              "slotLabel": "Acessório",
+              "name": "Selo de Cinzas Reais",
+              "kind": "amulet",
+              "icon": {
+                "id": "monarch-t04-accessory",
+                "path": "public/art/equipment/icon-monarch-t04-accessory-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 10,
+              "primary": {
+                "cha": 5,
+                "wis": 5
+              },
+              "secondary": {
+                "mp": 9,
+                "mag": 4
+              },
+              "scaling": {
+                "perLevel": {
+                  "cha": 0.2,
+                  "wis": 0.2,
+                  "mp": 0.36,
+                  "mag": 0.16
+                },
+                "capLevel": 15
+              },
+              "price": {
+                "buy": 85,
+                "sell": 42
+              }
+            }
+          ],
+          "setBonus": {
+            "name": "Trono de Cinzas",
+            "tiers": [
+              {
+                "pieces": 2,
+                "stats": {
+                  "mpPercent": 11
+                }
+              },
+              {
+                "pieces": 3,
+                "stats": {
+                  "mag": 4,
+                  "cha": 2,
+                  "manaRegenPercent": 9
+                },
+                "effect": "Recupera mana 9% mais rápido e fortalece seus feitiços."
+              }
+            ]
+          },
+          "setPrice": {
+            "buy": 410,
+            "sell": 205
+          }
+        },
+        {
+          "id": "monarch-t05",
+          "tier": 5,
+          "tierLabel": "Experiente",
+          "rarity": "raro",
+          "setName": "Sangue das Cinco Casas",
+          "requiredLevel": 13,
+          "about": "Cinco estandartes. Nenhum acordo durou para sempre.",
+          "pieces": [
+            {
+              "id": "monarch-t05-armor",
+              "slot": "armor",
+              "slotLabel": "Armadura",
+              "name": "Manto das Cinco Casas",
+              "kind": "brigandine",
+              "icon": {
+                "id": "monarch-t05-armor",
+                "path": "public/art/equipment/icon-monarch-t05-armor-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 13,
+              "primary": {
+                "mp": 17,
+                "mag": 5
+              },
+              "secondary": {
+                "int": 5,
+                "wis": 6
+              },
+              "scaling": {
+                "perLevel": {
+                  "mp": 0.68,
+                  "mag": 0.2,
+                  "int": 0.2,
+                  "wis": 0.24
+                },
+                "capLevel": 18
+              },
+              "price": {
+                "buy": 300,
+                "sell": 150
+              }
+            },
+            {
+              "id": "monarch-t05-mainHand",
+              "slot": "mainHand",
+              "slotLabel": "Arma principal",
+              "name": "Cetro dos Cinco Estandartes",
+              "kind": "scepter",
+              "icon": {
+                "id": "monarch-t05-mainHand",
+                "path": "public/art/equipment/icon-monarch-t05-mainHand-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 13,
+              "primary": {
+                "mag": 15,
+                "int": 6
+              },
+              "secondary": {
+                "mp": 10
+              },
+              "scaling": {
+                "perLevel": {
+                  "mag": 0.6,
+                  "int": 0.24,
+                  "mp": 0.4
+                },
+                "capLevel": 18
+              },
+              "price": {
+                "buy": 270,
+                "sell": 135
+              }
+            },
+            {
+              "id": "monarch-t05-accessory",
+              "slot": "accessory",
+              "slotLabel": "Acessório",
+              "name": "Sinete das Cinco Casas",
+              "kind": "ring",
+              "icon": {
+                "id": "monarch-t05-accessory",
+                "path": "public/art/equipment/icon-monarch-t05-accessory-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 13,
+              "primary": {
+                "cha": 6,
+                "wis": 6
+              },
+              "secondary": {
+                "mp": 11,
+                "mag": 5
+              },
+              "scaling": {
+                "perLevel": {
+                  "cha": 0.24,
+                  "wis": 0.24,
+                  "mp": 0.44,
+                  "mag": 0.2
+                },
+                "capLevel": 18
+              },
+              "price": {
+                "buy": 150,
+                "sell": 75
+              }
+            }
+          ],
+          "setBonus": {
+            "name": "Sangue das Cinco Casas",
+            "tiers": [
+              {
+                "pieces": 2,
+                "stats": {
+                  "mpPercent": 13
+                }
+              },
+              {
+                "pieces": 3,
+                "stats": {
+                  "mag": 5,
+                  "cha": 3,
+                  "manaRegenPercent": 11
+                },
+                "effect": "Recupera mana 11% mais rápido e fortalece seus feitiços."
+              }
+            ]
+          },
+          "setPrice": {
+            "buy": 720,
+            "sell": 360
+          }
+        },
+        {
+          "id": "monarch-t06",
+          "tier": 6,
+          "tierLabel": "Elite",
+          "rarity": "raro",
+          "setName": "Vigília do Conselho",
+          "requiredLevel": 16,
+          "about": "A guarda do trono não dorme. O conselho, às vezes.",
+          "pieces": [
+            {
+              "id": "monarch-t06-armor",
+              "slot": "armor",
+              "slotLabel": "Armadura",
+              "name": "Traje de Vigília do Conselho",
+              "kind": "brigandine",
+              "icon": {
+                "id": "monarch-t06-armor",
+                "path": "public/art/equipment/icon-monarch-t06-armor-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 16,
+              "primary": {
+                "mp": 20,
+                "mag": 6
+              },
+              "secondary": {
+                "int": 6,
+                "wis": 7
+              },
+              "scaling": {
+                "perLevel": {
+                  "mp": 0.8,
+                  "mag": 0.24,
+                  "int": 0.24,
+                  "wis": 0.28
+                },
+                "capLevel": 21
+              },
+              "price": {
+                "buy": 500,
+                "sell": 250
+              }
+            },
+            {
+              "id": "monarch-t06-mainHand",
+              "slot": "mainHand",
+              "slotLabel": "Arma principal",
+              "name": "Cetro da Vigília",
+              "kind": "scepter",
+              "icon": {
+                "id": "monarch-t06-mainHand",
+                "path": "public/art/equipment/icon-monarch-t06-mainHand-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 16,
+              "primary": {
+                "mag": 18,
+                "int": 7
+              },
+              "secondary": {
+                "mp": 12
+              },
+              "scaling": {
+                "perLevel": {
+                  "mag": 0.72,
+                  "int": 0.28,
+                  "mp": 0.48
+                },
+                "capLevel": 21
+              },
+              "price": {
+                "buy": 450,
+                "sell": 225
+              }
+            },
+            {
+              "id": "monarch-t06-accessory",
+              "slot": "accessory",
+              "slotLabel": "Acessório",
+              "name": "Medalhão de Obsidiana",
+              "kind": "amulet",
+              "icon": {
+                "id": "monarch-t06-accessory",
+                "path": "public/art/equipment/icon-monarch-t06-accessory-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 16,
+              "primary": {
+                "cha": 7,
+                "wis": 7
+              },
+              "secondary": {
+                "mp": 13,
+                "mag": 6
+              },
+              "scaling": {
+                "perLevel": {
+                  "cha": 0.28,
+                  "wis": 0.28,
+                  "mp": 0.52,
+                  "mag": 0.24
+                },
+                "capLevel": 21
+              },
+              "price": {
+                "buy": 250,
+                "sell": 125
+              }
+            }
+          ],
+          "setBonus": {
+            "name": "Vigília do Conselho",
+            "tiers": [
+              {
+                "pieces": 2,
+                "stats": {
+                  "mpPercent": 15
+                }
+              },
+              {
+                "pieces": 3,
+                "stats": {
+                  "mag": 6,
+                  "cha": 3,
+                  "manaRegenPercent": 13
+                },
+                "effect": "Recupera mana 13% mais rápido e fortalece seus feitiços."
+              }
+            ]
+          },
+          "setPrice": {
+            "buy": 1200,
+            "sell": 600
+          }
+        },
+        {
+          "id": "monarch-t07",
+          "tier": 7,
+          "tierLabel": "Mestre",
+          "rarity": "épico",
+          "setName": "Círculo da Chama",
+          "requiredLevel": 19,
+          "about": "A chama real ilumina pouco e cobra muito.",
+          "pieces": [
+            {
+              "id": "monarch-t07-armor",
+              "slot": "armor",
+              "slotLabel": "Armadura",
+              "name": "Manto da Chama Guardiã",
+              "kind": "cloth",
+              "icon": {
+                "id": "monarch-t07-armor",
+                "path": "public/art/equipment/icon-monarch-t07-armor-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 19,
+              "primary": {
+                "mp": 23,
+                "mag": 7
+              },
+              "secondary": {
+                "int": 7,
+                "wis": 8
+              },
+              "scaling": {
+                "perLevel": {
+                  "mp": 0.92,
+                  "mag": 0.28,
+                  "int": 0.28,
+                  "wis": 0.32
+                },
+                "capLevel": 24
+              },
+              "price": {
+                "buy": 800,
+                "sell": 400
+              }
+            },
+            {
+              "id": "monarch-t07-mainHand",
+              "slot": "mainHand",
+              "slotLabel": "Arma principal",
+              "name": "Cetro de Brasa Sombria",
+              "kind": "scepter",
+              "icon": {
+                "id": "monarch-t07-mainHand",
+                "path": "public/art/equipment/icon-monarch-t07-mainHand-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 19,
+              "primary": {
+                "mag": 21,
+                "int": 8
+              },
+              "secondary": {
+                "mp": 14
+              },
+              "scaling": {
+                "perLevel": {
+                  "mag": 0.84,
+                  "int": 0.32,
+                  "mp": 0.56
+                },
+                "capLevel": 24
+              },
+              "price": {
+                "buy": 720,
+                "sell": 360
+              }
+            },
+            {
+              "id": "monarch-t07-accessory",
+              "slot": "accessory",
+              "slotLabel": "Acessório",
+              "name": "Diadema da Chama Pálida",
+              "kind": "circlet",
+              "icon": {
+                "id": "monarch-t07-accessory",
+                "path": "public/art/equipment/icon-monarch-t07-accessory-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 19,
+              "primary": {
+                "cha": 8,
+                "wis": 8
+              },
+              "secondary": {
+                "mp": 15,
+                "mag": 7
+              },
+              "scaling": {
+                "perLevel": {
+                  "cha": 0.32,
+                  "wis": 0.32,
+                  "mp": 0.6,
+                  "mag": 0.28
+                },
+                "capLevel": 24
+              },
+              "price": {
+                "buy": 400,
+                "sell": 200
+              }
+            }
+          ],
+          "setBonus": {
+            "name": "Círculo da Chama",
+            "tiers": [
+              {
+                "pieces": 2,
+                "stats": {
+                  "mpPercent": 17
+                }
+              },
+              {
+                "pieces": 3,
+                "stats": {
+                  "mag": 7,
+                  "cha": 4,
+                  "manaRegenPercent": 15
+                },
+                "effect": "Recupera mana 15% mais rápido e fortalece seus feitiços."
+              }
+            ]
+          },
+          "setPrice": {
+            "buy": 1920,
+            "sell": 960
+          }
+        },
+        {
+          "id": "monarch-t08",
+          "tier": 8,
+          "tierLabel": "Heroico",
+          "rarity": "épico",
+          "setName": "Soberano do Crepúsculo",
+          "requiredLevel": 22,
+          "about": "O reino prospera entre o último sol e a primeira ameaça.",
+          "pieces": [
+            {
+              "id": "monarch-t08-armor",
+              "slot": "armor",
+              "slotLabel": "Armadura",
+              "name": "Armadura Cerimonial do Crepúsculo",
+              "kind": "plate",
+              "icon": {
+                "id": "monarch-t08-armor",
+                "path": "public/art/equipment/icon-monarch-t08-armor-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 22,
+              "primary": {
+                "mp": 26,
+                "mag": 8
+              },
+              "secondary": {
+                "int": 8,
+                "wis": 9
+              },
+              "scaling": {
+                "perLevel": {
+                  "mp": 1.04,
+                  "mag": 0.32,
+                  "int": 0.32,
+                  "wis": 0.36
+                },
+                "capLevel": 27
+              },
+              "price": {
+                "buy": 1250,
+                "sell": 625
+              }
+            },
+            {
+              "id": "monarch-t08-mainHand",
+              "slot": "mainHand",
+              "slotLabel": "Arma principal",
+              "name": "Cetro do Reino Velado",
+              "kind": "scepter",
+              "icon": {
+                "id": "monarch-t08-mainHand",
+                "path": "public/art/equipment/icon-monarch-t08-mainHand-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 22,
+              "primary": {
+                "mag": 24,
+                "int": 9
+              },
+              "secondary": {
+                "mp": 16
+              },
+              "scaling": {
+                "perLevel": {
+                  "mag": 0.96,
+                  "int": 0.36,
+                  "mp": 0.64
+                },
+                "capLevel": 27
+              },
+              "price": {
+                "buy": 1100,
+                "sell": 550
+              }
+            },
+            {
+              "id": "monarch-t08-accessory",
+              "slot": "accessory",
+              "slotLabel": "Acessório",
+              "name": "Orbe do Crepúsculo",
+              "kind": "orb",
+              "icon": {
+                "id": "monarch-t08-accessory",
+                "path": "public/art/equipment/icon-monarch-t08-accessory-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 22,
+              "primary": {
+                "cha": 9,
+                "wis": 9
+              },
+              "secondary": {
+                "mp": 17,
+                "mag": 8
+              },
+              "scaling": {
+                "perLevel": {
+                  "cha": 0.36,
+                  "wis": 0.36,
+                  "mp": 0.68,
+                  "mag": 0.32
+                },
+                "capLevel": 27
+              },
+              "price": {
+                "buy": 650,
+                "sell": 325
+              }
+            }
+          ],
+          "setBonus": {
+            "name": "Soberano do Crepúsculo",
+            "tiers": [
+              {
+                "pieces": 2,
+                "stats": {
+                  "mpPercent": 19
+                }
+              },
+              {
+                "pieces": 3,
+                "stats": {
+                  "mag": 8,
+                  "cha": 4,
+                  "manaRegenPercent": 17
+                },
+                "effect": "Recupera mana 17% mais rápido e fortalece seus feitiços."
+              }
+            ]
+          },
+          "setPrice": {
+            "buy": 3000,
+            "sell": 1500
+          }
+        },
+        {
+          "id": "monarch-t09",
+          "tier": 9,
+          "tierLabel": "Lendário",
+          "rarity": "lendário",
+          "setName": "Coroa das Cinzas",
+          "requiredLevel": 25,
+          "about": "O Barão reconhece o selo. Isso não é tranquilizador.",
+          "pieces": [
+            {
+              "id": "monarch-t09-armor",
+              "slot": "armor",
+              "slotLabel": "Armadura",
+              "name": "Regalia de Cinzas Reais",
+              "kind": "plate",
+              "icon": {
+                "id": "monarch-t09-armor",
+                "path": "public/art/equipment/icon-monarch-t09-armor-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 25,
+              "primary": {
+                "mp": 29,
+                "mag": 9
+              },
+              "secondary": {
+                "int": 9,
+                "wis": 10
+              },
+              "scaling": {
+                "perLevel": {
+                  "mp": 1.16,
+                  "mag": 0.36,
+                  "int": 0.36,
+                  "wis": 0.4
+                },
+                "capLevel": 30
+              },
+              "price": {
+                "buy": 1900,
+                "sell": 950
+              }
+            },
+            {
+              "id": "monarch-t09-mainHand",
+              "slot": "mainHand",
+              "slotLabel": "Arma principal",
+              "name": "Cetro do Barão",
+              "kind": "scepter",
+              "icon": {
+                "id": "monarch-t09-mainHand",
+                "path": "public/art/equipment/icon-monarch-t09-mainHand-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 25,
+              "primary": {
+                "mag": 27,
+                "int": 10
+              },
+              "secondary": {
+                "mp": 18
+              },
+              "scaling": {
+                "perLevel": {
+                  "mag": 1.08,
+                  "int": 0.4,
+                  "mp": 0.72
+                },
+                "capLevel": 30
+              },
+              "price": {
+                "buy": 1700,
+                "sell": 850
+              }
+            },
+            {
+              "id": "monarch-t09-accessory",
+              "slot": "accessory",
+              "slotLabel": "Acessório",
+              "name": "Coroa de Cinza Eterna",
+              "kind": "circlet",
+              "icon": {
+                "id": "monarch-t09-accessory",
+                "path": "public/art/equipment/icon-monarch-t09-accessory-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 25,
+              "primary": {
+                "cha": 10,
+                "wis": 10
+              },
+              "secondary": {
+                "mp": 19,
+                "mag": 9
+              },
+              "scaling": {
+                "perLevel": {
+                  "cha": 0.4,
+                  "wis": 0.4,
+                  "mp": 0.76,
+                  "mag": 0.36
+                },
+                "capLevel": 30
+              },
+              "price": {
+                "buy": 950,
+                "sell": 475
+              }
+            }
+          ],
+          "setBonus": {
+            "name": "Coroa das Cinzas",
+            "tiers": [
+              {
+                "pieces": 2,
+                "stats": {
+                  "mpPercent": 21
+                }
+              },
+              {
+                "pieces": 3,
+                "stats": {
+                  "mag": 9,
+                  "cha": 5,
+                  "manaRegenPercent": 19
+                },
+                "effect": "Recupera mana 19% mais rápido e fortalece seus feitiços."
+              }
+            ]
+          },
+          "setPrice": {
+            "buy": 4550,
+            "sell": 2275
+          }
+        },
+        {
+          "id": "monarch-t10",
+          "tier": 10,
+          "tierLabel": "Místico",
+          "rarity": "mítico",
+          "setName": "Soberano Imortal",
+          "requiredLevel": 28,
+          "about": "O reino lembra cada juramento, inclusive os quebrados.",
+          "pieces": [
+            {
+              "id": "monarch-t10-armor",
+              "slot": "armor",
+              "slotLabel": "Armadura",
+              "name": "Regalia Imortal de Mordavia",
+              "kind": "plate",
+              "icon": {
+                "id": "monarch-t10-armor",
+                "path": "public/art/equipment/icon-monarch-t10-armor-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 28,
+              "primary": {
+                "mp": 32,
+                "mag": 10
+              },
+              "secondary": {
+                "int": 10,
+                "wis": 11
+              },
+              "scaling": {
+                "perLevel": {
+                  "mp": 1.28,
+                  "mag": 0.4,
+                  "int": 0.4,
+                  "wis": 0.44
+                },
+                "capLevel": 30
+              },
+              "price": {
+                "buy": 2900,
+                "sell": 1450
+              }
+            },
+            {
+              "id": "monarch-t10-mainHand",
+              "slot": "mainHand",
+              "slotLabel": "Arma principal",
+              "name": "Cetro do Primeiro Rei",
+              "kind": "scepter",
+              "icon": {
+                "id": "monarch-t10-mainHand",
+                "path": "public/art/equipment/icon-monarch-t10-mainHand-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 28,
+              "primary": {
+                "mag": 30,
+                "int": 11
+              },
+              "secondary": {
+                "mp": 20
+              },
+              "scaling": {
+                "perLevel": {
+                  "mag": 1.2,
+                  "int": 0.44,
+                  "mp": 0.8
+                },
+                "capLevel": 30
+              },
+              "price": {
+                "buy": 2600,
+                "sell": 1300
+              }
+            },
+            {
+              "id": "monarch-t10-accessory",
+              "slot": "accessory",
+              "slotLabel": "Acessório",
+              "name": "Coroa do Último Reino",
+              "kind": "circlet",
+              "icon": {
+                "id": "monarch-t10-accessory",
+                "path": "public/art/equipment/icon-monarch-t10-accessory-photo-v01.png",
+                "status": "pendente"
+              },
+              "requiredLevel": 28,
+              "primary": {
+                "cha": 11,
+                "wis": 11
+              },
+              "secondary": {
+                "mp": 21,
+                "mag": 10
+              },
+              "scaling": {
+                "perLevel": {
+                  "cha": 0.44,
+                  "wis": 0.44,
+                  "mp": 0.84,
+                  "mag": 0.4
+                },
+                "capLevel": 30
+              },
+              "price": {
+                "buy": 1500,
+                "sell": 750
+              }
+            }
+          ],
+          "setBonus": {
+            "name": "Soberano Imortal",
+            "tiers": [
+              {
+                "pieces": 2,
+                "stats": {
+                  "mpPercent": 23
+                }
+              },
+              {
+                "pieces": 3,
+                "stats": {
+                  "mag": 10,
+                  "cha": 5,
+                  "manaRegenPercent": 21
+                },
+                "effect": "Recupera mana 21% mais rápido e fortalece seus feitiços."
+              }
+            ]
+          },
+          "setPrice": {
+            "buy": 7000,
+            "sell": 3500
           }
         }
       ]

@@ -11,8 +11,8 @@
     <link rel="preload" as="image" href="public/art/healer-walk-v01.webp">
     <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
     <link rel="preload" as="font" href="public/fonts/PirataOne.ttf" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="app.css?v=311">
-    <script defer src="app.js?v=311"></script>
+    <link rel="stylesheet" href="app.css?v=314">
+    <script defer src="app.js?v=314"></script>
   </head>
   <body>
     <div class="game">
@@ -21,13 +21,12 @@
           <div class="stat resource-stat" title="Ouro. Vem dos impostos, cobrados à meia-noite (camponeses e taverna)." aria-label="Ouro"><img class="hud-icon" src="public/art/icon-coin-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="gold">240</strong><em id="gold-rate" class="visually-hidden">+2/dia</em></span></div>
           <div class="stat resource-stat" title="Comida guardada. Clique para abrir a lista de alimentos." aria-label="Comida"><img class="hud-icon" src="public/art/icon-provisions-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong><span id="grain">58</span><i>/<span id="storage-cap">100</span></i></strong><em id="grain-rate" class="visually-hidden">+0/s</em></span></div>
           <div class="stat resource-stat" title="Madeira e quanto rende por segundo" aria-label="Madeira"><img class="hud-icon" src="public/art/icon-logs-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="timber">30</strong><em id="timber-rate">+0/s</em></span></div>
-          <div class="stat resource-stat" title="Metal" aria-label="Metal"><img class="hud-icon" src="public/art/icon-metal-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><small>METAL</small><strong>—</strong></span></div>
-          <div class="stat resource-stat" title="Pedras" aria-label="Pedras"><img class="hud-icon" src="public/art/icon-stone-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><small>PEDRAS</small><strong>—</strong></span></div>
+          <div class="stat resource-stat" title="Metal" aria-label="Metal"><img class="hud-icon" src="public/art/icon-metal-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><small>METAL</small><strong id="metal">0</strong><em id="metal-rate">+0/s</em></span></div>
+          <div class="stat resource-stat" title="Pedras" aria-label="Pedras"><img class="hud-icon" src="public/art/icon-stone-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><small>PEDRAS</small><strong id="stone">0</strong><em id="stone-rate">+0/s</em></span></div>
           <div class="stat mood resource-stat" title="Felicidade dos camponeses, de 0 a 100. Comida servida e imposto baixo aumentam; ração pequena, imposto alto e fome diminuem." aria-label="Felicidade dos camponeses"><img class="hud-icon" src="public/art/icon-happiness-photo-v01.png" alt="" aria-hidden="true"><span class="resource-values"><strong id="happiness">50</strong><em id="happiness-label" class="visually-hidden">Conformados</em></span></div>
           <div class="stat mood favor" title="Favor dos nobres, de 0 a 100. Tributos entregues no prazo aumentam; atraso diminui. Abaixo de 20, eles atacam. Clique para ver os tributos."><small>FAVOR</small><strong id="favor">50</strong><em id="favor-label">Tolerado</em></div>
           <div class="stat" title="Alojamento: Warrior inicial (1); cada guilda, +1 morador; hotel, +4 camas; taverna, +1 cama"><small>HERÓIS</small><strong><span id="hero-count">1</span><i>/<span id="hero-cap">1</span></i></strong></div>
           <div class="stat" title="Trabalhadores / limite (2 do casarão + 2 por casebre, 5 no Casebre Grande). Cada um come 0,3 provisão por segundo e recebe 5 de ouro por dia."><small>TRABALHADORES</small><strong><span id="worker-count">1</span><i>/<span id="worker-cap">1</span></i></strong></div>
-          <div class="stat" title="Construções erguidas no domínio"><small>CONSTRUÇÕES</small><strong><span id="site-count">0</span></strong></div>
         </div>
 
         <div class="hud-time">
@@ -44,7 +43,7 @@
 
       <main class="stage">
         <section class="map-scene" id="map-scene" tabindex="0" aria-label="Mapa de City. Alterne para Wilds pelo ícone. Arraste para explorar; use as setas do teclado ou a roda do mouse para mover a câmera.">
-          <div class="map-world" id="map-world" data-map="city">
+          <div class="map-world" id="map-world" data-map="city" data-map-set="1">
             <div class="map-region manor-region">
               <img class="map-art" src="public/art/mordavia-map.webp" alt="Mapa de City" draggable="false">
               <div class="map-atmosphere" aria-hidden="true"><span class="manor-smoke smoke-a"></span><span class="manor-smoke smoke-b"></span><span class="manor-smoke smoke-c"></span><span class="manor-smoke smoke-d"></span></div>

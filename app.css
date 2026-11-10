@@ -930,11 +930,21 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .inspector { display: flex; flex-direction: column; gap: 12px; }
 .inspector-back { align-self: flex-start; padding: 2px 0; border: 0; color: var(--muted); background: none; font: 11px 'Figtree', sans-serif; letter-spacing: .04em; cursor: pointer; }
 .inspector-back:hover, .inspector-back:focus-visible { color: var(--gold); outline: none; }
-/* Abas de tipo dentro de Construir: Casas, Produção, Guildas. */
-.build-cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 0 0 10px; padding: 3px; border: 1px solid var(--line); border-radius: 6px; background: rgba(12,13,11,.55); }
-.build-cat { padding: 7px 4px; border: 1px solid transparent; border-radius: 4px; color: var(--muted); background: transparent; font: 700 10px 'Figtree', sans-serif; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
-.build-cat:hover { color: #e9d9b5; }
-.build-cat.active { border-color: rgba(214,184,117,.55); color: #f1dfb4; background: rgba(214,184,117,.14); }
+/* Pedreira e Campo de Mineração: ainda sem arte própria, usam a do Lenhador com outra cor. */
+.site[data-type="quarry"] .building-art, .build-card[data-build="quarry"] .build-preview img { filter: grayscale(.85) brightness(.95) drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
+.site[data-type="mine"] .building-art, .build-card[data-build="mine"] .build-preview img { filter: sepia(.6) hue-rotate(-20deg) saturate(1.4) brightness(.8) drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
+/* Equipe da Pedreira e do Campo de Mineração: clique no nome para colocar ou tirar. */
+.pit-hint { color: var(--muted); font-size: 10px; }
+.pit-crew { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; }
+.pit-worker { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; color: #d9cdb2; background: rgba(15,17,14,.55); text-align: left; cursor: pointer; }
+.pit-worker b { font: 600 12px 'Figtree', sans-serif; }
+.pit-worker small { color: var(--muted); font-size: 10px; white-space: nowrap; }
+.pit-worker:hover:not([disabled]) { border-color: rgba(214,184,117,.6); }
+.pit-worker.here { border-color: rgba(214,184,117,.75); background: rgba(214,184,117,.16); color: #f3e2b8; }
+.pit-worker[disabled] { opacity: .45; cursor: default; }
+/* Construir: seções por tipo (Casas, Produção, Guildas), todas visíveis. */
+.build-section + .build-section { margin-top: 14px; }
+.build-section-title { margin: 0 0 7px; padding: 0 2px 5px; border-bottom: 1px solid rgba(214,184,117,.35); color: #e8c983; font: 20px/1.1 'Pirata One', Georgia, serif; letter-spacing: .04em; }
 /* Menu da construção: janela em cima do mapa; a aba Construir continua com a lista. */
 .site-inspector { position: absolute; z-index: 7; top: 12px; left: 12px; width: min(340px, calc(100% - 80px)); max-height: calc(100% - 70px); overflow-y: auto; padding: 14px 14px 12px; border: 1px solid rgba(206,186,137,.38); border-radius: 7px; background: var(--panel-2); box-shadow: 0 14px 34px rgba(0,0,0,.55); color: #e4d7b7; cursor: default; overscroll-behavior: contain; }
 .site-inspector[hidden] { display: none; }
@@ -1076,6 +1086,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 
 
 #map-world[data-map="wilds"] #site-layer, #map-world[data-map="wilds"] .map-atmosphere { display: none; }
+#map-world[data-map-set="2"] .map-atmosphere { display: none; }
 
 /* Cursores do Ember: a seta em tudo e a manopla enquanto o mapa é arrastado. */
 html, body, body *, body *::before, body *::after {
