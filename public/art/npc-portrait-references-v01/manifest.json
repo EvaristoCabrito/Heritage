@@ -1,0 +1,807 @@
+[
+  {
+    "file": "0jdiG.jpg",
+    "path": "public/art/npc-portrait-references-v01/0jdiG.jpg",
+    "bytes": 374440
+  },
+  {
+    "file": "0m1Um.jpg",
+    "path": "public/art/npc-portrait-references-v01/0m1Um.jpg",
+    "bytes": 384141
+  },
+  {
+    "file": "0MfXY.jpg",
+    "path": "public/art/npc-portrait-references-v01/0MfXY.jpg",
+    "bytes": 370841
+  },
+  {
+    "file": "0P3bO.jpg",
+    "path": "public/art/npc-portrait-references-v01/0P3bO.jpg",
+    "bytes": 304709
+  },
+  {
+    "file": "1cvAf.jpg",
+    "path": "public/art/npc-portrait-references-v01/1cvAf.jpg",
+    "bytes": 383370
+  },
+  {
+    "file": "1kaKb.jpg",
+    "path": "public/art/npc-portrait-references-v01/1kaKb.jpg",
+    "bytes": 331190
+  },
+  {
+    "file": "1y2DW.jpg",
+    "path": "public/art/npc-portrait-references-v01/1y2DW.jpg",
+    "bytes": 301696
+  },
+  {
+    "file": "1Zv74.jpg",
+    "path": "public/art/npc-portrait-references-v01/1Zv74.jpg",
+    "bytes": 395905
+  },
+  {
+    "file": "2OU6M.jpg",
+    "path": "public/art/npc-portrait-references-v01/2OU6M.jpg",
+    "bytes": 395262
+  },
+  {
+    "file": "2w6gO.jpg",
+    "path": "public/art/npc-portrait-references-v01/2w6gO.jpg",
+    "bytes": 341542
+  },
+  {
+    "file": "3xGxA.jpg",
+    "path": "public/art/npc-portrait-references-v01/3xGxA.jpg",
+    "bytes": 388889
+  },
+  {
+    "file": "3ZyJ6.jpg",
+    "path": "public/art/npc-portrait-references-v01/3ZyJ6.jpg",
+    "bytes": 404650
+  },
+  {
+    "file": "4kUAj.jpg",
+    "path": "public/art/npc-portrait-references-v01/4kUAj.jpg",
+    "bytes": 313775
+  },
+  {
+    "file": "4oOmZ.jpg",
+    "path": "public/art/npc-portrait-references-v01/4oOmZ.jpg",
+    "bytes": 408088
+  },
+  {
+    "file": "5bdXr.jpg",
+    "path": "public/art/npc-portrait-references-v01/5bdXr.jpg",
+    "bytes": 364964
+  },
+  {
+    "file": "5cSiD.jpg",
+    "path": "public/art/npc-portrait-references-v01/5cSiD.jpg",
+    "bytes": 397914
+  },
+  {
+    "file": "5iBZN.jpg",
+    "path": "public/art/npc-portrait-references-v01/5iBZN.jpg",
+    "bytes": 328157
+  },
+  {
+    "file": "5l5Uh.jpg",
+    "path": "public/art/npc-portrait-references-v01/5l5Uh.jpg",
+    "bytes": 362721
+  },
+  {
+    "file": "5PuxV.jpg",
+    "path": "public/art/npc-portrait-references-v01/5PuxV.jpg",
+    "bytes": 312056
+  },
+  {
+    "file": "5SgDu.jpg",
+    "path": "public/art/npc-portrait-references-v01/5SgDu.jpg",
+    "bytes": 389556
+  },
+  {
+    "file": "6DH1l.jpg",
+    "path": "public/art/npc-portrait-references-v01/6DH1l.jpg",
+    "bytes": 410389
+  },
+  {
+    "file": "715Tg.jpg",
+    "path": "public/art/npc-portrait-references-v01/715Tg.jpg",
+    "bytes": 363564
+  },
+  {
+    "file": "759Hp.jpg",
+    "path": "public/art/npc-portrait-references-v01/759Hp.jpg",
+    "bytes": 368243
+  },
+  {
+    "file": "76TXJ.jpg",
+    "path": "public/art/npc-portrait-references-v01/76TXJ.jpg",
+    "bytes": 398623
+  },
+  {
+    "file": "A0YZr.jpg",
+    "path": "public/art/npc-portrait-references-v01/A0YZr.jpg",
+    "bytes": 366722
+  },
+  {
+    "file": "AqNeW.jpg",
+    "path": "public/art/npc-portrait-references-v01/AqNeW.jpg",
+    "bytes": 375609
+  },
+  {
+    "file": "B9umo.jpg",
+    "path": "public/art/npc-portrait-references-v01/B9umo.jpg",
+    "bytes": 380311
+  },
+  {
+    "file": "bdXzc.jpg",
+    "path": "public/art/npc-portrait-references-v01/bdXzc.jpg",
+    "bytes": 367771
+  },
+  {
+    "file": "bl5AL.jpg",
+    "path": "public/art/npc-portrait-references-v01/bl5AL.jpg",
+    "bytes": 347762
+  },
+  {
+    "file": "BMNws.jpg",
+    "path": "public/art/npc-portrait-references-v01/BMNws.jpg",
+    "bytes": 375533
+  },
+  {
+    "file": "boHFz.jpg",
+    "path": "public/art/npc-portrait-references-v01/boHFz.jpg",
+    "bytes": 286977
+  },
+  {
+    "file": "br2BU.jpg",
+    "path": "public/art/npc-portrait-references-v01/br2BU.jpg",
+    "bytes": 379743
+  },
+  {
+    "file": "BtldE.jpg",
+    "path": "public/art/npc-portrait-references-v01/BtldE.jpg",
+    "bytes": 430316
+  },
+  {
+    "file": "BVrxH.jpg",
+    "path": "public/art/npc-portrait-references-v01/BVrxH.jpg",
+    "bytes": 445985
+  },
+  {
+    "file": "BYzuK.jpg",
+    "path": "public/art/npc-portrait-references-v01/BYzuK.jpg",
+    "bytes": 364065
+  },
+  {
+    "file": "C2TnP.jpg",
+    "path": "public/art/npc-portrait-references-v01/C2TnP.jpg",
+    "bytes": 318033
+  },
+  {
+    "file": "CByPn.jpg",
+    "path": "public/art/npc-portrait-references-v01/CByPn.jpg",
+    "bytes": 358927
+  },
+  {
+    "file": "CJNnS.jpg",
+    "path": "public/art/npc-portrait-references-v01/CJNnS.jpg",
+    "bytes": 346210
+  },
+  {
+    "file": "Cnynv.jpg",
+    "path": "public/art/npc-portrait-references-v01/Cnynv.jpg",
+    "bytes": 322268
+  },
+  {
+    "file": "CpPLP.jpg",
+    "path": "public/art/npc-portrait-references-v01/CpPLP.jpg",
+    "bytes": 304249
+  },
+  {
+    "file": "cRcTk.jpg",
+    "path": "public/art/npc-portrait-references-v01/cRcTk.jpg",
+    "bytes": 267078
+  },
+  {
+    "file": "CW2S8.jpg",
+    "path": "public/art/npc-portrait-references-v01/CW2S8.jpg",
+    "bytes": 320815
+  },
+  {
+    "file": "D4vKr.jpg",
+    "path": "public/art/npc-portrait-references-v01/D4vKr.jpg",
+    "bytes": 437390
+  },
+  {
+    "file": "D6eDe.jpg",
+    "path": "public/art/npc-portrait-references-v01/D6eDe.jpg",
+    "bytes": 309041
+  },
+  {
+    "file": "Dccjh.jpg",
+    "path": "public/art/npc-portrait-references-v01/Dccjh.jpg",
+    "bytes": 310263
+  },
+  {
+    "file": "dOReH.jpg",
+    "path": "public/art/npc-portrait-references-v01/dOReH.jpg",
+    "bytes": 386691
+  },
+  {
+    "file": "DoRkT.jpg",
+    "path": "public/art/npc-portrait-references-v01/DoRkT.jpg",
+    "bytes": 261627
+  },
+  {
+    "file": "E7hwE.jpg",
+    "path": "public/art/npc-portrait-references-v01/E7hwE.jpg",
+    "bytes": 277664
+  },
+  {
+    "file": "e7P7Y.jpg",
+    "path": "public/art/npc-portrait-references-v01/e7P7Y.jpg",
+    "bytes": 421615
+  },
+  {
+    "file": "E7yke.jpg",
+    "path": "public/art/npc-portrait-references-v01/E7yke.jpg",
+    "bytes": 332810
+  },
+  {
+    "file": "eN4DN.jpg",
+    "path": "public/art/npc-portrait-references-v01/eN4DN.jpg",
+    "bytes": 347031
+  },
+  {
+    "file": "eRP0F.jpg",
+    "path": "public/art/npc-portrait-references-v01/eRP0F.jpg",
+    "bytes": 406928
+  },
+  {
+    "file": "f5rVo.jpg",
+    "path": "public/art/npc-portrait-references-v01/f5rVo.jpg",
+    "bytes": 399219
+  },
+  {
+    "file": "f6Sol.jpg",
+    "path": "public/art/npc-portrait-references-v01/f6Sol.jpg",
+    "bytes": 366550
+  },
+  {
+    "file": "fCdnl.jpg",
+    "path": "public/art/npc-portrait-references-v01/fCdnl.jpg",
+    "bytes": 281597
+  },
+  {
+    "file": "FkPqJ.jpg",
+    "path": "public/art/npc-portrait-references-v01/FkPqJ.jpg",
+    "bytes": 362768
+  },
+  {
+    "file": "FNwbK.jpg",
+    "path": "public/art/npc-portrait-references-v01/FNwbK.jpg",
+    "bytes": 331421
+  },
+  {
+    "file": "Fot6H.jpg",
+    "path": "public/art/npc-portrait-references-v01/Fot6H.jpg",
+    "bytes": 305418
+  },
+  {
+    "file": "FQX7o.jpg",
+    "path": "public/art/npc-portrait-references-v01/FQX7o.jpg",
+    "bytes": 427346
+  },
+  {
+    "file": "FtdYx.jpg",
+    "path": "public/art/npc-portrait-references-v01/FtdYx.jpg",
+    "bytes": 397362
+  },
+  {
+    "file": "fyUb9.jpg",
+    "path": "public/art/npc-portrait-references-v01/fyUb9.jpg",
+    "bytes": 461252
+  },
+  {
+    "file": "g6R1S.jpg",
+    "path": "public/art/npc-portrait-references-v01/g6R1S.jpg",
+    "bytes": 322621
+  },
+  {
+    "file": "G8cx4.jpg",
+    "path": "public/art/npc-portrait-references-v01/G8cx4.jpg",
+    "bytes": 229881
+  },
+  {
+    "file": "gBN35.jpg",
+    "path": "public/art/npc-portrait-references-v01/gBN35.jpg",
+    "bytes": 388109
+  },
+  {
+    "file": "GmPQe.jpg",
+    "path": "public/art/npc-portrait-references-v01/GmPQe.jpg",
+    "bytes": 299301
+  },
+  {
+    "file": "h5rEt.jpg",
+    "path": "public/art/npc-portrait-references-v01/h5rEt.jpg",
+    "bytes": 329659
+  },
+  {
+    "file": "H6S4n.jpg",
+    "path": "public/art/npc-portrait-references-v01/H6S4n.jpg",
+    "bytes": 397764
+  },
+  {
+    "file": "H7JMa.jpg",
+    "path": "public/art/npc-portrait-references-v01/H7JMa.jpg",
+    "bytes": 322712
+  },
+  {
+    "file": "Hg4XW.jpg",
+    "path": "public/art/npc-portrait-references-v01/Hg4XW.jpg",
+    "bytes": 359025
+  },
+  {
+    "file": "I3amS.jpg",
+    "path": "public/art/npc-portrait-references-v01/I3amS.jpg",
+    "bytes": 437352
+  },
+  {
+    "file": "I9nnt.jpg",
+    "path": "public/art/npc-portrait-references-v01/I9nnt.jpg",
+    "bytes": 412436
+  },
+  {
+    "file": "I9QiT.jpg",
+    "path": "public/art/npc-portrait-references-v01/I9QiT.jpg",
+    "bytes": 356138
+  },
+  {
+    "file": "iJeDf.jpg",
+    "path": "public/art/npc-portrait-references-v01/iJeDf.jpg",
+    "bytes": 366762
+  },
+  {
+    "file": "J3PnR.jpg",
+    "path": "public/art/npc-portrait-references-v01/J3PnR.jpg",
+    "bytes": 415008
+  },
+  {
+    "file": "jWeR0.jpg",
+    "path": "public/art/npc-portrait-references-v01/jWeR0.jpg",
+    "bytes": 346726
+  },
+  {
+    "file": "jxf6J.jpg",
+    "path": "public/art/npc-portrait-references-v01/jxf6J.jpg",
+    "bytes": 461131
+  },
+  {
+    "file": "k0mzw.jpg",
+    "path": "public/art/npc-portrait-references-v01/k0mzw.jpg",
+    "bytes": 343120
+  },
+  {
+    "file": "K3ZK3.jpg",
+    "path": "public/art/npc-portrait-references-v01/K3ZK3.jpg",
+    "bytes": 359428
+  },
+  {
+    "file": "k92Cb.jpg",
+    "path": "public/art/npc-portrait-references-v01/k92Cb.jpg",
+    "bytes": 396658
+  },
+  {
+    "file": "kiutB.jpg",
+    "path": "public/art/npc-portrait-references-v01/kiutB.jpg",
+    "bytes": 297032
+  },
+  {
+    "file": "Kp5QG.jpg",
+    "path": "public/art/npc-portrait-references-v01/Kp5QG.jpg",
+    "bytes": 291497
+  },
+  {
+    "file": "KWCQc.jpg",
+    "path": "public/art/npc-portrait-references-v01/KWCQc.jpg",
+    "bytes": 302340
+  },
+  {
+    "file": "kZheK.jpg",
+    "path": "public/art/npc-portrait-references-v01/kZheK.jpg",
+    "bytes": 370892
+  },
+  {
+    "file": "LEpzE.jpg",
+    "path": "public/art/npc-portrait-references-v01/LEpzE.jpg",
+    "bytes": 409199
+  },
+  {
+    "file": "li5Kw.jpg",
+    "path": "public/art/npc-portrait-references-v01/li5Kw.jpg",
+    "bytes": 338814
+  },
+  {
+    "file": "LuVxZ.jpg",
+    "path": "public/art/npc-portrait-references-v01/LuVxZ.jpg",
+    "bytes": 376273
+  },
+  {
+    "file": "lWSYi.jpg",
+    "path": "public/art/npc-portrait-references-v01/lWSYi.jpg",
+    "bytes": 354973
+  },
+  {
+    "file": "M627u.jpg",
+    "path": "public/art/npc-portrait-references-v01/M627u.jpg",
+    "bytes": 367286
+  },
+  {
+    "file": "mcLa6.jpg",
+    "path": "public/art/npc-portrait-references-v01/mcLa6.jpg",
+    "bytes": 413430
+  },
+  {
+    "file": "Mixqp.jpg",
+    "path": "public/art/npc-portrait-references-v01/Mixqp.jpg",
+    "bytes": 358826
+  },
+  {
+    "file": "mk1mi.jpg",
+    "path": "public/art/npc-portrait-references-v01/mk1mi.jpg",
+    "bytes": 448960
+  },
+  {
+    "file": "MLD30.jpg",
+    "path": "public/art/npc-portrait-references-v01/MLD30.jpg",
+    "bytes": 368360
+  },
+  {
+    "file": "Mos9h.jpg",
+    "path": "public/art/npc-portrait-references-v01/Mos9h.jpg",
+    "bytes": 313227
+  },
+  {
+    "file": "MVFTs.jpg",
+    "path": "public/art/npc-portrait-references-v01/MVFTs.jpg",
+    "bytes": 372882
+  },
+  {
+    "file": "MZIjR.jpg",
+    "path": "public/art/npc-portrait-references-v01/MZIjR.jpg",
+    "bytes": 282786
+  },
+  {
+    "file": "N0nNb.jpg",
+    "path": "public/art/npc-portrait-references-v01/N0nNb.jpg",
+    "bytes": 385472
+  },
+  {
+    "file": "n30Jv.jpg",
+    "path": "public/art/npc-portrait-references-v01/n30Jv.jpg",
+    "bytes": 380688
+  },
+  {
+    "file": "N3OZM (1).jpg",
+    "path": "public/art/npc-portrait-references-v01/N3OZM (1).jpg",
+    "bytes": 364065
+  },
+  {
+    "file": "N3OZM.jpg",
+    "path": "public/art/npc-portrait-references-v01/N3OZM.jpg",
+    "bytes": 364065
+  },
+  {
+    "file": "n8MWF.jpg",
+    "path": "public/art/npc-portrait-references-v01/n8MWF.jpg",
+    "bytes": 433422
+  },
+  {
+    "file": "neB6p.jpg",
+    "path": "public/art/npc-portrait-references-v01/neB6p.jpg",
+    "bytes": 404764
+  },
+  {
+    "file": "NHtvE.jpg",
+    "path": "public/art/npc-portrait-references-v01/NHtvE.jpg",
+    "bytes": 410864
+  },
+  {
+    "file": "NJJHy.jpg",
+    "path": "public/art/npc-portrait-references-v01/NJJHy.jpg",
+    "bytes": 368681
+  },
+  {
+    "file": "NQRcW (1).jpg",
+    "path": "public/art/npc-portrait-references-v01/NQRcW (1).jpg",
+    "bytes": 325122
+  },
+  {
+    "file": "NQRcW.jpg",
+    "path": "public/art/npc-portrait-references-v01/NQRcW.jpg",
+    "bytes": 325122
+  },
+  {
+    "file": "NWaZG.jpg",
+    "path": "public/art/npc-portrait-references-v01/NWaZG.jpg",
+    "bytes": 353456
+  },
+  {
+    "file": "OMZcl.jpg",
+    "path": "public/art/npc-portrait-references-v01/OMZcl.jpg",
+    "bytes": 334874
+  },
+  {
+    "file": "oN5zx.jpg",
+    "path": "public/art/npc-portrait-references-v01/oN5zx.jpg",
+    "bytes": 283710
+  },
+  {
+    "file": "PQBnC.jpg",
+    "path": "public/art/npc-portrait-references-v01/PQBnC.jpg",
+    "bytes": 311673
+  },
+  {
+    "file": "qbekm.jpg",
+    "path": "public/art/npc-portrait-references-v01/qbekm.jpg",
+    "bytes": 401029
+  },
+  {
+    "file": "Qhtlh.jpg",
+    "path": "public/art/npc-portrait-references-v01/Qhtlh.jpg",
+    "bytes": 354906
+  },
+  {
+    "file": "QKSRE.jpg",
+    "path": "public/art/npc-portrait-references-v01/QKSRE.jpg",
+    "bytes": 300415
+  },
+  {
+    "file": "QQ19W.jpg",
+    "path": "public/art/npc-portrait-references-v01/QQ19W.jpg",
+    "bytes": 311911
+  },
+  {
+    "file": "QSO8k.jpg",
+    "path": "public/art/npc-portrait-references-v01/QSO8k.jpg",
+    "bytes": 261557
+  },
+  {
+    "file": "QT0pD.jpg",
+    "path": "public/art/npc-portrait-references-v01/QT0pD.jpg",
+    "bytes": 356235
+  },
+  {
+    "file": "R7aTw (1).jpg",
+    "path": "public/art/npc-portrait-references-v01/R7aTw (1).jpg",
+    "bytes": 347079
+  },
+  {
+    "file": "R7aTw.jpg",
+    "path": "public/art/npc-portrait-references-v01/R7aTw.jpg",
+    "bytes": 347079
+  },
+  {
+    "file": "RfO2R.jpg",
+    "path": "public/art/npc-portrait-references-v01/RfO2R.jpg",
+    "bytes": 373735
+  },
+  {
+    "file": "rhgda (1).jpg",
+    "path": "public/art/npc-portrait-references-v01/rhgda (1).jpg",
+    "bytes": 271109
+  },
+  {
+    "file": "rhgda.jpg",
+    "path": "public/art/npc-portrait-references-v01/rhgda.jpg",
+    "bytes": 271109
+  },
+  {
+    "file": "rkLTC.jpg",
+    "path": "public/art/npc-portrait-references-v01/rkLTC.jpg",
+    "bytes": 270332
+  },
+  {
+    "file": "RTVo4.jpg",
+    "path": "public/art/npc-portrait-references-v01/RTVo4.jpg",
+    "bytes": 360798
+  },
+  {
+    "file": "RXpRu.jpg",
+    "path": "public/art/npc-portrait-references-v01/RXpRu.jpg",
+    "bytes": 347198
+  },
+  {
+    "file": "stU2b.jpg",
+    "path": "public/art/npc-portrait-references-v01/stU2b.jpg",
+    "bytes": 368782
+  },
+  {
+    "file": "SUH7f.jpg",
+    "path": "public/art/npc-portrait-references-v01/SUH7f.jpg",
+    "bytes": 354720
+  },
+  {
+    "file": "T5ITa.jpg",
+    "path": "public/art/npc-portrait-references-v01/T5ITa.jpg",
+    "bytes": 283074
+  },
+  {
+    "file": "TLcAn.jpg",
+    "path": "public/art/npc-portrait-references-v01/TLcAn.jpg",
+    "bytes": 308611
+  },
+  {
+    "file": "TpJoC.jpg",
+    "path": "public/art/npc-portrait-references-v01/TpJoC.jpg",
+    "bytes": 415081
+  },
+  {
+    "file": "U1brN.jpg",
+    "path": "public/art/npc-portrait-references-v01/U1brN.jpg",
+    "bytes": 373490
+  },
+  {
+    "file": "u3LLb.jpg",
+    "path": "public/art/npc-portrait-references-v01/u3LLb.jpg",
+    "bytes": 396292
+  },
+  {
+    "file": "UNG6M.jpg",
+    "path": "public/art/npc-portrait-references-v01/UNG6M.jpg",
+    "bytes": 324336
+  },
+  {
+    "file": "uNsob.jpg",
+    "path": "public/art/npc-portrait-references-v01/uNsob.jpg",
+    "bytes": 371657
+  },
+  {
+    "file": "UTo2U.jpg",
+    "path": "public/art/npc-portrait-references-v01/UTo2U.jpg",
+    "bytes": 377849
+  },
+  {
+    "file": "uxc9L.jpg",
+    "path": "public/art/npc-portrait-references-v01/uxc9L.jpg",
+    "bytes": 362714
+  },
+  {
+    "file": "Uxj3C.jpg",
+    "path": "public/art/npc-portrait-references-v01/Uxj3C.jpg",
+    "bytes": 346075
+  },
+  {
+    "file": "uZfxm.jpg",
+    "path": "public/art/npc-portrait-references-v01/uZfxm.jpg",
+    "bytes": 378998
+  },
+  {
+    "file": "vvFbE.jpg",
+    "path": "public/art/npc-portrait-references-v01/vvFbE.jpg",
+    "bytes": 321587
+  },
+  {
+    "file": "wanUq.jpg",
+    "path": "public/art/npc-portrait-references-v01/wanUq.jpg",
+    "bytes": 236585
+  },
+  {
+    "file": "wfL4Z.jpg",
+    "path": "public/art/npc-portrait-references-v01/wfL4Z.jpg",
+    "bytes": 357073
+  },
+  {
+    "file": "WH559.jpg",
+    "path": "public/art/npc-portrait-references-v01/WH559.jpg",
+    "bytes": 361230
+  },
+  {
+    "file": "WTLVZ.jpg",
+    "path": "public/art/npc-portrait-references-v01/WTLVZ.jpg",
+    "bytes": 315615
+  },
+  {
+    "file": "wZ6fl.jpg",
+    "path": "public/art/npc-portrait-references-v01/wZ6fl.jpg",
+    "bytes": 323148
+  },
+  {
+    "file": "xbsgX.jpg",
+    "path": "public/art/npc-portrait-references-v01/xbsgX.jpg",
+    "bytes": 393551
+  },
+  {
+    "file": "xCWlD (1).jpg",
+    "path": "public/art/npc-portrait-references-v01/xCWlD (1).jpg",
+    "bytes": 349736
+  },
+  {
+    "file": "xCWlD.jpg",
+    "path": "public/art/npc-portrait-references-v01/xCWlD.jpg",
+    "bytes": 349736
+  },
+  {
+    "file": "xfOlp.jpg",
+    "path": "public/art/npc-portrait-references-v01/xfOlp.jpg",
+    "bytes": 324095
+  },
+  {
+    "file": "XhgHd.jpg",
+    "path": "public/art/npc-portrait-references-v01/XhgHd.jpg",
+    "bytes": 345808
+  },
+  {
+    "file": "xkrbQ.jpg",
+    "path": "public/art/npc-portrait-references-v01/xkrbQ.jpg",
+    "bytes": 308406
+  },
+  {
+    "file": "yALJU.jpg",
+    "path": "public/art/npc-portrait-references-v01/yALJU.jpg",
+    "bytes": 356493
+  },
+  {
+    "file": "yArzc.jpg",
+    "path": "public/art/npc-portrait-references-v01/yArzc.jpg",
+    "bytes": 304307
+  },
+  {
+    "file": "Yb3pV.jpg",
+    "path": "public/art/npc-portrait-references-v01/Yb3pV.jpg",
+    "bytes": 360148
+  },
+  {
+    "file": "Yd7UX.jpg",
+    "path": "public/art/npc-portrait-references-v01/Yd7UX.jpg",
+    "bytes": 320764
+  },
+  {
+    "file": "YYKRv.jpg",
+    "path": "public/art/npc-portrait-references-v01/YYKRv.jpg",
+    "bytes": 480419
+  },
+  {
+    "file": "z8rBg.jpg",
+    "path": "public/art/npc-portrait-references-v01/z8rBg.jpg",
+    "bytes": 352068
+  },
+  {
+    "file": "z8zJI.jpg",
+    "path": "public/art/npc-portrait-references-v01/z8zJI.jpg",
+    "bytes": 347822
+  },
+  {
+    "file": "Zfos7.jpg",
+    "path": "public/art/npc-portrait-references-v01/Zfos7.jpg",
+    "bytes": 397963
+  },
+  {
+    "file": "ZhBWz.jpg",
+    "path": "public/art/npc-portrait-references-v01/ZhBWz.jpg",
+    "bytes": 263773
+  },
+  {
+    "file": "ZiQeg.jpg",
+    "path": "public/art/npc-portrait-references-v01/ZiQeg.jpg",
+    "bytes": 373984
+  },
+  {
+    "file": "ZMYqR.jpg",
+    "path": "public/art/npc-portrait-references-v01/ZMYqR.jpg",
+    "bytes": 374533
+  },
+  {
+    "file": "ZpK4r.jpg",
+    "path": "public/art/npc-portrait-references-v01/ZpK4r.jpg",
+    "bytes": 313360
+  },
+  {
+    "file": "ZqWRs.jpg",
+    "path": "public/art/npc-portrait-references-v01/ZqWRs.jpg",
+    "bytes": 261233
+  }
+]

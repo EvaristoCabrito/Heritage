@@ -93,8 +93,10 @@ const Monarch = (() => {
   const nearest = (list, x, y, r) => near(list, x, y, r).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0] || null;
   const fighters = () => rt.allies.filter(actor => actor.className !== 'Peasant');
   function refreshLists() {
-    rt.allies = [...state.heroes.filter(a => a.alive), ...state.workers.filter(a => a.alive), ...rt.summons.filter(a => a.alive), ...(state.bandits || []).filter(b => b.alive && b.mfx?.convert)];
-    rt.enemies = (state.bandits || []).filter(b => b.alive && !b.mfx?.convert);
+    // O Monarca fica na cidade: quem está nos Wilds não conta.
+    const here = a => a.alive && (a.mapId || 'city') === 'city';
+    rt.allies = [...state.heroes.filter(here), ...state.workers.filter(here), ...rt.summons.filter(a => a.alive), ...(state.bandits || []).filter(b => here(b) && b.mfx?.convert)];
+    rt.enemies = (state.bandits || []).filter(b => here(b) && !b.mfx?.convert);
   }
   const addFx = (actor, key, t, data = {}) => { actor.mfx = actor.mfx || {}; actor.mfx[key] = { t, ...data }; return actor.mfx[key]; };
   const heal = (actor, amount) => { actor.hp = Math.min(maxHpOf(actor), hpOf(actor) + amount); };
@@ -570,7 +572,7 @@ const Monarch = (() => {
       const m = ms();
       rt.majesty = st.durationSeconds;
       Object.keys(m.cd).forEach(key => { if (key !== spell.key) m.cd[key] = 0; });
-      near([...state.heroes, ...rt.summons], m.x, m.y, st.auraRadius).forEach(ally => { ally.cooldown = 0; FX.flash(ally.x, ally.y - BODY, 2, C.gold, 0.4); });
+      near([...state.heroes.filter(a => (a.mapId || 'city') === 'city'), ...rt.summons], m.x, m.y, st.auraRadius).forEach(ally => { ally.cooldown = 0; FX.flash(ally.x, ally.y - BODY, 2, C.gold, 0.4); });
       FX.beam(m.x, m.y, 2.6, 40, C.gold, 1.4);
       FX.shockwave(m.x, m.y, st.auraRadius, C.gold, 1.0);
       FX.sigil(m.x, m.y, st.auraRadius, C.paleGold, 1.8, 12);
