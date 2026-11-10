@@ -3543,6 +3543,37 @@ const versionLabel = serial => `v${String(serial).padStart(3, '0')}`;
 const editor = { active: false, scenario: 1, record: null, places: [], base: null, tool: null, group: 'lair', selected: null, drag: null, preview: false, armedDelete: null, status: '' };
 let worldScenario = null;
 
+// Troca única: os covis de lobos vão para onde estavam os trolls, e os trolls descem para onde
+// estavam os lobos. Cada covil de lobos troca de lugar com o covil de troll mais perto dele.
+// Vale para todas as versões salvas e para o rascunho do editor, e roda uma vez só por navegador.
+(function swapWolfAndTrollDens() {
+  const doneKey = 'mordavia.fix.swapWolfTroll.v1';
+  try { if (localStorage.getItem(doneKey)) return; } catch { return; }
+  const swapIn = places => {
+    if (!Array.isArray(places)) return;
+    const trolls = places.filter(place => place?.type === 'trollDen');
+    places.filter(place => place?.type === 'wolfDen').forEach(wolf => {
+      if (!trolls.length) return;
+      const near = trolls.reduce((best, troll) => Math.hypot(troll.x - wolf.x, (troll.y - wolf.y) / 2) < Math.hypot(best.x - wolf.x, (best.y - wolf.y) / 2) ? troll : best);
+      trolls.splice(trolls.indexOf(near), 1);
+      [wolf.x, wolf.y, near.x, near.y] = [near.x, near.y, wolf.x, wolf.y];
+    });
+  };
+  const fix = (key, apply) => {
+    try {
+      const data = JSON.parse(localStorage.getItem(key));
+      if (!data) return;
+      apply(data);
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch {}
+  };
+  SCENARIOS.forEach(def => {
+    fix(scenarioKey(def.id), data => { swapIn(data.places); (data.versions || []).forEach(version => swapIn(version?.places)); });
+    fix(scenarioDraftKey(def.id), data => swapIn(data.places));
+  });
+  try { localStorage.setItem(doneKey, '1'); } catch {}
+})();
+
 const cleanPlaces = list => (Array.isArray(list) ? list : []).filter(place => placeType(place?.type) && Number.isFinite(+place.x) && Number.isFinite(+place.y))
   .map(place => ({ id: String(place.id), type: place.type, x: +place.x, y: +place.y }));
 // O registro de um cenário: {id, name, updatedAt, active, versions: [{serial, savedAt, places}]}.
