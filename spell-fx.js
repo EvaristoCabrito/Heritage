@@ -14,6 +14,8 @@ const SpellFX = (() => {
     gold: [1, 0.8, 0.38], paleGold: [1, 0.93, 0.68], holy: [1, 0.97, 0.86], crimson: [1, 0.22, 0.16], blood: [0.75, 0.05, 0.08],
     violet: [0.66, 0.42, 1], darkViolet: [0.42, 0.16, 0.78], astral: [0.45, 0.82, 1], frost: [0.55, 0.78, 1], emerald: [0.45, 1, 0.6],
     ember: [1, 0.52, 0.18], steel: [0.8, 0.88, 1], shadow: [0.12, 0.05, 0.16], white: [1, 1, 1],
+    fire: [1, 0.4, 0.08], flame: [1, 0.72, 0.25], ice: [0.72, 0.92, 1], lightning: [0.78, 0.86, 1], poison: [0.5, 1, 0.22], toxic: [0.2, 0.42, 0.06],
+    heal: [0.5, 1, 0.62], arcane: [0.78, 0.48, 1], smoke: [0.08, 0.07, 0.07],
   };
 
   const VERT = `
@@ -100,7 +102,14 @@ const SpellFX = (() => {
       } else if (shape < 7.5) {                // segmento: p0 estilo (0 feixe, 1 corrente), p1 comprimento, p2 fase
         float across = exp(-uv.y * uv.y * 7.0);
         float ends = smoothstep(1.0, 0.85, abs(uv.x));
-        if (vP.y > 0.5) {
+        if (vP.y > 1.5) {                      // 2: relâmpago em zigue-zague, muda de forma várias vezes por segundo
+          float flick = floor(uTime * 16.0 + vP.w * 5.0);
+          float j = (fbm(vec2(uv.x * vP.z * 0.45 + vP.w * 3.1, flick)) - 0.5) * 1.6 * (1.0 - abs(uv.x) * 0.5);
+          float off = uv.y - j;
+          float core = exp(-off * off * 70.0);
+          a = (core + exp(-off * off * 5.0) * 0.4) * ends;
+          col = mix(col, vec3(1.0), core * 0.8);
+        } else if (vP.y > 0.5) {
           float link = fract(uv.x * vP.z * 0.5 + vP.w);
           float ring = smoothstep(0.18, 0.05, abs(length(vec2((link - 0.5) * 2.0, uv.y * 1.6)) - 0.65));
           a = ring * ends + across * 0.25 * ends;
@@ -169,6 +178,7 @@ const SpellFX = (() => {
   let time = 0;
   let view = null;
   let reduced = false;
+  let muted = false;   // ligado enquanto roda algo de outro mapa: a lógica acontece, o desenho não
 
   function makeLayer(name, z, anchor, after) {
     const canvas = document.createElement('canvas');
@@ -292,6 +302,7 @@ const SpellFX = (() => {
 
   // ----- Partículas -----
   function emit(x, y, options = {}) {
+    if (muted) return;
     const count = Math.max(1, Math.round((options.count || 12) * (reduced ? 0.3 : 1)));
     for (let i = 0; i < count; i++) {
       const angle = options.angle != null ? options.angle + (Math.random() - 0.5) * (options.spread ?? Math.PI * 2) : Math.random() * Math.PI * 2;
@@ -322,7 +333,7 @@ const SpellFX = (() => {
   }
 
   // ----- Efeitos de uma vez (duram um tempo e somem) -----
-  function oneShot(duration, draw) { oneShots.push({ t: 0, duration, draw }); }
+  function oneShot(duration, draw) { if (!muted) oneShots.push({ t: 0, duration, draw }); }
   function stepOneShots(dt) {
     for (let i = oneShots.length - 1; i >= 0; i--) {
       const e = oneShots[i];
@@ -396,6 +407,8 @@ const SpellFX = (() => {
     SHAPE, COLORS, fx, draw, emit,
     get ok() { return ok; },
     get time() { return time; },
+    get muted() { return muted; },
+    set muted(value) { muted = !!value; },
     init,
     // Começa um quadro: chamado antes de desenhar qualquer coisa.
     begin(dt, reducedMotion) {

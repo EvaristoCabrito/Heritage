@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "classId": "monarch",
   "className": "Monarca",
   "role": "Comando, aura e controle de campo",
@@ -1762,7 +1762,8 @@
       "level": 1,
       "phase": "fundacao",
       "unlocks": [
-        1
+        1,
+        31
       ],
       "upgrades": []
     },
@@ -1770,7 +1771,8 @@
       "level": 2,
       "phase": "fundacao",
       "unlocks": [
-        2
+        2,
+        32
       ],
       "upgrades": []
     },
@@ -1778,7 +1780,8 @@
       "level": 3,
       "phase": "fundacao",
       "unlocks": [
-        3
+        3,
+        33
       ],
       "upgrades": []
     },
@@ -1786,7 +1789,8 @@
       "level": 4,
       "phase": "fundacao",
       "unlocks": [
-        4
+        4,
+        34
       ],
       "upgrades": []
     },
@@ -1794,7 +1798,8 @@
       "level": 5,
       "phase": "fundacao",
       "unlocks": [
-        5
+        5,
+        35
       ],
       "upgrades": []
     },
@@ -1802,7 +1807,8 @@
       "level": 6,
       "phase": "consolidacao",
       "unlocks": [
-        6
+        6,
+        36
       ],
       "upgrades": []
     },
@@ -1810,7 +1816,8 @@
       "level": 7,
       "phase": "consolidacao",
       "unlocks": [
-        7
+        7,
+        37
       ],
       "upgrades": [
         {
@@ -1823,7 +1830,8 @@
       "level": 8,
       "phase": "consolidacao",
       "unlocks": [
-        8
+        8,
+        38
       ],
       "upgrades": [
         {
@@ -1836,7 +1844,8 @@
       "level": 9,
       "phase": "consolidacao",
       "unlocks": [
-        9
+        9,
+        39
       ],
       "upgrades": [
         {
@@ -1849,7 +1858,8 @@
       "level": 10,
       "phase": "consolidacao",
       "unlocks": [
-        10
+        10,
+        40
       ],
       "upgrades": [
         {
@@ -1862,7 +1872,8 @@
       "level": 11,
       "phase": "comando",
       "unlocks": [
-        11
+        11,
+        41
       ],
       "upgrades": [
         {
@@ -1875,7 +1886,8 @@
       "level": 12,
       "phase": "comando",
       "unlocks": [
-        12
+        12,
+        42
       ],
       "upgrades": [
         {
@@ -1888,7 +1900,8 @@
       "level": 13,
       "phase": "comando",
       "unlocks": [
-        13
+        13,
+        43
       ],
       "upgrades": [
         {
@@ -1905,7 +1918,8 @@
       "level": 14,
       "phase": "comando",
       "unlocks": [
-        14
+        14,
+        44
       ],
       "upgrades": [
         {
@@ -1918,7 +1932,8 @@
       "level": 15,
       "phase": "comando",
       "unlocks": [
-        15
+        15,
+        45
       ],
       "upgrades": [
         {
@@ -1935,7 +1950,8 @@
       "level": 16,
       "phase": "majestade",
       "unlocks": [
-        16
+        16,
+        46
       ],
       "upgrades": [
         {
@@ -1948,7 +1964,8 @@
       "level": 17,
       "phase": "majestade",
       "unlocks": [
-        17
+        17,
+        47
       ],
       "upgrades": [
         {
@@ -1961,7 +1978,8 @@
       "level": 18,
       "phase": "majestade",
       "unlocks": [
-        18
+        18,
+        48
       ],
       "upgrades": [
         {
@@ -1978,7 +1996,8 @@
       "level": 19,
       "phase": "majestade",
       "unlocks": [
-        19
+        19,
+        49
       ],
       "upgrades": [
         {
@@ -1995,7 +2014,8 @@
       "level": 20,
       "phase": "majestade",
       "unlocks": [
-        20
+        20,
+        50
       ],
       "upgrades": [
         {
@@ -2012,7 +2032,8 @@
       "level": 21,
       "phase": "autoridade",
       "unlocks": [
-        21
+        21,
+        51
       ],
       "upgrades": [
         {
@@ -2033,7 +2054,8 @@
       "level": 22,
       "phase": "autoridade",
       "unlocks": [
-        22
+        22,
+        52
       ],
       "upgrades": [
         {
@@ -2050,7 +2072,8 @@
       "level": 23,
       "phase": "autoridade",
       "unlocks": [
-        23
+        23,
+        53
       ],
       "upgrades": [
         {
@@ -2067,7 +2090,8 @@
       "level": 24,
       "phase": "autoridade",
       "unlocks": [
-        24
+        24,
+        54
       ],
       "upgrades": [
         {
@@ -2084,7 +2108,8 @@
       "level": 25,
       "phase": "autoridade",
       "unlocks": [
-        25
+        25,
+        55
       ],
       "upgrades": [
         {
@@ -2105,7 +2130,8 @@
       "level": 26,
       "phase": "ascendencia",
       "unlocks": [
-        26
+        26,
+        56
       ],
       "upgrades": [
         {
@@ -2126,7 +2152,8 @@
       "level": 27,
       "phase": "ascendencia",
       "unlocks": [
-        27
+        27,
+        57
       ],
       "upgrades": [
         {
@@ -2147,7 +2174,8 @@
       "level": 28,
       "phase": "ascendencia",
       "unlocks": [
-        28
+        28,
+        58
       ],
       "upgrades": [
         {
@@ -2168,7 +2196,8 @@
       "level": 29,
       "phase": "ascendencia",
       "unlocks": [
-        29
+        29,
+        59
       ],
       "upgrades": [
         {
@@ -2189,7 +2218,8 @@
       "level": 30,
       "phase": "ascendencia",
       "unlocks": [
-        30
+        30,
+        60
       ],
       "upgrades": [
         {
@@ -2210,5 +2240,719 @@
         }
       ]
     }
-  ]
+  ],
+  "fieldSpells": [
+    {
+      "id": 31,
+      "key": "fagulha",
+      "name": "Fagulha",
+      "unlockLevel": 1,
+      "school": "fogo",
+      "category": "ataque",
+      "target": "inimigo",
+      "mechanic": "bolt",
+      "manaCost": 7,
+      "cooldownSeconds": 3,
+      "castRange": "campo",
+      "damage": {
+        "base": 7,
+        "perLevel": 1.4,
+        "magPercent": 70
+      },
+      "dot": {
+        "dps": {
+          "base": 1,
+          "perLevel": 0.2,
+          "magPercent": 12
+        },
+        "durationSeconds": 3
+      },
+      "description": "Atira uma fagulha no inimigo: {dano} de dano de fogo e queima por {dotTotal} em {dotDuracao} s."
+    },
+    {
+      "id": 32,
+      "key": "toque-restaurador",
+      "name": "Toque Restaurador",
+      "unlockLevel": 2,
+      "school": "cura",
+      "category": "cura",
+      "target": "aliado",
+      "mechanic": "heal",
+      "manaCost": 8,
+      "cooldownSeconds": 4,
+      "castRange": "campo",
+      "heal": {
+        "base": 12,
+        "perLevel": 1.7,
+        "magPercent": 70
+      },
+      "description": "Cura {cura} de vida de um aliado."
+    },
+    {
+      "id": 33,
+      "key": "missil-magico",
+      "name": "Míssil Mágico",
+      "unlockLevel": 3,
+      "school": "arcano",
+      "category": "ataque",
+      "target": "inimigo",
+      "mechanic": "missiles",
+      "manaCost": 10,
+      "cooldownSeconds": 5,
+      "castRange": "campo",
+      "damage": {
+        "base": 3,
+        "perLevel": 0.7,
+        "magPercent": 43
+      },
+      "missiles": 3,
+      "radius": 6,
+      "description": "Dispara {misseis} mísseis arcanos que nunca erram: {dano} de dano cada, divididos entre os inimigos a até {raio} m do alvo."
+    },
+    {
+      "id": 34,
+      "key": "dardo-venenoso",
+      "name": "Dardo Venenoso",
+      "unlockLevel": 4,
+      "school": "veneno",
+      "category": "dano_continuo",
+      "target": "inimigo",
+      "mechanic": "dot",
+      "manaCost": 9,
+      "cooldownSeconds": 4,
+      "castRange": "campo",
+      "dot": {
+        "dps": {
+          "base": 2,
+          "perLevel": 0.4,
+          "magPercent": 23
+        },
+        "durationSeconds": 8
+      },
+      "description": "Envenena o inimigo: {dotTotal} de dano em {dotDuracao} s."
+    },
+    {
+      "id": 35,
+      "key": "bola-de-fogo",
+      "name": "Bola de Fogo",
+      "unlockLevel": 5,
+      "school": "fogo",
+      "category": "area",
+      "target": "area",
+      "mechanic": "ball",
+      "manaCost": 19,
+      "cooldownSeconds": 8,
+      "castRange": "campo",
+      "damage": {
+        "base": 11,
+        "perLevel": 1.5,
+        "magPercent": 70
+      },
+      "radius": 3.5,
+      "dot": {
+        "dps": {
+          "base": 1,
+          "perLevel": 0.2,
+          "magPercent": 9
+        },
+        "durationSeconds": 3
+      },
+      "description": "Uma bola de fogo explode no ponto: {dano} de dano em quem estiver a até {raio} m, que ainda queima por {dotTotal} em {dotDuracao} s."
+    },
+    {
+      "id": 36,
+      "key": "fraqueza",
+      "name": "Fraqueza",
+      "unlockLevel": 6,
+      "school": "sombra",
+      "category": "enfraquecimento",
+      "target": "area",
+      "mechanic": "weaken",
+      "manaCost": 15,
+      "cooldownSeconds": 12,
+      "castRange": "campo",
+      "radius": 4,
+      "weaken": {
+        "damageDealtPercent": 25,
+        "damageTakenPercent": 20,
+        "armorPercent": 0,
+        "durationSeconds": 8
+      },
+      "description": "Inimigos a até {raio} m causam {fraqueza}% menos dano e recebem {vulneravel}% mais dano por {fraquezaDuracao} s."
+    },
+    {
+      "id": 37,
+      "key": "cadeia-de-relampagos",
+      "name": "Cadeia de Relâmpagos",
+      "unlockLevel": 7,
+      "school": "raio",
+      "category": "ataque",
+      "target": "inimigo",
+      "mechanic": "chain",
+      "manaCost": 21,
+      "cooldownSeconds": 8,
+      "castRange": "campo",
+      "damage": {
+        "base": 17,
+        "perLevel": 1.8,
+        "magPercent": 70
+      },
+      "jumps": 3,
+      "falloffPercent": 15,
+      "jumpRange": 10,
+      "description": "Um relâmpago acerta o alvo com {dano} de dano e salta para mais {saltos} inimigos, perdendo {perda}% a cada salto."
+    },
+    {
+      "id": 38,
+      "key": "nevasca",
+      "name": "Nevasca",
+      "unlockLevel": 8,
+      "school": "gelo",
+      "category": "area",
+      "target": "area",
+      "mechanic": "storm",
+      "manaCost": 32,
+      "cooldownSeconds": 18,
+      "castRange": "campo",
+      "radius": 6,
+      "durationSeconds": 6,
+      "tickSeconds": 1,
+      "hitsPerTick": 0,
+      "damage": {
+        "base": 3,
+        "perLevel": 0.4,
+        "magPercent": 21
+      },
+      "slow": {
+        "percent": 40,
+        "durationSeconds": 1.5
+      },
+      "description": "Uma nevasca de {raio} m por {duracao} s: a cada {intervalo} s, {dano} de dano em todos dentro, que ficam {lentidao}% mais lentos."
+    },
+    {
+      "id": 39,
+      "key": "onda-de-cura",
+      "name": "Onda de Cura",
+      "unlockLevel": 9,
+      "school": "cura",
+      "category": "cura",
+      "target": "area",
+      "mechanic": "healArea",
+      "manaCost": 26,
+      "cooldownSeconds": 10,
+      "castRange": "campo",
+      "heal": {
+        "base": 9,
+        "perLevel": 1.3,
+        "magPercent": 66
+      },
+      "radius": 6,
+      "description": "Cura {cura} de vida de todos os aliados a até {raio} m."
+    },
+    {
+      "id": 40,
+      "key": "nuvem-toxica",
+      "name": "Nuvem Tóxica",
+      "unlockLevel": 10,
+      "school": "veneno",
+      "category": "area",
+      "target": "area",
+      "mechanic": "cloud",
+      "manaCost": 29,
+      "cooldownSeconds": 12,
+      "castRange": "campo",
+      "radius": 4.5,
+      "durationSeconds": 8,
+      "cloud": {
+        "base": 3,
+        "perLevel": 0.4,
+        "magPercent": 18
+      },
+      "description": "Uma nuvem venenosa de {raio} m fica {duracao} s no chão: {dps} de dano por segundo em quem estiver dentro."
+    },
+    {
+      "id": 41,
+      "key": "lanca-de-gelo",
+      "name": "Lança de Gelo",
+      "unlockLevel": 11,
+      "school": "gelo",
+      "category": "ataque",
+      "target": "inimigo",
+      "mechanic": "bolt",
+      "manaCost": 23,
+      "cooldownSeconds": 6,
+      "castRange": "campo",
+      "damage": {
+        "base": 35,
+        "perLevel": 2.3,
+        "magPercent": 70
+      },
+      "freezeSeconds": 1.5,
+      "description": "Uma lança de gelo atravessa o alvo: {dano} de dano e congela por {congela} s."
+    },
+    {
+      "id": 42,
+      "key": "relampago",
+      "name": "Relâmpago",
+      "unlockLevel": 12,
+      "school": "raio",
+      "category": "area",
+      "target": "area",
+      "mechanic": "strike",
+      "manaCost": 31,
+      "cooldownSeconds": 9,
+      "castRange": "campo",
+      "damage": {
+        "base": 31,
+        "perLevel": 2.1,
+        "magPercent": 70
+      },
+      "radius": 2.5,
+      "strikes": 1,
+      "stunSeconds": 1.2,
+      "description": "Um relâmpago cai do céu: {dano} de dano em quem estiver a até {raio} m, atordoados por {atordoa} s."
+    },
+    {
+      "id": 43,
+      "key": "maldicao-da-carne",
+      "name": "Maldição da Carne",
+      "unlockLevel": 13,
+      "school": "sombra",
+      "category": "enfraquecimento",
+      "target": "inimigo",
+      "mechanic": "dot",
+      "manaCost": 24,
+      "cooldownSeconds": 8,
+      "castRange": "campo",
+      "dot": {
+        "dps": {
+          "base": 3,
+          "perLevel": 0.4,
+          "magPercent": 17
+        },
+        "durationSeconds": 8
+      },
+      "weaken": {
+        "damageDealtPercent": 30,
+        "damageTakenPercent": 0,
+        "armorPercent": 0,
+        "durationSeconds": 8
+      },
+      "description": "Apodrece o alvo: {dotTotal} de dano em {dotDuracao} s, e enquanto durar ele causa {fraqueza}% menos dano."
+    },
+    {
+      "id": 44,
+      "key": "regeneracao",
+      "name": "Regeneração",
+      "unlockLevel": 14,
+      "school": "cura",
+      "category": "cura",
+      "target": "area",
+      "mechanic": "hot",
+      "manaCost": 36,
+      "cooldownSeconds": 14,
+      "castRange": "campo",
+      "radius": 6,
+      "hot": {
+        "hps": {
+          "base": 3,
+          "perLevel": 0.3,
+          "magPercent": 12
+        },
+        "durationSeconds": 10
+      },
+      "description": "Aliados a até {raio} m regeneram {hps} de vida por segundo durante {hotDuracao} s."
+    },
+    {
+      "id": 45,
+      "key": "meteoro",
+      "name": "Meteoro",
+      "unlockLevel": 15,
+      "school": "fogo",
+      "category": "area",
+      "target": "area",
+      "mechanic": "meteor",
+      "manaCost": 63,
+      "cooldownSeconds": 30,
+      "castRange": "campo",
+      "damage": {
+        "base": 93,
+        "perLevel": 3.8,
+        "magPercent": 70
+      },
+      "radius": 5,
+      "delaySeconds": 1.2,
+      "durationSeconds": 5,
+      "cloud": {
+        "base": 4,
+        "perLevel": 0.3,
+        "magPercent": 15
+      },
+      "description": "Um meteoro cai depois de {atraso} s: {dano} de dano a até {raio} m e o chão queima {duracao} s com {dps} de dano por segundo."
+    },
+    {
+      "id": 46,
+      "key": "dreno-de-vida",
+      "name": "Dreno de Vida",
+      "unlockLevel": 16,
+      "school": "sombra",
+      "category": "ataque",
+      "target": "inimigo",
+      "mechanic": "drain",
+      "manaCost": 34,
+      "cooldownSeconds": 7,
+      "castRange": "campo",
+      "damage": {
+        "base": 29,
+        "perLevel": 1.9,
+        "magPercent": 70
+      },
+      "radius": 6,
+      "drainHealPercent": 80,
+      "description": "Arranca {dano} de vida do inimigo e cura os aliados a até {raio} m em {dreno}% do dano."
+    },
+    {
+      "id": 47,
+      "key": "chuva-de-fogo",
+      "name": "Chuva de Fogo",
+      "unlockLevel": 17,
+      "school": "fogo",
+      "category": "area",
+      "target": "area",
+      "mechanic": "storm",
+      "manaCost": 63,
+      "cooldownSeconds": 20,
+      "castRange": "campo",
+      "radius": 6,
+      "durationSeconds": 6,
+      "tickSeconds": 0.5,
+      "hitsPerTick": 2,
+      "damage": {
+        "base": 6,
+        "perLevel": 0.5,
+        "magPercent": 23
+      },
+      "dot": {
+        "dps": {
+          "base": 1,
+          "perLevel": 0.1,
+          "magPercent": 4
+        },
+        "durationSeconds": 3
+      },
+      "description": "Fogo cai do céu por {duracao} s numa área de {raio} m: {dano} de dano em {porTique} inimigos a cada {intervalo} s, e cada um queima por {dotTotal}."
+    },
+    {
+      "id": 48,
+      "key": "ruina",
+      "name": "Ruína",
+      "unlockLevel": 18,
+      "school": "sombra",
+      "category": "enfraquecimento",
+      "target": "area",
+      "mechanic": "weaken",
+      "manaCost": 48,
+      "cooldownSeconds": 20,
+      "castRange": "campo",
+      "radius": 6,
+      "weaken": {
+        "damageDealtPercent": 40,
+        "damageTakenPercent": 30,
+        "armorPercent": 30,
+        "durationSeconds": 12
+      },
+      "description": "Inimigos a até {raio} m causam {fraqueza}% menos dano, recebem {vulneravel}% mais dano e perdem {armadura}% da armadura por {fraquezaDuracao} s."
+    },
+    {
+      "id": 49,
+      "key": "tempestade-de-raios",
+      "name": "Tempestade de Raios",
+      "unlockLevel": 19,
+      "school": "raio",
+      "category": "area",
+      "target": "area",
+      "mechanic": "storm",
+      "manaCost": 69,
+      "cooldownSeconds": 20,
+      "castRange": "campo",
+      "radius": 7,
+      "durationSeconds": 7,
+      "tickSeconds": 0.7,
+      "hitsPerTick": 2,
+      "damage": {
+        "base": 9,
+        "perLevel": 0.8,
+        "magPercent": 34
+      },
+      "stunSeconds": 0.4,
+      "description": "Uma tempestade de {raio} m por {duracao} s: a cada {intervalo} s, raios caem em {porTique} inimigos com {dano} de dano e atordoam por {atordoa} s."
+    },
+    {
+      "id": 50,
+      "key": "ressurreicao",
+      "name": "Ressurreição",
+      "unlockLevel": 20,
+      "school": "cura",
+      "category": "cura",
+      "target": "area",
+      "mechanic": "revive",
+      "manaCost": 86,
+      "cooldownSeconds": 60,
+      "castRange": "campo",
+      "radius": 8,
+      "reviveHpPercent": 50,
+      "maxTargets": 1,
+      "description": "Traz de volta o herói morto mais perto do ponto (até {raio} m) com {vidaVolta}% da vida."
+    },
+    {
+      "id": 51,
+      "key": "praga",
+      "name": "Praga",
+      "unlockLevel": 21,
+      "school": "veneno",
+      "category": "dano_continuo",
+      "target": "area",
+      "mechanic": "dotArea",
+      "manaCost": 52,
+      "cooldownSeconds": 14,
+      "castRange": "campo",
+      "radius": 5,
+      "dot": {
+        "dps": {
+          "base": 4,
+          "perLevel": 0.3,
+          "magPercent": 14
+        },
+        "durationSeconds": 8
+      },
+      "spreadOnDeath": true,
+      "description": "Infecta todos a até {raio} m: {dotTotal} de dano em {dotDuracao} s. Quem morrer infectado passa a praga para o vizinho."
+    },
+    {
+      "id": 52,
+      "key": "explosao-solar",
+      "name": "Explosão Solar",
+      "unlockLevel": 22,
+      "school": "fogo",
+      "category": "area",
+      "target": "area",
+      "mechanic": "ball",
+      "manaCost": 70,
+      "cooldownSeconds": 12,
+      "castRange": "campo",
+      "damage": {
+        "base": 45,
+        "perLevel": 2.1,
+        "magPercent": 70
+      },
+      "radius": 6,
+      "dot": {
+        "dps": {
+          "base": 3,
+          "perLevel": 0.2,
+          "magPercent": 9
+        },
+        "durationSeconds": 4
+      },
+      "description": "Uma esfera de fogo explode no ponto: {dano} de dano a até {raio} m, e todos queimam por {dotTotal} em {dotDuracao} s."
+    },
+    {
+      "id": 53,
+      "key": "enxame-de-misseis",
+      "name": "Enxame de Mísseis",
+      "unlockLevel": 23,
+      "school": "arcano",
+      "category": "ataque",
+      "target": "inimigo",
+      "mechanic": "missiles",
+      "manaCost": 68,
+      "cooldownSeconds": 9,
+      "castRange": "campo",
+      "damage": {
+        "base": 9,
+        "perLevel": 0.6,
+        "magPercent": 28
+      },
+      "missiles": 10,
+      "radius": 9,
+      "description": "Dispara {misseis} mísseis arcanos: {dano} de dano cada, divididos entre os inimigos a até {raio} m do alvo."
+    },
+    {
+      "id": 54,
+      "key": "fonte-da-vida",
+      "name": "Fonte da Vida",
+      "unlockLevel": 24,
+      "school": "cura",
+      "category": "cura",
+      "target": "area",
+      "mechanic": "healArea",
+      "manaCost": 76,
+      "cooldownSeconds": 18,
+      "castRange": "campo",
+      "heal": {
+        "base": 38,
+        "perLevel": 1.9,
+        "magPercent": 70
+      },
+      "radius": 8,
+      "hot": {
+        "hps": {
+          "base": 3,
+          "perLevel": 0.2,
+          "magPercent": 8
+        },
+        "durationSeconds": 6
+      },
+      "description": "Cura {cura} de vida de todos os aliados a até {raio} m e os deixa regenerando {hps} por segundo durante {hotDuracao} s."
+    },
+    {
+      "id": 55,
+      "key": "inferno",
+      "name": "Inferno",
+      "unlockLevel": 25,
+      "school": "fogo",
+      "category": "area",
+      "target": "area",
+      "mechanic": "cloud",
+      "manaCost": 87,
+      "cooldownSeconds": 20,
+      "castRange": "campo",
+      "radius": 5.5,
+      "durationSeconds": 8,
+      "cloud": {
+        "base": 11,
+        "perLevel": 0.7,
+        "magPercent": 29
+      },
+      "description": "Abre um chão em chamas de {raio} m por {duracao} s: {dps} de dano por segundo em quem estiver dentro."
+    },
+    {
+      "id": 56,
+      "key": "zero-absoluto",
+      "name": "Zero Absoluto",
+      "unlockLevel": 26,
+      "school": "gelo",
+      "category": "area",
+      "target": "area",
+      "mechanic": "nova",
+      "manaCost": 99,
+      "cooldownSeconds": 24,
+      "castRange": "campo",
+      "damage": {
+        "base": 73,
+        "perLevel": 2.6,
+        "magPercent": 70
+      },
+      "radius": 7,
+      "freezeSeconds": 3,
+      "description": "O ar congela num raio de {raio} m: {dano} de dano e todos ficam congelados por {congela} s."
+    },
+    {
+      "id": 57,
+      "key": "furia-dos-ceus",
+      "name": "Fúria dos Céus",
+      "unlockLevel": 27,
+      "school": "raio",
+      "category": "area",
+      "target": "area",
+      "mechanic": "strike",
+      "manaCost": 93,
+      "cooldownSeconds": 16,
+      "castRange": "campo",
+      "damage": {
+        "base": 30,
+        "perLevel": 1.7,
+        "magPercent": 70
+      },
+      "radius": 6,
+      "strikes": 6,
+      "strikeRadius": 2.5,
+      "stunSeconds": 1,
+      "description": "Caem {raios} relâmpagos espalhados numa área de {raio} m: {dano} de dano cada e atordoam por {atordoa} s."
+    },
+    {
+      "id": 58,
+      "key": "eclipse",
+      "name": "Eclipse",
+      "unlockLevel": 28,
+      "school": "sombra",
+      "category": "enfraquecimento",
+      "target": "global",
+      "mechanic": "weakenAll",
+      "manaCost": 115,
+      "cooldownSeconds": 45,
+      "castRange": "campo",
+      "weaken": {
+        "damageDealtPercent": 50,
+        "damageTakenPercent": 30,
+        "armorPercent": 0,
+        "durationSeconds": 10
+      },
+      "description": "O sol apaga: todos os inimigos do mapa causam {fraqueza}% menos dano e recebem {vulneravel}% mais dano por {fraquezaDuracao} s."
+    },
+    {
+      "id": 59,
+      "key": "cataclismo",
+      "name": "Cataclismo",
+      "unlockLevel": 29,
+      "school": "fogo",
+      "category": "area",
+      "target": "area",
+      "mechanic": "meteor",
+      "manaCost": 148,
+      "cooldownSeconds": 50,
+      "castRange": "campo",
+      "damage": {
+        "base": 274,
+        "perLevel": 6.0,
+        "magPercent": 70
+      },
+      "radius": 9,
+      "delaySeconds": 1.6,
+      "durationSeconds": 6,
+      "cloud": {
+        "base": 7,
+        "perLevel": 0.4,
+        "magPercent": 18
+      },
+      "description": "Um meteoro gigante cai depois de {atraso} s: {dano} de dano a até {raio} m e o chão queima {duracao} s com {dps} de dano por segundo."
+    },
+    {
+      "id": 60,
+      "key": "milagre",
+      "name": "Milagre",
+      "unlockLevel": 30,
+      "school": "cura",
+      "category": "cura",
+      "target": "global",
+      "mechanic": "healAll",
+      "manaCost": 173,
+      "cooldownSeconds": 90,
+      "castRange": "campo",
+      "healPercent": 100,
+      "reviveHpPercent": 50,
+      "description": "Cura toda a vida de todos os aliados do mapa e traz de volta os heróis mortos com {vidaVolta}% da vida."
+    }
+  ],
+  "fieldRules": {
+    "about": "Magias de campo (ids 31 a 60): uma nova por nível, além das 30 do Monarca. O herdeiro não aparece no mapa; ele lança direto no campo. Escolha a magia no botão MAGIAS e clique no inimigo, no aliado ou no ponto do mapa.",
+    "scaling": "Valores que crescem: base + perLevel x (nível do herdeiro - nível da magia) + magPercent% da Magia do herdeiro.",
+    "mana": "Gastam o mesmo MP das magias do Monarca.",
+    "targets": {
+      "inimigo": "clique num inimigo",
+      "aliado": "clique num aliado",
+      "area": "clique num ponto do mapa",
+      "global": "o mapa inteiro, sem mirar"
+    },
+    "schools": {
+      "fogo": "Fogo",
+      "gelo": "Gelo",
+      "raio": "Raio",
+      "arcano": "Arcano",
+      "veneno": "Veneno",
+      "sombra": "Sombra",
+      "sagrado": "Sagrado",
+      "cura": "Cura"
+    }
+  }
 }

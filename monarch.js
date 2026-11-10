@@ -37,6 +37,7 @@ const Monarch = (() => {
     time: 0, summons: [], zones: [], armies: [], channel: null, majesty: 0, conquest: { stacks: 0, t: 0 },
     targeting: null, hover: null, mods: new Map(), allies: [], enemies: [], crushInside: new Set(), nextId: 1,
     self: { id: 'monarch', name: 'O Monarca', className: 'Monarch', purse: 0, x: 0, y: 0 }, barKey: '', barClock: 0, cache: new Map(), outOfCombat: 0,
+    projs: [], timers: [], fzones: [], lastMap: '', panelClock: 0,
   };
 
   // ----- Nível, ranks e números de cada magia -----
@@ -125,6 +126,7 @@ const Monarch = (() => {
     gainHeirXp(4);
   }
   function onEnemyKilled(enemy) {
+    spreadPlague(enemy);
     const m = ms();
     const dist = Math.hypot(enemy.x - m.x, enemy.y - m.y);
     const widest = Math.max(0, ...m.auras.filter(key => isUnlocked(byKey[key])).map(key => radiusOf(byKey[key])));
@@ -583,22 +585,719 @@ const Monarch = (() => {
   const anchors = () => [0, 1, 2].map(i => i / 3 * Math.PI * 2 + Math.random() * 0.8);
   const focusSummons = enemy => rt.summons.forEach(s => { if (s.alive) s.focus = enemy.id; });
 
+  // =====================================================================
+  // Magias de campo (ids 31 a 60): uma por nível, além das 30 do Monarca.
+  // O herdeiro não aparece no mapa: o jogador escolhe a magia no painel MAGIAS e clica no alvo.
+  // Valem no mapa que estiver aberto (City ou Wilds).
+  // =====================================================================
+  const FIELD = DATA.fieldSpells || [];
+  const fieldByKey = {};
+  FIELD.forEach(spell => { fieldByKey[spell.key] = spell; });
+  const SCHOOL_COLOR = { fogo: C.fire, gelo: C.ice, raio: C.lightning, arcano: C.arcane, veneno: C.poison, sombra: C.violet, sagrado: C.holy, cura: C.heal };
+  const SCHOOL_HEX = { fogo: '#ff7a3a', gelo: '#9fdcff', raio: '#c9d8ff', arcano: '#c69bff', veneno: '#8cff5a', sombra: '#a77bff', sagrado: '#fff1c4', cura: '#7dffa0' };
+  const FIELD_GLYPH = {
+    fagulha: '✹', 'toque-restaurador': '✚', 'missil-magico': '✦', 'dardo-venenoso': '➶', 'bola-de-fogo': '☄', fraqueza: '☾', 'cadeia-de-relampagos': 'ϟ', nevasca: '❄',
+    'onda-de-cura': '✚', 'nuvem-toxica': '☣', 'lanca-de-gelo': '❆', relampago: 'ϟ', 'maldicao-da-carne': '☠', regeneracao: '❦', meteoro: '☄', 'dreno-de-vida': '♥',
+    'chuva-de-fogo': '♨', ruina: '☾', 'tempestade-de-raios': '⛈', ressurreicao: '✝', praga: '☣', 'explosao-solar': '☀', 'enxame-de-missseis': '✦', 'enxame-de-misseis': '✦',
+    'fonte-da-vida': '❦', inferno: '♨', 'zero-absoluto': '❄', 'furia-dos-ceus': '⛈', eclipse: '◐', cataclismo: '☄', milagre: '✝',
+  };
+  const fieldUnlocked = spell => level() >= spell.unlockLevel;
+  const grow = (v, spell) => (v ? v.base + v.perLevel * Math.max(0, level() - spell.unlockLevel) + v.magPercent / 100 * mag() : 0);
+  const r1 = v => Math.round(v * 10) / 10;
+  function fieldNums(spell) {
+    const n = {
+      dano: Math.round(grow(spell.damage, spell)), cura: Math.round(grow(spell.heal, spell)), raio: spell.radius || 0, duracao: spell.durationSeconds || 0,
+      intervalo: spell.tickSeconds || 0, porTique: spell.hitsPerTick || 0, misseis: spell.missiles || 0, saltos: spell.jumps || 0, perda: spell.falloffPercent || 0,
+      atordoa: spell.stunSeconds || 0, congela: spell.freezeSeconds || 0, empurra: spell.knockback || 0, dreno: spell.drainHealPercent || 0, atraso: spell.delaySeconds || 0,
+      raios: spell.strikes || 0, raioImpacto: spell.impactRadius || 0, chanceCongelar: spell.freezeChancePercent || 0, vidaVolta: spell.reviveHpPercent || 0,
+      curaPct: spell.healPercent || 0, execucao: spell.execute?.belowHpPercent || 0,
+    };
+    if (spell.dot) { n.dotDps = grow(spell.dot.dps, spell); n.dotDuracao = spell.dot.durationSeconds; n.dotTotal = Math.round(n.dotDps * n.dotDuracao); }
+    if (spell.cloud) { n.cloudDps = grow(spell.cloud, spell); n.dps = r1(n.cloudDps); }
+    if (spell.hot) { n.hotHps = grow(spell.hot.hps, spell); n.hps = r1(n.hotHps); n.hotDuracao = spell.hot.durationSeconds; }
+    if (spell.slow) { n.lentidao = spell.slow.percent; n.lentidaoDuracao = spell.slow.durationSeconds; }
+    if (spell.weaken) { n.fraqueza = spell.weaken.damageDealtPercent; n.vulneravel = spell.weaken.damageTakenPercent; n.armadura = spell.weaken.armorPercent; n.fraquezaDuracao = spell.weaken.durationSeconds; }
+    return n;
+  }
+  const fieldText = spell => { const n = fieldNums(spell); return spell.description.replace(/\{(\w+)\}/g, (_, k) => String(n[k] ?? '?').replace('.', ',')); };
+  const fieldTitle = spell => `${spell.name} (nível ${spell.unlockLevel})\n${fieldText(spell)}\n${spell.manaCost} MP · recarga ${spell.cooldownSeconds} s · ${DATA.fieldRules?.targets?.[spell.target] || ''}`;
+
+  // Quem está no mapa aberto.
+  const mapKey = () => `${currentMap}:${currentMapSet}`;
+  const onMap = a => a.alive && (a.mapId || 'city') === currentMap && (a.mapSet || 1) === currentMapSet;
+  const fEnemies = () => (state.bandits || []).filter(b => onMap(b) && !b.mfx?.convert);
+  const fAllies = () => [...state.heroes, ...state.workers, ...rt.summons, ...(state.bandits || []).filter(b => b.mfx?.convert)].filter(onMap);
+  const deadHeroes = () => state.heroes.filter(h => !h.alive && (h.mapId || 'city') === currentMap && (h.mapSet || 1) === currentMapSet);
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const inDisk = (x, y, r) => { const a = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random()) * r; return { x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * 0.9 }; };
+
+  // Dano que ignora armadura (venenos, queimaduras, nuvens): guarda a fração até virar ponto inteiro.
+  function hurtRaw(enemy, amount) {
+    if (!enemy.alive || amount <= 0) return;
+    const f = enemy.mfx || {};
+    if (f.weaken?.taken) amount *= 1 + f.weaken.taken / 100;
+    enemy.rawAcc = (enemy.rawAcc || 0) + amount;
+    const whole = Math.floor(enemy.rawAcc);
+    if (!whole) return;
+    enemy.rawAcc -= whole;
+    enemy.hp = hpOf(enemy) - whole;
+    enemy.calm = 5;
+    if (enemy.hp <= 0) killBySpell(enemy);
+  }
+  // Dano direto de magia: armadura conta, e Fraqueza/Ruína fazem o alvo apanhar mais.
+  function hit(enemy, amount, spell) {
+    if (!enemy.alive) return 0;
+    let value = amount;
+    if (spell?.execute && hpOf(enemy) < maxHpOf(enemy) * spell.execute.belowHpPercent / 100) value *= 1 + spell.execute.bonusPercent / 100;
+    if (enemy.mfx?.weaken?.taken) value *= 1 + enemy.mfx.weaken.taken / 100;
+    return hurt(enemy, value);
+  }
+  const keep = (actor, key, t, data = {}) => addFx(actor, key, Math.max(actor.mfx?.[key]?.t || 0, t), data);
+  function freeze(enemy, t) {
+    keep(enemy, 'freeze', t);
+    FX.flash(enemy.x, enemy.y - BODY, 2, C.ice, 0.35);
+    emit(enemy.x, enemy.y - BODY, { color: C.ice, count: 8, speed: 2.5, size: 0.3, up: 2, shape: SpellFX.SHAPE.star });
+  }
+  function addDot(enemy, spell, n) {
+    if (!enemy.alive || !spell.dot) return;
+    addFx(enemy, `dot:${spell.key}`, spell.dot.durationSeconds, { dps: n.dotDps, clock: 0, school: spell.school, spread: !!spell.spreadOnDeath, spell: spell.key });
+  }
+  function weaken(enemy, w) {
+    if (!enemy.alive) return;
+    keep(enemy, 'weaken', w.durationSeconds, { dealt: w.damageDealtPercent, taken: w.damageTakenPercent, armor: w.armorPercent });
+  }
+  // Os efeitos que vêm junto com o dano: lentidão, atordoar, congelar, enfraquecer, queimar, empurrar.
+  function riders(enemy, spell, n, from) {
+    if (!enemy.alive) return;
+    if (spell.slow) keep(enemy, 'slow', spell.slow.durationSeconds, { v: spell.slow.percent });
+    if (spell.stunSeconds) keep(enemy, 'stun', spell.stunSeconds);
+    if (spell.freezeSeconds && (!spell.freezeChancePercent || Math.random() * 100 < spell.freezeChancePercent)) freeze(enemy, spell.freezeSeconds);
+    if (spell.weaken) weaken(enemy, spell.weaken);
+    if (spell.dot) addDot(enemy, spell, n);
+    if (spell.knockback && from) push(enemy, from.x, from.y, spell.knockback);
+  }
+  // Praga: quem morre infectado passa para o vizinho mais perto.
+  function spreadPlague(enemy) {
+    const f = enemy.mfx || {};
+    Object.keys(f).filter(key => key.startsWith('dot:') && f[key].spread).forEach(key => {
+      const next = (state.bandits || []).filter(b => b.alive && b !== enemy && !b.mfx?.[key] && (b.mapId || 'city') === (enemy.mapId || 'city'))
+        .sort((a, b) => dist(a, enemy) - dist(b, enemy))[0];
+      if (!next || dist(next, enemy) > 8) return;
+      const spell = fieldByKey[f[key].spell];
+      addFx(next, key, spell.dot.durationSeconds, { ...f[key], clock: 0, t: spell.dot.durationSeconds });
+      FX.link({ x: enemy.x, y: enemy.y - BODY }, { x: next.x, y: next.y - BODY }, C.poison, 0.6, 0, 0.5);
+      emit(next.x, next.y - BODY, { color: C.poison, count: 12, speed: 2, size: 0.4, up: 2 });
+    });
+  }
+  const healFx = (a, big = 1) => {
+    FX.beam(a.x, a.y, 0.7 * big, 9 * big, C.heal, 0.7);
+    FX.sigil(a.x, a.y, 1.6 * big, C.heal, 0.9, 6);
+    emit(a.x, a.y - BODY, { color: C.heal, count: Math.round(14 * big), speed: 1.2, size: 0.4, up: 4, ring: 0.8, shape: SpellFX.SHAPE.wisp });
+  };
+  function healUnit(a, amount, big = 1) { heal(a, amount); healFx(a, big); }
+  function addHot(a, spell, n) { if (spell.hot) addFx(a, `hot:${spell.key}`, spell.hot.durationSeconds, { hps: n.hotHps }); }
+
+  // ----- Impactos por escola -----
+  function lightningStrike(x, y, width = 1.4, color = C.lightning) {
+    const sx = x + rand(-5, 5), sy = y - 46;
+    FX.custom(0.32, (k, t) => {
+      const a = k < 0.15 ? 1 : 1 - (k - 0.15) / 0.85;
+      D.segment('sky', sx, sy, x, y - 0.4, color, a, 2, width, t * 8);
+      D.segment('sky', (sx + x) / 2, (sy + y) / 2, x + rand(-3, 3), y - rand(6, 12), color, a * 0.6, 2, width * 0.5, t * 5 + 3);
+    });
+    FX.flash(x, y - 2, 4.5, C.white, 0.25);
+    FX.shockwave(x, y, 3, color, 0.4);
+    FX.cracks(x, y, 2.2, color, 0.6);
+    emit(x, y, { color: C.white, count: 16, speed: 7, size: 0.25, up: 3, gravity: 8, life: 0.5, shape: SpellFX.SHAPE.star });
+  }
+  function explode(x, y, r, school) {
+    const color = SCHOOL_COLOR[school] || C.gold;
+    FX.flash(x, y - r * 0.3, r * 1.3, school === 'fogo' ? C.flame : color, 0.35);
+    FX.shockwave(x, y, r, color, 0.55);
+    FX.shockwave(x, y, r * 0.6, C.white, 0.35);
+    if (school === 'fogo') {
+      FX.cracks(x, y, r * 0.8, C.ember, 1.0);
+      emit(x, y - 1, { color: C.flame, count: 40, speed: r * 2.5, size: 0.45, up: 5, gravity: 7, life: 0.8 });
+      emit(x, y - 1, { color: C.fire, count: 26, speed: r * 1.5, size: 0.7, up: 3, life: 0.6 });
+      FX.custom(1.4, k => D.darkZone(x, y - 1 - k * 3, r * (0.6 + k * 0.5), C.smoke, 0.45 * (1 - k)));
+    } else if (school === 'gelo') {
+      emit(x, y - 1, { color: C.ice, count: 36, speed: r * 2.4, size: 0.35, up: 3, gravity: 6, life: 0.8, shape: SpellFX.SHAPE.star });
+      FX.custom(0.9, k => D.zone(x, y, r, C.ice, 0.5 * (1 - k), 0.06, 8, 0));
+    } else if (school === 'arcano') {
+      emit(x, y - 1, { color: C.arcane, count: 30, speed: r * 2.2, size: 0.35, up: 2, life: 0.6, shape: SpellFX.SHAPE.star });
+      FX.sigil(x, y, r, C.arcane, 0.8, 7);
+    } else if (school === 'veneno') {
+      emit(x, y - 1, { color: C.poison, count: 30, speed: r * 1.6, size: 0.5, up: 2.5, gravity: 4, life: 0.9 });
+    } else if (school === 'sombra') {
+      FX.custom(1, k => D.darkZone(x, y, r * (0.5 + k * 0.6), C.shadow, 0.6 * (1 - k)));
+      emit(x, y - 1, { color: C.violet, count: 20, speed: r, size: 0.5, up: 3, life: 1, shape: SpellFX.SHAPE.wisp });
+    } else if (school === 'sagrado') {
+      FX.beam(x, y, r * 0.5, 22, C.holy, 0.7);
+      emit(x, y - 1, { color: C.holy, count: 26, speed: r * 2, size: 0.4, up: 3, life: 0.7, shape: SpellFX.SHAPE.star });
+    }
+  }
+  // Projétil que cai do céu até um alvo (ator ou ponto) e chama onHit quando chega.
+  function launch(o) {
+    const end = o.target ? { x: o.target.x, y: o.target.y - BODY } : { x: o.x, y: o.y };
+    const from = o.from || { x: end.x - 9, y: end.y - 34 };
+    rt.projs.push({ ...o, sx: from.x, sy: from.y, ex: end.x, ey: end.y, cx: o.curve ? (from.x + end.x) / 2 + o.curve.x : (from.x + end.x) / 2, cy: o.curve ? (from.y + end.y) / 2 + o.curve.y : (from.y + end.y) / 2,
+      t: 0, trail: [], map: mapKey(), color: o.color || C.gold, size: o.size || 0.8 });
+  }
+  const later = (t, fn) => rt.timers.push({ t, fn, map: mapKey() });
+
+  // ----- Conjuração -----
+  function fieldCanCast(spell) {
+    if (!fieldUnlocked(spell)) return `${spell.name}: chega no nível ${spell.unlockLevel}.`;
+    const m = ms();
+    if ((m.cd[spell.key] || 0) > 0) return `${spell.name}: em recarga (${Math.ceil(m.cd[spell.key])} s).`;
+    if (m.mp < spell.manaCost) return `${spell.name}: falta mana (${spell.manaCost} MP).`;
+    return null;
+  }
+  function fieldPress(key) {
+    if (!active()) return;
+    const spell = fieldByKey[key];
+    if (!spell) return;
+    const reason = fieldCanCast(spell);
+    if (reason) { say(reason); return; }
+    if (spell.target === 'global') { fieldCast(spell, null); return; }
+    rt.targeting = rt.targeting?.key === key ? null : { key, field: true };
+    refreshCursor();
+  }
+  function fieldClick(point) {
+    const spell = fieldByKey[rt.targeting.key];
+    let target = point;
+    if (spell.target === 'inimigo') {
+      target = nearest(fEnemies(), point.x, point.y, 5);
+      if (!target) { say(`${spell.name}: clique em cima de um inimigo.`); return; }
+    } else if (spell.target === 'aliado') {
+      target = nearest(fAllies(), point.x, point.y, 5);
+      if (!target) { say(`${spell.name}: clique em cima de um aliado.`); return; }
+    }
+    rt.targeting = null;
+    refreshCursor();
+    const reason = fieldCanCast(spell);
+    if (reason) { say(reason); return; }
+    fieldCast(spell, target);
+  }
+  function fieldCast(spell, target) {
+    const m = ms();
+    m.mp -= spell.manaCost;
+    m.cd[spell.key] = spell.cooldownSeconds;
+    const n = fieldNums(spell);
+    const run = MECHANIC[spell.mechanic];
+    if (run) run(spell, n, target);
+    renderPanel(true);
+  }
+
+  const MECHANIC = {
+    // Projétil único num inimigo.
+    bolt(spell, n, enemy) {
+      const color = SCHOOL_COLOR[spell.school];
+      const look = { fogo: { size: 0.9, speed: 0.38 }, gelo: { size: 0.7, speed: 0.3 }, raio: null, sombra: { size: 1, speed: 0.45 }, sagrado: { size: 0.8, speed: 0.25 } }[spell.school];
+      const land = () => {
+        hit(enemy, n.dano, spell);
+        riders(enemy, spell, n, null);
+        explode(enemy.x, enemy.y, 1.6, spell.school);
+        if (spell.school === 'sombra') FX.custom(0.7, k => D.rune(enemy.x, enemy.y - HEAD - 0.8, 1.1 * (1 - k * 0.3), C.violet, 1 - k, k * 2));
+      };
+      if (spell.school === 'raio') { lightningStrike(enemy.x, enemy.y, 1.1); land(); return; }
+      launch({ target: enemy, dur: look.speed, color, size: look.size, school: spell.school, onHit: land, shard: spell.school === 'gelo' });
+    },
+    // Vários mísseis curvos divididos entre os inimigos perto do alvo.
+    missiles(spell, n, enemy) {
+      const pool = near(fEnemies(), enemy.x, enemy.y, spell.radius).sort((a, b) => dist(a, enemy) - dist(b, enemy));
+      if (!pool.includes(enemy)) pool.unshift(enemy);
+      for (let i = 0; i < spell.missiles; i++) {
+        const target = pool[i % pool.length];
+        later(i * 0.07, () => {
+          if (!target.alive) return;
+          const side = i % 2 ? 1 : -1;
+          launch({ target, dur: 0.45 + Math.random() * 0.15, color: C.arcane, size: 0.55, school: 'arcano', from: { x: target.x + side * rand(6, 12), y: target.y - rand(22, 30) },
+            curve: { x: side * rand(4, 9), y: rand(-4, 4) }, onHit: () => { hit(target, n.dano, spell); FX.flash(target.x, target.y - BODY, 1.6, C.arcane, 0.25); emit(target.x, target.y - BODY, { color: C.arcane, count: 6, speed: 3, size: 0.3, up: 1.5, shape: SpellFX.SHAPE.star }); } });
+        });
+      }
+    },
+    // Dano contínuo num alvo só.
+    dot(spell, n, enemy) {
+      const color = SCHOOL_COLOR[spell.school];
+      launch({ target: enemy, dur: 0.3, color, size: 0.5, school: spell.school, onHit: () => {
+        riders(enemy, spell, n, null);
+        emit(enemy.x, enemy.y - BODY, { color, count: 16, speed: 2, size: 0.45, up: 2.5, gravity: 2 });
+        FX.flash(enemy.x, enemy.y - BODY, 1.6, color, 0.3);
+      } });
+    },
+    // Dano contínuo em todos na área.
+    dotArea(spell, n, p) {
+      const color = SCHOOL_COLOR[spell.school];
+      near(fEnemies(), p.x, p.y, spell.radius).forEach(enemy => { riders(enemy, spell, n, null); FX.link({ x: p.x, y: p.y - 1 }, { x: enemy.x, y: enemy.y - BODY }, color, 0.5, 0, 0.3); });
+      FX.custom(1.3, k => { D.zone(p.x, p.y, spell.radius * (0.4 + k * 0.6), color, 0.55 * (1 - k), 0.05, 5, k); D.darkZone(p.x, p.y, spell.radius, spell.school === 'veneno' ? C.toxic : C.shadow, 0.4 * (1 - k)); });
+      emit(p.x, p.y, { color, count: 40, ring: spell.radius * 0.6, speed: 1, size: 0.5, up: 2, life: 1.2 });
+    },
+    // Bola que cai no ponto e explode.
+    ball(spell, n, p) {
+      const big = spell.radius / 3.5;
+      launch({ x: p.x, y: p.y, dur: 0.55, color: C.fire, size: 1.1 * big, school: 'fogo', from: { x: p.x - 16, y: p.y - 34 }, curve: { x: -3, y: -4 }, onHit: () => {
+        near(fEnemies(), p.x, p.y, spell.radius).forEach(enemy => { hit(enemy, n.dano, spell); riders(enemy, spell, n, p); });
+        explode(p.x, p.y, spell.radius, 'fogo');
+      } });
+    },
+    // Relâmpago que salta de inimigo em inimigo.
+    chain(spell, n, first) {
+      const done = new Set();
+      let current = first, prev = null, damage = n.dano;
+      for (let i = 0; i <= spell.jumps && current; i++) {
+        const target = current, from = prev, amount = damage;
+        later(i * 0.09, () => {
+          if (!target.alive) return;
+          if (from) {
+            FX.custom(0.3, (k, t) => D.segment('sky', from.x, from.y - BODY, target.x, target.y - BODY, C.lightning, 1 - k, 2, 0.9, t * 9));
+          } else lightningStrike(target.x, target.y, 1.1);
+          FX.flash(target.x, target.y - BODY, 2, C.white, 0.2);
+          hit(target, amount, spell);
+          riders(target, spell, n, null);
+        });
+        done.add(target);
+        prev = { x: target.x, y: target.y };
+        damage *= 1 - spell.falloffPercent / 100;
+        current = fEnemies().filter(e => !done.has(e) && dist(e, target) <= spell.jumpRange).sort((a, b) => dist(a, target) - dist(b, target))[0];
+      }
+    },
+    // Raio(s) do céu numa área.
+    strike(spell, n, p) {
+      const holy = spell.school === 'sagrado';
+      for (let i = 0; i < spell.strikes; i++) {
+        const at = spell.strikes > 1 ? inDisk(p.x, p.y, spell.radius) : p;
+        const r = spell.strikeRadius || spell.radius;
+        later(spell.strikes > 1 ? i * 0.16 + Math.random() * 0.08 : 0, () => {
+          if (holy) {
+            FX.custom(0.35, k => D.beam(at.x, at.y, r * 0.6 * (1 - k * 0.5), 28, C.holy, 1 - k, 2));
+            FX.flash(at.x, at.y - 2, r * 1.4, C.holy, 0.35);
+            FX.shockwave(at.x, at.y, r, C.gold, 0.5);
+            FX.cracks(at.x, at.y, r, C.gold, 1);
+            emit(at.x, at.y, { color: C.holy, count: 30, speed: r * 2.6, size: 0.4, up: 3, gravity: 5, shape: SpellFX.SHAPE.star });
+          } else lightningStrike(at.x, at.y, 1.4);
+          near(fEnemies(), at.x, at.y, r).forEach(enemy => { hit(enemy, n.dano, spell); riders(enemy, spell, n, at); });
+        });
+      }
+    },
+    // Explosão no ponto, sem projétil.
+    nova(spell, n, p) {
+      const color = SCHOOL_COLOR[spell.school];
+      FX.shockwave(p.x, p.y, spell.radius, color, 0.7);
+      FX.shockwave(p.x, p.y, spell.radius * 0.7, C.white, 0.5);
+      FX.flash(p.x, p.y - 2, spell.radius, color, 0.4);
+      FX.sigil(p.x, p.y, spell.radius, color, 1, 8);
+      if (spell.school === 'gelo') {
+        FX.custom(1.6, k => D.zone(p.x, p.y, spell.radius, C.ice, 0.5 * (1 - k), 0.05, 7, 0));
+        emit(p.x, p.y, { color: C.ice, count: 60, ring: spell.radius * 0.3, speed: spell.radius * 2.5, size: 0.4, up: 2.5, gravity: 4, shape: SpellFX.SHAPE.star });
+      } else emit(p.x, p.y, { color, count: 40, speed: spell.radius * 2.6, size: 0.4, up: 2, shape: SpellFX.SHAPE.star });
+      near(fEnemies(), p.x, p.y, spell.radius).forEach(enemy => { hit(enemy, n.dano, spell); riders(enemy, spell, n, p); });
+    },
+    // Enfraquecer todos na área.
+    weaken(spell, n, p) {
+      FX.sigil(p.x, p.y, spell.radius, C.darkViolet, 1.4, 5, 'ground', -0.6);
+      FX.shockwave(p.x, p.y, spell.radius, C.violet, 0.7);
+      FX.custom(1.4, k => D.darkZone(p.x, p.y, spell.radius * (0.6 + 0.4 * k), C.shadow, 0.55 * (1 - k)));
+      near(fEnemies(), p.x, p.y, spell.radius).forEach(enemy => {
+        riders(enemy, spell, n, null);
+        FX.link({ x: p.x, y: p.y - 6 }, { x: enemy.x, y: enemy.y - HEAD }, C.violet, 0.6, 0, 0.3);
+        emit(enemy.x, enemy.y - BODY, { color: C.violet, count: 10, speed: 1, size: 0.45, up: -1, gravity: 2, shape: SpellFX.SHAPE.wisp });
+      });
+    },
+    // Enfraquecer todos os inimigos do mapa.
+    weakenAll(spell, n) {
+      fEnemies().forEach(enemy => {
+        riders(enemy, spell, n, null);
+        FX.custom(1.6, k => { D.darkZone(enemy.x, enemy.y, 6 * (0.5 + k), C.shadow, 0.6 * (1 - k)); D.rune(enemy.x, enemy.y - HEAD - 1, 1.2, C.violet, 1 - k, k * 3); });
+      });
+      say('O sol apagou. Os inimigos ficaram com medo do escuro.');
+    },
+    // Arranca vida e cura quem está perto.
+    drain(spell, n, target) {
+      const victims = spell.drainArea ? near(fEnemies(), target.x, target.y, spell.radius) : [target];
+      let total = 0;
+      victims.forEach(enemy => {
+        total += hit(enemy, n.dano, spell);
+        FX.custom(0.8, (k, t) => D.segment('sky', enemy.x, enemy.y - BODY, enemy.x, enemy.y - BODY - 5 * k, C.crimson, 1 - k, 0, 0.5, t));
+        emit(enemy.x, enemy.y - BODY, { color: C.crimson, count: 12, speed: 2, size: 0.4, up: 3 });
+      });
+      const center = spell.drainArea ? target : { x: target.x, y: target.y };
+      const allies = near(fAllies(), center.x, center.y, spell.radius);
+      const each = allies.length ? total * spell.drainHealPercent / 100 / (spell.drainArea ? allies.length : 1) : 0;
+      allies.forEach(ally => {
+        heal(ally, each);
+        const src = victims[0] || center;
+        FX.link({ x: src.x, y: src.y - BODY }, { x: ally.x, y: ally.y - BODY }, C.crimson, 0.6, 0, 0.45);
+        emit(ally.x, ally.y - BODY, { color: C.heal, count: 8, speed: 1, size: 0.35, up: 3, shape: SpellFX.SHAPE.wisp });
+      });
+    },
+    // Zona que dura: nevasca, chuva de fogo, tempestade.
+    storm(spell, n, p) {
+      rt.fzones.push({ spell, n, x: p.x, y: p.y, r: spell.radius, t: spell.durationSeconds, max: spell.durationSeconds, clock: 0.15, map: mapKey(), seed: Math.random() * 10 });
+      FX.shockwave(p.x, p.y, spell.radius, SCHOOL_COLOR[spell.school], 0.6);
+    },
+    // Nuvem no chão que fere quem estiver dentro.
+    cloud(spell, n, p) {
+      rt.fzones.push({ spell, n, x: p.x, y: p.y, r: spell.radius, t: spell.durationSeconds, max: spell.durationSeconds, clock: 0, map: mapKey(), seed: Math.random() * 10, cloud: true });
+      FX.shockwave(p.x, p.y, spell.radius, SCHOOL_COLOR[spell.school], 0.6);
+      emit(p.x, p.y, { color: SCHOOL_COLOR[spell.school], count: 30, ring: spell.radius * 0.5, speed: 2, size: 0.6, up: 2, life: 1 });
+    },
+    // Meteoro: aviso no chão, a pedra cai, explode e deixa o chão queimando.
+    meteor(spell, n, p) {
+      const r = spell.radius;
+      FX.custom(spell.delaySeconds, (k, t) => {
+        D.ring(p.x, p.y, r * (0.25 + 0.75 * k), C.crimson, 0.5 + 0.5 * k, 0.05, 12, t * 0.3);
+        D.zone(p.x, p.y, r, C.fire, 0.25 * k, 0.03, 6, t * 0.2);
+      });
+      later(Math.max(0, spell.delaySeconds - 0.5), () => launch({ x: p.x, y: p.y, dur: 0.5, color: C.fire, size: 1.2 + r * 0.25, school: 'fogo', meteor: true, from: { x: p.x - 22, y: p.y - 60 }, onHit: () => {
+        near(fEnemies(), p.x, p.y, r).forEach(enemy => { hit(enemy, n.dano, spell); riders(enemy, spell, n, p); });
+        explode(p.x, p.y, r, 'fogo');
+        FX.shockwave(p.x, p.y, r * 1.5, C.ember, 0.9);
+        FX.flash(p.x, p.y - 4, r * 2, C.white, 0.3);
+        rt.fzones.push({ spell, n, x: p.x, y: p.y, r: r * 0.8, t: spell.durationSeconds, max: spell.durationSeconds, clock: 0, map: mapKey(), seed: Math.random() * 10, cloud: true, burning: true });
+      } }));
+    },
+    heal(spell, n, ally) {
+      healUnit(ally, n.cura, 1.2);
+      addHot(ally, spell, n);
+    },
+    healArea(spell, n, p) {
+      FX.shockwave(p.x, p.y, spell.radius, C.heal, 0.8);
+      FX.sigil(p.x, p.y, spell.radius, C.heal, 1.2, 8);
+      near(fAllies(), p.x, p.y, spell.radius).forEach(ally => { healUnit(ally, n.cura); addHot(ally, spell, n); });
+    },
+    hot(spell, n, p) {
+      FX.sigil(p.x, p.y, spell.radius, C.heal, 1.6, 6, 'ground', 0.4);
+      FX.custom(1.6, k => D.zone(p.x, p.y, spell.radius, C.heal, 0.4 * (1 - k), 0.04, 5, k));
+      near(fAllies(), p.x, p.y, spell.radius).forEach(ally => {
+        if (n.cura) heal(ally, n.cura);
+        addHot(ally, spell, n);
+        emit(ally.x, ally.y - BODY, { color: C.heal, count: 10, speed: 1, size: 0.4, up: 3, shape: SpellFX.SHAPE.wisp });
+      });
+    },
+    revive(spell, n, p) {
+      const dead = deadHeroes().filter(h => dist(h, p) <= spell.radius).sort((a, b) => dist(a, p) - dist(b, p));
+      const chosen = spell.maxTargets ? dead.slice(0, spell.maxTargets) : dead;
+      if (!chosen.length) { say(`${spell.name}: nenhum herói morto perto do ponto.`); return; }
+      chosen.forEach(h => reviveHero(h, spell.reviveHpPercent));
+    },
+    healAll(spell, n) {
+      fAllies().forEach(ally => { healUnit(ally, maxHpOf(ally) * spell.healPercent / 100, 0.8); });
+      if (spell.reviveHpPercent) deadHeroes().forEach(h => reviveHero(h, spell.reviveHpPercent));
+      say(spell.healPercent >= 100 ? 'Um milagre. Até os padres ficaram desconfiados.' : 'Os antigos ouviram. Uma vez na vida.');
+    },
+  };
+  function reviveHero(h, pct) {
+    h.alive = true;
+    h.mfx = {};
+    h.hp = Math.max(1, Math.round(maxHpOf(h) * pct / 100));
+    h.cooldown = 0;
+    FX.beam(h.x, h.y, 1.6, 30, C.holy, 1.4);
+    FX.flash(h.x, h.y - BODY, 4, C.holy, 0.6);
+    FX.shockwave(h.x, h.y, 4, C.gold, 0.8);
+    emit(h.x, h.y - BODY, { color: C.holy, count: 40, speed: 3, size: 0.45, up: 5, shape: SpellFX.SHAPE.star });
+    say(`${h.name} voltou dos mortos. Reclamou do frio.`);
+    updateHud();
+  }
+
+  // ----- Um quadro das magias de campo -----
+  function fieldStep(dt) {
+    const mk = mapKey();
+    for (let i = rt.timers.length - 1; i >= 0; i--) {
+      const timer = rt.timers[i];
+      timer.t -= dt;
+      if (timer.t > 0) continue;
+      rt.timers.splice(i, 1);
+      SpellFX.muted = timer.map !== mk;
+      timer.fn();
+      SpellFX.muted = false;
+    }
+    for (let i = rt.projs.length - 1; i >= 0; i--) {
+      const p = rt.projs[i];
+      p.t += dt;
+      if (p.target?.alive) { p.ex = p.target.x; p.ey = p.target.y - BODY; }
+      if (p.t < p.dur) continue;
+      rt.projs.splice(i, 1);
+      SpellFX.muted = p.map !== mk;
+      p.onHit({ x: p.ex, y: p.ey });
+      SpellFX.muted = false;
+    }
+    for (let i = rt.fzones.length - 1; i >= 0; i--) {
+      const z = rt.fzones[i];
+      z.t -= dt;
+      if (z.t <= 0) { rt.fzones.splice(i, 1); continue; }
+      const [zm, zs] = z.map.split(':');
+      const inside = (state.bandits || []).filter(b => b.alive && !b.mfx?.convert && (b.mapId || 'city') === zm && String(b.mapSet || 1) === zs && dist(b, z) <= z.r);
+      SpellFX.muted = z.map !== mk;
+      if (z.cloud) {
+        inside.forEach(enemy => {
+          hurtRaw(enemy, z.n.cloudDps * dt);
+          if (z.spell.slow) keep(enemy, 'slow', 0.6, { v: z.spell.slow.percent });
+          if (z.spell.weaken && !z.burning) keep(enemy, 'weaken', 0.6, { dealt: z.spell.weaken.damageDealtPercent, taken: z.spell.weaken.damageTakenPercent, armor: z.spell.weaken.armorPercent });
+        });
+      } else {
+        z.clock -= dt;
+        if (z.clock <= 0) { z.clock += z.spell.tickSeconds; stormTick(z, inside); }
+      }
+      SpellFX.muted = false;
+    }
+  }
+  function stormTick(z, inside) {
+    const s = z.spell;
+    if (s.hitsPerTick < 0) {
+      // Impactos espalhados (meteoros, cinzas): cada um acerta quem estiver perto da queda.
+      const at = inDisk(z.x, z.y, z.r);
+      launch({ x: at.x, y: at.y, dur: 0.4, color: C.fire, size: 0.9, school: 'fogo', meteor: true, from: { x: at.x - 10, y: at.y - 36 }, onHit: () => {
+        explode(at.x, at.y, s.impactRadius, 'fogo');
+        (state.bandits || []).filter(b => b.alive && dist(b, at) <= s.impactRadius && (b.mapId || 'city') === z.map.split(':')[0]).forEach(enemy => { hit(enemy, z.n.dano, s); riders(enemy, s, z.n, at); });
+      } });
+      return;
+    }
+    const targets = s.hitsPerTick === 0 ? inside : [...inside].sort(() => Math.random() - 0.5).slice(0, s.hitsPerTick);
+    targets.forEach(enemy => {
+      if (s.school === 'raio') lightningStrike(enemy.x, enemy.y, 1.1);
+      else if (s.school === 'fogo') launch({ target: enemy, dur: 0.3, color: C.fire, size: 0.6, school: 'fogo', from: { x: enemy.x - 5, y: enemy.y - 26 }, onHit: () => explode(enemy.x, enemy.y, 1.4, 'fogo') });
+      else if (s.school === 'gelo') { emit(enemy.x, enemy.y - BODY, { color: C.ice, count: 6, speed: 2, size: 0.3, up: 1, shape: SpellFX.SHAPE.star }); FX.flash(enemy.x, enemy.y - BODY, 1.4, C.ice, 0.2); }
+      hit(enemy, z.n.dano, s);
+      riders(enemy, s, z.n, null);
+    });
+    if (s.school === 'gelo') FX.shockwave(z.x, z.y, z.r, C.ice, 0.5, 'ground', 0.4);
+    if (s.school === 'raio' && Math.random() < 0.5) { const at = inDisk(z.x, z.y, z.r); lightningStrike(at.x, at.y, 0.9); }
+  }
+
+  function fieldDraw(dt) {
+    const t = SpellFX.time;
+    const mk = mapKey();
+    // Projéteis.
+    rt.projs.forEach(p => {
+      if (p.map !== mk) return;
+      const k = Math.min(1, p.t / p.dur);
+      const u = 1 - k;
+      const x = u * u * p.sx + 2 * u * k * p.cx + k * k * p.ex;
+      const y = u * u * p.sy + 2 * u * k * p.cy + k * k * p.ey;
+      p.trail.unshift({ x, y });
+      if (p.trail.length > 9) p.trail.pop();
+      for (let i = 0; i < p.trail.length - 1; i++) {
+        const a = p.trail[i], b = p.trail[i + 1];
+        D.segment('sky', a.x, a.y, b.x, b.y, p.color, (1 - i / p.trail.length) * 0.9, 0, p.size * (1 - i / p.trail.length) * 0.9, 0);
+      }
+      D.glow('sky', x, y, p.size * 2.2, p.color, 0.85);
+      D.glow('sky', x, y, p.size * 0.9, C.white, 0.9);
+      if (p.shard) D.star(x, y, p.size * 1.4, C.ice, 0.9, t * 6);
+      if (p.school === 'arcano') D.star(x, y, p.size * 1.2, C.arcane, 0.8, t * 8);
+      if (p.school === 'fogo' && Math.random() < dt * 60) emit(x, y, { color: Math.random() < 0.5 ? C.flame : C.fire, count: p.meteor ? 3 : 1, speed: 1, size: p.size * 0.5, up: 0.5, life: 0.4 });
+      if (p.meteor) D.glow('sky', x, y, p.size * 3.5, C.ember, 0.35);
+    });
+    // Zonas.
+    rt.fzones.forEach(z => {
+      if (z.map !== mk) return;
+      const fade = Math.min(1, z.t / 0.6, (z.max - z.t) / 0.3 + 0.05);
+      const s = z.spell;
+      const color = SCHOOL_COLOR[s.school];
+      if (z.burning || (z.cloud && s.school === 'fogo')) {
+        D.darkZone(z.x, z.y, z.r, C.smoke, 0.35 * fade);
+        D.zone(z.x, z.y, z.r, C.fire, 0.55 * fade, 0.05, 7, t * 0.4);
+        for (let i = 0; i < 9; i++) {
+          const a = z.seed + i * 2.39, d = (0.25 + (i % 3) * 0.28) * z.r;
+          const fx = z.x + Math.cos(a) * d, fy = z.y + Math.sin(a) * d * 0.9;
+          D.wisp(fx, fy - 1.2, 0.9, 2.2 + Math.sin(t * 7 + i) * 0.4, i % 2 ? C.flame : C.fire, 0.8 * fade, i + z.seed);
+        }
+        if (Math.random() < dt * 14) { const at = inDisk(z.x, z.y, z.r); emit(at.x, at.y, { color: C.flame, count: 1, speed: 0.3, size: 0.3, up: 3, life: 0.8 }); }
+      } else if (z.cloud) {
+        D.darkZone(z.x, z.y, z.r, C.toxic, 0.45 * fade);
+        D.zone(z.x, z.y, z.r, color, 0.5 * fade, 0.06, 4, t * 0.25);
+        D.zone(z.x + Math.sin(t * 0.7) * 0.6, z.y, z.r * 0.75, color, 0.3 * fade, 0.02, 3, -t * 0.2);
+        if (Math.random() < dt * 18) { const at = inDisk(z.x, z.y, z.r); emit(at.x, at.y, { color, count: 1, speed: 0.2, size: 0.45, up: 1.6, life: 1.2, layer: 'ground' }); }
+      } else if (s.school === 'gelo') {
+        D.darkZone(z.x, z.y, z.r, C.shadow, 0.2 * fade);
+        D.zone(z.x, z.y, z.r, C.ice, 0.35 * fade, 0.04, 6, t * 0.1);
+        D.ring(z.x, z.y, z.r, C.white, 0.5 * fade, 0.02, 16, t * 0.05);
+        if (Math.random() < dt * 60) { const at = inDisk(z.x, z.y, z.r); emit(at.x - 1, at.y, { color: C.white, count: 1, h: 12, up: -3, speed: 1.4, angle: 0.4, spread: 0.3, size: 0.22, life: 1.4, drag: 0.4, gravity: 2 }); }
+      } else if (s.school === 'raio') {
+        D.darkZone(z.x, z.y, z.r * 1.1, C.shadow, 0.45 * fade);
+        D.zone(z.x, z.y, z.r, C.lightning, (0.15 + 0.15 * Math.max(0, Math.sin(t * 13 + z.seed))) * fade, 0.03, 5, t * 0.2);
+      } else if (s.school === 'fogo') {
+        D.darkZone(z.x, z.y, z.r, C.smoke, 0.3 * fade);
+        D.zone(z.x, z.y, z.r, C.fire, 0.3 * fade, 0.04, 6, t * 0.3);
+        D.ring(z.x, z.y, z.r, C.ember, 0.5 * fade, 0.02, 10, t * 0.1);
+      }
+    });
+    // Estados de quem está no mapa.
+    const tt = t;
+    [...fEnemies(), ...fAllies()].forEach(a => {
+      const f = a.mfx;
+      if (!f) return;
+      if (f.freeze) { D.hex(a.x, a.y - BODY, 2.3, C.ice, 1, a.x); D.glow('ground', a.x, a.y, 2, C.ice, 0.5); }
+      if (f.weaken) { D.rune(a.x, a.y - HEAD - 1.3, 0.8, C.violet, 0.85, tt * 0.8); D.ring(a.x, a.y, 1.5, C.darkViolet, 0.6, 0.1, 5, -tt * 0.2); }
+      for (const key in f) {
+        if (key.startsWith('dot:')) {
+          const school = f[key].school;
+          const color = SCHOOL_COLOR[school];
+          if (Math.random() < dt * 9) emit(a.x + rand(-0.6, 0.6), a.y - rand(1, 3.5), { color, count: 1, speed: 0.3, size: school === 'fogo' ? 0.4 : 0.35, up: school === 'sombra' ? 1 : 2, life: 0.7, shape: school === 'sombra' ? SpellFX.SHAPE.wisp : SpellFX.SHAPE.glow });
+          D.glow('ground', a.x, a.y, 1.4, color, 0.35);
+        } else if (key.startsWith('hot:')) {
+          if (Math.random() < dt * 6) emit(a.x + rand(-0.6, 0.6), a.y - rand(0.5, 2), { color: C.heal, count: 1, speed: 0.2, size: 0.35, up: 2, life: 0.9, shape: SpellFX.SHAPE.wisp });
+        }
+      }
+    });
+    // Mira de uma magia de campo.
+    const aim = rt.targeting;
+    if (aim?.field && rt.hover) {
+      const spell = fieldByKey[aim.key];
+      const h = rt.hover;
+      const color = SCHOOL_COLOR[spell.school];
+      if (spell.target === 'inimigo') {
+        const enemy = nearest(fEnemies(), h.x, h.y, 5);
+        if (enemy) { D.ring(enemy.x, enemy.y, 1.8, C.crimson, 0.95, 0.12, 8, t * 0.5); if (spell.radius) D.ring(enemy.x, enemy.y, spell.radius, color, 0.45, 0.02, 12, t * 0.1); }
+        else D.sigil('ground', h.x, h.y, 1.2, C.crimson, 0.5, 4, t);
+      } else if (spell.target === 'aliado') {
+        const ally = nearest(fAllies(), h.x, h.y, 5);
+        if (ally) D.ring(ally.x, ally.y, 1.8, C.heal, 0.95, 0.12, 8, t * 0.5);
+        else D.sigil('ground', h.x, h.y, 1.2, C.heal, 0.5, 4, t);
+      } else {
+        const r = spell.radius || 2;
+        D.ring(h.x, h.y, r, color, 0.9, 0.04, 12, t * 0.1);
+        D.zone(h.x, h.y, r, color, 0.18, 0.01, 4, t * 0.1);
+      }
+    }
+  }
+
+  // ----- Painel MAGIAS: botão no canto do mapa e a lista para lançar -----
+  let panel = null, panelBtn = null;
+  const panelOpen = () => !!panel && !panel.hidden;
+  function togglePanel(force) {
+    if (!panel) return;
+    const open = force ?? panel.hidden;
+    panel.hidden = !open;
+    panelBtn?.classList.toggle('on', open);
+    if (!open && rt.targeting) { rt.targeting = null; refreshCursor(); }
+    if (open) renderPanel(true);
+  }
+  function renderPanel(force) {
+    if (!panelOpen()) return;
+    if (!active()) { togglePanel(false); return; }
+    const lv = level();
+    const listKey = `${lv}`;
+    const body = panel.querySelector('.spell-panel-list');
+    if (force || panel.dataset.key !== listKey) {
+      panel.dataset.key = listKey;
+      panel.querySelector('.spell-panel-level').textContent = `Nível ${lv}`;
+      const rows = [];
+      for (let l = lv; l >= 1; l--) {
+        const old = SPELLS.find(spell => spell.unlockLevel === l);
+        const fresh = FIELD.find(spell => spell.unlockLevel === l);
+        const cell = (spell, field) => {
+          if (!spell) return '<span></span>';
+          const usable = field || isUnlocked(spell);
+          const cost = field ? `${spell.manaCost} MP` : [stats(spell).manaCost ? `${stats(spell).manaCost} MP` : '', stats(spell).authorityCost ? `${stats(spell).authorityCost} Aut.` : ''].filter(Boolean).join(' · ') || 'sem custo';
+          const color = field ? SCHOOL_HEX[spell.school] : (ACCENT[spell.type] || '#e9d08f');
+          const title = (field ? fieldTitle(spell) : (usable ? spellTitle(spell) : `${spell.name}: substituída por outra magia.`)).replace(/"/g, '&quot;');
+          return `<button type="button" class="spell-cast${field ? ' is-field' : ''}${usable ? '' : ' replaced'}" data-spell="${spell.key}" data-field="${field ? 1 : 0}" style="--accent:${color}" title="${title}"${usable ? '' : ' disabled'}>
+            <span class="spell-glyph">${field ? FIELD_GLYPH[spell.key] || '✦' : GLYPHS[spell.key] || '✦'}</span><span class="spell-name">${spell.name}</span><small>${cost}</small><i class="spell-cd"></i></button>`;
+        };
+        rows.push(`<div class="spell-row-level"><b>${l}</b>${cell(old, false)}${cell(fresh, true)}</div>`);
+      }
+      body.innerHTML = rows.join('');
+      const next = [...SPELLS, ...FIELD].filter(spell => spell.unlockLevel === lv + 1);
+      panel.querySelector('.spell-panel-next').textContent = next.length ? `Nível ${lv + 1}: ${next.map(spell => spell.name).join(' e ')}` : 'Todas as magias aprendidas.';
+    }
+    const m = ms();
+    const cap = mpCap(), max = maxMp();
+    panel.querySelector('.spell-panel-mp i').style.width = `${Math.round(m.mp / Math.max(1, max) * 100)}%`;
+    panel.querySelector('.spell-panel-mp span').textContent = `MP ${Math.floor(m.mp)} / ${Math.floor(cap)}`;
+    body.querySelectorAll('.spell-cast').forEach(button => {
+      const k = button.dataset.spell;
+      const field = button.dataset.field === '1';
+      const spell = field ? fieldByKey[k] : byKey[k];
+      if (!spell) return;
+      const cdMax = field ? spell.cooldownSeconds : stats(spell).cooldownSeconds;
+      const cost = field ? spell.manaCost : stats(spell).manaCost;
+      const cd = m.cd[k] || 0;
+      button.style.setProperty('--cd', cd ? (cd / Math.max(0.1, cdMax)).toFixed(3) : 0);
+      button.classList.toggle('cooling', cd > 0);
+      button.classList.toggle('poor', m.mp < cost);
+      button.classList.toggle('on', !field && (m.auras.includes(k) || rt.channel?.key === k));
+      button.classList.toggle('targeting', rt.targeting?.key === k || (!field && m.pending?.key === k));
+    });
+  }
+  function buildPanel() {
+    const scene = document.getElementById('map-scene');
+    const tools = scene?.querySelector('.map-tools');
+    if (!scene || !tools) return;
+    panelBtn = document.createElement('button');
+    panelBtn.type = 'button';
+    panelBtn.id = 'spells-btn';
+    panelBtn.className = 'spell-corner-btn';
+    panelBtn.title = 'Magias';
+    panelBtn.setAttribute('aria-label', 'Abrir as magias');
+    panelBtn.innerHTML = '<span>✦</span><small>MAGIAS</small>';
+    tools.append(panelBtn);
+    panel = document.createElement('div');
+    panel.className = 'spell-panel';
+    panel.hidden = true;
+    panel.innerHTML = `<header><b>MAGIAS</b><span class="spell-panel-level"></span><button type="button" class="spell-panel-close" aria-label="Fechar" title="Fechar">×</button></header>
+      <div class="spell-panel-mp"><i></i><span></span></div>
+      <p class="spell-panel-help">Escolha a magia e clique no alvo. Esc ou clique direito cancela.</p>
+      <div class="spell-panel-list"></div>
+      <footer class="spell-panel-next"></footer>`;
+    scene.append(panel);
+    const stop = event => event.stopPropagation();
+    [panel, panelBtn].forEach(el => { el.addEventListener('pointerdown', stop); el.addEventListener('wheel', stop, { passive: true }); });
+    panelBtn.addEventListener('click', event => {
+      event.stopPropagation();
+      if (!active()) { say(state.heir ? 'Volte ao jogo para usar as magias.' : 'Sem herdeiro, sem magia. Comece um jogo novo e escolha um herdeiro.'); return; }
+      togglePanel();
+    });
+    panel.addEventListener('click', event => {
+      event.stopPropagation();
+      if (event.target.closest('.spell-panel-close')) { togglePanel(false); return; }
+      const button = event.target.closest('.spell-cast');
+      if (!button || button.disabled) return;
+      if (button.dataset.field === '1') fieldPress(button.dataset.spell); else press(button.dataset.spell);
+      renderPanel(false);
+    });
+    scene.addEventListener('pointermove', event => { rt.hover = worldPoint(event); });
+    scene.addEventListener('click', event => {
+      if (!rt.targeting || !active() || camera.dragMoved || event.target.closest('.spell-panel, .map-tools')) return;
+      event.stopPropagation();
+      event.preventDefault();
+      const point = worldPoint(event);
+      if (rt.targeting.field) fieldClick(point); else onMapClick(point);
+      renderPanel(false);
+    }, true);
+    scene.addEventListener('contextmenu', event => {
+      if (!rt.targeting) return;
+      event.preventDefault();
+      rt.targeting = null;
+      refreshCursor();
+      renderPanel(false);
+    });
+    window.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || !document.getElementById('menu-layer')?.hidden) return;
+      if (rt.targeting) { event.preventDefault(); event.stopPropagation(); rt.targeting = null; refreshCursor(); renderPanel(false); return; }
+      if (panelOpen()) { event.preventDefault(); event.stopPropagation(); togglePanel(false); }
+    }, true);
+  }
+
   // ----- Ganchos chamados pelo combate do app.js -----
   function statMods(actor, base) {
     const o = rt.mods.get(actor);
     const judged = actor.mfx?.judged;
-    if (!o && !judged) return base;
+    const broken = actor.mfx?.weaken?.armor;
+    if (!o && !judged && !broken) return base;
     let s = base;
     if (o?.primary) { const k = 1 + o.primary / 100; s = { ...s, hp: Math.round(s.hp * k), atk: Math.round(s.atk * k), mag: Math.round(s.mag * k), def: Math.round(s.def * k), dex: Math.round(s.dex * k) }; }
     if (o?.armor || o?.armorPct) s = { ...s, def: Math.round((s.def + o.armor) * (1 + o.armorPct / 100)) };
     if (judged) s = { ...s, def: Math.round(s.def * (1 - judged.v / 100)) };
+    if (broken) s = { ...s, def: Math.round(s.def * (1 - broken / 100)) };
     return s;
   }
   function moveMul(actor) {
     const f = actor.mfx;
     let k = 1;
     if (f) {
-      if (f.stun || f.knock || f.root || f.push) return 0;
+      if (f.stun || f.knock || f.root || f.push || f.freeze) return 0;
       if (f.slow) k *= 1 - f.slow.v / 100;
       if (f.crushSlow) k *= 1 - f.crushSlow.v / 100;
       if (f.haste) k *= 1 + f.haste.v / 100;
@@ -635,6 +1334,7 @@ const Monarch = (() => {
       if (g.execute && hpOf(defender) < maxHpOf(defender) * g.execute.thr / 100) mul += g.execute.v / 100;
       if (attacker.summon && g.slow?.summonTaken) mul += g.slow.summonTaken / 100;
       if (magic && g.silence?.magicTaken) mul += g.silence.magicTaken / 100;
+      if (g.weaken?.taken) mul += g.weaken.taken / 100;
       dmg *= mul;
       if (g.mark) {
         heal(attacker, dmg * g.mark.v / 100);
@@ -642,6 +1342,7 @@ const Monarch = (() => {
       }
     } else if (isEnemy(attacker) && isAlly(defender)) {
       const g = defender.mfx || {};
+      if (attacker.mfx?.weaken?.dealt) dmg *= 1 - attacker.mfx.weaken.dealt / 100;
       if (g.invuln) { FX.flash(defender.x, defender.y - BODY, 2, C.holy, 0.25); return 0; }
       if (auraOn('aura-de-submissao') && Math.hypot(attacker.x - m.x, attacker.y - m.y) <= radiusOf(byKey['aura-de-submissao'])) {
         const e = effects(byKey['aura-de-submissao']);
@@ -689,7 +1390,7 @@ const Monarch = (() => {
     const f = enemy.mfx;
     if (!f) return false;
     if (f.push) { animateWalk(enemy, false, dt, reducedMotion); return true; }
-    if (f.stun || f.knock) { enemy.action = 'walk'; enemy.frame = 0; return true; }
+    if (f.stun || f.knock || f.freeze) { enemy.action = 'walk'; enemy.frame = 0; return true; }
     if (f.convert) { convertedStep(enemy, dt, reducedMotion); return true; }
     return false;
   }
@@ -705,6 +1406,8 @@ const Monarch = (() => {
         actor.y = Math.max(2, Math.min(198, actor.y + entry.vy * dt));
         if (Math.random() < dt * 20) emit(actor.x, actor.y, { color: C.steel, count: 1, speed: 0.5, size: 0.4, up: 0.5, life: 0.4, layer: 'ground', alpha: 0.6 });
       }
+      if (key.startsWith('dot:')) { hurtRaw(actor, entry.dps * dt); if (!actor.alive) return; }
+      if (key.startsWith('hot:')) heal(actor, entry.hps * dt);
       if (key === 'root' && entry.dot) {
         entry.clock += dt;
         if (entry.clock >= 1) { entry.clock -= 1; hurt(actor, entry.dot); if (!actor.alive) return; }
@@ -844,7 +1547,7 @@ const Monarch = (() => {
   }
 
   function step(dt, reducedMotion) {
-    if (!active()) { hideUi(); return; }
+    if (!active()) { hideUi(); togglePanel(false); return; }
     rt.time += dt;
     const m = ms();
     refreshLists();
@@ -856,6 +1559,8 @@ const Monarch = (() => {
     [...state.heroes, ...state.workers, ...(state.bandits || []), ...rt.summons].forEach(actor => { if (actor.alive && actor.mfx) tickFx(actor, dt); });
     refreshLists();
     auraStep(dt);
+    if (rt.lastMap !== mapKey()) { rt.lastMap = mapKey(); SpellFX.clear(); if (rt.targeting) { rt.targeting = null; refreshCursor(); } }
+    fieldStep(dt);
     rt.summons.filter(s => s.alive).forEach(s => summonStep(s, dt, reducedMotion));
     rt.summons = rt.summons.filter(s => s.alive);
     // Pela borda: aura desligada se o nível caiu (save antigo) ou se a Presença saiu.
@@ -864,6 +1569,8 @@ const Monarch = (() => {
     drawFrame(dt, reducedMotion);
     rt.barClock -= dt;
     if (rt.barClock <= 0) { rt.barClock = 0.1; renderBar(false); }
+    rt.panelClock -= dt;
+    if (rt.panelClock <= 0) { rt.panelClock = 0.15; renderPanel(false); }
   }
 
   // ----- Desenho -----
@@ -873,15 +1580,13 @@ const Monarch = (() => {
     const m = ms();
     const t = SpellFX.time;
     const boost = rt.majesty > 0 ? 1.6 : 1;
-    // O Monarca.
-    D.glow('ground', m.x, m.y, 2.4, C.gold, 0.5);
-    D.sigil('ground', m.x, m.y, 1.9, C.gold, 0.6, 5, t * 0.6);
+    // O Monarca não aparece no mapa; só a Majestade Absoluta, quando ligada.
     if (rt.majesty > 0) {
       D.beam(m.x, m.y, 1.6, 22, C.gold, 0.55 + 0.15 * Math.sin(t * 6), 2);
       D.sigil('ground', m.x, m.y, 4.5, C.paleGold, 0.9, 12, -t * 0.4);
       D.crown(m.x, m.y - HEAD - 2.4, 1.6, C.gold, 1);
       if (Math.random() < dt * 30) emit(m.x, m.y - BODY, { color: C.gold, count: 1, speed: 2, size: 0.35, up: 4, shape: SpellFX.SHAPE.star });
-    } else D.crown(m.x, m.y - HEAD - 1.6, 0.8, C.gold, 0.85);
+    }
     // Auras ligadas.
     m.auras.forEach(key => {
       const spell = byKey[key];
@@ -938,7 +1643,7 @@ const Monarch = (() => {
       D.wisp(s.x, s.y - BODY, 1.8, 3.2, C.astral, 0.32, s.id.length);
       if (s.taunting > 0) D.ring(s.x, s.y, s.tauntRadius, C.crimson, 0.35, 0.03, 0, 0);
     });
-    [...rt.allies, ...rt.enemies].forEach(a => {
+    [...fAllies(), ...fEnemies()].forEach(a => {
       const f = a.mfx;
       if (!f) return;
       if (f.order) D.crown(a.x, a.y - HEAD - 1, 0.75, C.gold, 0.95);
@@ -987,6 +1692,7 @@ const Monarch = (() => {
         }
       }
     }
+    fieldDraw(dt);
     SpellFX.end(dt);
   }
 
@@ -1081,25 +1787,29 @@ const Monarch = (() => {
     return `<div class="sheet-section-label">MAGIAS DO MONARCA</div>
       <p class="sheet-spell-res">MP ${Math.floor(m.mp)} de ${Math.floor(mpCap())} · Autoridade ${Math.floor(m.authority || 0)} de ${authMax()} · ${auraSlots() ? `até ${auraSlots()} ${auraSlots() === 1 ? 'aura' : 'auras'} ao mesmo tempo` : 'nenhuma aura ainda'}</p>
       <ul class="spell-list">${list.map(row).join('')}</ul>
+      <div class="sheet-section-label">MAGIAS DE CAMPO</div>
+      <ul class="spell-list">${FIELD.filter(fieldUnlocked).map(spell => `<li><span class="spell-glyph" style="--accent:${SCHOOL_HEX[spell.school]}">${FIELD_GLYPH[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>nível ${spell.unlockLevel}</small><p>${fieldText(spell)}</p><small>${spell.manaCost} MP · recarga ${spell.cooldownSeconds} s</small></div></li>`).join('')}</ul>
       ${next.length ? `<div class="sheet-section-label">${all ? 'AINDA BLOQUEADAS' : 'PRÓXIMAS'}</div><ul class="spell-list locked">${next.map(spell => `<li><span class="spell-glyph">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>nível ${spell.unlockLevel}</small><p>${spell.ranks[0].description}</p></div></li>`).join('')}</ul>` : ''}`;
   }
 
   function reset() {
     rt.summons = []; rt.zones = []; rt.armies = []; rt.channel = null; rt.majesty = 0; rt.conquest = { stacks: 0, t: 0 };
     rt.targeting = null; rt.cache.clear(); rt.barKey = ''; rt.crushInside.clear(); token = null;
+    rt.projs = []; rt.timers = []; rt.fzones = []; rt.lastMap = '';
+    togglePanel(false);
     SpellFX.clear();
     if (state.monarch) { state.monarch.pending = null; state.monarch.walkTo = null; }
     refreshCursor();
   }
 
-  // Sem Monarca no mapa: nada de estandarte, barra ou atalhos. As magias ficam só na lista do botão MAGIAS.
-  function init() {}
+  // Sem Monarca no mapa: nada de estandarte nem barra. As magias ficam no painel do botão MAGIAS, no canto do mapa.
+  function init() { buildPanel(); }
 
   init();
   return {
     statMods, moveMul, attackRate, tauntTarget, allyTargets, blocksAttack, strikeBoost, adjustDamage, afterStrike, summonDied, enemyStep, chargeStep,
-    step, reset, sheetHTML, press, summons: () => rt.summons, isConverted: actor => !!actor?.mfx?.convert,
-    debug: { rt, stats, effects, byKey, cast: key => cast(byKey[key], { x: ms().x, y: ms().y + 6, enemy: rt.enemies[0] }) },
+    step, reset, sheetHTML, press, fieldPress, summons: () => rt.summons, isConverted: actor => !!actor?.mfx?.convert,
+    debug: { rt, stats, effects, byKey, fieldByKey, fieldNums, fieldText, fieldCast: (key, target) => fieldCast(fieldByKey[key], target), cast: key => cast(byKey[key], { x: ms().x, y: ms().y + 6, enemy: rt.enemies[0] }) },
   };
 })();
 window.Monarch = Monarch;
