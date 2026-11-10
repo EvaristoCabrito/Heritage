@@ -583,7 +583,7 @@ function updateHud() {
   $('#gold-rate').textContent = `${goldNet < 0 ? '−' : '+'}${format(Math.abs(goldNet))}/dia`;
   $('#grain-rate').textContent = `${r.grain < 0 ? '−' : '+'}${Math.abs(r.grain).toFixed(1).replace('.', ',')}/s`;
   $('#grain-rate').classList.toggle('negative', r.grain < 0);
-  $('#timber-rate').textContent = `+${r.timber.toFixed(1).replace('.', ',')}/s`;
+  $('#timber-rate').textContent = `+${rateNumber(r.timber)}/s`;
   // Personagens: quantos existem e quantos o domínio comporta.
   const heroes = state.heroes.filter(hero => hero.alive).length;
   const heroCap = heroCapacity();
@@ -1424,7 +1424,10 @@ function tick() {
   accrueTavern(state.speed);
   if (state.minutes % 60 < state.speed) { shopAtArmory(); processDemands(); processBounties(); }
   state.minutes += state.speed;
-  if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) { gainHeirXp(40); collectTaxes(); }
+  if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) {
+    gainHeirXp(40); collectTaxes();
+    if (Math.floor(state.minutes / 1440) % 7 === 0) applyWeeklyMood();
+  }
   // Heróis ganham experiência só em combate (golpes e curas). Aqui chegam os bandos e todos se recuperam.
   combatTick(state.speed);
   const hasTavern = state.buildings.some(building => building.type === 'tavern' && isDone(building));
@@ -1882,20 +1885,35 @@ function actorOrigin(actor) {
 // e cardápio servido. Carne e variedade alegram; ração pequena e fome entristecem.
 // ==========================================================================
 const FOOD_TYPES = [
-  { id: 'flour', name: 'Farinha', art: 'mill-body', mood: 3, note: 'Sai do moinho. Eles que cozinhem em casa.' },
+  { id: 'flour', name: 'Farinha', art: 'mill-body', mood: 2, note: 'Sai do moinho. Eles que cozinhem em casa.' },
   { id: 'wheat', name: 'Trigo', art: 'farm-wheat', raw: true, note: 'Cru não serve pra nada. Vai pro moinho virar farinha.' },
   { id: 'garlic', name: 'Alho', art: 'farm-garlic', mood: 1, note: 'Afasta strigoi. E todo o resto também.' },
-  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', meat: true, mood: 4, note: 'Carne. Deixa os camponeses mais felizes.' },
-  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', mood: 2, note: 'Variedade. Os camponeses notam.' },
-  { id: 'milk', name: 'Leite', art: 'farm-milk', mood: 2, note: 'Variedade. Às vezes azeda antes.' },
+  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', meat: true, mood: 2, note: 'Carne. Deixa os camponeses mais felizes.' },
+  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', mood: 1, note: 'Variedade. Os camponeses notam.' },
+  { id: 'milk', name: 'Leite', art: 'farm-milk', mood: 1, note: 'Variedade. Às vezes azeda antes.' },
 ];
 const RATIONS = [
-  { label: 'Nenhuma', mult: 0, mood: -40 }, { label: 'Meia', mult: 0.5, mood: -15 }, { label: 'Normal', mult: 1, mood: 0 },
-  { label: 'Dobrada', mult: 2, mood: 10 }, { label: 'Tripla', mult: 3, mood: 20 },
+  { label: 'Nenhuma', mult: 0, mood: -20 }, { label: 'Meia', mult: 0.5, mood: -8 }, { label: 'Normal', mult: 1, mood: 0 },
+  { label: 'Dobrada', mult: 2, mood: 5 }, { label: 'Tripla', mult: 3, mood: 10 },
 ];
 // Imposto: 0% alegra, 10% é neutro, 20% entristece.
 const TAX_MAX = 20;
-const taxMood = () => Math.round((10 - (state.taxPercent ?? 10)) * 2);
+const taxMood = () => Math.round(10 - (state.taxPercent ?? 10));
+// Felicidade muda uma vez por semana, à meia-noite do 7º dia: anda até MOOD_WEEKLY_STEP pontos
+// na direção da média da semana (50 + efeitos), no estilo de turno do Lords of the Realm.
+const MOOD_WEEKLY_STEP = 10;
+const moodWeekAverage = () => (state.moodTime > 0 ? state.moodSum / state.moodTime : state.moodTarget ?? state.happiness);
+const nextMoodDay = () => (Math.floor(Math.floor(state.minutes / 1440) / 7) + 1) * 7 + 1;
+function applyWeeklyMood() {
+  const average = moodWeekAverage();
+  const change = Math.round(Math.max(-MOOD_WEEKLY_STEP, Math.min(MOOD_WEEKLY_STEP, average - state.happiness)));
+  state.happiness = Math.max(0, Math.min(100, state.happiness + change));
+  state.moodSum = 0;
+  state.moodTime = 0;
+  say(change ? `Fim da semana: felicidade ${change > 0 ? '+' : '−'}${Math.abs(change)}, agora ${Math.round(state.happiness)}. ${change > 0 ? 'Ninguém agradeceu.' : 'Ninguém se surpreendeu.'}` : `Fim da semana: a felicidade ficou em ${Math.round(state.happiness)}.`);
+  updateHud();
+  if (state.tab === 'food') renderPanel();
+}
 const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, eggs: 0, milk: 0 });
 // O casarão guarda 200 unidades. Cada Depósito de Provisões construído soma 30, e amplia para 45, 70 e 100.
 // Guardam comida, armas e itens; madeira e ouro ficam fora.
@@ -2044,7 +2062,7 @@ function happinessLabel(value) {
   return value < 20 ? 'Revoltados' : value < 40 ? 'Infelizes' : value < 60 ? 'Conformados' : value < 80 ? 'Contentes' : 'Felizes';
 }
 
-// Uma vez por segundo de jogo: produz, serve a mesa e move a felicidade em direção ao alvo.
+// Uma vez por segundo de jogo: produz, serve a mesa e anota o alvo de felicidade da semana.
 function feedWorkers(dt) {
   state.buildings.filter(building => building.type === 'farm' && isDone(building)).forEach(farm => {
     farm.stock = Math.min(FARM_STOCK_CAP, (farm.stock || 0) + farmOutput(farm) * (1 + crewWork(farm)) * dt);
@@ -2070,11 +2088,12 @@ function feedWorkers(dt) {
     ration: ration.mood,
     food: ration.mult > 0 ? [...eaten].reduce((sum, id) => sum + (FOOD_TYPES.find(food => food.id === id)?.mood || 0), 0) : 0,
     tax: taxMood(),
-    hunger: demand > 0 ? -Math.round(40 * (1 - fulfilled)) : 0,
+    hunger: demand > 0 ? -Math.round(20 * (1 - fulfilled)) : 0,
   } : { ration: 0, food: 0, tax: 0, hunger: 0 };
   const target = Math.max(0, Math.min(100, 50 + parts.ration + parts.food + parts.tax + parts.hunger));
-  const step = 0.5 * dt;
-  state.happiness = Math.max(0, Math.min(100, state.happiness + Math.max(-step, Math.min(step, target - state.happiness))));
+  // Não muda agora: acumula o alvo para a média da semana (ver applyWeeklyMood).
+  state.moodSum = (state.moodSum || 0) + target * dt;
+  state.moodTime = (state.moodTime || 0) + dt;
   state.moodParts = parts;
   state.moodTarget = target;
   if (fulfilled < 0.999 && eaters() && !state.hungerWarned) { state.hungerWarned = true; say('A comida não deu pra todo mundo. Os camponeses estão passando fome. Por enquanto, reclamam baixinho.'); }
@@ -2487,16 +2506,16 @@ function foodPanelHTML() {
         <img src="public/art/${food.art}-v01.webp" alt=""><span class="food-name"><b>${food.name}</b><small>${food.note}</small></span>
         <span class="food-stock"><b>${format(stock)}</b><small>${food.id === 'flour' ? (milling ? `até +${rateNumber(milling)}/s` : 'sem moinho') : prod[food.id] ? `+${rateNumber(prod[food.id])}/s${food.raw && milling ? ` · moinho −${rateNumber(milling)}/s` : ''}` : 'sem produção'}</small></span>
         ${food.raw ? '<button type="button" disabled>PRO MOINHO</button>' : `<button type="button" data-diet="${food.id}" class="${on ? 'on' : ''}">${on ? 'SERVINDO' : 'GUARDADO'}</button>`}</div>`; }).join('')}</div>
-    <div class="mood-box"><div class="mood-head"><span>FELICIDADE</span><b>${Math.round(state.happiness)}</b><em>${happinessLabel(state.happiness)}</em><small>indo para ${Math.round(state.moodTarget ?? state.happiness)}</small></div>
+    <div class="mood-box"><div class="mood-head"><span>FELICIDADE</span><b>${Math.round(state.happiness)}</b><em>${happinessLabel(state.happiness)}</em><small>média da semana ${Math.round(moodWeekAverage())} · muda no dia ${nextMoodDay()}</small></div>
       <div class="mood-bar"><i style="width:${Math.round(state.happiness)}%"></i></div>
       <dl class="mood-parts"><div><dt>Ração</dt><dd>${signed(parts.ration)}</dd></div><div><dt>Comida</dt><dd>${signed(parts.food)}</dd></div><div><dt>Imposto</dt><dd>${signed(parts.tax)}</dd></div><div><dt>Fome</dt><dd>${signed(parts.hunger)}</dd></div></dl></div>
     <div class="mood-rules"><div class="food-label">O QUE MUDA A FELICIDADE</div>
-      <p>A felicidade parte de 50 e anda devagar até o alvo, que é 50 somado a estes efeitos:</p>
+      <p>A felicidade muda uma vez por semana, à meia-noite do 7º dia: anda até ${MOOD_WEEKLY_STEP} pontos na direção da média da semana, que é 50 somado a estes efeitos:</p>
       <dl>
-        <div><dt>Ração</dt><dd>Nenhuma −40 · Meia −15 · Normal 0 · Dobrada +10 · Tripla +20</dd></div>
-        <div><dt>Comida</dt><dd>Cada alimento servido soma: alho +1 · farinha +3 · bacon +4 · ovos +2 · leite +2</dd></div>
-        <div><dt>Imposto</dt><dd>0% +20 · 5% +10 · 10% 0 · 15% −10 · 20% −20</dd></div>
-        <div><dt>Fome</dt><dd>Quando a comida servida não dá pra todos: até −40</dd></div>
+        <div><dt>Ração</dt><dd>Nenhuma −20 · Meia −8 · Normal 0 · Dobrada +5 · Tripla +10</dd></div>
+        <div><dt>Comida</dt><dd>Cada alimento servido soma: alho +1 · farinha +2 · bacon +2 · ovos +1 · leite +1</dd></div>
+        <div><dt>Imposto</dt><dd>0% +10 · 5% +5 · 10% 0 · 15% −5 · 20% −10</dd></div>
+        <div><dt>Fome</dt><dd>Quando a comida servida não dá pra todos: até −20</dd></div>
       </dl>
       <p>Só conta o que está marcado como SERVINDO e tem estoque. Trigo cru não vai pra mesa: o moinho transforma em farinha.</p></div>`;
 }
