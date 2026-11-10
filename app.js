@@ -2492,7 +2492,8 @@ function bountyPanelHTML() {
     ${rows ? `<div class="bounty-list">${rows}</div>` : ''}</section>`;
 }
 function renderBountyFlags() {
-  const layer = $('#site-layer');
+  // Camada própria, por cima de tudo no mapa: construções, árvores, covis e personagens.
+  const layer = $('#flag-layer');
   const ids = new Set((state.bounties || []).filter(bounty => !bounty.target).map(bounty => bounty.id));
   $$('.bounty-flag', layer).filter(flag => !ids.has(flag.dataset.bounty)).forEach(flag => flag.remove());
   (state.bounties || []).filter(bounty => !bounty.target).forEach(bounty => {
