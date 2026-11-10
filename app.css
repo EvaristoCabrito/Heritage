@@ -1188,3 +1188,15 @@ input[type="number"], input[type="text"], textarea {
 .menu-layer { place-items: safe center; }
 .nobles-gallery { margin: 4px 0 0; }
 .nobles-gallery a { color: #d6b875; }
+.slot-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
+.slot-actions .slot-delete { position: static; }
+.save-slot:has(.slot-actions) .save-head { padding-right: 170px; }
+/* Nobres e linhagens na entrada: os mesmos cards da antiga aba NOBRES. */
+.menu-card.nobles-screen { width: min(1100px, 100%); }
+.noble-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.noble-roster-card { overflow: hidden; border: 1px solid rgba(206,186,137,.2); border-radius: 5px; background: rgba(10,12,9,.45); }
+.noble-roster-card img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center 22%; background: #171612; }
+.noble-roster-copy { display: grid; gap: 3px; padding: 8px 10px 10px; }
+.noble-roster-copy b { color: #e8d8b7; font: 16px 'Newsreader', Georgia, serif; }
+.noble-roster-copy small { color: #aaa18e; font-size: 12px; line-height: 1.3; }
+.noble-roster-copy .noble-house { color: #d0b779; }

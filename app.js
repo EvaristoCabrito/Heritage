@@ -3657,7 +3657,6 @@ const SCREENS = {
         <button type="button" data-action="nobles">Nobres</button>
         <button type="button" data-action="options">Opções</button>
         <button type="button" data-action="debug">Debug</button>
-        <a class="menu-gallery-link" href="public/npc-portrait-gallery-v01.html" target="_blank" rel="noopener">Galeria · 161 referências e 68 retratos jogáveis</a>
       </nav>
       ${debug.testMode ? '<footer class="title-footer"><span class="tag-test">MODO TESTE LIGADO</span></footer>' : ''}
     </div>` };
@@ -3745,33 +3744,16 @@ const SCREENS = {
       <div class="menu-actions"><button type="button" class="primary" data-action="choose-heir" data-slot="${slot}">Escolher ${chosen.name.split(' ')[0]}</button><button type="button" data-action="back">Voltar</button></div>
     </section>` };
   },
-  // Galeria inteira dos nobres de Mordávia: todos os personagens com retrato, com as 4 fases de cada um.
-  nobles({ selected = 0 }) {
-    const chosen = HEIRS[selected] || HEIRS[0];
-    const house = HOUSES[chosen.house];
-    const noble = NOBLES.find(entry => chosen.portrait === `noble-portraits-v01/${entry.house}`);
-    const card = (heir, i) => `<button type="button" class="heir-card${i === selected ? ' selected' : ''}" data-action="pick-noble" data-index="${i}" aria-pressed="${i === selected}">
-        <img class="heir-card-portrait" src="${heirPortraitSrc(heir.id)}" alt="${heir.name}"><b>${heir.name.split(' ')[0]}</b><small>${HOUSES[heir.house].name.replace(/^Casa /, '')} · ${heir.age}</small></button>`;
-    const men = HEIRS.map((heir, i) => ({ heir, i })).filter(entry => entry.heir.gender === 'm');
-    const women = HEIRS.map((heir, i) => ({ heir, i })).filter(entry => entry.heir.gender === 'f');
-    return { cls: 'is-title', html: `<section class="menu-card heir-screen">
-      <header class="menu-card-head"><span class="eyebrow">NOBRES DE MORDÁVIA</span><h2>Nobres e linhagens</h2><p>${HEIRS.length} personagens · ${men.length} homens · ${women.length} mulheres. Os retratos avançam a cada ${HEIR_PHASE_YEARS} anos de jogo.</p></header>
-      <div class="heir-layout">
-        <div class="heir-pick">
-          <div class="heir-row-label">HOMENS</div>
-          <div class="heir-grid">${men.map(entry => card(entry.heir, entry.i)).join('')}</div>
-          <div class="heir-row-label">MULHERES</div>
-          <div class="heir-grid">${women.map(entry => card(entry.heir, entry.i)).join('')}</div>
-          <p class="nobles-gallery"><a href="public/npc-portrait-gallery-v01.html" target="_blank" rel="noopener">Abrir a galeria completa de retratos</a></p>
-        </div>
-        <div class="heir-detail">
-          <img class="heir-detail-portrait" src="${heirPortraitSrc(chosen.id)}" alt="${chosen.name}">
-          <span class="eyebrow">${house.name.toUpperCase()}</span><h3>${noble ? noble.name : chosen.name}</h3><p class="heir-motto">“${house.motto}”</p>
-          <p>${noble ? `${noble.title}. ` : ''}${chosen.about}</p><p class="heir-tie">${chosen.age} anos · ${chosen.tie}</p>
-          <div class="heir-row-label">O QUE EMBER FAZ COM ${chosen.name.split(' ')[0].toUpperCase()}</div>
-          <div class="heir-phases">${[1, 2, 3, 4].map(phase => `<figure><img src="${heirPortraitSrc(chosen.id, phase)}" alt="${chosen.name}, fase ${phase}"><figcaption>${(phase - 1) * HEIR_PHASE_YEARS} anos</figcaption></figure>`).join('')}</div>
-        </div>
-      </div>
+  // Nobres e linhagens: a mesma lista que ficava na aba NOBRES do jogo, agora na entrada, com a casa de cada um.
+  nobles() {
+    const houseNobles = NOBLES.map(noble => ({ name: noble.name, title: noble.title, house: noble.house, src: noblePortraitSrc(noble.house, 1), gender: ['grenholt', 'lucerna'].includes(noble.house) ? 'm' : 'f' }));
+    const heirs = HEIRS.filter(heir => !heir.portrait).map(heir => ({ name: heir.name, title: heir.tie, house: heir.house, src: heirPortraitSrc(heir.id, 1), gender: heir.gender }));
+    const all = [...houseNobles, ...heirs];
+    const men = all.filter(entry => entry.gender === 'm').length;
+    const card = entry => `<article class="noble-roster-card"><img src="${entry.src}" alt="${entry.name}"><div class="noble-roster-copy"><b>${entry.name}</b><small>${entry.title}</small><small class="noble-house">${HOUSES[entry.house].name} · “${HOUSES[entry.house].motto}”</small></div></article>`;
+    return { cls: 'is-title', html: `<section class="menu-card nobles-screen">
+      <header class="menu-card-head"><span class="eyebrow">NOBRES</span><h2>Nobres e linhagens</h2><p>${all.length} personagens · ${men} homens · ${all.length - men} mulheres. Os retratos avançam a cada ${HEIR_PHASE_YEARS} anos de jogo.</p></header>
+      <div class="noble-roster">${all.map(card).join('')}</div>
       <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
     </section>` };
   },

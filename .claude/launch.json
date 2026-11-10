@@ -5,8 +5,7 @@
       "name": "wasteland",
       "runtimeExecutable": "python",
       "runtimeArgs": [
-        "-m",
-        "http.server",
+        "tools/serve.py",
         "8765"
       ],
       "port": 8765
@@ -15,8 +14,7 @@
       "name": "wasteland-alt",
       "runtimeExecutable": "python",
       "runtimeArgs": [
-        "-m",
-        "http.server",
+        "tools/serve.py",
         "8768"
       ],
       "port": 8768,
