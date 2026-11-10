@@ -3014,6 +3014,7 @@ function startGame(newState, slot) {
   sizeWorld();
   homeCamera();
   renderSites(); renderHeroes(); renderPanel(); updateHud();
+  worldScenario = loadScenario(state.scenario || 1); renderPlaces();
   $('#event-line').textContent = state.ticks ? 'De volta ao Vale do Luto.' : 'A herança foi aceita. Os credores já estão a caminho.';
   writeSave(slot);
   game.running = true;
@@ -3107,6 +3108,7 @@ const SCREENS = {
         ${latest ? '<button type="button" data-action="load">Carregar jogo</button>' : ''}
         <button type="button" data-action="options">Opções</button>
         <button type="button" data-action="debug">Debug</button>
+        <button type="button" data-action="editor">Editor de mapas</button>
       </nav>
       <p class="title-save">${latest ? `Slot ${latest.slot} · ${slotSummary(latest.record)}` : 'Nenhum jogo salvo ainda.'}</p>
       <footer class="title-footer"><span>O SAVE FICA NESTE NAVEGADOR</span>${debug.testMode ? '<span class="tag-test">MODO TESTE LIGADO</span>' : ''}</footer>
@@ -3408,6 +3410,7 @@ function initMenus() {
       case 'economy': showScreen('economy'); break;
       case 'options': showScreen('options'); break;
       case 'debug': showScreen('debug'); break;
+      case 'editor': openEditor(); break;
       case 'back': goBack(); break;
       case 'resume': closeMenu(); break;
       case 'load-slot':
@@ -3478,7 +3481,7 @@ function initMenus() {
   });
   $('#sheet-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('sheet'); });
   document.addEventListener('keydown', event => {
-    if (event.key !== 'Escape') return;
+    if (event.key !== 'Escape' || editor.active) return;
     if (!$('#menu-layer').hidden) {
       const top = menu.stack[menu.stack.length - 1]?.name;
       if (top === 'title') return;
@@ -3499,6 +3502,267 @@ function initMenus() {
   window.addEventListener('resize', () => { if (!$('#menu-layer').hidden) fitMenu(); });
   window.addEventListener('pagehide', () => { if (game.slot && options.autosave) writeSave(game.slot); });
   showScreen('title');
+}
+
+// ==========================================================================
+// Cenários e editor de mapas. Cada cenário guarda covis e locais de interesse no mesmo sistema
+// de coordenadas do jogo: x em % da largura do mapa, y de 0 a 200 (como PATH_NODES).
+// O editor salva sozinho a cada mudança neste navegador e, com a pasta do jogo ligada,
+// grava também data/scenarios/<arquivo>.js, que o index.html carrega. Vale o mais recente dos dois.
+// ==========================================================================
+const SCENARIOS = [{ id: 1, name: 'Floresta', file: '01-floresta' }];
+const PLACE_TYPES = [
+  { id: 'wolfDen', group: 'lair', name: 'Covil de lobos', icon: '<circle cx="6.5" cy="9.5" r="1.8"/><circle cx="10.5" cy="6" r="1.8"/><circle cx="15" cy="6.5" r="1.8"/><circle cx="18" cy="10.5" r="1.7"/><path d="M8 17.5c0-3.2 2.3-5.6 4.6-5.6s4.2 2.4 4.2 4.8c0 2-1.6 3-3.3 2.4-1.2-.4-1.9-.4-3 .1-1.6.6-2.5-.2-2.5-1.7z"/>' },
+  { id: 'spiderNest', group: 'lair', name: 'Ninho de aranhas', icon: '<path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/><path d="M12 7.2l3.4 1.4 1.4 3.4-1.4 3.4-3.4 1.4-3.4-1.4L7.2 12l1.4-3.4z"/>' },
+  { id: 'graveyard', group: 'lair', name: 'Cemitério', icon: '<path d="M7 20V10a5 5 0 0 1 10 0v10"/><path d="M4 20h16M12 8.5v6.5M9.5 11h5"/>' },
+  { id: 'banditCamp', group: 'lair', name: 'Acampamento de ladrões', icon: '<path d="M3 19L12 5l9 14z"/><path d="M9 19l3-5.5 3 5.5"/>' },
+  { id: 'ruins', group: 'poi', name: 'Ruínas', icon: '<path d="M3 20h18M5.5 20V9H9v11M15 20v-6.5h3.5V20M4.5 9h5.5M14 13.5h5.5M9 9l1.5-2.5"/>' },
+  { id: 'shrine', group: 'poi', name: 'Santuário', icon: '<path d="M6 20v-9l6-6 6 6v9M4 20h16"/><path d="M12 10v6M10 12h4"/>' },
+  { id: 'well', group: 'poi', name: 'Poço', icon: '<path d="M4 8.5l8-4.5 8 4.5M7 8.5V14M17 8.5V14M12 8.5V11"/><path d="M5 14h14v6H5z"/>' },
+  { id: 'mine', group: 'poi', name: 'Mina', icon: '<path d="M4.5 9.5c4.2-4.4 10.8-4.4 15 0"/><path d="M12 6.4L7 20"/><path d="M14 20a4 4 0 0 1 6 0"/>' },
+];
+const placeType = id => PLACE_TYPES.find(type => type.id === id);
+const scenarioDef = id => SCENARIOS.find(item => item.id === id) || SCENARIOS[0];
+const scenarioKey = id => `mordavia.scenario.${pad2(id)}`;
+const scenarioTitle = id => `Cenário ${pad2(id)} · ${scenarioDef(id).name}`;
+const editor = { active: false, scenario: 1, data: null, tool: null, selected: null, drag: null, status: '' };
+let worldScenario = null;
+
+function loadScenario(id) {
+  const def = scenarioDef(id);
+  let local = null;
+  try { local = JSON.parse(localStorage.getItem(scenarioKey(def.id))); } catch {}
+  const fromFile = window.MORDAVIA_SCENARIOS?.[def.id];
+  const best = [local, fromFile].filter(data => data && Array.isArray(data.places)).sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0))[0];
+  const places = (best?.places || []).filter(place => placeType(place.type) && Number.isFinite(+place.x) && Number.isFinite(+place.y))
+    .map(place => ({ id: String(place.id), type: place.type, x: +place.x, y: +place.y }));
+  return { id: def.id, name: def.name, savedAt: best?.savedAt || 0, places };
+}
+function scenarioFileText(data) {
+  const json = JSON.stringify({ id: data.id, name: data.name, savedAt: data.savedAt, places: data.places });
+  return `// ${scenarioTitle(data.id)}. Gravado pelo editor de mapas do jogo. x em % da largura do mapa, y de 0 a 200.\n(window.MORDAVIA_SCENARIOS = window.MORDAVIA_SCENARIOS || {})[${data.id}] = ${json};\n`;
+}
+
+// Covis e locais no mapa. No jogo só aparecem; no editor viram botões que dá pra arrastar.
+function placeMarkerHTML(place) {
+  const type = placeType(place.type);
+  const tag = editor.active ? 'button' : 'div';
+  return `<${tag} ${editor.active ? 'type="button" ' : ''}class="poi ${type.group}${editor.selected === place.id ? ' selected' : ''}" data-place="${place.id}" style="--x:${place.x}%;--y:${place.y / 2}%;z-index:${Math.round(place.y * 10)}" title="${type.name}"><span class="poi-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${type.icon}</svg></span><small>${type.name}</small></${tag}>`;
+}
+function renderPlaces() {
+  const places = editor.active ? editor.data.places : worldScenario?.places || [];
+  $('#poi-layer').classList.toggle('editing', editor.active);
+  $('#poi-layer').innerHTML = places.map(placeMarkerHTML).join('');
+}
+
+// A pasta do jogo fica lembrada no navegador (IndexedDB) depois da primeira vez.
+const FOLDER_DB = 'mordavia-editor';
+function folderStore(mode, value) {
+  return new Promise(resolve => {
+    try {
+      const open = indexedDB.open(FOLDER_DB, 1);
+      open.onupgradeneeded = () => open.result.createObjectStore('handles');
+      open.onerror = () => resolve(null);
+      open.onsuccess = () => {
+        try {
+          const tx = open.result.transaction('handles', mode);
+          const request = mode === 'readwrite' ? tx.objectStore('handles').put(value, 'gameFolder') : tx.objectStore('handles').get('gameFolder');
+          request.onsuccess = () => resolve(mode === 'readwrite' ? true : request.result || null);
+          request.onerror = () => resolve(null);
+        } catch { resolve(null); }
+      };
+    } catch { resolve(null); }
+  });
+}
+async function gameFolder(ask) {
+  let folder = await folderStore('readonly');
+  if (folder) {
+    let permission = await folder.queryPermission({ mode: 'readwrite' });
+    if (permission !== 'granted' && ask) permission = await folder.requestPermission({ mode: 'readwrite' });
+    if (permission === 'granted') return folder;
+  }
+  if (!ask) return null;
+  folder = await window.showDirectoryPicker({ id: 'wasteland-farming', mode: 'readwrite' });
+  try { await folder.getFileHandle('index.html'); await folder.getFileHandle('app.js'); } catch { throw new Error('wrong-folder'); }
+  await folderStore('readwrite', folder);
+  return folder;
+}
+async function writeScenarioFile(data, ask) {
+  if (!window.showDirectoryPicker) return 'unsupported';
+  const folder = await gameFolder(ask);
+  if (!folder) return 'unlinked';
+  const dir = await (await folder.getDirectoryHandle('data', { create: true })).getDirectoryHandle('scenarios', { create: true });
+  const writable = await (await dir.getFileHandle(`${scenarioDef(data.id).file}.js`, { create: true })).createWritable();
+  await writable.write(scenarioFileText(data));
+  await writable.close();
+  return 'ok';
+}
+function downloadScenarioFile(data) {
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([scenarioFileText(data)], { type: 'text/javascript' }));
+  link.download = `${scenarioDef(data.id).file}.js`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+// Salva a cada mudança. ask = true só no clique em Salvar (pode abrir a escolha da pasta do jogo).
+let editorWrite = Promise.resolve();
+function saveScenario(ask = false) {
+  const data = editor.data;
+  data.savedAt = Date.now();
+  try { localStorage.setItem(scenarioKey(data.id), JSON.stringify(data)); } catch {}
+  (window.MORDAVIA_SCENARIOS = window.MORDAVIA_SCENARIOS || {})[data.id] = JSON.parse(JSON.stringify(data));
+  const file = `data/scenarios/${scenarioDef(data.id).file}.js`;
+  // O seletor de pasta só abre direto do clique; por isso a primeira gravação com ask não espera a fila.
+  const run = () => writeScenarioFile(data, ask);
+  editorWrite = (ask ? run() : editorWrite.then(run)).then(result => {
+    if (result === 'ok') editor.status = `Salvo neste navegador e em ${file}.`;
+    else if (result === 'unsupported') {
+      if (ask) downloadScenarioFile(data);
+      editor.status = ask ? `Este navegador não grava na pasta. Baixei o ${scenarioDef(data.id).file}.js: ponha em data/scenarios.` : 'Salvo neste navegador.';
+    } else editor.status = 'Salvo neste navegador. Clique em Salvar e escolha a pasta do jogo para gravar o arquivo.';
+  }).catch(error => {
+    editor.status = error?.message === 'wrong-folder' ? 'Essa não é a pasta do jogo. Escolha a pasta do JOGAR.bat.' : error?.name === 'AbortError' ? 'Salvo neste navegador. A pasta não foi escolhida.' : 'Salvo neste navegador. Não deu para gravar o arquivo.';
+  }).finally(() => { if (editor.active) $('#editor-status').textContent = editor.status; });
+  return editorWrite;
+}
+
+function editorPanelHTML() {
+  const tools = group => PLACE_TYPES.filter(type => type.group === group).map(type => `<button type="button" class="editor-tool is-${type.group}${editor.tool === type.id ? ' active' : ''}" data-tool="${type.id}" aria-pressed="${editor.tool === type.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${type.icon}</svg><span>${type.name}</span></button>`).join('');
+  const place = editor.data.places.find(item => item.id === editor.selected);
+  const count = editor.data.places.length;
+  return `<header class="editor-head"><span class="eyebrow">EDITOR DE MAPAS</span>
+      <select id="editor-scenario" aria-label="Cenário">${SCENARIOS.map(item => `<option value="${item.id}"${item.id === editor.scenario ? ' selected' : ''}>${scenarioTitle(item.id)}</option>`).join('')}</select></header>
+    <div class="food-label">COVIS</div><div class="editor-tools">${tools('lair')}</div>
+    <div class="food-label">LOCAIS</div><div class="editor-tools">${tools('poi')}</div>
+    <div class="editor-selected">${place ? `<span><b>${placeType(place.type).name}</b> · x ${place.x.toFixed(1)} · y ${place.y.toFixed(1)}</span><button type="button" class="editor-remove" data-remove="${place.id}">Remover</button>` : `<span>${count ? `${count} ${count === 1 ? 'local' : 'locais'} no mapa.` : 'Nada no mapa ainda.'}</span>`}</div>
+    <p class="editor-hint">Escolha um tipo e clique no mapa. Arraste para mover. Botão direito ou Delete remove. Esc solta o tipo.</p>
+    <div class="editor-actions"><button type="button" class="editor-save" id="editor-save">Salvar</button><button type="button" class="editor-exit" id="editor-exit">Sair</button></div>
+    <p class="editor-status" id="editor-status">${editor.status}</p>`;
+}
+function renderEditor() {
+  $('#editor-card').innerHTML = editorPanelHTML();
+  $('#map-scene').classList.toggle('placing', !!editor.tool);
+  renderPlaces();
+}
+function openEditor() {
+  menu.stack = [];
+  $('#menu-layer').hidden = true;
+  game.running = false;
+  editor.active = true;
+  editor.data = loadScenario(editor.scenario);
+  editor.tool = null;
+  editor.selected = null;
+  editor.status = editor.data.savedAt ? 'Salvo.' : 'Nada salvo ainda.';
+  document.body.classList.add('map-editing');
+  $('#editor-card').hidden = false;
+  sizeWorld(); renderCamera();
+  renderEditor();
+  if (window.showDirectoryPicker) gameFolder(false).then(folder => {
+    if (!folder || !editor.active) return;
+    editor.status = `Pasta do jogo ligada: cada mudança grava data/scenarios/${scenarioDef(editor.scenario).file}.js.`;
+    $('#editor-status').textContent = editor.status;
+  }).catch(() => {});
+}
+function closeEditor() {
+  editor.active = false;
+  editor.drag = null;
+  document.body.classList.remove('map-editing');
+  $('#editor-card').hidden = true;
+  $('#map-scene').classList.remove('placing');
+  worldScenario = loadScenario(state.scenario || 1);
+  renderPlaces();
+  sizeWorld(); renderCamera();
+  toTitle();
+}
+function selectPlace(id) {
+  editor.selected = id;
+  renderEditor();
+}
+const editorCoord = (value, max) => Math.round(Math.max(2, Math.min(max - 2, value)) * 10) / 10;
+function addPlace(x, y) {
+  const place = { id: `p${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`, type: editor.tool, x: editorCoord(x, 100), y: editorCoord(y, 200) };
+  editor.data.places.push(place);
+  editor.selected = place.id;
+  renderEditor();
+  saveScenario();
+}
+function removePlace(id) {
+  editor.data.places = editor.data.places.filter(place => place.id !== id);
+  if (editor.selected === id) editor.selected = null;
+  renderEditor();
+  saveScenario();
+}
+
+function initEditor() {
+  const scene = $('#map-scene');
+  const layer = $('#poi-layer');
+  $('#editor-card').addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.dataset.tool) { editor.tool = editor.tool === button.dataset.tool ? null : button.dataset.tool; renderEditor(); }
+    else if (button.dataset.remove) removePlace(button.dataset.remove);
+    else if (button.id === 'editor-save') saveScenario(true);
+    else if (button.id === 'editor-exit') closeEditor();
+  });
+  $('#editor-card').addEventListener('change', event => {
+    if (event.target.id !== 'editor-scenario') return;
+    editor.scenario = Number(event.target.value);
+    openEditor();
+  });
+  scene.addEventListener('click', event => {
+    if (!editor.active || camera.dragMoved || event.target.closest('.poi, .map-tools')) return;
+    if (editor.tool) { const { x, y } = worldPoint(event); addPlace(x, y); }
+    else if (editor.selected) selectPlace(null);
+  });
+  scene.addEventListener('contextmenu', event => {
+    if (!editor.active) return;
+    event.preventDefault();
+    const marker = event.target.closest('.poi');
+    if (marker) removePlace(marker.dataset.place);
+    else if (editor.tool) { editor.tool = null; renderEditor(); }
+  });
+  layer.addEventListener('pointerdown', event => {
+    const marker = event.target.closest('.poi');
+    if (!editor.active || !marker || event.button !== 0) return;
+    editor.drag = { id: marker.dataset.place, pointerId: event.pointerId, x: event.clientX, y: event.clientY, moved: false, marker };
+    try { marker.setPointerCapture(event.pointerId); } catch {}
+    editor.selected = marker.dataset.place;
+    $('#editor-card').innerHTML = editorPanelHTML();
+    $$('.poi', layer).forEach(item => item.classList.toggle('selected', item === marker));
+  });
+  layer.addEventListener('pointermove', event => {
+    const drag = editor.drag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 4) return;
+    drag.moved = true;
+    const place = editor.data.places.find(item => item.id === drag.id);
+    if (!place) return;
+    const { x, y } = worldPoint(event);
+    place.x = editorCoord(x, 100);
+    place.y = editorCoord(y, 200);
+    drag.marker.style.setProperty('--x', `${place.x}%`);
+    drag.marker.style.setProperty('--y', `${place.y / 2}%`);
+    drag.marker.style.zIndex = String(Math.round(place.y * 10));
+  });
+  // Ao soltar, só o painel é redesenhado: o marcador fica no lugar e o clique que vem depois cai nele.
+  const endDrag = event => {
+    const drag = editor.drag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    editor.drag = null;
+    if (drag.moved) { $('#editor-card').innerHTML = editorPanelHTML(); saveScenario(); }
+  };
+  layer.addEventListener('pointerup', endDrag);
+  layer.addEventListener('pointercancel', endDrag);
+  document.addEventListener('keydown', event => {
+    if (!editor.active || event.target.closest?.('select, input')) return;
+    if (event.key === 'Escape') { event.preventDefault(); if (editor.tool) { editor.tool = null; renderEditor(); } else if (editor.selected) selectPlace(null); }
+    else if ((event.key === 'Delete' || event.key === 'Backspace') && editor.selected) { event.preventDefault(); removePlace(editor.selected); }
+  });
+  worldScenario = loadScenario(state.scenario || 1);
+  renderPlaces();
 }
 
 function init() {
@@ -3566,6 +3830,7 @@ function init() {
   $('#tax-down').addEventListener('click', () => setTax(-5));
   $('#tax-up').addEventListener('click', () => setTax(5));
   renderSites(); renderHeroes(); renderPanel(); updateHud();
+  initEditor();
   setInterval(tick, 1000);
   requestAnimationFrame(animateActors);
   initMenus();
