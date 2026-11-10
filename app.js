@@ -3507,52 +3507,90 @@ function initMenus() {
 // ==========================================================================
 // Cenários e editor de mapas. Cada cenário guarda covis e locais de interesse no mesmo sistema
 // de coordenadas do jogo: x em % da largura do mapa, y de 0 a 200 (como PATH_NODES).
-// O editor salva sozinho a cada mudança neste navegador e, com a pasta do jogo ligada,
-// grava também data/scenarios/<arquivo>.js, que o index.html carrega. Vale o mais recente dos dois.
+// Save no modelo do editor do Ember Ashes: cada Salvar grava uma versão nova com número (v001, v002...),
+// que vira a ativa no jogo; as versões ficam listadas para Carregar, Ativar ou Apagar (dois cliques).
+// Tudo vai para este navegador e, com a pasta do jogo ligada, para data/scenarios/<arquivo>.js, que o
+// index.html carrega. Vale o registro mais recente dos dois. O rascunho (o que ainda não foi salvo)
+// fica guardado no navegador, como o rascunho aberto do editor do Ember.
 // ==========================================================================
 const SCENARIOS = [{ id: 1, name: 'Floresta', file: '01-floresta' }];
+const PLACE_GROUPS = [{ id: 'lair', name: 'Covis' }, { id: 'poi', name: 'Locais' }];
 const PLACE_TYPES = [
   { id: 'wolfDen', group: 'lair', name: 'Covil de lobos', icon: '<circle cx="6.5" cy="9.5" r="1.8"/><circle cx="10.5" cy="6" r="1.8"/><circle cx="15" cy="6.5" r="1.8"/><circle cx="18" cy="10.5" r="1.7"/><path d="M8 17.5c0-3.2 2.3-5.6 4.6-5.6s4.2 2.4 4.2 4.8c0 2-1.6 3-3.3 2.4-1.2-.4-1.9-.4-3 .1-1.6.6-2.5-.2-2.5-1.7z"/>' },
   { id: 'spiderNest', group: 'lair', name: 'Ninho de aranhas', icon: '<path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/><path d="M12 7.2l3.4 1.4 1.4 3.4-1.4 3.4-3.4 1.4-3.4-1.4L7.2 12l1.4-3.4z"/>' },
+  { id: 'goblinDen', group: 'lair', name: 'Toca de goblins', icon: '<path d="M3 20c0-8 4-13 9-13s9 5 9 13"/><path d="M8 20c0-4 1.8-7 4-7s4 3 4 7M2 20h20"/>' },
+  { id: 'trollDen', group: 'lair', name: 'Covil de troll', icon: '<path d="M5 19.5l7.5-7.5"/><path d="M11.5 13c-1.2-3 .8-7.2 4-8.2s4.6 1.8 3.4 4.2-4.4 4-7.4 4z"/>' },
   { id: 'graveyard', group: 'lair', name: 'Cemitério', icon: '<path d="M7 20V10a5 5 0 0 1 10 0v10"/><path d="M4 20h16M12 8.5v6.5M9.5 11h5"/>' },
+  { id: 'crypt', group: 'lair', name: 'Cripta', icon: '<path d="M5 20V9l7-5 7 5v11"/><path d="M9.5 20v-6a2.5 2.5 0 0 1 5 0v6M3 20h18"/>' },
   { id: 'banditCamp', group: 'lair', name: 'Acampamento de ladrões', icon: '<path d="M3 19L12 5l9 14z"/><path d="M9 19l3-5.5 3 5.5"/>' },
   { id: 'ruins', group: 'poi', name: 'Ruínas', icon: '<path d="M3 20h18M5.5 20V9H9v11M15 20v-6.5h3.5V20M4.5 9h5.5M14 13.5h5.5M9 9l1.5-2.5"/>' },
   { id: 'shrine', group: 'poi', name: 'Santuário', icon: '<path d="M6 20v-9l6-6 6 6v9M4 20h16"/><path d="M12 10v6M10 12h4"/>' },
   { id: 'well', group: 'poi', name: 'Poço', icon: '<path d="M4 8.5l8-4.5 8 4.5M7 8.5V14M17 8.5V14M12 8.5V11"/><path d="M5 14h14v6H5z"/>' },
   { id: 'mine', group: 'poi', name: 'Mina', icon: '<path d="M4.5 9.5c4.2-4.4 10.8-4.4 15 0"/><path d="M12 6.4L7 20"/><path d="M14 20a4 4 0 0 1 6 0"/>' },
+  { id: 'watchtower', group: 'poi', name: 'Torre de vigia', icon: '<path d="M8 20l1.5-11h5L16 20M7 9h10M8 9V5h8v4M10 5V3.5M14 5V3.5M5 20h14"/>' },
+  { id: 'bridge', group: 'poi', name: 'Ponte', icon: '<path d="M2 11h20M4 11v6M20 11v6M7 17a5 5 0 0 1 10 0"/>' },
+  { id: 'quarry', group: 'poi', name: 'Pedreira', icon: '<path d="M3 19l4-6 3 3 4-7 7 10z"/>' },
+  { id: 'gallows', group: 'poi', name: 'Forca', icon: '<path d="M6 20V4h9M6 8l4-4M15 4v4M3 20h8"/><circle cx="15" cy="10" r="2"/>' },
+  { id: 'crossroads', group: 'poi', name: 'Encruzilhada', icon: '<path d="M12 21V3M12 6h7l2 2-2 2h-7M12 12H5l-2 2 2 2h7"/>' },
 ];
 const placeType = id => PLACE_TYPES.find(type => type.id === id);
 const scenarioDef = id => SCENARIOS.find(item => item.id === id) || SCENARIOS[0];
 const scenarioKey = id => `mordavia.scenario.${pad2(id)}`;
+const scenarioDraftKey = id => `mordavia.scenario.${pad2(id)}.draft`;
 const scenarioTitle = id => `Cenário ${pad2(id)} · ${scenarioDef(id).name}`;
-const editor = { active: false, scenario: 1, data: null, tool: null, selected: null, drag: null, status: '' };
+const scenarioFilePath = id => `data/scenarios/${scenarioDef(id).file}.js`;
+const versionLabel = serial => `v${String(serial).padStart(3, '0')}`;
+const editor = { active: false, scenario: 1, record: null, places: [], base: null, tool: null, group: 'lair', selected: null, drag: null, preview: false, armedDelete: null, status: '' };
 let worldScenario = null;
 
-function loadScenario(id) {
+const cleanPlaces = list => (Array.isArray(list) ? list : []).filter(place => placeType(place?.type) && Number.isFinite(+place.x) && Number.isFinite(+place.y))
+  .map(place => ({ id: String(place.id), type: place.type, x: +place.x, y: +place.y }));
+// O registro de um cenário: {id, name, updatedAt, active, versions: [{serial, savedAt, places}]}.
+// Aceita o formato antigo ({savedAt, places}) como a versão 1.
+function normalizeRecord(data) {
+  if (!data || typeof data !== 'object') return null;
+  if (Array.isArray(data.versions)) {
+    const versions = data.versions.filter(item => Number.isInteger(item?.serial) && item.serial > 0)
+      .map(item => ({ serial: item.serial, savedAt: item.savedAt || 0, places: cleanPlaces(item.places) })).sort((a, b) => a.serial - b.serial);
+    return { updatedAt: data.updatedAt || 0, active: versions.some(item => item.serial === data.active) ? data.active : versions.at(-1)?.serial ?? null, versions };
+  }
+  if (Array.isArray(data.places) && (data.places.length || data.savedAt))
+    return { updatedAt: data.savedAt || 0, active: 1, versions: [{ serial: 1, savedAt: data.savedAt || 0, places: cleanPlaces(data.places) }] };
+  return null;
+}
+function loadScenarioRecord(id) {
   const def = scenarioDef(id);
   let local = null;
-  try { local = JSON.parse(localStorage.getItem(scenarioKey(def.id))); } catch {}
-  const fromFile = window.MORDAVIA_SCENARIOS?.[def.id];
-  const best = [local, fromFile].filter(data => data && Array.isArray(data.places)).sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0))[0];
-  const places = (best?.places || []).filter(place => placeType(place.type) && Number.isFinite(+place.x) && Number.isFinite(+place.y))
-    .map(place => ({ id: String(place.id), type: place.type, x: +place.x, y: +place.y }));
-  return { id: def.id, name: def.name, savedAt: best?.savedAt || 0, places };
+  try { local = normalizeRecord(JSON.parse(localStorage.getItem(scenarioKey(def.id)))); } catch {}
+  const fromFile = normalizeRecord(window.MORDAVIA_SCENARIOS?.[def.id]);
+  const best = [local, fromFile].filter(Boolean).sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  return { id: def.id, name: def.name, updatedAt: best?.updatedAt || 0, active: best?.active ?? null, versions: best?.versions || [] };
 }
-function scenarioFileText(data) {
-  const json = JSON.stringify({ id: data.id, name: data.name, savedAt: data.savedAt, places: data.places });
-  return `// ${scenarioTitle(data.id)}. Gravado pelo editor de mapas do jogo. x em % da largura do mapa, y de 0 a 200.\n(window.MORDAVIA_SCENARIOS = window.MORDAVIA_SCENARIOS || {})[${data.id}] = ${json};\n`;
+const activeVersion = record => record.versions.find(item => item.serial === record.active) || record.versions.at(-1) || null;
+// O que o jogo mostra: a versão ativa do cenário.
+function loadScenario(id) {
+  const record = loadScenarioRecord(id);
+  return { id: record.id, name: record.name, serial: activeVersion(record)?.serial ?? null, places: activeVersion(record)?.places || [] };
+}
+function scenarioFileText(record) {
+  const json = JSON.stringify({ id: record.id, name: record.name, updatedAt: record.updatedAt, active: record.active, versions: record.versions }, null, 2);
+  return `// ${scenarioTitle(record.id)}. Gravado pelo editor de mapas do jogo: cada Salvar é uma versão; "active" é a que o jogo usa.\n// x em % da largura do mapa, y de 0 a 200.\n(window.MORDAVIA_SCENARIOS = window.MORDAVIA_SCENARIOS || {})[${record.id}] = ${json};\n`;
 }
 
-// Covis e locais no mapa. No jogo só aparecem; no editor viram botões que dá pra arrastar.
-function placeMarkerHTML(place) {
+// Covis e locais no mapa. No jogo (e no preview do editor) só aparecem; editando, viram botões que dá pra arrastar.
+function placeMarkerHTML(place, editable) {
   const type = placeType(place.type);
-  const tag = editor.active ? 'button' : 'div';
-  return `<${tag} ${editor.active ? 'type="button" ' : ''}class="poi ${type.group}${editor.selected === place.id ? ' selected' : ''}" data-place="${place.id}" style="--x:${place.x}%;--y:${place.y / 2}%;z-index:${Math.round(place.y * 10)}" title="${type.name}"><span class="poi-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${type.icon}</svg></span><small>${type.name}</small></${tag}>`;
+  const tag = editable ? 'button' : 'div';
+  return `<${tag} ${editable ? 'type="button" ' : ''}class="poi ${type.group}${editable && editor.selected === place.id ? ' selected' : ''}" data-place="${place.id}" style="--x:${place.x}%;--y:${place.y / 2}%;z-index:${Math.round(place.y * 10)}" title="${type.name}"><span class="poi-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${type.icon}</svg></span><small>${type.name}</small></${tag}>`;
 }
 function renderPlaces() {
-  const places = editor.active ? editor.data.places : worldScenario?.places || [];
-  $('#poi-layer').classList.toggle('editing', editor.active);
-  $('#poi-layer').innerHTML = places.map(placeMarkerHTML).join('');
+  const editing = editor.active && !editor.preview;
+  const places = editor.active ? editor.places : worldScenario?.places || [];
+  const layer = $('#poi-layer');
+  layer.classList.toggle('editing', editing);
+  layer.innerHTML = places.map(place => placeMarkerHTML(place, editing)).join('');
+  // A sombra do objeto escolhido segue o mouse antes do clique: o preview de onde ele vai ficar.
+  if (editing && editor.tool) layer.insertAdjacentHTML('beforeend', placeMarkerHTML({ id: 'ghost', type: editor.tool, x: -50, y: -50 }, false).replace('class="poi ', 'class="poi ghost '));
 }
 
 // A pasta do jogo fica lembrada no navegador (IndexedDB) depois da primeira vez.
@@ -3587,64 +3625,149 @@ async function gameFolder(ask) {
   await folderStore('readwrite', folder);
   return folder;
 }
-async function writeScenarioFile(data, ask) {
+// Como o Ember: grava, lê de volta e confere. Se não bater, avisa que não salvou o arquivo.
+async function writeScenarioFile(record, ask) {
   if (!window.showDirectoryPicker) return 'unsupported';
   const folder = await gameFolder(ask);
   if (!folder) return 'unlinked';
+  const text = scenarioFileText(record);
   const dir = await (await folder.getDirectoryHandle('data', { create: true })).getDirectoryHandle('scenarios', { create: true });
-  const writable = await (await dir.getFileHandle(`${scenarioDef(data.id).file}.js`, { create: true })).createWritable();
-  await writable.write(scenarioFileText(data));
+  const handle = await dir.getFileHandle(`${scenarioDef(record.id).file}.js`, { create: true });
+  const writable = await handle.createWritable();
+  await writable.write(text);
   await writable.close();
+  if (await (await handle.getFile()).text() !== text) throw new Error('mismatch');
   return 'ok';
 }
-function downloadScenarioFile(data) {
+function downloadScenarioFile(record) {
   const link = document.createElement('a');
-  link.href = URL.createObjectURL(new Blob([scenarioFileText(data)], { type: 'text/javascript' }));
-  link.download = `${scenarioDef(data.id).file}.js`;
+  link.href = URL.createObjectURL(new Blob([scenarioFileText(record)], { type: 'text/javascript' }));
+  link.download = `${scenarioDef(record.id).file}.js`;
   document.body.append(link);
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
-// Salva a cada mudança. ask = true só no clique em Salvar (pode abrir a escolha da pasta do jogo).
+function setEditorStatus(text) {
+  editor.status = text;
+  if (editor.active && $('#editor-status')) $('#editor-status').textContent = text;
+}
+// Grava o registro (versões e qual está ativa) no navegador e no arquivo. ask = true só em cliques
+// (Salvar, Ativar, Apagar): pode abrir a escolha da pasta do jogo na primeira vez.
 let editorWrite = Promise.resolve();
-function saveScenario(ask = false) {
-  const data = editor.data;
-  data.savedAt = Date.now();
-  try { localStorage.setItem(scenarioKey(data.id), JSON.stringify(data)); } catch {}
-  (window.MORDAVIA_SCENARIOS = window.MORDAVIA_SCENARIOS || {})[data.id] = JSON.parse(JSON.stringify(data));
-  const file = `data/scenarios/${scenarioDef(data.id).file}.js`;
-  // O seletor de pasta só abre direto do clique; por isso a primeira gravação com ask não espera a fila.
-  const run = () => writeScenarioFile(data, ask);
+function persistRecord(done, ask = true) {
+  const record = editor.record;
+  record.updatedAt = Date.now();
+  const stored = { id: record.id, name: record.name, updatedAt: record.updatedAt, active: record.active, versions: record.versions };
+  try { localStorage.setItem(scenarioKey(record.id), JSON.stringify(stored)); } catch {}
+  (window.MORDAVIA_SCENARIOS = window.MORDAVIA_SCENARIOS || {})[record.id] = JSON.parse(JSON.stringify(stored));
+  const run = () => writeScenarioFile(stored, ask);
+  // O seletor de pasta só abre direto do clique; por isso a gravação pedida por clique não espera a fila.
   editorWrite = (ask ? run() : editorWrite.then(run)).then(result => {
-    if (result === 'ok') editor.status = `Salvo neste navegador e em ${file}.`;
-    else if (result === 'unsupported') {
-      if (ask) downloadScenarioFile(data);
-      editor.status = ask ? `Este navegador não grava na pasta. Baixei o ${scenarioDef(data.id).file}.js: ponha em data/scenarios.` : 'Salvo neste navegador.';
-    } else editor.status = 'Salvo neste navegador. Clique em Salvar e escolha a pasta do jogo para gravar o arquivo.';
+    if (result === 'ok') return setEditorStatus(`${done} Gravado neste navegador e em ${scenarioFilePath(record.id)}.`);
+    if (result === 'unsupported') {
+      if (ask) downloadScenarioFile(stored);
+      return setEditorStatus(`${done} Este navegador não grava na pasta do jogo: baixei o ${scenarioDef(record.id).file}.js; ponha em data/scenarios.`);
+    }
+    setEditorStatus(`${done} Gravado só neste navegador: escolha a pasta do jogo para gravar o arquivo.`);
   }).catch(error => {
-    editor.status = error?.message === 'wrong-folder' ? 'Essa não é a pasta do jogo. Escolha a pasta do JOGAR.bat.' : error?.name === 'AbortError' ? 'Salvo neste navegador. A pasta não foi escolhida.' : 'Salvo neste navegador. Não deu para gravar o arquivo.';
-  }).finally(() => { if (editor.active) $('#editor-status').textContent = editor.status; });
+    setEditorStatus(error?.message === 'wrong-folder' ? `${done} Gravado só neste navegador: essa não é a pasta do jogo (a do JOGAR.bat).`
+      : error?.name === 'AbortError' ? `${done} Gravado só neste navegador: a pasta do jogo não foi escolhida.`
+      : `${done} NÃO GRAVOU o arquivo ${scenarioFilePath(record.id)}; ficou só neste navegador.`);
+  });
   return editorWrite;
 }
 
+// O rascunho: as mudanças ainda não salvas. Fica no navegador a cada mudança, para não perder nada.
+const placesKey = places => JSON.stringify(places.map(({ type, x, y }) => [type, x, y]));
+const draftDirty = () => placesKey(editor.places) !== placesKey(activeVersionOf(editor.base)?.places || []);
+const activeVersionOf = serial => editor.record.versions.find(item => item.serial === serial) || null;
+function keepDraft() {
+  try {
+    if (draftDirty()) localStorage.setItem(scenarioDraftKey(editor.scenario), JSON.stringify({ base: editor.base, places: editor.places }));
+    else localStorage.removeItem(scenarioDraftKey(editor.scenario));
+  } catch {}
+}
+function editorChanged() {
+  keepDraft();
+  renderEditor();
+}
+
+function saveVersion() {
+  const record = editor.record;
+  const serial = Math.max(0, ...record.versions.map(item => item.serial)) + 1;
+  record.versions.push({ serial, savedAt: Date.now(), places: editor.places.map(place => ({ ...place })) });
+  record.active = serial;
+  editor.base = serial;
+  editor.armedDelete = null;
+  keepDraft();
+  renderEditor();
+  persistRecord(`Salvo: ${versionLabel(serial)}, ativa no jogo.`);
+}
+function loadVersion(serial) {
+  const version = activeVersionOf(serial);
+  if (!version) return;
+  editor.places = version.places.map(place => ({ ...place }));
+  editor.base = serial;
+  editor.selected = null;
+  editor.armedDelete = null;
+  keepDraft();
+  renderEditor();
+  setEditorStatus(`Aberta a ${versionLabel(serial)}.`);
+}
+function activateVersion(serial) {
+  editor.record.active = serial;
+  editor.armedDelete = null;
+  renderEditor();
+  persistRecord(`${versionLabel(serial)} agora é a ativa no jogo.`);
+}
+function deleteVersion(serial) {
+  if (editor.armedDelete !== serial) {
+    editor.armedDelete = serial;
+    renderEditor();
+    return setEditorStatus(`Clique de novo em Confirmar para apagar a ${versionLabel(serial)}. Isso não tem volta.`);
+  }
+  const record = editor.record;
+  record.versions = record.versions.filter(item => item.serial !== serial);
+  if (record.active === serial) record.active = record.versions.at(-1)?.serial ?? null;
+  if (editor.base === serial) editor.base = null;
+  editor.armedDelete = null;
+  keepDraft();
+  renderEditor();
+  persistRecord(`${versionLabel(serial)} apagada.${record.active ? ` Ativa no jogo: ${versionLabel(record.active)}.` : ''}`);
+}
+
+const savedAtText = time => time ? new Date(time).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+function versionsHTML() {
+  const versions = [...editor.record.versions].reverse();
+  if (!versions.length) return `<p class="editor-hint">Nenhuma versão ainda. Salvar grava a ${versionLabel(1)} em ${scenarioFilePath(editor.scenario)}.</p>`;
+  return `<ol class="editor-versions">${versions.map(item => {
+    const active = item.serial === editor.record.active;
+    return `<li class="${active ? 'active' : ''}${item.serial === editor.base ? ' open' : ''}"><b>${versionLabel(item.serial)}</b><span>${savedAtText(item.savedAt)} · ${item.places.length} ${item.places.length === 1 ? 'local' : 'locais'}${active ? ' · ativa no jogo' : ''}${item.serial === editor.base ? ' · aberta' : ''}</span>
+      <div><button type="button" data-version-load="${item.serial}">Carregar</button><button type="button" data-version-activate="${item.serial}"${active ? ' disabled' : ''}>Ativar</button><button type="button" class="danger" data-version-delete="${item.serial}">${editor.armedDelete === item.serial ? 'Confirmar' : 'Apagar'}</button></div></li>`;
+  }).join('')}</ol>`;
+}
 function editorPanelHTML() {
-  const tools = group => PLACE_TYPES.filter(type => type.group === group).map(type => `<button type="button" class="editor-tool is-${type.group}${editor.tool === type.id ? ' active' : ''}" data-tool="${type.id}" aria-pressed="${editor.tool === type.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${type.icon}</svg><span>${type.name}</span></button>`).join('');
-  const place = editor.data.places.find(item => item.id === editor.selected);
-  const count = editor.data.places.length;
+  const tools = PLACE_TYPES.filter(type => type.group === editor.group).map(type => `<button type="button" class="editor-tool is-${type.group}${editor.tool === type.id ? ' active' : ''}" data-tool="${type.id}" aria-pressed="${editor.tool === type.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${type.icon}</svg><span>${type.name}</span></button>`).join('');
+  const groups = PLACE_GROUPS.map(group => `<button type="button" class="editor-group${editor.group === group.id ? ' active' : ''}" data-group="${group.id}">${group.name} <i>${PLACE_TYPES.filter(type => type.group === group.id).length}</i></button>`).join('');
+  const place = editor.places.find(item => item.id === editor.selected);
+  const count = editor.places.length;
+  const dirty = draftDirty();
   return `<header class="editor-head"><span class="eyebrow">EDITOR DE MAPAS</span>
       <select id="editor-scenario" aria-label="Cenário">${SCENARIOS.map(item => `<option value="${item.id}"${item.id === editor.scenario ? ' selected' : ''}>${scenarioTitle(item.id)}</option>`).join('')}</select></header>
-    <div class="food-label">COVIS</div><div class="editor-tools">${tools('lair')}</div>
-    <div class="food-label">LOCAIS</div><div class="editor-tools">${tools('poi')}</div>
-    <div class="editor-selected">${place ? `<span><b>${placeType(place.type).name}</b> · x ${place.x.toFixed(1)} · y ${place.y.toFixed(1)}</span><button type="button" class="editor-remove" data-remove="${place.id}">Remover</button>` : `<span>${count ? `${count} ${count === 1 ? 'local' : 'locais'} no mapa.` : 'Nada no mapa ainda.'}</span>`}</div>
-    <p class="editor-hint">Escolha um tipo e clique no mapa. Arraste para mover. Botão direito ou Delete remove. Esc solta o tipo.</p>
-    <div class="editor-actions"><button type="button" class="editor-save" id="editor-save">Salvar</button><button type="button" class="editor-exit" id="editor-exit">Sair</button></div>
-    <p class="editor-status" id="editor-status">${editor.status}</p>`;
+    <div class="editor-groups" role="tablist">${groups}</div>
+    <div class="editor-tools">${tools}</div>
+    <div class="editor-selected">${place ? `<span><b>${placeType(place.type).name}</b> · x ${place.x.toFixed(1)} · y ${place.y.toFixed(1)}</span><button type="button" class="editor-remove" data-remove="${place.id}">Remover</button>` : `<span>${count ? `${count} ${count === 1 ? 'local' : 'locais'} no mapa` : 'Nada no mapa ainda'}${editor.base ? ` · da ${versionLabel(editor.base)}` : ''}${dirty ? ' · <em>mudanças não salvas</em>' : ''}</span>`}</div>
+    <p class="editor-hint">Escolha um objeto e clique no mapa. Arraste para mover. Botão direito ou Delete remove. Esc solta o objeto.</p>
+    <div class="editor-actions"><button type="button" class="editor-save" id="editor-save">Salvar</button><button type="button" class="editor-preview${editor.preview ? ' active' : ''}" id="editor-preview" aria-pressed="${editor.preview}">Preview</button><button type="button" class="editor-exit" id="editor-exit">Sair</button></div>
+    <p class="editor-status" id="editor-status">${editor.status}</p>
+    <div class="food-label">VERSÕES</div>${versionsHTML()}`;
 }
 function renderEditor() {
   $('#editor-card').innerHTML = editorPanelHTML();
-  $('#map-scene').classList.toggle('placing', !!editor.tool);
+  document.body.classList.toggle('map-preview', editor.preview);
+  $('#map-scene').classList.toggle('placing', !!editor.tool && !editor.preview);
   renderPlaces();
 }
 function openEditor() {
@@ -3652,24 +3775,27 @@ function openEditor() {
   $('#menu-layer').hidden = true;
   game.running = false;
   editor.active = true;
-  editor.data = loadScenario(editor.scenario);
+  editor.record = loadScenarioRecord(editor.scenario);
+  editor.base = activeVersion(editor.record)?.serial ?? null;
+  editor.places = (activeVersion(editor.record)?.places || []).map(place => ({ ...place }));
+  let draft = null;
+  try { draft = JSON.parse(localStorage.getItem(scenarioDraftKey(editor.scenario))); } catch {}
+  if (draft && Array.isArray(draft.places)) { editor.places = cleanPlaces(draft.places); editor.base = activeVersionOf(draft.base) ? draft.base : null; }
   editor.tool = null;
   editor.selected = null;
-  editor.status = editor.data.savedAt ? 'Salvo.' : 'Nada salvo ainda.';
+  editor.preview = false;
+  editor.armedDelete = null;
+  editor.status = draftDirty() ? 'Rascunho reaberto: as mudanças ainda não foram salvas.' : editor.base ? `Aberta a ${versionLabel(editor.base)}, ativa no jogo.` : 'Nada salvo ainda.';
   document.body.classList.add('map-editing');
   $('#editor-card').hidden = false;
   sizeWorld(); renderCamera();
   renderEditor();
-  if (window.showDirectoryPicker) gameFolder(false).then(folder => {
-    if (!folder || !editor.active) return;
-    editor.status = `Pasta do jogo ligada: cada mudança grava data/scenarios/${scenarioDef(editor.scenario).file}.js.`;
-    $('#editor-status').textContent = editor.status;
-  }).catch(() => {});
 }
 function closeEditor() {
   editor.active = false;
   editor.drag = null;
-  document.body.classList.remove('map-editing');
+  editor.preview = false;
+  document.body.classList.remove('map-editing', 'map-preview');
   $('#editor-card').hidden = true;
   $('#map-scene').classList.remove('placing');
   worldScenario = loadScenario(state.scenario || 1);
@@ -3684,16 +3810,14 @@ function selectPlace(id) {
 const editorCoord = (value, max) => Math.round(Math.max(2, Math.min(max - 2, value)) * 10) / 10;
 function addPlace(x, y) {
   const place = { id: `p${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`, type: editor.tool, x: editorCoord(x, 100), y: editorCoord(y, 200) };
-  editor.data.places.push(place);
+  editor.places.push(place);
   editor.selected = place.id;
-  renderEditor();
-  saveScenario();
+  editorChanged();
 }
 function removePlace(id) {
-  editor.data.places = editor.data.places.filter(place => place.id !== id);
+  editor.places = editor.places.filter(place => place.id !== id);
   if (editor.selected === id) editor.selected = null;
-  renderEditor();
-  saveScenario();
+  editorChanged();
 }
 
 function initEditor() {
@@ -3701,10 +3825,16 @@ function initEditor() {
   const layer = $('#poi-layer');
   $('#editor-card').addEventListener('click', event => {
     const button = event.target.closest('button');
-    if (!button) return;
-    if (button.dataset.tool) { editor.tool = editor.tool === button.dataset.tool ? null : button.dataset.tool; renderEditor(); }
-    else if (button.dataset.remove) removePlace(button.dataset.remove);
-    else if (button.id === 'editor-save') saveScenario(true);
+    if (!button || button.disabled) return;
+    const data = button.dataset;
+    if (data.tool) { editor.tool = editor.tool === data.tool ? null : data.tool; editor.preview = false; renderEditor(); }
+    else if (data.group) { editor.group = data.group; renderEditor(); }
+    else if (data.remove) removePlace(data.remove);
+    else if (data.versionLoad) loadVersion(Number(data.versionLoad));
+    else if (data.versionActivate) activateVersion(Number(data.versionActivate));
+    else if (data.versionDelete) deleteVersion(Number(data.versionDelete));
+    else if (button.id === 'editor-save') saveVersion();
+    else if (button.id === 'editor-preview') { editor.preview = !editor.preview; editor.tool = null; editor.selected = null; renderEditor(); }
     else if (button.id === 'editor-exit') closeEditor();
   });
   $('#editor-card').addEventListener('change', event => {
@@ -3713,20 +3843,30 @@ function initEditor() {
     openEditor();
   });
   scene.addEventListener('click', event => {
-    if (!editor.active || camera.dragMoved || event.target.closest('.poi, .map-tools')) return;
+    if (!editor.active || editor.preview || camera.dragMoved || event.target.closest('.poi:not(.ghost), .map-tools')) return;
     if (editor.tool) { const { x, y } = worldPoint(event); addPlace(x, y); }
     else if (editor.selected) selectPlace(null);
   });
+  scene.addEventListener('pointermove', event => {
+    const ghost = editor.active && !editor.preview && editor.tool ? $('.poi.ghost', layer) : null;
+    if (!ghost) return;
+    const { x, y } = worldPoint(event);
+    ghost.style.setProperty('--x', `${editorCoord(x, 100)}%`);
+    ghost.style.setProperty('--y', `${editorCoord(y, 200) / 2}%`);
+    ghost.style.zIndex = '2000';
+  });
+  scene.addEventListener('pointerleave', () => { const ghost = $('.poi.ghost', layer); if (ghost) ghost.style.setProperty('--x', '-50%'); });
   scene.addEventListener('contextmenu', event => {
     if (!editor.active) return;
     event.preventDefault();
-    const marker = event.target.closest('.poi');
+    if (editor.preview) return;
+    const marker = event.target.closest('.poi:not(.ghost)');
     if (marker) removePlace(marker.dataset.place);
     else if (editor.tool) { editor.tool = null; renderEditor(); }
   });
   layer.addEventListener('pointerdown', event => {
-    const marker = event.target.closest('.poi');
-    if (!editor.active || !marker || event.button !== 0) return;
+    const marker = event.target.closest('.poi:not(.ghost)');
+    if (!editor.active || editor.preview || !marker || event.button !== 0) return;
     editor.drag = { id: marker.dataset.place, pointerId: event.pointerId, x: event.clientX, y: event.clientY, moved: false, marker };
     try { marker.setPointerCapture(event.pointerId); } catch {}
     editor.selected = marker.dataset.place;
@@ -3738,7 +3878,7 @@ function initEditor() {
     if (!drag || drag.pointerId !== event.pointerId) return;
     if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 4) return;
     drag.moved = true;
-    const place = editor.data.places.find(item => item.id === drag.id);
+    const place = editor.places.find(item => item.id === drag.id);
     if (!place) return;
     const { x, y } = worldPoint(event);
     place.x = editorCoord(x, 100);
@@ -3752,14 +3892,18 @@ function initEditor() {
     const drag = editor.drag;
     if (!drag || drag.pointerId !== event.pointerId) return;
     editor.drag = null;
-    if (drag.moved) { $('#editor-card').innerHTML = editorPanelHTML(); saveScenario(); }
+    if (drag.moved) { keepDraft(); $('#editor-card').innerHTML = editorPanelHTML(); }
   };
   layer.addEventListener('pointerup', endDrag);
   layer.addEventListener('pointercancel', endDrag);
   document.addEventListener('keydown', event => {
     if (!editor.active || event.target.closest?.('select, input')) return;
-    if (event.key === 'Escape') { event.preventDefault(); if (editor.tool) { editor.tool = null; renderEditor(); } else if (editor.selected) selectPlace(null); }
-    else if ((event.key === 'Delete' || event.key === 'Backspace') && editor.selected) { event.preventDefault(); removePlace(editor.selected); }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (editor.preview) { editor.preview = false; renderEditor(); }
+      else if (editor.tool) { editor.tool = null; renderEditor(); }
+      else if (editor.selected) selectPlace(null);
+    } else if ((event.key === 'Delete' || event.key === 'Backspace') && editor.selected && !editor.preview) { event.preventDefault(); removePlace(editor.selected); }
   });
   worldScenario = loadScenario(state.scenario || 1);
   renderPlaces();
