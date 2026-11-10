@@ -3826,7 +3826,7 @@ const SCREENS = {
       <header class="menu-card-head"><span class="eyebrow">COMITIVA FORMADA</span><h2>Quem segue com você</h2><p>O castelo do próximo cenário vai abrigar a comitiva. Ele ainda está sendo erguido. Os pedreiros prometeram. Pedreiros prometem muito.</p></header>
       <div class="heir-row-label">SERVOS</div><ul class="retinue-list">${names(r.servants) || '<li>Ninguém.</li>'}</ul>
       <div class="heir-row-label">PROTETORES</div><ul class="retinue-list">${names(r.protectors) || '<li>Ninguém.</li>'}</ul>
-      <div class="menu-actions"><button type="button" class="primary" data-action="resume">Continuar no Vale do Luto</button><button type="button" data-action="save-quit">Sair pro título</button></div>
+      <div class="menu-actions"><button type="button" class="primary" data-action="resume">Continuar no Vale do Luto</button><button type="button" data-action="save-quit">Voltar ao menu principal</button></div>
     </section>` };
   },
   confirm({ title, text, confirmLabel, danger }) {
@@ -3867,22 +3867,10 @@ const SCREENS = {
       <header class="menu-card-head"><span class="eyebrow">DIA ${day} · ${clock}</span><h2>Pausado</h2></header>
       <nav class="menu-list compact" aria-label="Menu de pausa">
         <button type="button" class="primary" data-action="resume">Voltar ao jogo</button>
-        <button type="button" data-action="economy">Economia do domínio</button>
-        <button type="button" data-action="save">Salvar</button>
+        <button type="button" data-action="save">Salvar jogo</button>
         <button type="button" data-action="load">Carregar jogo</button>
         <button type="button" data-action="options">Opções</button>
-        <button type="button" data-action="debug">Debug</button>
-        <button type="button" data-action="quit">Sair pro título</button>
-      </nav>
-    </section>` };
-  },
-  quit() {
-    return { cls: 'is-pause', html: `<section class="menu-card narrow">
-      <header class="menu-card-head"><span class="eyebrow">SAIR</span><h2>Sair pro título?</h2><p>O que não foi salvo se perde. A fazenda não vai sentir sua falta.</p></header>
-      <nav class="menu-list compact">
-        <button type="button" class="primary" data-action="save-quit">Salvar e sair</button>
-        <button type="button" data-action="quit-nosave">Sair sem salvar</button>
-        <button type="button" data-action="back">Cancelar</button>
+        <button type="button" data-action="save-quit">Voltar ao menu principal</button>
       </nav>
     </section>` };
   },
@@ -4035,9 +4023,7 @@ function initMenus() {
       }
       case 'confirm-yes': { const run = menu.pending; menu.pending = null; run?.(); break; }
       case 'save': say(writeSave(game.slot) ? 'Jogo salvo.' : 'Não deu pra salvar. O navegador recusou.'); renderMenu(); break;
-      case 'quit': showScreen('quit'); break;
       case 'save-quit': writeSave(game.slot); toTitle(); break;
-      case 'quit-nosave': toTitle(); break;
     }
   });
   $('#menu-btn').addEventListener('click', openPause);
