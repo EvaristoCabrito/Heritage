@@ -816,9 +816,9 @@ function workerCard(worker) {
   </article>`;
 }
 
-function renderPanel() {
-  const host = $('#panel-view');
-  if (state.tab === 'build') {
+// A ficha da construção selecionada abre numa janela própria em cima do mapa.
+// A aba Construir fica sempre com a lista de construções.
+function inspectorHTML() {
     const selectedFarm = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'farm' && isDone(building));
     const selectedBuilding = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && !building.underConstruction);
     const selectedArmory = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'armory' && isDone(building));
@@ -827,7 +827,6 @@ function renderPanel() {
     const selectedLumber = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'lumber' && isDone(building));
     const selectedDepot = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'depot' && isDone(building));
     const selectedGuild = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && isDone(building) && BUILDINGS.find(item => item.id === building.type)?.heroClass);
-    const farmChoice = state.selectedBuild === 'farm' || !!selectedFarm;
     const currentFarmType = selectedFarm ? farmType(selectedFarm.produce).id : state.selectedFarmType;
     const inspectorActions = selectedBuilding ? `${selectedFarm ? `<section class="inspector-section" aria-label="Tipo de fazenda"><h4>Produção</h4>
         <div class="farm-type-grid compact">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="+${rateNumber(type.grain[producerLevel(selectedFarm)])} por segundo"><img src="public/art/${type.art}-v01.webp" alt=""><b>${type.name}</b></button>`).join('')}</div></section>` : ''}
@@ -837,26 +836,19 @@ function renderPanel() {
       ${selectedDepot ? depotBoxHTML(selectedDepot) : ''}
       ${selectedLumber ? lumberBoxHTML(selectedLumber) : ''}
       ${selectedArmory ? armoryBoxHTML(selectedArmory) : ''}` : '';
-    host.innerHTML = selectedBuilding ? buildingInfoHTML(selectedBuilding, inspectorActions) : `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
-      ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
-        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0])} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small></span></button>`).join('')}</div></section>` : ''}
-      <div class="build-grid">${BUILDINGS.map(item => `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira">
-        <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${item.detail}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`).join('')}</div>
-      <p class="build-note">A moeda é o custo em ouro e a lenha é o custo em madeira.</p>`;
-  } else if (state.tab === 'heroes') {
-    host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
-      ${bountyPanelHTML()}
-      <div class="hero-list">${state.heroes.filter(h => h.alive).map(heroCard).join('') || '<div class="empty-state">Nenhum herói. Ninguém foi corajoso, ou burro, o bastante.<br>Construa uma taverna ou guilda.</div>'}</div>
-      <div class="panel-title worker-heading"><h3>Trabalhadores</h3><span>${state.workers.filter(worker => worker.alive).length} no domínio</span></div>
-      <div class="hero-list">${state.workers.filter(worker => worker.alive).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Até eles desistiram.<br>Construa um casebre.</div>'}</div>
-      <p class="build-note">Você não manda nos heróis. Eles fazem o que querem.</p>`;
-  } else if (state.tab === 'food') {
-    host.innerHTML = foodPanelHTML();
-  } else if (state.tab === 'economy') {
-    host.innerHTML = economyPanelHTML();
-  } else if (state.tab === 'market') {
-    host.innerHTML = marketPanelHTML();
-  }
+  return selectedBuilding ? buildingInfoHTML(selectedBuilding, inspectorActions) : '';
+}
+
+function renderInspector() {
+  const box = $('#site-inspector');
+  if (!box) return;
+  const html = inspectorHTML();
+  box.hidden = !html;
+  box.innerHTML = html;
+  if (html) bindPanel(box);
+}
+
+function bindPanel(host) {
   $$('.build-card', host).forEach(button => button.addEventListener('click', () => chooseBuild(button.dataset.build)));
   $$('[data-farm-type]', host).forEach(button => button.addEventListener('click', () => chooseFarmType(button.dataset.farmType)));
   $$('[data-guild-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeGuild(Number(button.dataset.guildUpgrade), button.dataset.branch || null)));
@@ -880,6 +872,36 @@ function renderPanel() {
   $$('[data-hut-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeHut(Number(button.dataset.hutUpgrade))));
   $$('[data-profession]', host).forEach(select => select.addEventListener('change', () => setProfession(select.dataset.profession, select.value)));
   $$('[data-actor-sheet]', host).forEach(button => button.addEventListener('click', () => { menu.stack = []; showScreen('actor', { id: button.dataset.actorSheet }); }));
+}
+
+function renderPanel() {
+  const host = $('#panel-view');
+  if (state.tab === 'build') {
+    const selectedFarm = null;
+    const farmChoice = state.selectedBuild === 'farm';
+    const currentFarmType = state.selectedFarmType;
+    host.innerHTML = `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
+      ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
+        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0])} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small></span></button>`).join('')}</div></section>` : ''}
+      <div class="build-grid">${BUILDINGS.map(item => `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira">
+        <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${item.detail}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`).join('')}</div>
+      <p class="build-note">A moeda é o custo em ouro e a lenha é o custo em madeira.</p>`;
+  } else if (state.tab === 'heroes') {
+    host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
+      ${bountyPanelHTML()}
+      <div class="hero-list">${state.heroes.filter(h => h.alive).map(heroCard).join('') || '<div class="empty-state">Nenhum herói. Ninguém foi corajoso, ou burro, o bastante.<br>Construa uma taverna ou guilda.</div>'}</div>
+      <div class="panel-title worker-heading"><h3>Trabalhadores</h3><span>${state.workers.filter(worker => worker.alive).length} no domínio</span></div>
+      <div class="hero-list">${state.workers.filter(worker => worker.alive).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Até eles desistiram.<br>Construa um casebre.</div>'}</div>
+      <p class="build-note">Você não manda nos heróis. Eles fazem o que querem.</p>`;
+  } else if (state.tab === 'food') {
+    host.innerHTML = foodPanelHTML();
+  } else if (state.tab === 'economy') {
+    host.innerHTML = economyPanelHTML();
+  } else if (state.tab === 'market') {
+    host.innerHTML = marketPanelHTML();
+  }
+  bindPanel(host);
+  renderInspector();
 }
 
 // Inspetor da construção selecionada, no padrão dos jogos de construir cidade: quem é, vida, o que faz,
@@ -940,7 +962,7 @@ function buildingInfoHTML(building, actions = '') {
     : def.heroClass ? `Nível ${guildTier(building) + 1} de 3` : building.type === 'hut' ? (building.big ? 'Grande' : 'Pequeno') : '';
   const stats = building.ruined ? [['Estado', 'Em ruínas, parada'], ...lines] : lines.filter(([label]) => label !== 'Nível');
   return `<section class="inspector" aria-label="${siteLabel(building)}">
-    <button type="button" class="inspector-back" data-inspector-close>‹ Construções</button>
+    <button type="button" class="inspector-back" data-inspector-close aria-label="Fechar" title="Fechar">×</button>
     <header class="inspector-id">
       <img class="inspector-thumb" src="${buildingImage(siteArt(building))}" alt="">
       <div><h3>${siteLabel(building)}</h3><small>${[def.name === siteLabel(building) ? '' : def.name, level].filter(Boolean).join(' · ')}</small></div>
@@ -3545,6 +3567,9 @@ function initMenus() {
       cancelMove();
     } else if (state.placingBounty) {
       cancelBountyPlacement();
+    } else if (state.selectedSite != null) {
+      state.selectedSite = null;
+      renderSites(); renderPanel();
     } else {
       event.preventDefault();
       openPause();
@@ -3994,6 +4019,8 @@ function initEditor() {
 function init() {
   initCamera();
   const scene = $('#map-scene');
+  // A janela da construção fica em cima do mapa: cliques, arrasto e rolagem nela não mexem no mapa.
+  ['pointerdown', 'click', 'wheel', 'contextmenu'].forEach(type => $('#site-inspector').addEventListener(type, event => event.stopPropagation()));
   scene.addEventListener('pointermove', event => { if (state.selectedBuild || state.movingSite != null) showPlacementPreview(event); });
   scene.addEventListener('pointerleave', () => { $('#placement-preview').hidden = true; });
   scene.addEventListener('contextmenu', event => {
@@ -4022,11 +4049,9 @@ function init() {
       state.selectedSite = idx;
       const def = BUILDINGS.find(item => item.id === building.type);
       renderSites();
-      state.tab = 'build';
-      $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
       if (def.id === 'farm') state.selectedFarmType = farmType(building.produce).id;
       renderPanel();
-      $('#panel-view').scrollTop = 0;
+      $('#site-inspector').scrollTop = 0;
       if (def.id === 'market') {
         say('Mercado: venda o que sobra, compre o que falta.');
       } else if (def.id === 'hut' || def.id === 'depot' || def.id === 'lumber') {
