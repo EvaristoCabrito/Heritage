@@ -2,7 +2,7 @@
   "version": 3,
   "classId": "monarch",
   "className": "Monarca",
-  "role": "Comando, aura e controle de campo",
+  "role": "Comando e controle de campo",
   "maxLevel": 30,
   "units": {
     "distance": "metros",
@@ -14,22 +14,6 @@
       "name": "Mana (MP)",
       "max": "MP do herdeiro: 30 + 6 × (nível − 1), menos a reserva das auras ligadas",
       "regen": "1,5% do máximo por segundo com inimigos no mapa, 4% sem inimigos"
-    },
-    "authority": {
-      "name": "Autoridade",
-      "maxByLevel": {
-        "1": 100,
-        "15": 120,
-        "25": 150
-      },
-      "start": "Começa em 0 a cada combate.",
-      "gain": {
-        "allyHitUnderOrder": 4,
-        "enemyControlled": 3,
-        "enemyKilledInAura": 10,
-        "spellGenerates": "algumas magias geram autoridade (campo authorityGain)"
-      },
-      "decay": "Perde 2 por segundo depois de 8 s fora de combate."
     }
   },
   "auraSlotsByLevel": {
@@ -40,7 +24,7 @@
   "phases": [
     {
       "id": "fundacao",
-      "name": "Fundação da Autoridade",
+      "name": "Ascensão do Monarca",
       "fromLevel": 1,
       "toLevel": 5
     },
@@ -63,8 +47,8 @@
       "toLevel": 20
     },
     {
-      "id": "autoridade",
-      "name": "Autoridade Absoluta",
+      "id": "soberania",
+      "name": "Soberania do Monarca",
       "fromLevel": 21,
       "toLevel": 25
     },
@@ -107,12 +91,10 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 20,
-        "authorityCost": 0,
-        "authorityGain": 6,
         "cooldownSeconds": 8,
         "castRange": 12,
         "auraRadius": 4,
-        "durationSeconds": 6
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -122,7 +104,7 @@
             "nextAttackDamagePercent": 20,
             "maxAllies": 3
           },
-          "description": "Até 3 aliados na área causam +20% de dano no próximo ataque (expira em 6 s). Gera 6 de autoridade."
+          "description": "Até 3 aliados na área causam +20% de dano no próximo ataque. O bônus dura até 60 s ou até ser usado."
         },
         {
           "level": 7,
@@ -133,7 +115,7 @@
             "nextAttackDamagePercent": 30,
             "maxAllies": 4
           },
-          "description": "Até 4 aliados, +30% de dano no próximo ataque. Área sobe para 5 m."
+          "description": "Até 4 aliados causam +30% de dano no próximo ataque. O bônus dura até 60 s ou até ser usado. Área de 5 m."
         },
         {
           "level": 13,
@@ -142,10 +124,9 @@
           },
           "effects": {
             "nextAttackDamagePercent": 40,
-            "maxAllies": 5,
-            "authorityPerEmpoweredHit": 2
+            "maxAllies": 5
           },
-          "description": "Até 5 aliados, +40% de dano. Cada ataque potencializado gera 2 de autoridade extra."
+          "description": "Até 5 aliados causam +40% de dano no próximo ataque. O bônus dura até 60 s ou até ser usado. Área de 5 m."
         },
         {
           "level": 21,
@@ -155,10 +136,9 @@
           },
           "effects": {
             "nextAttackDamagePercent": 55,
-            "maxAllies": 6,
-            "authorityPerEmpoweredHit": 3
+            "maxAllies": 6
           },
-          "description": "Até 6 aliados, +55% de dano. Recarga de 6 s e área de 6 m."
+          "description": "Até 6 aliados causam +55% de dano no próximo ataque. O bônus dura até 60 s ou até ser usado. Área de 6 m."
         }
       ]
     },
@@ -180,7 +160,6 @@
       "base": {
         "manaCost": 15,
         "manaReservePercent": 10,
-        "authorityCost": 0,
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 8,
@@ -249,7 +228,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 30,
-        "authorityCost": 10,
         "cooldownSeconds": 14,
         "castRange": 0,
         "auraRadius": 8,
@@ -268,13 +246,12 @@
         {
           "level": 9,
           "changes": {
-            "authorityCost": 8,
             "durationSeconds": 5
           },
           "effects": {
             "slowPercent": 40
           },
-          "description": "Lentidão de 40% por 5 s. Custa 8 de autoridade."
+          "description": "Lentidão de 40% por 5 s."
         },
         {
           "level": 16,
@@ -318,8 +295,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 35,
-        "authorityCost": 0,
-        "authorityGain": 5,
         "cooldownSeconds": 12,
         "castRange": 0,
         "auraRadius": 5,
@@ -334,7 +309,7 @@
             "damageMagPercent": 60,
             "knockbackMeters": 4
           },
-          "description": "Onda de choque causa 30 + 60% de mag de dano e repele inimigos 4 m. Gera 5 de autoridade."
+          "description": "Onda de choque causa 30 + 60% de mag de dano e repele inimigos 4 m."
         },
         {
           "level": 10,
@@ -392,11 +367,10 @@
       "replacedBySpellId": 15,
       "base": {
         "manaCost": 60,
-        "authorityCost": 20,
         "cooldownSeconds": 45,
         "castRange": 10,
         "auraRadius": 0,
-        "durationSeconds": 40
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -411,7 +385,7 @@
             "absorbPercent": 25,
             "absorbRangeMeters": 6
           },
-          "description": "Invoca um espírito guardião (200 + 15 × nível de vida) que ataca o alvo indicado e absorve 25% do dano recebido por aliados a até 6 m dele."
+          "description": "Invoca um espírito guardião com 200 + 15 × nível de vida. Ele ataca o alvo indicado e absorve 25% do dano recebido por aliados a até 6 m. Dura 60 s."
         },
         {
           "level": 11,
@@ -427,7 +401,7 @@
             "absorbPercent": 30,
             "absorbRangeMeters": 6
           },
-          "description": "Vassalo com 350 + 18 × nível de vida, dura 60 s e absorve 30% do dano dos aliados a até 6 m. No nível 15 vira a Guarda Real."
+          "description": "Vassalo com 350 + 18 × nível de vida, dura 60 s e absorve 30% do dano de aliados a até 6 m. No nível 15 vira a Guarda Real."
         }
       ]
     },
@@ -447,11 +421,10 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 45,
-        "authorityCost": 15,
         "cooldownSeconds": 25,
         "castRange": 0,
         "auraRadius": 8,
-        "durationSeconds": 6
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -462,19 +435,19 @@
             "shieldPerLevel": 8,
             "shieldMagPercent": 50
           },
-          "description": "Aliados na aura recebem escudo de 60 + 8 × nível + 50% de mag por 6 s."
+          "description": "Aliados na aura recebem escudo de 60 + 8 × nível + 50% de mag. O escudo dura até ser destruído ou por 60 s."
         },
         {
           "level": 12,
           "changes": {
-            "durationSeconds": 8
+            "durationSeconds": 60
           },
           "effects": {
             "shieldBase": 100,
             "shieldPerLevel": 10,
             "shieldMagPercent": 70
           },
-          "description": "Escudo de 100 + 10 × nível + 70% de mag por 8 s."
+          "description": "Escudo de 100 + 10 × nível + 70% de mag. Dura até ser destruído ou por 60 s."
         },
         {
           "level": 19,
@@ -485,7 +458,7 @@
             "shieldMagPercent": 90,
             "breakKnockbackMeters": 2
           },
-          "description": "Escudo de 150 + 12 × nível + 90% de mag. Ao quebrar, explode e repele inimigos 2 m."
+          "description": "Escudo de 150 + 12 × nível + 90% de mag. Ao quebrar, explode e repele inimigos 2 m. Dura até ser destruído ou por 60 s."
         },
         {
           "level": 25,
@@ -499,7 +472,7 @@
             "breakKnockbackMeters": 2,
             "expireHealPercent": 50
           },
-          "description": "Escudo de 220 + 15 × nível + 110% de mag. O que sobrar ao expirar vira cura de 50% do valor. Recarga de 20 s."
+          "description": "Escudo de 220 + 15 × nível + 110% de mag. O que sobrar após 60 s vira cura de 50% do valor. Recarga de 20 s."
         }
       ]
     },
@@ -520,7 +493,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 25,
-        "authorityCost": 10,
         "cooldownSeconds": 18,
         "castRange": 15,
         "auraRadius": 0,
@@ -588,7 +560,6 @@
       "base": {
         "manaCost": 20,
         "manaReservePercent": 12,
-        "authorityCost": 0,
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 9,
@@ -643,7 +614,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 40,
-        "authorityCost": 0,
         "cooldownSeconds": 10,
         "castRange": 18,
         "auraRadius": 0,
@@ -702,11 +672,10 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 70,
-        "authorityCost": 30,
         "cooldownSeconds": 60,
         "castRange": 14,
         "auraRadius": 7,
-        "durationSeconds": 15
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -716,34 +685,32 @@
             "hpRegenPercentPerSecond": 1.5,
             "manaRegenPercentPerSecond": 2
           },
-          "description": "Reivindica uma zona de 7 m por 15 s. Aliados dentro regeneram 1,5% da vida e 2% da mana máximas por segundo."
+          "description": "Reivindica uma zona de 7 m por 60 s. Aliados dentro regeneram 1,5% da vida e 2% da mana máximas por segundo."
         },
         {
           "level": 17,
           "changes": {
             "auraRadius": 8,
-            "durationSeconds": 18
+            "durationSeconds": 60
           },
           "effects": {
             "hpRegenPercentPerSecond": 2,
-            "manaRegenPercentPerSecond": 2.5,
-            "authorityPerSecondInside": 2
+            "manaRegenPercentPerSecond": 2.5
           },
-          "description": "Zona de 8 m por 18 s, 2% de vida e 2,5% de mana por segundo. O Monarca dentro dela gera 2 de autoridade por segundo."
+          "description": "Zona de 8 m por 60 s. Aliados regeneram 2% da vida e 2,5% da mana máximas por segundo."
         },
         {
           "level": 24,
           "changes": {
             "auraRadius": 9,
-            "durationSeconds": 20
+            "durationSeconds": 60
           },
           "effects": {
             "hpRegenPercentPerSecond": 3,
             "manaRegenPercentPerSecond": 3.5,
-            "authorityPerSecondInside": 2,
             "enemySlowPercent": 15
           },
-          "description": "Zona de 9 m por 20 s, 3% de vida e 3,5% de mana por segundo. Inimigos dentro ficam 15% mais lentos."
+          "description": "Zona de 9 m por 60 s. Aliados regeneram 3% da vida e 3,5% da mana máximas por segundo; inimigos ficam 15% mais lentos."
         }
       ]
     },
@@ -764,11 +731,10 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 35,
-        "authorityCost": 20,
         "cooldownSeconds": 20,
         "castRange": 20,
         "auraRadius": 12,
-        "durationSeconds": 5,
+        "durationSeconds": 60,
         "targetAreaRadius": 4
       },
       "ranks": [
@@ -779,18 +745,18 @@
             "moveSpeedPercent": 30,
             "firstHitDamagePercent": 15
           },
-          "description": "Aliados a até 12 m do Monarca investem contra a área alvo com +30% de velocidade de movimento por 5 s. O primeiro golpe ao chegar causa +15% de dano."
+          "description": "Aliados a até 12 m recebem +30% de velocidade de movimento por 60 s e investem contra a área escolhida. O primeiro golpe ao chegar causa +15% de dano."
         },
         {
           "level": 18,
           "changes": {
-            "durationSeconds": 6
+            "durationSeconds": 60
           },
           "effects": {
             "moveSpeedPercent": 40,
             "firstHitDamagePercent": 25
           },
-          "description": "+40% de velocidade por 6 s e +25% de dano no primeiro golpe."
+          "description": "Aliados recebem +40% de velocidade de movimento por 60 s; o primeiro golpe ao chegar causa +25% de dano."
         },
         {
           "level": 25,
@@ -800,9 +766,9 @@
           "effects": {
             "moveSpeedPercent": 50,
             "firstHitDamagePercent": 35,
-            "unstoppableSeconds": 2
+            "unstoppableSeconds": 60
           },
-          "description": "+50% de velocidade, +35% no primeiro golpe e aliados imparáveis por 2 s durante a investida."
+          "description": "Aliados recebem +50% de velocidade de movimento por 60 s; o primeiro golpe causa +35% de dano e eles ficam imparáveis por 60 s."
         }
       ]
     },
@@ -824,7 +790,6 @@
       "base": {
         "manaCost": 25,
         "manaReservePercent": 15,
-        "authorityCost": 0,
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 8,
@@ -881,7 +846,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 50,
-        "authorityCost": 25,
         "cooldownSeconds": 30,
         "castRange": 16,
         "auraRadius": 5,
@@ -929,8 +893,8 @@
       "name": "Aegis da Coroa",
       "unlockLevel": 14,
       "phase": "comando",
-      "type": "canalizacao",
-      "activation": "canalizada",
+      "type": "decreto",
+      "activation": "ativa",
       "target": "aliados_aura",
       "tags": [
         "canalizacao",
@@ -939,50 +903,38 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 60,
-        "manaPerSecond": 8,
-        "authorityCost": 30,
         "cooldownSeconds": 50,
         "castRange": 0,
         "auraRadius": 7,
-        "durationSeconds": 4
+        "durationSeconds": 60
       },
       "ranks": [
         {
           "level": 14,
           "changes": {},
-          "effects": {
-            "ccImmune": true,
-            "maxChannelSeconds": 4,
-            "casterMoveSpeedPercent": 0
-          },
-          "description": "Canaliza por até 4 s: o Monarca e aliados a até 7 m ficam imunes a controle de grupo. O Monarca não se move enquanto canaliza."
+          "effects": {},
+          "description": "Remove efeitos de controle e concede imunidade a controle ao Monarca e aliados a até 7 m por 60 s."
         },
         {
           "level": 21,
           "changes": {
-            "durationSeconds": 5
+            "durationSeconds": 60
           },
           "effects": {
-            "ccImmune": true,
-            "maxChannelSeconds": 5,
-            "casterMoveSpeedPercent": 0,
             "cleanseOnStart": true
           },
-          "description": "Canaliza por até 5 s e remove os controles já aplicados ao começar."
+          "description": "Remove efeitos de controle e concede imunidade a controle ao Monarca e aliados a até 7 m por 60 s."
         },
         {
           "level": 29,
           "changes": {
             "auraRadius": 9,
-            "durationSeconds": 6
+            "durationSeconds": 60
           },
           "effects": {
-            "ccImmune": true,
-            "maxChannelSeconds": 6,
-            "casterMoveSpeedPercent": 50,
             "cleanseOnStart": true
           },
-          "description": "Canaliza por até 6 s num raio de 9 m, e o Monarca anda a 50% da velocidade enquanto canaliza."
+          "description": "Remove efeitos de controle e concede imunidade a controle ao Monarca e aliados a até 9 m por 60 s."
         }
       ]
     },
@@ -1003,11 +955,10 @@
       "upgradesSpellId": 5,
       "base": {
         "manaCost": 90,
-        "authorityCost": 35,
         "cooldownSeconds": 60,
         "castRange": 10,
         "auraRadius": 0,
-        "durationSeconds": 45,
+        "durationSeconds": 60,
         "tauntRadius": 6
       },
       "ranks": [
@@ -1023,7 +974,7 @@
             "tauntSeconds": 3,
             "tauntEverySeconds": 10
           },
-          "description": "Substitui o Vassalo: invoca 2 guardas de elite (450 + 20 × nível de vida) que provocam inimigos a até 6 m por 3 s a cada 10 s."
+          "description": "Invoca 2 guardas de elite com 450 + 20 × nível de vida por 60 s. Eles provocam inimigos a até 6 m por 3 s a cada 10 s."
         },
         {
           "level": 22,
@@ -1039,7 +990,7 @@
             "tauntSeconds": 4,
             "tauntEverySeconds": 10
           },
-          "description": "Guardas com 650 + 24 × nível de vida, provocação de 4 s e duração de 60 s."
+          "description": "Invoca 2 guardas com 650 + 24 × nível de vida por 60 s. Eles provocam inimigos por 4 s a cada 10 s."
         },
         {
           "level": 26,
@@ -1054,7 +1005,7 @@
             "tauntEverySeconds": 8,
             "damageReductionWhileTauntingPercent": 30
           },
-          "description": "Guardas com 900 + 28 × nível de vida, provocam a cada 8 s e têm 30% de redução de dano enquanto provocam."
+          "description": "Invoca 2 guardas com 900 + 28 × nível de vida por 60 s. Eles provocam inimigos por 4 s a cada 8 s e recebem 30% menos dano enquanto provocam."
         }
       ]
     },
@@ -1075,7 +1026,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 55,
-        "authorityCost": 35,
         "cooldownSeconds": 25,
         "castRange": 16,
         "auraRadius": 6,
@@ -1096,10 +1046,9 @@
           "changes": {},
           "effects": {
             "executeThresholdHpPercent": 30,
-            "damageTakenBonusPercent": 75,
-            "authorityRefundOnKill": 10
+            "damageTakenBonusPercent": 75
           },
-          "description": "Limite de 30% de vida e +75% de dano. Cada inimigo executado devolve 10 de autoridade."
+          "description": "Limite de 30% de vida e +75% de dano."
         }
       ]
     },
@@ -1121,7 +1070,6 @@
       "base": {
         "manaCost": 30,
         "manaReservePercent": 15,
-        "authorityCost": 0,
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 9,
@@ -1134,9 +1082,9 @@
           "effects": {
             "damagePercentPerStack": 3,
             "maxStacks": 10,
-            "stackDurationSeconds": 12
+            "stackDurationSeconds": 60
           },
-          "description": "Cada inimigo derrotado na aura dá ao grupo +3% de dano por 12 s (renova), até 10 acúmulos."
+          "description": "Cada inimigo derrotado na aura concede ao grupo +3% de dano por 60 s, até 10 acúmulos."
         },
         {
           "level": 23,
@@ -1146,9 +1094,9 @@
           "effects": {
             "damagePercentPerStack": 4,
             "maxStacks": 12,
-            "stackDurationSeconds": 15
+            "stackDurationSeconds": 60
           },
-          "description": "+4% por acúmulo, até 12 acúmulos, 15 s de duração. Raio de 10 m."
+          "description": "Cada inimigo derrotado na aura concede ao grupo +4% de dano por 60 s, até 12 acúmulos."
         }
       ]
     },
@@ -1168,7 +1116,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 60,
-        "authorityCost": 30,
         "cooldownSeconds": 28,
         "castRange": 16,
         "auraRadius": 5,
@@ -1215,7 +1162,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 50,
-        "authorityCost": 40,
         "cooldownSeconds": 35,
         "castRange": 0,
         "auraRadius": 7,
@@ -1237,11 +1183,9 @@
             "durationSeconds": 2
           },
           "effects": {
-            "stunSeconds": 2,
-            "authorityPerStunned": 10,
-            "authorityPerStunnedMax": 30
+            "stunSeconds": 2
           },
-          "description": "Atordoa por 2 s num raio de 8 m. Gera 10 de autoridade por inimigo atordoado (máximo 30)."
+          "description": "Atordoa por 2 s num raio de 8 m."
         }
       ]
     },
@@ -1261,7 +1205,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 80,
-        "authorityCost": 50,
         "cooldownSeconds": 90,
         "castRange": 0,
         "auraRadius": 12,
@@ -1275,7 +1218,7 @@
             "equalizeHpPercent": true,
             "bonusHealPercent": 5
           },
-          "description": "Iguala a vida percentual de todos do grupo a até 12 m na média do grupo e cura mais 5% da vida máxima."
+          "description": "Iguala a vida percentual de todos do grupo a até 12 m pela média do grupo e cura mais 5% da vida máxima."
         },
         {
           "level": 26,
@@ -1286,9 +1229,9 @@
             "equalizeHpPercent": true,
             "bonusHealPercent": 10,
             "shieldMaxHpPercent": 10,
-            "shieldSeconds": 5
+            "shieldSeconds": 60
           },
-          "description": "Iguala as barras, cura 10% e dá escudo de 10% da vida máxima por 5 s. Recarga de 75 s."
+          "description": "Iguala a vida percentual de todos do grupo a até 12 m pela média do grupo, cura mais 10% e concede escudo de 10% da vida máxima por 60 s."
         }
       ]
     },
@@ -1297,7 +1240,7 @@
       "key": "ordem-de-aniquilacao",
       "name": "Ordem de Aniquilação",
       "unlockLevel": 21,
-      "phase": "autoridade",
+      "phase": "soberania",
       "type": "ordem",
       "activation": "ativa",
       "target": "aliados_aura",
@@ -1308,11 +1251,10 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 70,
-        "authorityCost": 60,
         "cooldownSeconds": 45,
         "castRange": 0,
         "auraRadius": 12,
-        "durationSeconds": 6
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -1322,18 +1264,18 @@
             "guaranteedCritNextAttack": true,
             "critDamageBonusPercent": 0
           },
-          "description": "O próximo ataque de todos os aliados a até 12 m é crítico garantido (expira em 6 s)."
+          "description": "O próximo ataque de todos os aliados a até 12 m é crítico garantido. O efeito dura até 60 s ou até ser usado."
         },
         {
           "level": 27,
           "changes": {
-            "durationSeconds": 8
+            "durationSeconds": 60
           },
           "effects": {
             "guaranteedCritNextAttack": true,
             "critDamageBonusPercent": 30
           },
-          "description": "Crítico garantido com +30% de dano crítico. Janela de 8 s."
+          "description": "O próximo ataque de todos os aliados a até 12 m é crítico garantido, com +30% de dano crítico. Dura até 60 s ou até ser usado."
         }
       ]
     },
@@ -1342,7 +1284,7 @@
       "key": "aura-de-invulnerabilidade",
       "name": "Aura de Invulnerabilidade",
       "unlockLevel": 22,
-      "phase": "autoridade",
+      "phase": "soberania",
       "type": "aura",
       "activation": "ativa",
       "target": "aliados_aura",
@@ -1353,32 +1295,31 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 100,
-        "authorityCost": 70,
         "cooldownSeconds": 120,
         "castRange": 0,
         "auraRadius": 9,
-        "durationSeconds": 2
+        "durationSeconds": 60
       },
       "ranks": [
         {
           "level": 22,
           "changes": {},
           "effects": {
-            "damageImmunitySeconds": 2
+            "damageImmunitySeconds": 60
           },
-          "description": "Pulso de aura: aliados a até 9 m ficam imunes a todo dano por 2 s. Não ocupa slot de aura."
+          "description": "Aliados a até 9 m ficam imunes a todo dano por 60 s."
         },
         {
           "level": 28,
           "changes": {
             "cooldownSeconds": 100,
             "auraRadius": 10,
-            "durationSeconds": 3
+            "durationSeconds": 60
           },
           "effects": {
-            "damageImmunitySeconds": 3
+            "damageImmunitySeconds": 60
           },
-          "description": "Imunidade de 3 s num raio de 10 m. Recarga de 100 s."
+          "description": "Aliados a até 10 m ficam imunes a todo dano por 60 s."
         }
       ]
     },
@@ -1387,7 +1328,7 @@
       "key": "decreto-da-ruina",
       "name": "Decreto da Ruína",
       "unlockLevel": 23,
-      "phase": "autoridade",
+      "phase": "majestade",
       "type": "decreto",
       "activation": "ativa",
       "target": "inimigos_campo",
@@ -1399,7 +1340,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 90,
-        "authorityCost": 60,
         "cooldownSeconds": 60,
         "castRange": 0,
         "auraRadius": 40,
@@ -1435,7 +1375,7 @@
       "key": "santuario-do-trono",
       "name": "Santuário do Trono",
       "unlockLevel": 24,
-      "phase": "autoridade",
+      "phase": "soberania",
       "type": "zona",
       "activation": "ativa",
       "target": "ponto",
@@ -1447,11 +1387,10 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 100,
-        "authorityCost": 50,
         "cooldownSeconds": 70,
         "castRange": 12,
         "auraRadius": 6,
-        "durationSeconds": 8
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -1462,20 +1401,20 @@
             "reflectedDamagePercent": 50,
             "alliedArmorPercent": 15
           },
-          "description": "Ergue uma cidadela astral de 6 m por 8 s. Projéteis inimigos que a atingem voltam com 50% do dano; aliados dentro ganham +15% de armadura."
+          "description": "Ergue uma cidadela astral de 6 m por 60 s. Projéteis inimigos que a atingem voltam com 50% do dano; aliados dentro ganham +15% de armadura."
         },
         {
           "level": 30,
           "changes": {
             "auraRadius": 7,
-            "durationSeconds": 10
+            "durationSeconds": 60
           },
           "effects": {
             "reflectProjectiles": true,
             "reflectedDamagePercent": 100,
             "alliedArmorPercent": 20
           },
-          "description": "Cidadela de 7 m por 10 s, reflete projéteis com 100% do dano e dá +20% de armadura."
+          "description": "Cidadela astral de 7 m por 60 s. Projéteis voltam com 100% do dano; aliados dentro ganham +20% de armadura."
         }
       ]
     },
@@ -1484,7 +1423,7 @@
       "key": "invocacao-do-exercito-astral",
       "name": "Invocação do Exército Astral",
       "unlockLevel": 25,
-      "phase": "autoridade",
+      "phase": "majestade",
       "type": "invocacao",
       "activation": "ativa",
       "target": "linha",
@@ -1496,7 +1435,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 140,
-        "authorityCost": 80,
         "cooldownSeconds": 120,
         "castRange": 20,
         "auraRadius": 0,
@@ -1548,7 +1486,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 80,
-        "authorityCost": 70,
         "cooldownSeconds": 90,
         "castRange": 14,
         "auraRadius": 0,
@@ -1598,7 +1535,6 @@
       "base": {
         "manaCost": 60,
         "manaReservePercent": 25,
-        "authorityCost": 0,
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 12,
@@ -1656,7 +1592,6 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 150,
-        "authorityCost": 90,
         "cooldownSeconds": 75,
         "castRange": 25,
         "auraRadius": 10,
@@ -1694,7 +1629,6 @@
       "base": {
         "manaCost": 40,
         "manaReservePercent": 20,
-        "authorityCost": 0,
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 12,
@@ -1732,11 +1666,10 @@
       "upgradesSpellId": null,
       "base": {
         "manaCost": 200,
-        "authorityCost": 100,
         "cooldownSeconds": 240,
         "castRange": 0,
         "auraRadius": 15,
-        "durationSeconds": 12
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -1752,7 +1685,7 @@
             "auraRadiusPercent": 30,
             "casterCcImmune": true
           },
-          "description": "O Monarca assume a forma divina por 12 s: zera as recargas de todo o grupo a até 15 m (menos esta), dobra os efeitos de todas as auras ativas, aumenta o raio delas em 30% e fica imune a controle."
+          "description": "O Monarca assume a forma divina por 60 s: reinicia as recargas do grupo a até 15 m (menos esta), dobra os efeitos das auras ativas, aumenta o raio delas em 30% e fica imune a controle."
         }
       ]
     }
@@ -2030,7 +1963,7 @@
     },
     {
       "level": 21,
-      "phase": "autoridade",
+      "phase": "",
       "unlocks": [
         21,
         51
@@ -2052,7 +1985,7 @@
     },
     {
       "level": 22,
-      "phase": "autoridade",
+      "phase": "",
       "unlocks": [
         22,
         52
@@ -2070,7 +2003,7 @@
     },
     {
       "level": 23,
-      "phase": "autoridade",
+      "phase": "",
       "unlocks": [
         23,
         53
@@ -2088,7 +2021,7 @@
     },
     {
       "level": 24,
-      "phase": "autoridade",
+      "phase": "",
       "unlocks": [
         24,
         54
@@ -2106,7 +2039,7 @@
     },
     {
       "level": 25,
-      "phase": "autoridade",
+      "phase": "",
       "unlocks": [
         25,
         55

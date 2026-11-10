@@ -1762,13 +1762,13 @@ const HEIRS = [
   { id: 'mircea', name: 'Teodoro Montalvo', house: 'montalvo', gender: 'm', age: 22, tie: 'Credor do falecido. Também é parente.', about: 'Sabe o preço de tudo. O valor, ele cobra à parte.' },
   { id: 'toma', name: 'Inácio Lucerna', house: 'lucerna', gender: 'm', age: 21, tie: 'Enterrou o falecido. E o pai dele.', about: 'Coveiro de terceira geração. Os clientes nunca reclamam.' },
   { id: 'petru', name: 'Darian Kastrell', house: 'kastrell', gender: 'm', age: 18, tie: 'Afilhado do falecido.', about: 'Treinado pra guerra desde criança. A guerra nunca veio buscar ele.' },
-  { id: 'rodrigo-salazar', name: 'Rodrigo Salazar', house: 'salazar', gender: 'm', age: 24, tie: 'Descendente de um ramo antigo da família Salazar.', about: 'Criado entre brasões, veludos e histórias de uma linhagem que atravessou o mar antes de se fixar em Mordávia.' },
   { id: 'ileana', name: 'Odette Vaelmont', house: 'vaelmont', gender: 'f', age: 17, tie: 'Sobrinha do falecido.', about: 'Herdou o orgulho da família. Só o orgulho. O resto foi penhorado.' },
   { id: 'doina', name: 'Wren Grenholt', house: 'grenholt', gender: 'f', age: 16, tie: 'Prima distante. A uma distância segura.', about: 'Uiva na lua cheia. Jura que é canto.' },
   { id: 'viorica', name: 'Lavinia Montalvo', house: 'montalvo', gender: 'f', age: 18, tie: 'Viúva do sobrinho do falecido.', about: 'Já faliu três vezes. Na prática, é uma especialista.' },
   { id: 'zoia', name: 'Amara Lucerna', house: 'lucerna', gender: 'f', age: 17, tie: 'Parente, segundo os mortos.', about: 'Conversa com os mortos. Eles respondem mais que os vivos.' },
   { id: 'anca', name: 'Rowena Kastrell', house: 'kastrell', gender: 'f', age: 16, tie: 'Neta do irmão do falecido.', about: 'Duelou com metade da corte. A outra metade foi embora do reino.' },
   { id: 'isabel-salazar', name: 'Isabel Salazar', house: 'salazar', gender: 'f', age: 21, tie: 'Descendente do mesmo ramo antigo da família Salazar.', about: 'Aprendeu que a elegância também é uma armadura — e que uma família sobrevive melhor quando sabe mudar sem esquecer de onde veio.' },
+  { id: 'afonso-salazar', name: 'Afonso Salazar', house: 'salazar', gender: 'm', age: 21, tie: 'Herdeiro de um ramo antigo da Casa Salazar.', about: 'Criado entre os salões da corte, aprendeu cedo que nome, presença e lealdade também decidem disputas.' },
   // Os nobres das casas também podem herdar. Os retratos deles ficam em noble-portraits-v01.
   { id: 'anselm', name: 'Anselm Grenholt', house: 'grenholt', gender: 'm', age: 30, portrait: 'noble-portraits-v01/grenholt', tie: 'Caçador-Mor das Montanhas. Primo do falecido, pelo lado dos lobos.', about: 'Os cães dele comem melhor que os camponeses. Ele acha justo: os cães trabalham mais.' },
   { id: 'ottokar', name: 'Ottokar Lucerna', house: 'lucerna', gender: 'm', age: 38, portrait: 'noble-portraits-v01/lucerna', tie: 'Padre-Conde. Rezou a missa do falecido e leu o testamento na mesma tarde.', about: 'Mede a porta de quem visita. Pra saber se o caixão passa.' },
@@ -3570,14 +3570,14 @@ function startGame(newState, slot) {
 
 function newGame(slot, heir) {
   startGame(newGameState(debug.testMode, heir), slot);
-  say(debug.testMode ? `Slot ${slot}. A herança é sua. Modo teste: o ouro não acaba, a desgraça também não.` : `Slot ${slot}. A herança é sua. Os credores já foram avisados.`);
+  say(debug.testMode ? 'A herança é sua. Modo teste: o ouro não acaba, a desgraça também não.' : 'A herança é sua. Os credores já foram avisados.');
 }
 
 function loadGame(slot) {
   const record = readSave(slot);
   if (!record) return;
   startGame(hydrateState(record.state), slot);
-  say(`Slot ${slot}. Bem-vindo de volta. Dia ${Math.floor(state.minutes / 1440) + 1}. A fazenda continua horrível.`);
+  say(`Bem-vindo de volta. Dia ${Math.floor(state.minutes / 1440) + 1}. A fazenda continua horrível.`);
 }
 
 function setTestMode(on) {
@@ -3651,15 +3651,15 @@ const SCREENS = {
     return { cls: 'is-title', html: `<div class="title-screen">
       <div class="title-logo"><h1>Wasteland Farming</h1><p class="title-sub">HERITAGE OF ASHES · A KINGDOM OF MORDAVIA FANTASY SIM</p><p class="title-epigraph">${titleLine}</p><p class="title-version">${GAME_VERSION}</p></div>
       <nav class="menu-list" aria-label="Menu principal">
-        ${latest ? '<button type="button" class="primary" data-action="continue">Continuar</button>' : ''}
+        ${latest ? '<button type="button" class="primary" data-action="load">Continuar</button>' : ''}
         <button type="button" class="${latest ? '' : 'primary'}" data-action="new">Novo jogo</button>
         ${latest ? '<button type="button" data-action="load">Carregar jogo</button>' : ''}
+        <button type="button" data-action="nobles">Nobres</button>
         <button type="button" data-action="options">Opções</button>
         <button type="button" data-action="debug">Debug</button>
-        <a class="menu-gallery-link" href="public/npc-portrait-gallery-v01.html" target="_blank" rel="noopener">Galeria · 161 referências e 20 fases nobres</a>
+        <a class="menu-gallery-link" href="public/npc-portrait-gallery-v01.html" target="_blank" rel="noopener">Galeria · 161 referências e 68 retratos jogáveis</a>
       </nav>
-      <p class="title-save">${latest ? `Slot ${latest.slot} · ${slotSummary(latest.record)}` : 'Nenhum jogo salvo ainda.'}</p>
-      <footer class="title-footer"><span>O SAVE FICA NESTE NAVEGADOR</span>${debug.testMode ? '<span class="tag-test">MODO TESTE LIGADO</span>' : ''}</footer>
+      ${debug.testMode ? '<footer class="title-footer"><span class="tag-test">MODO TESTE LIGADO</span></footer>' : ''}
     </div>` };
   },
   economy() {
@@ -3670,7 +3670,7 @@ const SCREENS = {
     const demandRow = `<div><dt>Consumo dos camponeses · ${RATIONS[source.ration ?? 2]?.label || 'Normal'}</dt><dd>−${economyRate(e.consumption)} /s</dd></div>`;
     const costs = BUILDINGS.map(building => `<tr><th>${building.name}</th><td>${building.cost} ouro</td><td>${building.wood} madeira</td></tr>`).join('');
     return { cls: menuMode(), html: `<section class="menu-card economy-card wide">
-      <header class="menu-card-head"><span class="eyebrow">${game.slot ? `SLOT ${game.slot} · DIA ${Math.floor(source.minutes / 1440) + 1}` : latest ? 'ÚLTIMO SAVE' : 'REGRAS DO INÍCIO'}</span><h2>Economia do domínio</h2><p>${game.slot ? 'Valores atuais do jogo pausado.' : latest ? 'Valores gravados no save mais recente.' : 'Sem save: mostrando o início da partida. Produção e taxas mudam com as construções e moradores.'}</p></header>
+      <header class="menu-card-head"><span class="eyebrow">${game.slot ? `DIA ${Math.floor(source.minutes / 1440) + 1}` : latest ? 'ÚLTIMO SAVE' : 'REGRAS DO INÍCIO'}</span><h2>Economia do domínio</h2><p>${game.slot ? 'Valores atuais do jogo pausado.' : latest ? 'Valores gravados no save mais recente.' : 'Sem save: mostrando o início da partida. Produção e taxas mudam com as construções e moradores.'}</p></header>
       <div class="economy-metrics"><div><small>OURO DISPONÍVEL</small><b>${source.testMode ? '∞' : format(source.gold || 0)}</b></div><div><small>MADEIRA</small><b>${source.testMode ? '∞' : format(source.timber || 0)}</b><em>+${economyRate(e.woodRate)}/s</em></div><div><small>PROVISÕES EM ESTOQUE</small><b>${format(e.stock)} / ${e.capacity}</b></div><div><small>IMPOSTO CONFIGURADO</small><b>${source.taxPercent ?? 10}%</b></div></div>
       <div class="economy-columns"><section><h3>Provisões por segundo</h3><dl class="economy-list">${foodRows}${demandRow}<div class="economy-net"><dt>Saldo líquido atual</dt><dd>${e.edible - e.consumption >= 0 ? '+' : '−'}${economyRate(Math.abs(e.edible - e.consumption))} /s</dd></div></dl></section>
         <section><h3>Ouro na próxima cobrança</h3><dl class="economy-list"><div><dt>Camponeses · ${e.workers} × ${economyRate(2 * ((source.taxPercent ?? 10) / 10))} por dia</dt><dd>+${economyRate(e.workerTax)}</dd></div><div><dt>Conta da taverna acumulada</dt><dd>+${economyRate(e.tavernTax)}</dd></div><div><dt>Salários · ${e.workers} × ${WORKER_WAGE}</dt><dd>−${economyRate(e.wages)}</dd></div><div class="economy-net"><dt>Estimativa da próxima coleta</dt><dd>≈ ${economyRate(e.taxEstimate)} ouro</dd></div></dl><p class="economy-note">Impostos são recolhidos à meia-noite do jogo. A taverna depende de quem bebe e de quanto tempo ficou.</p></section></div>
@@ -3715,29 +3715,56 @@ const SCREENS = {
         <li>O <b>ouro</b> vem dos impostos, cobrados à meia-noite: dos camponeses e de quem bebe na taverna.</li>
         <li><b>Esc</b> ou <b>MENU</b> pausa e salva.</li>
       </ul>
-      <p class="title-save">Este jogo salva no slot ${slot}.${occupied ? ' O jogo que está lá some.' : ''}${debug.testMode ? ' <b class="test-text">Modo teste ligado: ouro e madeira infinitos.</b>' : ''}</p>
+      ${debug.testMode ? '<p class="title-save"><b class="test-text">Modo teste ligado: ouro e madeira infinitos.</b></p>' : ''}
       <div class="menu-actions"><button type="button" class="primary" data-action="accept" data-slot="${slot}">Aceitar a herança</button><button type="button" data-action="back">Voltar</button></div>
     </section>` };
   },
   heir({ slot, selected }) {
     const card = (heir, i) => `<button type="button" class="heir-card${i === selected ? ' selected' : ''}" data-action="pick-heir" data-index="${i}" aria-pressed="${i === selected}">
-        <img class="heir-card-portrait" src="${heirPortraitSrc(heir.id)}" alt="Retrato jovem de ${heir.name}" loading="lazy" decoding="async"><b>${heir.name.split(' ')[0]}</b><small>${HOUSES[heir.house].name}</small><small>${heir.age} anos</small></button>`;
+        <img class="heir-card-portrait" src="${heirPortraitSrc(heir.id)}" alt="Retrato jovem de ${heir.name}"><b>${heir.name.split(' ')[0]}</b><small>${HOUSES[heir.house].name.replace(/^Casa /, '')} · ${heir.age}</small></button>`;
     const men = HEIRS.map((heir, i) => ({ heir, i })).filter(entry => entry.heir.gender === 'm');
     const women = HEIRS.map((heir, i) => ({ heir, i })).filter(entry => entry.heir.gender === 'f');
     const chosen = HEIRS[selected];
     const house = HOUSES[chosen.house];
     return { cls: 'is-title', html: `<section class="menu-card heir-screen">
-      <header class="menu-card-head"><span class="eyebrow">NOVO JOGO · SLOT ${slot}</span><h2>Quem herda o Vale do Luto?</h2><p>Ninguém da família quis. Escolha quem vai ser obrigado.</p></header>
-      <div class="heir-row-label">HERDEIROS</div>
-      <div class="heir-grid">${men.map(entry => card(entry.heir, entry.i)).join('')}</div>
-      <div class="heir-row-label">HERDEIRAS</div>
-      <div class="heir-grid">${women.map(entry => card(entry.heir, entry.i)).join('')}</div>
-      <div class="heir-detail">
-        <img class="heir-detail-portrait" src="${heirPortraitSrc(chosen.id)}" alt="${chosen.name}, fase jovem" decoding="async">
-        <div><span class="eyebrow">${house.name.toUpperCase()}</span><h3>${chosen.name}</h3><p class="heir-motto">“${house.motto}”</p>
-          <p>${chosen.about}</p><p class="heir-tie">${chosen.age} anos · ${chosen.tie}</p></div>
+      <header class="menu-card-head"><span class="eyebrow">NOVO JOGO</span><h2>Quem herda o Vale do Luto?</h2><p>Ninguém da família quis. Escolha quem vai ser obrigado.</p></header>
+      <div class="heir-layout">
+        <div class="heir-pick">
+          <div class="heir-row-label">HERDEIROS</div>
+          <div class="heir-grid">${men.map(entry => card(entry.heir, entry.i)).join('')}</div>
+          <div class="heir-row-label">HERDEIRAS</div>
+          <div class="heir-grid">${women.map(entry => card(entry.heir, entry.i)).join('')}</div>
+        </div>
+        <div class="heir-detail">
+          <img class="heir-detail-portrait" src="${heirPortraitSrc(chosen.id)}" alt="${chosen.name}, fase jovem">
+          <span class="eyebrow">${house.name.toUpperCase()}</span><h3>${chosen.name}</h3><p class="heir-motto">“${house.motto}”</p>
+          <p>${chosen.about}</p><p class="heir-tie">${chosen.age} anos · ${chosen.tie}</p>
+          <div class="heir-row-label">O QUE EMBER FAZ COM ${chosen.name.split(' ')[0].toUpperCase()}</div>
+          <div class="heir-phases">${[1, 2, 3, 4].map(phase => `<figure><img src="${heirPortraitSrc(chosen.id, phase)}" alt="${chosen.name}, fase ${phase}"><figcaption>${(phase - 1) * HEIR_PHASE_YEARS} anos</figcaption></figure>`).join('')}</div>
+        </div>
       </div>
       <div class="menu-actions"><button type="button" class="primary" data-action="choose-heir" data-slot="${slot}">Escolher ${chosen.name.split(' ')[0]}</button><button type="button" data-action="back">Voltar</button></div>
+    </section>` };
+  },
+  nobles({ selected = 0 }) {
+    const chosen = NOBLES[selected] || NOBLES[0];
+    const house = HOUSES[chosen.house];
+    const card = (noble, i) => `<button type="button" class="heir-card${i === selected ? ' selected' : ''}" data-action="pick-noble" data-index="${i}" aria-pressed="${i === selected}">
+        <img class="heir-card-portrait" src="${noblePortraitSrc(noble.house, 1)}" alt="${noble.name}"><b>${noble.name.split(' ').slice(-2, -1)[0]}</b><small>${house && HOUSES[noble.house].name.replace(/^Casa /, '')}</small></button>`;
+    return { cls: 'is-title', html: `<section class="menu-card heir-screen">
+      <header class="menu-card-head"><span class="eyebrow">NOBRES DE MORDÁVIA</span><h2>As casas que cobram tributo</h2><p>Cada uma manda alguém buscar o que é dela. Com o tempo, Ember cobra deles também.</p></header>
+      <div class="heir-layout">
+        <div class="heir-pick"><div class="heir-grid">${NOBLES.map(card).join('')}</div>
+          <p class="nobles-gallery"><a href="public/npc-portrait-gallery-v01.html" target="_blank" rel="noopener">Abrir a galeria completa de retratos</a></p></div>
+        <div class="heir-detail">
+          <img class="heir-detail-portrait" src="${noblePortraitSrc(chosen.house, 1)}" alt="${chosen.name}">
+          <span class="eyebrow">${house.name.toUpperCase()}</span><h3>${chosen.name}</h3><p class="heir-motto">“${house.motto}”</p>
+          <p>${chosen.title}. ${house.about}</p>
+          <div class="heir-row-label">O QUE EMBER FAZ COM ${chosen.name.split(' ').slice(-2, -1)[0].toUpperCase()}</div>
+          <div class="heir-phases">${[1, 2, 3, 4].map(phase => `<figure><img src="${noblePortraitSrc(chosen.house, phase)}" alt="${chosen.name}, fase ${phase}"><figcaption>${(phase - 1) * HEIR_PHASE_YEARS} anos</figcaption></figure>`).join('')}</div>
+        </div>
+      </div>
+      <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
     </section>` };
   },
   sheet() {
@@ -3822,7 +3849,7 @@ const SCREENS = {
       <header class="menu-card-head"><span class="eyebrow">OPÇÕES</span><h2>Opções</h2></header>
       <div class="option-list">
         <div class="option-row"><div><b>Som</b><small>Música e efeitos do jogo.</small></div>${segmented('sound', options.sound, [[1, 'Ligado'], [0, 'Desligado']])}</div>
-        <div class="option-row"><div><b>Salvar sozinho</b><small>Salva no slot do jogo de tempos em tempos e quando você fecha a página.</small></div>${segmented('autosave', options.autosave, [[0, 'Desligado'], [1, '1 min'], [3, '3 min'], [5, '5 min']])}</div>
+        <div class="option-row"><div><b>Salvar sozinho</b><small>Salva o jogo de tempos em tempos e quando você fecha a página.</small></div>${segmented('autosave', options.autosave, [[0, 'Desligado'], [1, '1 min'], [3, '3 min'], [5, '5 min']])}</div>
         <div class="option-row"><div><b>Zoom ao começar</b><small>Ampla, normal ou próxima. Dá pra trocar no mapa a qualquer hora.</small></div>${segmented('startZoom', options.startZoom, [[0, 'Ampla'], [1, 'Normal'], [2, 'Próxima']])}</div>
         <div class="option-row"><div><b>Nomes dos personagens</b><small>Eles têm nome. Ninguém lembra qual.</small></div>${segmented('names', options.names, [['selected', 'Ao tocar'], ['always', 'Sempre']])}</div>
         <div class="option-row"><div><b>Aparência das construções</b><small>Só troca a arte. Não altera produção, custos, regras nem saves.</small></div>${segmented('buildingArtStyle', options.buildingArtStyle, [['dark', 'Escura'], ['color', 'Colorida']])}</div>
@@ -3846,11 +3873,11 @@ const SCREENS = {
     const day = Math.floor(state.minutes / 1440) + 1;
     const clock = `${pad2(Math.floor(state.minutes / 60) % 24)}:${pad2(state.minutes % 60)}`;
     return { cls: 'is-pause', html: `<section class="menu-card narrow">
-      <header class="menu-card-head"><span class="eyebrow">SLOT ${game.slot} · DIA ${day} · ${clock}</span><h2>Pausado</h2><p>${game.lastSaved ? `Último save ${ago(game.lastSaved)}.` : 'Ainda não salvou este jogo.'}</p></header>
+      <header class="menu-card-head"><span class="eyebrow">DIA ${day} · ${clock}</span><h2>Pausado</h2></header>
       <nav class="menu-list compact" aria-label="Menu de pausa">
         <button type="button" class="primary" data-action="resume">Voltar ao jogo</button>
         <button type="button" data-action="economy">Economia do domínio</button>
-        <button type="button" data-action="save">Salvar no slot ${game.slot}</button>
+        <button type="button" data-action="save">Salvar</button>
         <button type="button" data-action="load">Carregar jogo</button>
         <button type="button" data-action="options">Opções</button>
         <button type="button" data-action="debug">Debug</button>
@@ -3882,21 +3909,9 @@ function renderMenu() {
   $('#menu-panel button:not([disabled])')?.focus({ preventScroll: true });
 }
 
-// A tela de menu encolhe o mínimo necessário para caber na altura da janela, sem rolagem.
+// Os menus não encolhem mais para caber na janela: o que não couber rola. Volta ao topo a cada tela nova.
 function fitMenu() {
-  const card = $('#menu-panel').firstElementChild;
-  if (!card || card.classList.contains('sheet')) return;
-  card.style.zoom = '';
-  const layer = $('#menu-layer');
-  const pad = parseFloat(getComputedStyle(layer).paddingTop) + parseFloat(getComputedStyle(layer).paddingBottom);
-  const available = window.innerHeight - pad - 6;
-  let zoom = 1;
-  for (let i = 0; i < 4; i++) {
-    const height = card.getBoundingClientRect().height;
-    if (height <= available || zoom <= 0.5) break;
-    zoom = Math.max(0.5, zoom * available / height - 0.005);
-    card.style.zoom = zoom.toFixed(3);
-  }
+  $('#menu-layer').scrollTop = 0;
 }
 
 function showScreen(name, params = {}) {
@@ -3957,6 +3972,7 @@ function initMenus() {
     switch (button.dataset.action) {
       case 'continue': showScreen('continue'); break;
       case 'new': showScreen('saves', { mode: 'new' }); break;
+      case 'nobles': showScreen('nobles'); break;
       case 'load': showScreen('saves', { mode: 'load' }); break;
       case 'economy': showScreen('economy'); break;
       case 'options': showScreen('options'); break;
@@ -3968,7 +3984,7 @@ function initMenus() {
         else loadGame(slot);
         break;
       case 'new-slot': showScreen('heir', { slot, selected: 0 }); break;
-      case 'pick-heir': menu.stack[menu.stack.length - 1].params.selected = Number(button.dataset.index); renderMenu(); break;
+      case 'pick-heir': case 'pick-noble': menu.stack[menu.stack.length - 1].params.selected = Number(button.dataset.index); renderMenu(); break;
       case 'choose-heir': showScreen('intro', { slot, heir: HEIRS[menu.stack[menu.stack.length - 1].params.selected].id }); break;
       case 'accept': newGame(slot, menu.stack[menu.stack.length - 1].params.heir); break;
       case 'delete-slot':
@@ -4011,7 +4027,7 @@ function initMenus() {
         break;
       }
       case 'confirm-yes': { const run = menu.pending; menu.pending = null; run?.(); break; }
-      case 'save': say(writeSave(game.slot) ? `Salvo no slot ${game.slot}, neste navegador.` : 'Não deu pra salvar. O navegador recusou.'); renderMenu(); break;
+      case 'save': say(writeSave(game.slot) ? 'Jogo salvo.' : 'Não deu pra salvar. O navegador recusou.'); renderMenu(); break;
       case 'quit': showScreen('quit'); break;
       case 'save-quit': writeSave(game.slot); toTitle(); break;
       case 'quit-nosave': toTitle(); break;
@@ -4063,7 +4079,6 @@ function initMenus() {
       openPause();
     }
   });
-  window.addEventListener('resize', () => { if (!$('#menu-layer').hidden) fitMenu(); });
   window.addEventListener('pagehide', () => { if (game.slot && options.autosave) writeSave(game.slot); });
   showScreen('title');
 }

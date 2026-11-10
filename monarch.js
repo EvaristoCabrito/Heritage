@@ -2,7 +2,7 @@
 // Monarca: as 30 magias do herdeiro (data/monarch-spells.json) funcionando no mapa.
 // O Monarca anda pelo domínio, não luta e ninguém bate nele. Ele comanda: auras em volta dele,
 // ordens e decretos para os aliados, editos e julgamentos contra os inimigos, invocações.
-// Recursos: MP (o atributo do herdeiro) e Autoridade (ganha comandando e controlando).
+// Recurso: MP (o atributo do herdeiro).
 // Os ganchos no combate do app.js chamam window.Monarch.* com ?. para o jogo rodar sem este arquivo.
 // ==========================================================================
 const Monarch = (() => {
@@ -36,7 +36,7 @@ const Monarch = (() => {
   const rt = {
     time: 0, summons: [], zones: [], armies: [], channel: null, majesty: 0, conquest: { stacks: 0, t: 0 },
     targeting: null, hover: null, mods: new Map(), allies: [], enemies: [], crushInside: new Set(), nextId: 1,
-    self: { id: 'monarch', name: 'O Monarca', className: 'Monarch', purse: 0, x: 0, y: 0 }, barKey: '', barClock: 0, cache: new Map(), outOfCombat: 0,
+    self: { id: 'monarch', name: 'O Monarca', className: 'Monarch', purse: 0, x: 0, y: 0 }, barKey: '', barClock: 0, cache: new Map(),
     projs: [], timers: [], fzones: [], lastMap: '', panelClock: 0,
   };
 
@@ -60,7 +60,7 @@ const Monarch = (() => {
 
   // ----- Estado salvo junto com o jogo -----
   function ms() {
-    if (!state.monarch) state.monarch = { x: 44.5, y: 41.5, mp: null, authority: 0, auras: [], cd: {}, goal: null, pending: null, knownLevel: level() };
+    if (!state.monarch) state.monarch = { x: 44.5, y: 41.5, mp: null, auras: [], cd: {}, goal: null, pending: null, knownLevel: level() };
     const m = state.monarch;
     if (!Array.isArray(m.auras)) m.auras = [];
     if (!m.cd) m.cd = {};
@@ -72,7 +72,6 @@ const Monarch = (() => {
   const maxMp = () => heirStat('MP');
   const reservedMp = () => (state.monarch?.auras || []).reduce((sum, key) => sum + (stats(byKey[key]).manaReservePercent || 0) / 100 * maxMp(), 0);
   const mpCap = () => Math.max(0, maxMp() - reservedMp());
-  const authMax = () => byLevelTable(DATA.resources.authority.maxByLevel);
   const auraSlots = () => byLevelTable(DATA.auraSlotsByLevel);
   const slotsUsed = () => ms().auras.filter(key => !byKey[key].auraSlotShared).length;
   function radiusOf(spell) {
@@ -85,7 +84,6 @@ const Monarch = (() => {
   }
   const heirName = () => heirById(state.heir)?.name || 'O Monarca';
   const firstName = () => heirName().split(' ')[0];
-  const gainAuth = amount => { const m = ms(); m.authority = Math.min(authMax(), (m.authority || 0) + amount); };
 
   // ----- Quem é aliado e quem é inimigo -----
   const isAlly = actor => !!actor && (actor.summon || actor.mfx?.convert || !isHostile(actor));
@@ -130,7 +128,6 @@ const Monarch = (() => {
     const m = ms();
     const dist = Math.hypot(enemy.x - m.x, enemy.y - m.y);
     const widest = Math.max(0, ...m.auras.filter(key => isUnlocked(byKey[key])).map(key => radiusOf(byKey[key])));
-    if (dist <= widest) gainAuth(DATA.resources.authority.gain.enemyKilledInAura);
     if (auraOn('aura-da-conquista') && dist <= radiusOf(byKey['aura-da-conquista'])) {
       const e = effects(byKey['aura-da-conquista']);
       rt.conquest.stacks = Math.min(e.maxStacks, rt.conquest.stacks + 1);
@@ -139,7 +136,6 @@ const Monarch = (() => {
       emit(m.x, m.y - BODY, { color: C.crimson, count: 10, speed: 3, size: 0.35, up: 3 });
     }
     const f = enemy.mfx || {};
-    if (f.execute?.refund) gainAuth(f.execute.refund);
     if (f.mark?.jump) {
       const next = nearest(rt.enemies.filter(other => other !== enemy && !other.mfx?.mark), enemy.x, enemy.y, 12);
       if (next) { addFx(next, 'mark', f.mark.t / 2, { v: f.mark.v, jump: true }); FX.link({ x: enemy.x, y: enemy.y - HEAD }, { x: next.x, y: next.y - HEAD }, C.crimson, 0.6, 0, 0.4); }
@@ -156,7 +152,8 @@ const Monarch = (() => {
     const dur = 0.28;
     addFx(actor, 'push', dur, { vx: dx * dist / dur, vy: dy * dist / dur, stun });
   }
-  const control = (actor, key, t, data = {}) => { addFx(actor, key, Math.max(actor.mfx?.[key]?.t || 0, t), data); gainAuth(DATA.resources.authority.gain.enemyControlled); };
+
+  const control = (actor, key, t, data = {}) => { addFx(actor, key, Math.max(actor.mfx?.[key]?.t || 0, t), data); };
 
   // ----- Invocações -----
   function summon(kind, x, y, e, st) {
@@ -246,7 +243,6 @@ const Monarch = (() => {
     if (spell.activation === 'alternavel' && m.auras.includes(spell.key)) return null;
     if ((m.cd[spell.key] || 0) > 0) return `${spell.name}: em recarga (${Math.ceil(m.cd[spell.key])} s).`;
     if (m.mp < st.manaCost) return `${spell.name}: falta mana. O sangue azul não paga contas.`;
-    if ((m.authority || 0) < st.authorityCost) return `${spell.name}: falta autoridade. Ninguém obedece a quem ainda não mandou nada.`;
     if (spell.activation === 'alternavel') {
       if (spell.auraSlotShared && !m.auras.includes(spell.auraSlotShared)) return `${spell.name}: ligue antes a ${byKey[spell.auraSlotShared].name}.`;
       if (!spell.auraSlotShared && slotsUsed() >= auraSlots()) return `Sem espaço para mais auras (${auraSlots()} ao mesmo tempo). Desligue uma.`;
@@ -257,8 +253,6 @@ const Monarch = (() => {
     const m = ms();
     const st = stats(spell);
     m.mp -= st.manaCost;
-    m.authority = Math.max(0, (m.authority || 0) - st.authorityCost);
-    if (st.authorityGain) gainAuth(st.authorityGain);
     m.cd[spell.key] = st.cooldownSeconds;
   }
   const needsTarget = spell => stats(spell).castRange > 0;
@@ -272,10 +266,11 @@ const Monarch = (() => {
     if (rt.channel?.key === key) { endChannel(); return; }
     const reason = canCast(spell);
     if (reason) { say(reason); return; }
-    if (spell.activation === 'alternavel') { toggleAura(spell); return; }
-    if (needsTarget(spell)) { rt.targeting = rt.targeting?.key === key ? null : { key }; refreshCursor(); return; }
+    // Aura já ligada desliga na hora. Todo o resto: escolhe a magia e clica no mapa onde ela sai.
+    if (spell.activation === 'alternavel' && m.auras.includes(spell.key)) { toggleAura(spell); return; }
     m.pending = null;
-    cast(spell, { x: m.x, y: m.y });
+    rt.targeting = rt.targeting?.key === key ? null : { key };
+    refreshCursor();
   }
   function toggleAura(spell) {
     const m = ms();
@@ -308,7 +303,8 @@ const Monarch = (() => {
     rt.channel = null;
   }
 
-  // Clique no mapa com uma magia escolhida: guarda o pedido; o Monarca anda até ficar ao alcance.
+  // Clique no mapa com uma magia escolhida: a magia sai ali, na hora. Não existe Monarca andando:
+  // o ponto de origem da magia passa a ser onde você clicou (ou o inimigo clicado).
   function onMapClick(point) {
     const t = rt.targeting;
     if (!t) return false;
@@ -330,10 +326,16 @@ const Monarch = (() => {
       }
       targetId = enemy.id;
     }
-    m.pending = { key: spell.key, x: point.x, y: point.y, targetId };
-    m.goal = null;
+    const enemy = targetId ? rt.enemies.find(other => other.id === targetId) : null;
+    const spot = enemy || point;
+    m.pending = null; m.goal = null; m.walkTo = null;
+    m.x = spot.x; m.y = spot.y;
     rt.targeting = null;
     refreshCursor();
+    const reason = canCast(spell);
+    if (reason) { say(reason); return true; }
+    if (spell.activation === 'alternavel') toggleAura(spell);
+    else cast(spell, { x: spot.x, y: spot.y, enemy });
     return true;
   }
   function pendingStep() {
@@ -367,7 +369,7 @@ const Monarch = (() => {
       const m = ms();
       const chosen = near(rt.allies, t.x, t.y, st.auraRadius).sort((a, b) => Math.hypot(a.x - t.x, a.y - t.y) - Math.hypot(b.x - t.x, b.y - t.y)).slice(0, e.maxAllies);
       chosen.forEach(ally => {
-        addFx(ally, 'order', st.durationSeconds, { v: e.nextAttackDamagePercent, auth: e.authorityPerEmpoweredHit || 0 });
+        addFx(ally, 'order', st.durationSeconds, { v: e.nextAttackDamagePercent });
         FX.link({ x: m.x, y: m.y - HEAD }, { x: ally.x, y: ally.y - HEAD }, C.gold, 0.5, 0, 0.35);
         emit(ally.x, ally.y - HEAD, { color: C.gold, count: 10, speed: 2, size: 0.3, up: 2 });
       });
@@ -404,6 +406,16 @@ const Monarch = (() => {
     },
     'convocacao-do-vassalo'(spell, st, e, t) { summon('vassal', t.x, t.y, e, st); },
     'convocacao-da-guarda-real'(spell, st, e, t) { summon('guard', t.x, t.y, e, st); say('A Guarda Real voltou dos mortos. Não pela sua honra: pelo soldo atrasado.'); },
+    'aegis-da-coroa'(spell, st, e) {
+      const m = ms();
+      near(rt.allies, m.x, m.y, st.auraRadius).forEach(ally => {
+        CONTROL.forEach(key => { if (ally.mfx) delete ally.mfx[key]; });
+        addFx(ally, 'ccImmune', st.durationSeconds);
+      });
+      FX.shockwave(m.x, m.y, st.auraRadius, C.gold, 0.7);
+      FX.sigil(m.x, m.y, st.auraRadius, C.paleGold, st.durationSeconds, 12);
+      say(firstName() + ' ergue a coroa. O grupo fica imune a controle por 60 s.');
+    },
     'decreto-de-ferro'(spell, st, e) {
       const m = ms();
       const value = Math.round(e.shieldBase + e.shieldPerLevel * level() + e.shieldMagPercent / 100 * mag());
@@ -465,7 +477,7 @@ const Monarch = (() => {
       emit(t.x, t.y - 3, { color: C.violet, count: 30, speed: 2, size: 0.4, up: -1, ring: r * 0.6, gravity: 2 });
     },
     'decreto-de-executado'(spell, st, e, t) {
-      near(rt.enemies, t.x, t.y, st.auraRadius).forEach(enemy => addFx(enemy, 'execute', st.durationSeconds, { thr: e.executeThresholdHpPercent, v: e.damageTakenBonusPercent, refund: e.authorityRefundOnKill || 0 }));
+      near(rt.enemies, t.x, t.y, st.auraRadius).forEach(enemy => addFx(enemy, 'execute', st.durationSeconds, { thr: e.executeThresholdHpPercent, v: e.damageTakenBonusPercent }));
       FX.sigil(t.x, t.y, st.auraRadius, C.blood, 1.4, 4, 'ground', 0.3);
       FX.cracks(t.x, t.y, st.auraRadius, C.crimson, 0.9);
     },
@@ -479,7 +491,6 @@ const Monarch = (() => {
       const m = ms();
       const stunned = near(rt.enemies, m.x, m.y, st.auraRadius);
       stunned.forEach(enemy => { control(enemy, 'stun', e.stunSeconds); emit(enemy.x, enemy.y - HEAD, { color: C.gold, count: 6, speed: 1.5, size: 0.3, up: 1, shape: SpellFX.SHAPE.star }); });
-      if (e.authorityPerStunned) gainAuth(Math.min(e.authorityPerStunnedMax, e.authorityPerStunned * stunned.length));
       [0, 0.12, 0.24].forEach((delay, i) => setTimeout(() => FX.shockwave(m.x, m.y, st.auraRadius * (1 - i * 0.12), i ? C.gold : C.white, 0.6), delay * 1000));
       FX.flash(m.x, m.y - HEAD, 4, C.gold, 0.35);
       say(`${firstName()} falou mais alto. O vale inteiro calou a boca.`);
@@ -1190,7 +1201,7 @@ const Monarch = (() => {
         const cell = (spell, field) => {
           if (!spell) return '<span></span>';
           const usable = field || isUnlocked(spell);
-          const cost = field ? `${spell.manaCost} MP` : [stats(spell).manaCost ? `${stats(spell).manaCost} MP` : '', stats(spell).authorityCost ? `${stats(spell).authorityCost} Aut.` : ''].filter(Boolean).join(' · ') || 'sem custo';
+      const cost = field ? spell.manaCost : stats(spell).manaCost;
           const color = field ? SCHOOL_HEX[spell.school] : (ACCENT[spell.type] || '#e9d08f');
           const title = (field ? fieldTitle(spell) : (usable ? spellTitle(spell) : `${spell.name}: substituída por outra magia.`)).replace(/"/g, '&quot;');
           return `<button type="button" class="spell-cast${field ? ' is-field' : ''}${usable ? '' : ' replaced'}" data-spell="${spell.key}" data-field="${field ? 1 : 0}" style="--accent:${color}" title="${title}"${usable ? '' : ' disabled'}>
@@ -1326,7 +1337,7 @@ const Monarch = (() => {
     if (isAlly(attacker) && isEnemy(defender)) {
       const f = attacker.mfx || {};
       let mul = 1;
-      if (f.order) { mul += f.order.v / 100; gainAuth(DATA.resources.authority.gain.allyHitUnderOrder + (f.order.auth || 0)); delete f.order; FX.flash(defender.x, defender.y - BODY, 1.8, C.gold, 0.3); }
+      if (f.order) { mul += f.order.v / 100; delete f.order; FX.flash(defender.x, defender.y - BODY, 1.8, C.gold, 0.3); }
       if (f.charge?.arrived && f.charge.first && !f.charge.used) { mul += f.charge.first / 100; f.charge.used = true; FX.shockwave(defender.x, defender.y, 2, C.ember, 0.4); }
       if (f.convert?.dmgPct) mul += f.convert.dmgPct / 100;
       if (rt.conquest.stacks && auraOn('aura-da-conquista')) mul += rt.conquest.stacks * effects(byKey['aura-da-conquista']).damagePercentPerStack * auraMult() / 100;
@@ -1476,7 +1487,6 @@ const Monarch = (() => {
         near(rt.allies, zone.x, zone.y, zone.r).forEach(a => heal(a, maxHpOf(a) * zone.e.hpRegenPercentPerSecond / 100 * dt));
         if (Math.hypot(m.x - zone.x, m.y - zone.y) <= zone.r) {
           m.mp = Math.min(mpCap(), m.mp + maxMp() * zone.e.manaRegenPercentPerSecond / 100 * dt);
-          if (zone.e.authorityPerSecondInside) gainAuth(zone.e.authorityPerSecondInside * dt);
         }
       }
     }
@@ -1512,9 +1522,6 @@ const Monarch = (() => {
     const m = ms();
     const fighting = rt.enemies.length > 0;
     m.mp = Math.min(mpCap(), m.mp + maxMp() * (fighting ? 1.5 : 4) / 100 * dt);
-    if (fighting) rt.outOfCombat = 0; else rt.outOfCombat += dt;
-    if (rt.outOfCombat > 8) m.authority = Math.max(0, (m.authority || 0) - 2 * dt);
-    m.authority = Math.min(authMax(), m.authority || 0);
     Object.keys(m.cd).forEach(key => { m.cd[key] = Math.max(0, m.cd[key] - dt); if (!m.cd[key]) delete m.cd[key]; });
   }
   function moveStep(dt) {
@@ -1730,7 +1737,7 @@ const Monarch = (() => {
   const spellTitle = spell => {
     const st = stats(spell);
     const rank = rankIndex(spell) + 1;
-    const cost = [st.manaCost ? `${st.manaCost} MP` : '', st.authorityCost ? `${st.authorityCost} de autoridade` : '', st.manaReservePercent ? `reserva ${st.manaReservePercent}% do MP` : ''].filter(Boolean).join(' · ') || 'sem custo';
+    const cost = [st.manaCost ? (st.manaCost + ' MP') : '', st.manaReservePercent ? ('reserva ' + st.manaReservePercent + '% do MP') : ''].filter(Boolean).join(' · ') || 'sem custo';
     const reach = [st.castRange ? `alcance ${st.castRange} m` : 'sai do Monarca', st.auraRadius ? `raio ${st.auraRadius} m` : ''].filter(Boolean).join(' · ');
     return `${spell.name} (rank ${rank}/${spell.ranks.length})\n${spell.ranks[rank - 1].description}\n${cost} · recarga ${st.cooldownSeconds} s · ${reach}`;
   };
@@ -1752,8 +1759,6 @@ const Monarch = (() => {
     bar.querySelector('.res-mp i').style.width = `${Math.round(m.mp / Math.max(1, max) * 100)}%`;
     bar.querySelector('.res-mp em').style.width = `${Math.round(reservedMp() / Math.max(1, max) * 100)}%`;
     bar.querySelector('.res-mp span').textContent = `MP ${Math.floor(m.mp)}/${Math.floor(cap)}`;
-    bar.querySelector('.res-auth i').style.width = `${Math.round((m.authority || 0) / authMax() * 100)}%`;
-    bar.querySelector('.res-auth span').textContent = `Autoridade ${Math.floor(m.authority || 0)}/${authMax()}`;
     bar.querySelector('.aura-slots').textContent = auraSlots() ? `Auras ${slotsUsed()}/${auraSlots()}` : '';
     bar.querySelectorAll('.spell-btn[data-spell]').forEach(button => {
       const k = button.dataset.spell;
@@ -1766,7 +1771,7 @@ const Monarch = (() => {
       button.classList.toggle('cooling', cd > 0);
       button.classList.toggle('on', m.auras.includes(k) || rt.channel?.key === k);
       button.classList.toggle('targeting', rt.targeting?.key === k || m.pending?.key === k);
-      button.classList.toggle('poor', !m.auras.includes(k) && (m.mp < st.manaCost || (m.authority || 0) < st.authorityCost));
+      button.classList.toggle('poor', !m.auras.includes(k) && m.mp < st.manaCost);
     });
   }
   function refreshCursor() {
@@ -1781,11 +1786,11 @@ const Monarch = (() => {
     const row = spell => {
       const st = stats(spell);
       const rank = rankIndex(spell) + 1;
-      const cost = [st.manaCost ? `${st.manaCost} MP` : '', st.authorityCost ? `${st.authorityCost} Aut.` : '', st.manaReservePercent ? `reserva ${st.manaReservePercent}%` : ''].filter(Boolean).join(' · ');
+      const cost = [st.manaCost ? (st.manaCost + ' MP') : '', st.manaReservePercent ? ('reserva ' + st.manaReservePercent + '%') : ''].filter(Boolean).join(' · ');
       return `<li><span class="spell-glyph" style="--accent:${ACCENT[spell.type] || '#e9d08f'}">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>rank ${rank}/${spell.ranks.length}</small><p>${spell.ranks[rank - 1].description}</p><small>${cost || 'sem custo'} · recarga ${st.cooldownSeconds} s${st.castRange ? ` · alcance ${st.castRange} m` : ''}${st.auraRadius ? ` · raio ${st.auraRadius} m` : ''}</small></div></li>`;
     };
     return `<div class="sheet-section-label">MAGIAS DO MONARCA</div>
-      <p class="sheet-spell-res">MP ${Math.floor(m.mp)} de ${Math.floor(mpCap())} · Autoridade ${Math.floor(m.authority || 0)} de ${authMax()} · ${auraSlots() ? `até ${auraSlots()} ${auraSlots() === 1 ? 'aura' : 'auras'} ao mesmo tempo` : 'nenhuma aura ainda'}</p>
+      <p class="sheet-spell-res">MP ${Math.floor(m.mp)} de ${Math.floor(mpCap())} · ${auraSlots() ? `até ${auraSlots()} ${auraSlots() === 1 ? 'aura' : 'auras'} ao mesmo tempo` : 'nenhuma aura ainda'}</p>
       <ul class="spell-list">${list.map(row).join('')}</ul>
       <div class="sheet-section-label">MAGIAS DE CAMPO</div>
       <ul class="spell-list">${FIELD.filter(fieldUnlocked).map(spell => `<li><span class="spell-glyph" style="--accent:${SCHOOL_HEX[spell.school]}">${FIELD_GLYPH[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>nível ${spell.unlockLevel}</small><p>${fieldText(spell)}</p><small>${spell.manaCost} MP · recarga ${spell.cooldownSeconds} s</small></div></li>`).join('')}</ul>
