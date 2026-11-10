@@ -29,7 +29,7 @@ const CARRY_LOAD = 5;
 const FARM_STOCK_CAP = 10;
 const MANOR_DOOR = { x: 42, y: 39 };
 // Fazendas e moinhos sobem até o nível 3. O moinho melhorado mói mais rápido, sem exagero.
-const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 90, wood: 6 }, { gold: 160, wood: 10 }];
+const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 180, wood: 12 }, { gold: 320, wood: 20 }];
 const MILL_RATE = [0.225, 0.3, 0.4]; // trigo moído em farinha por segundo, por nível
 // Arte por nível: quando houver desenho do upgrade, liste aqui. Ex.: 'farm-garlic': [null, 'farm-garlic-l2', 'farm-garlic-l3']
 const LEVEL_ART = {};
@@ -998,7 +998,6 @@ function placeBuilding(x, y) {
   const building = { site, type: item.id, produce: item.id === 'farm' ? state.selectedFarmType : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
   state.buildings.push(building);
   state.selectedBuild = null;
-  state.selectedSite = site;
   assignBuilders();
   renderSites(); renderPanel(); updateHud();
   const builder = building.builderId != null ? findActor(building.builderId) : null;
@@ -1105,7 +1104,7 @@ function recruit(className, origin, prestige = null, guildResident = false) {
 }
 
 // Cada fazenda ou moinho traz um camponês, que sai da construção e trabalha nela.
-const HUT_UPGRADE = { gold: 90, wood: 6 };
+const HUT_UPGRADE = { gold: 180, wood: 12 };
 function upgradeHut(site) {
   const hut = state.buildings.find(building => building.site === site && building.type === 'hut');
   if (!hut || hut.big) return;
@@ -1136,7 +1135,7 @@ function hireWorker(home, female) {
 }
 
 // Nível 1 traz um morador da guilda; níveis 2 e 3 trazem heróis extras, alojados em taverna/hotel.
-const GUILD_UPGRADES = [{ gold: 120, wood: 8 }, { gold: 180, wood: 12 }];
+const GUILD_UPGRADES = [{ gold: 240, wood: 16 }, { gold: 360, wood: 24 }];
 const guildTier = guild => guild.tier ?? (guild.branch ? 2 : 0);
 function upgradeGuild(site, branch) {
   const guild = state.buildings.find(building => building.site === site);
@@ -1703,7 +1702,7 @@ function setProfession(id, profession) {
   say(worker.profession ? `${worker.name} agora é ${professionName(worker).toLowerCase()}. Ninguém perguntou se queria.` : `${worker.name} ficou sem profissão. Vai fazer o que aparecer.`);
 }
 const PEASANT_PRIORITY = ['tool', 'clothes', 'feet', 'hands', 'head'];
-const ARMORY_LEVELS = [{ gold: 0, wood: 0 }, { gold: 120, wood: 8 }, { gold: 200, wood: 14 }];
+const ARMORY_LEVELS = [{ gold: 0, wood: 0 }, { gold: 240, wood: 16 }, { gold: 400, wood: 28 }];
 const BONUS_LABELS = { atk: 'Ataque', def: 'Defesa', mag: 'Magia', hp: 'Vida', dex: 'Destreza', work: 'trabalho', carry: 'carga', speed: 'passo', build: 'obra' };
 const gearOf = actor => actor.gear || (actor.gear = {});
 const slotsFor = actor => actor.className === 'Peasant' ? PEASANT_SLOTS : HERO_SLOTS;
@@ -1922,7 +1921,7 @@ const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, eggs: 0, mil
 // Guardam comida, armas e itens; madeira e ouro ficam fora.
 const MANOR_STORAGE = 200;
 const STORAGE_LEVELS = [
-  { cap: 30, gold: 0, wood: 0 }, { cap: 45, gold: 80, wood: 6 }, { cap: 70, gold: 140, wood: 10 }, { cap: 100, gold: 220, wood: 16 },
+  { cap: 30, gold: 0, wood: 0 }, { cap: 45, gold: 160, wood: 12 }, { cap: 70, gold: 280, wood: 20 }, { cap: 100, gold: 440, wood: 32 },
 ];
 const depots = () => state.buildings.filter(building => building.type === 'depot' && isDone(building));
 const depotCap = depot => STORAGE_LEVELS[depot.level || 0].cap;
@@ -3549,6 +3548,8 @@ function init() {
   });
   $$('.tab').forEach(tab => tab.addEventListener('click', () => {
     state.tab = tab.dataset.tab;
+    // Construir sempre abre a lista completa, mesmo com uma construção selecionada.
+    if (state.tab === 'build' && state.selectedSite != null) { if (state.movingSite != null) cancelMove(); state.selectedSite = null; renderSites(); }
     $$('.tab').forEach(other => { const active = other === tab; other.classList.toggle('active', active); other.setAttribute('aria-selected', String(active)); });
     renderPanel();
   }));
