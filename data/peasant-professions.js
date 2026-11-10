@@ -1,4 +1,6 @@
-{
+// Profissões dos camponeses. Carregado como script para o jogo abrir direto do arquivo (JOGAR.bat), sem servidor.
+// Tudo depois do sinal de igual é JSON puro.
+window.PEASANT_PROFESSIONS = {
   "version": 1,
   "maxLevel": 50,
   "specializationLevel": 50,
@@ -2751,4 +2753,4 @@
       ]
     }
   ]
-}
+};
