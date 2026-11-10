@@ -3687,15 +3687,14 @@ const SCREENS = {
       <div class="menu-actions"><button type="button" class="primary" data-action="load-slot" data-slot="${latest.slot}">Continuar</button><button type="button" data-action="load">Outros saves</button><button type="button" data-action="back">Voltar</button></div>
     </section>` };
   },
-  saves({ mode }) {
-    const loading = mode === 'load';
+  // Um menu de saves só, igual não importa de onde foi aberto: jogo salvo continua, espaço vazio começa um novo.
+  saves() {
     const slots = allSaves().map(({ slot, record }) => {
-      const disabled = loading && !record;
-      const del = record ? `<button type="button" class="slot-delete" data-action="delete-slot" data-slot="${slot}">Apagar</button>` : '';
-      return `<div class="save-slot${record ? '' : ' empty'}${game.slot === slot ? ' current' : ''}"><button type="button" class="slot-main" data-action="${loading ? 'load-slot' : 'new-slot'}" data-slot="${slot}" ${disabled ? 'disabled' : ''}>${saveCard(slot, record)}</button>${del}</div>`;
+      const side = record ? `<span class="slot-actions"><button type="button" class="slot-delete" data-action="new-slot" data-slot="${slot}">Novo jogo</button><button type="button" class="slot-delete" data-action="delete-slot" data-slot="${slot}">Apagar</button></span>` : '';
+      return `<div class="save-slot${record ? '' : ' empty'}${game.slot === slot ? ' current' : ''}"><button type="button" class="slot-main" data-action="${record ? 'load-slot' : 'new-slot'}" data-slot="${slot}">${saveCard(slot, record)}</button>${side}</div>`;
     }).join('');
     return { cls: menuMode(), html: `<section class="menu-card wide">
-      <header class="menu-card-head"><span class="eyebrow">${loading ? 'CARREGAR' : 'NOVO JOGO'}</span><h2>${loading ? 'Carregar jogo' : 'Em qual slot?'}</h2><p>${loading ? 'Escolha qual desastre retomar.' : 'Escolha onde a próxima tragédia da família vai ficar registrada.'}</p></header>
+      <header class="menu-card-head"><span class="eyebrow">SAVES</span><h2>Jogos salvos</h2><p>Clique num jogo para continuar. Clique num espaço vazio para começar um novo.</p></header>
       <div class="save-list">${slots}</div>
       <div class="menu-actions"><button type="button" data-action="back">Voltar</button></div>
     </section>` };
@@ -3746,22 +3745,31 @@ const SCREENS = {
       <div class="menu-actions"><button type="button" class="primary" data-action="choose-heir" data-slot="${slot}">Escolher ${chosen.name.split(' ')[0]}</button><button type="button" data-action="back">Voltar</button></div>
     </section>` };
   },
+  // Galeria inteira dos nobres de Mordávia: todos os personagens com retrato, com as 4 fases de cada um.
   nobles({ selected = 0 }) {
-    const chosen = NOBLES[selected] || NOBLES[0];
+    const chosen = HEIRS[selected] || HEIRS[0];
     const house = HOUSES[chosen.house];
-    const card = (noble, i) => `<button type="button" class="heir-card${i === selected ? ' selected' : ''}" data-action="pick-noble" data-index="${i}" aria-pressed="${i === selected}">
-        <img class="heir-card-portrait" src="${noblePortraitSrc(noble.house, 1)}" alt="${noble.name}"><b>${noble.name.split(' ').slice(-2, -1)[0]}</b><small>${house && HOUSES[noble.house].name.replace(/^Casa /, '')}</small></button>`;
+    const noble = NOBLES.find(entry => chosen.portrait === `noble-portraits-v01/${entry.house}`);
+    const card = (heir, i) => `<button type="button" class="heir-card${i === selected ? ' selected' : ''}" data-action="pick-noble" data-index="${i}" aria-pressed="${i === selected}">
+        <img class="heir-card-portrait" src="${heirPortraitSrc(heir.id)}" alt="${heir.name}"><b>${heir.name.split(' ')[0]}</b><small>${HOUSES[heir.house].name.replace(/^Casa /, '')} · ${heir.age}</small></button>`;
+    const men = HEIRS.map((heir, i) => ({ heir, i })).filter(entry => entry.heir.gender === 'm');
+    const women = HEIRS.map((heir, i) => ({ heir, i })).filter(entry => entry.heir.gender === 'f');
     return { cls: 'is-title', html: `<section class="menu-card heir-screen">
-      <header class="menu-card-head"><span class="eyebrow">NOBRES DE MORDÁVIA</span><h2>As casas que cobram tributo</h2><p>Cada uma manda alguém buscar o que é dela. Com o tempo, Ember cobra deles também.</p></header>
+      <header class="menu-card-head"><span class="eyebrow">NOBRES DE MORDÁVIA</span><h2>Nobres e linhagens</h2><p>${HEIRS.length} personagens · ${men.length} homens · ${women.length} mulheres. Os retratos avançam a cada ${HEIR_PHASE_YEARS} anos de jogo.</p></header>
       <div class="heir-layout">
-        <div class="heir-pick"><div class="heir-grid">${NOBLES.map(card).join('')}</div>
-          <p class="nobles-gallery"><a href="public/npc-portrait-gallery-v01.html" target="_blank" rel="noopener">Abrir a galeria completa de retratos</a></p></div>
+        <div class="heir-pick">
+          <div class="heir-row-label">HOMENS</div>
+          <div class="heir-grid">${men.map(entry => card(entry.heir, entry.i)).join('')}</div>
+          <div class="heir-row-label">MULHERES</div>
+          <div class="heir-grid">${women.map(entry => card(entry.heir, entry.i)).join('')}</div>
+          <p class="nobles-gallery"><a href="public/npc-portrait-gallery-v01.html" target="_blank" rel="noopener">Abrir a galeria completa de retratos</a></p>
+        </div>
         <div class="heir-detail">
-          <img class="heir-detail-portrait" src="${noblePortraitSrc(chosen.house, 1)}" alt="${chosen.name}">
-          <span class="eyebrow">${house.name.toUpperCase()}</span><h3>${chosen.name}</h3><p class="heir-motto">“${house.motto}”</p>
-          <p>${chosen.title}. ${house.about}</p>
-          <div class="heir-row-label">O QUE EMBER FAZ COM ${chosen.name.split(' ').slice(-2, -1)[0].toUpperCase()}</div>
-          <div class="heir-phases">${[1, 2, 3, 4].map(phase => `<figure><img src="${noblePortraitSrc(chosen.house, phase)}" alt="${chosen.name}, fase ${phase}"><figcaption>${(phase - 1) * HEIR_PHASE_YEARS} anos</figcaption></figure>`).join('')}</div>
+          <img class="heir-detail-portrait" src="${heirPortraitSrc(chosen.id)}" alt="${chosen.name}">
+          <span class="eyebrow">${house.name.toUpperCase()}</span><h3>${noble ? noble.name : chosen.name}</h3><p class="heir-motto">“${house.motto}”</p>
+          <p>${noble ? `${noble.title}. ` : ''}${chosen.about}</p><p class="heir-tie">${chosen.age} anos · ${chosen.tie}</p>
+          <div class="heir-row-label">O QUE EMBER FAZ COM ${chosen.name.split(' ')[0].toUpperCase()}</div>
+          <div class="heir-phases">${[1, 2, 3, 4].map(phase => `<figure><img src="${heirPortraitSrc(chosen.id, phase)}" alt="${chosen.name}, fase ${phase}"><figcaption>${(phase - 1) * HEIR_PHASE_YEARS} anos</figcaption></figure>`).join('')}</div>
         </div>
       </div>
       <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
@@ -3971,9 +3979,8 @@ function initMenus() {
     }
     switch (button.dataset.action) {
       case 'continue': showScreen('continue'); break;
-      case 'new': showScreen('saves', { mode: 'new' }); break;
+      case 'new': case 'load': showScreen('saves'); break;
       case 'nobles': showScreen('nobles'); break;
-      case 'load': showScreen('saves', { mode: 'load' }); break;
       case 'economy': showScreen('economy'); break;
       case 'options': showScreen('options'); break;
       case 'debug': showScreen('debug'); break;
@@ -3983,7 +3990,10 @@ function initMenus() {
         if (game.slot && game.slot !== slot) confirmThen({ title: `Carregar o slot ${slot}?`, text: `O jogo aberto vai ser salvo no slot ${game.slot} antes. Por precaução, não por otimismo.`, confirmLabel: 'Carregar' }, () => { writeSave(game.slot); loadGame(slot); });
         else loadGame(slot);
         break;
-      case 'new-slot': showScreen('heir', { slot, selected: 0 }); break;
+      case 'new-slot':
+        if (readSave(slot)) confirmThen({ title: `Novo jogo no slot ${slot}?`, text: 'O jogo que está lá some pra sempre.', confirmLabel: 'Começar novo', danger: true }, () => { menu.stack.pop(); showScreen('heir', { slot, selected: 0 }); });
+        else showScreen('heir', { slot, selected: 0 });
+        break;
       case 'pick-heir': case 'pick-noble': menu.stack[menu.stack.length - 1].params.selected = Number(button.dataset.index); renderMenu(); break;
       case 'choose-heir': showScreen('intro', { slot, heir: HEIRS[menu.stack[menu.stack.length - 1].params.selected].id }); break;
       case 'accept': newGame(slot, menu.stack[menu.stack.length - 1].params.heir); break;
@@ -3992,7 +4002,6 @@ function initMenus() {
           deleteSave(slot);
           if (game.slot === slot) { toTitle(); return; }
           menu.stack.pop();
-          if (!latestSave() && menu.stack[menu.stack.length - 1]?.params?.mode === 'load') menu.stack.pop();
           renderMenu();
         });
         break;
