@@ -19,6 +19,9 @@ const BUILDINGS = [
   { id: 'healer', name: 'Guilda de Curandeiros', glyph: 'H', cost: 180, wood: 10, detail: 'Recruta Healers. Mantêm os heróis vivos. Por um tempo.', heroClass: 'Healer', gold: 0.25, grain: 0, people: 1 },
   { id: 'armory', name: 'Arsenal do Domínio', glyph: 'E', cost: 165, wood: 9, detail: 'Heróis e camponeses compram equipamento aqui com o próprio ouro. O ouro vem pro cofre.', gold: 0.15, grain: 0, people: 0 },
 ];
+BUILDINGS.find(building => building.id === 'lumber').detail += ' Pode ser construida em City ou Wilds.';
+BUILDINGS.find(building => building.id === 'quarry').detail += ' Apenas em Wilds, no deposito de pedra marcado.';
+BUILDINGS.find(building => building.id === 'mine').detail += ' Apenas em Wilds, no deposito de metais marcado.';
 const FARM_TYPES = [
   // grain: produção por segundo nos níveis 1, 2 e 3 da fazenda.
   { id: 'garlic', name: 'Alho', art: 'farm-garlic', grain: [0.075, 0.125, 0.2], gold: 0.9 },
@@ -208,7 +211,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.12';
+const GAME_VERSION = 'Version 0.13';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -269,6 +272,7 @@ function newGameState(testMode = false, heir = null) {
 }
 
 let state = newGameState();
+let selectedLairId = null;
 const game = { running: false, slot: null, lastSaved: 0 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -383,6 +387,25 @@ function switchMap(name) {
   renderCamera();
   renderLairs();
   renderHeroes();
+  renderSites();
+  updateManorInventoryTrigger();
+}
+
+function updateManorInventoryTrigger() {
+  const trigger = $('#manor-inventory-trigger');
+  if (trigger) trigger.hidden = currentMap !== 'city' || currentMapSet !== 1;
+}
+
+function openManorInventory() {
+  if (!game.slot) return;
+  state.selectedSite = null;
+  selectedLairId = null;
+  renderSites();
+  state.tab = 'food';
+  $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
+  renderPanel();
+  $('#panel-view').scrollTop = 0;
+  say('Inventário do Casarão: provisões, itens, Dead Remains e Ember.');
 }
 
 function moveCamera(dx, dy) {
@@ -506,12 +529,12 @@ const WORKER_UPKEEP = 0.3; // provisões por segundo, por trabalhador
 // vende por 75% do preço e compra por 125%.
 // Preços fixos em ouro por unidade. Comprar custa o dobro de vender.
 const MARKET_GOODS = [
-  { id: 'wheat', name: 'Trigo', art: 'farm-wheat', sell: 1, buy: 2 },
-  { id: 'flour', name: 'Farinha', art: 'mill-body', sell: 2, buy: 4 },
-  { id: 'garlic', name: 'Alho', art: 'farm-garlic', sell: 1, buy: 2 },
-  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', sell: 2, buy: 4 },
-  { id: 'milk', name: 'Leite', art: 'farm-milk', sell: 2, buy: 4 },
-  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', sell: 3, buy: 6 },
+  { id: 'wheat', name: 'Trigo', icon: 'icon-market-wheat-photo-v01.png', sell: 1, buy: 2 },
+  { id: 'flour', name: 'Farinha', icon: 'icon-market-flour-photo-v01.png', sell: 2, buy: 4 },
+  { id: 'garlic', name: 'Alho', icon: 'icon-market-garlic-photo-v01.png', sell: 1, buy: 2 },
+  { id: 'eggs', name: 'Ovos', icon: 'icon-market-eggs-photo-v01.png', sell: 2, buy: 4 },
+  { id: 'milk', name: 'Leite', icon: 'icon-market-milk-photo-v01.png', sell: 2, buy: 4 },
+  { id: 'bacon', name: 'Bacon', icon: 'icon-market-bacon-photo-v01.png', sell: 3, buy: 6 },
   // Da Padaria. Vale um pouco mais que os ingredientes: o forno também cobra.
   { id: 'bread', name: 'Pão', art: BAKED_ART.bread, sell: 3, buy: 6 },
   { id: 'cheese', name: 'Queijo', art: BAKED_ART.cheese, sell: 5, buy: 10 },
@@ -815,7 +838,7 @@ function renderManorHp() {
   if (!layer) return;
   let tag = $('.manor-hp', layer);
   const manor = MANOR();
-  if (!(manor.damage > 0) || currentMapSet !== 1) { tag?.remove(); return; }
+  if (!(manor.damage > 0) || currentMapSet !== 1 || currentMap !== 'city') { tag?.remove(); return; }
   if (!tag) { tag = document.createElement('div'); tag.className = 'manor-hp'; layer.append(tag); }
   const hp = buildingHp(manor), maxHp = buildingMaxHp(manor);
   tag.style.setProperty('--x', `${manor.x}%`);
@@ -835,7 +858,7 @@ function manorFell() {
 // Uma construção por botão no mapa, no ponto onde foi erguida.
 function renderSites() {
   const layer = $('#site-layer');
-  const visibleBuildings = state.buildings.filter(building => (building.mapSet || 1) === currentMapSet);
+  const visibleBuildings = state.buildings.filter(building => (building.mapId || 'city') === currentMap && (building.mapSet || 1) === currentMapSet);
   const ids = new Set(visibleBuildings.map(building => String(building.site)));
   $$('.site', layer).filter(site => !ids.has(site.dataset.site)).forEach(site => site.remove());
   const moving = state.movingSite != null;
@@ -899,13 +922,15 @@ function renderLairs() {
   (state.lairs || []).filter(lair => lair.active).forEach(lair => {
     visibleIds.add(lair.id);
     let marker = $(`.lair-marker[data-lair="${lair.id}"]`, layer);
-    if (!marker) { marker = document.createElement('div'); marker.className = 'lair-marker'; marker.dataset.lair = lair.id; layer.append(marker); }
+    if (!marker) { marker = document.createElement('button'); marker.type = 'button'; marker.className = 'lair-marker'; marker.dataset.lair = lair.id; layer.append(marker); }
     marker.style.left = `${lair.x}%`;
     marker.style.top = `${lair.y / WORLD_Y_UNITS * 100}%`;
     marker.style.zIndex = String(Math.round(lair.y * 10));
     marker.hidden = (lair.mapId || 'city') !== currentMap || (lair.mapSet || 1) !== currentMapSet;
     marker.classList.toggle('level-two', lair.level >= 2);
-    marker.setAttribute('aria-label', lair.name);
+    marker.classList.toggle('selected', selectedLairId === lair.id);
+    marker.setAttribute('aria-label', `${lair.name}. Clique para ver informações.`);
+    marker.title = `${lair.name} · ver informações`;
     const image = `public/art/${lair.art}`;
     if (marker.dataset.image !== image) { marker.innerHTML = `<img src="${image}" alt=""><small>${lair.name}</small>`; marker.dataset.image = image; }
     const label = lair.damage > 0 ? `${lair.name} · vida ${lairHp(lair)}/${lairMaxHp(lair)}` : lair.name;
@@ -928,13 +953,52 @@ function renderLairs() {
     marker.setAttribute('aria-label', `Dead Remains grade ${pile.grade}`);
   });
   $$('.lair-marker', layer).filter(marker => !visibleIds.has(marker.dataset.lair)).forEach(marker => marker.remove());
+  if (selectedLairId) renderInspector();
+}
+
+function extractionPlaces(type) {
+  const marked = (worldScenario?.places || []).filter(place => place.type === type);
+  if (marked.length) return marked;
+  // Esses pontos ja estao pintados no mapa dos Wilds; servem mesmo sem marcador do editor.
+  const defaults = {
+    quarry: { id: `map-${currentMapSet}-stone-quarry`, x: 22, y: 18 },
+    mine: { id: `map-${currentMapSet}-metal-mine`, x: 72, y: 61 },
+  };
+  return defaults[type] ? [{ ...defaults[type], type }] : [];
 }
 
 function placementProblem(x, y, ignoreSite = null) {
+  const moving = state.movingSite != null ? state.buildings.find(building => building.site === state.movingSite) : null;
+  const type = moving?.type || state.selectedBuild;
+  if ((type === 'mine' || type === 'quarry') && currentMap !== 'wilds') return 'Minas e pedreiras s\u00f3 podem ser constru\u00eddas em Wilds.';
+  if (type && !['mine', 'quarry', 'lumber'].includes(type) && currentMap !== 'city') return 'Esta constru\u00e7\u00e3o s\u00f3 pode ser erguida em City.';
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
-  const crowded = state.buildings.some(building => building.site !== ignoreSite && Math.hypot(building.x - x, (building.y - y) * Y_TO_X_SCALE) < BUILD_SPACING);
+  if (type === 'mine' || type === 'quarry') {
+    const deposits = extractionPlaces(type);
+    if (!deposits.length) return type === 'mine' ? 'Este mapa n\u00e3o tem um dep\u00f3sito de metal marcado.' : 'Este mapa n\u00e3o tem um dep\u00f3sito de pedra marcado.';
+    const deposit = deposits.find(place => Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5);
+    if (!deposit) return type === 'mine' ? 'Construa junto ao dep\u00f3sito de metais marcado no mapa.' : 'Construa junto ao dep\u00f3sito de pedra marcado no mapa.';
+    const occupied = state.buildings.some(building => building.site !== ignoreSite && building.type === type && building.resourcePlaceId === deposit.id && (building.mapSet || 1) === currentMapSet);
+    if (occupied) return 'Este dep\u00f3sito j\u00e1 tem um posto de extra\u00e7\u00e3o.';
+  }
+  const crowded = state.buildings.some(building => building.site !== ignoreSite && (building.mapId || 'city') === currentMap && (building.mapSet || 1) === currentMapSet && Math.hypot(building.x - x, (building.y - y) * Y_TO_X_SCALE) < BUILD_SPACING);
   if (crowded) return 'Encostado demais em outra construção.';
   return null;
+}
+
+function migrateLegacyExtractionSites() {
+  const used = new Set(state.buildings.filter(building => building.resourcePlaceId).map(building => `${building.mapSet || 1}:${building.resourcePlaceId}`));
+  state.buildings.filter(building => ['mine', 'quarry'].includes(building.type) && (building.mapId || 'city') === 'city').forEach(building => {
+    const deposits = extractionPlaces(building.type);
+    const deposit = deposits.find(place => !used.has(`${building.mapSet || 1}:${place.id}`)) || deposits[0];
+    building.mapId = 'wilds';
+    if (deposit) {
+      building.x = deposit.x;
+      building.y = deposit.y;
+      building.resourcePlaceId = deposit.id;
+      used.add(`${building.mapSet || 1}:${deposit.id}`);
+    }
+  });
 }
 
 
@@ -1052,9 +1116,44 @@ function workerCard(worker) {
   </article>`;
 }
 
+// O inspetor dos covis usa o mesmo painel de informações das construções.
+function lairInfoHTML(lair) {
+  const den = CREATURE_DENS.includes(lair.kind);
+  const level = lair.level || 1;
+  const bounty = (state.bounties || []).find(item => item.lairId === lair.id);
+  const creature = lair.kind === 'wolf-den' ? 'Lobo mordaviano'
+    : lair.kind === 'goblin-den' ? 'Goblin'
+    : lair.kind === 'troll-den' ? 'Troll'
+    : lair.kind === 'cemetery' ? (level >= 2 ? 'Zumbi' : 'Caveira')
+    : 'Criatura';
+  const activity = den ? 'Solta uma criatura a cada 12 horas de jogo.'
+    : lair.kind === 'cemetery' ? `${creature}s surgem às 22h, uma vez por noite.`
+    : 'Local perigoso nos Wilds.';
+  const stats = [
+    ['Estado', bounty ? `Recompensa ativa · ${format(bounty.reward)} de ouro` : 'Ativo'],
+    ['Ameaça', creature],
+    ['Atividade', activity],
+  ];
+  const hp = den ? lairHp(lair) : 0;
+  const maxHp = den ? lairMaxHp(lair) : 1;
+  return `<section class="inspector" aria-label="${lair.name}">
+    <button type="button" class="inspector-back" data-inspector-close aria-label="Fechar informações do covil" title="Fechar">×</button>
+    <header class="inspector-id">
+      <img class="inspector-thumb" src="public/art/${lair.art}" alt="">
+      <div><h3>${lair.name}</h3><small>Nível ${level}${den ? ' · Covil de criaturas' : ' · Cemitério'}</small></div>
+    </header>
+    ${den ? `<div class="inspector-hp${hp < maxHp ? ' hurt' : ''}" title="Vida do covil"><span>Vida</span><i style="--hp:${Math.round(hp / maxHp * 100)}%"></i><b>${hp} / ${maxHp}</b></div>` : ''}
+    <dl class="inspector-stats">${stats.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>
+    ${den && !bounty ? `<section class="inspector-section"><button type="button" class="hut-upgrade hunt-btn" data-bounty-lair="${lair.id}">Destruir · ${format(state.bountyAmount)} ouro</button></section>` : ''}
+  </section>`;
+}
+
 // A ficha da construção abre num menu próprio em cima do mapa (mover, melhorar, demolir).
 // A aba Construir fica sempre com a lista de construções.
 function inspectorHTML() {
+    const selectedLair = selectedLairId == null ? null : (state.lairs || []).find(lair => lair.id === selectedLairId && lair.active);
+    if (selectedLair) return lairInfoHTML(selectedLair);
+    if (selectedLairId != null) selectedLairId = null;
     const selectedFarm = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'farm' && isDone(building));
     const selectedBuilding = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite);
     const selectedArmory = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'armory' && isDone(building));
@@ -1097,7 +1196,7 @@ function bindPanel(host) {
   $$('[data-trade]', host).forEach(button => button.addEventListener('click', () => trade(button.dataset.trade, Number(button.dataset.amount))));
   $$('[data-pit]', host).forEach(button => button.addEventListener('click', () => togglePitWorker(Number(button.dataset.pit), button.dataset.worker)));
   $$('[data-lumber]', host).forEach(button => button.addEventListener('click', () => setLumberCrew(Number(button.dataset.lumber), Number(button.dataset.change))));
-  $$('[data-inspector-close]', host).forEach(button => button.addEventListener('click', () => { if (state.movingSite != null) cancelMove(); state.selectedSite = null; renderSites(); renderPanel(); }));
+  $$('[data-inspector-close]', host).forEach(button => button.addEventListener('click', () => { if (state.movingSite != null) cancelMove(); state.selectedSite = null; selectedLairId = null; renderLairs(); renderSites(); renderPanel(); }));
   $$('[data-move-site]', host).forEach(button => button.addEventListener('click', () => (state.movingSite === Number(button.dataset.moveSite) ? cancelMove() : startMove(Number(button.dataset.moveSite)))));
   $$('[data-open-market]', host).forEach(button => button.addEventListener('click', () => { state.tab = 'market'; $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); renderPanel(); }));
   $$('[data-bounty-amount]', host).forEach(button => button.addEventListener('click', () => { state.bountyAmount = Number(button.dataset.bountyAmount); renderPanel(); }));
@@ -1105,7 +1204,7 @@ function bindPanel(host) {
   $$('[data-bounty-place]', host).forEach(button => button.addEventListener('click', () => (state.placingBounty ? cancelBountyPlacement() : startBountyPlacement())));
   $$('[data-bounty-preset]', host).forEach(button => button.addEventListener('click', () => createBounty(BOUNTY_PRESETS[button.dataset.bountyPreset])));
   $$('[data-bounty-hunt]', host).forEach(button => button.addEventListener('click', () => huntBounty(button.dataset.bountyHunt)));
-  $$('[data-bounty-lair]', host).forEach(button => button.addEventListener('click', () => lairBounty(button.dataset.bountyLair)));
+  $$('[data-bounty-lair]', host).forEach(button => button.addEventListener('click', () => { lairBounty(button.dataset.bountyLair); renderPanel(); }));
   $$('[data-bounty-cancel]', host).forEach(button => button.addEventListener('click', () => cancelBounty(button.dataset.bountyCancel)));
   $$('[data-deliver]', host).forEach(button => button.addEventListener('click', () => deliverDemand(button.dataset.deliver)));
   $$('[data-monarch-buy]', host).forEach(button => button.addEventListener('click', () => {
@@ -1119,6 +1218,7 @@ function bindPanel(host) {
   $$('[data-profession]', host).forEach(select => select.addEventListener('change', () => setProfession(select.dataset.profession, select.value)));
   $$('[data-actor-sheet]', host).forEach(button => button.addEventListener('click', () => { menu.stack = []; showScreen('actor', { id: button.dataset.actorSheet }); }));
   $$('[data-demolish]', host).forEach(button => button.addEventListener('click', () => demolishBuilding(Number(button.dataset.demolish))));
+  $$('[data-cancel-construction]', host).forEach(button => button.addEventListener('click', () => cancelConstruction(Number(button.dataset.cancelConstruction))));
 }
 
 // A aba Construir mostra as construções agrupadas por tipo, uma seção embaixo da outra.
@@ -1270,8 +1370,34 @@ function buildingInfoHTML(building, actions = '') {
     <dl class="inspector-stats">${stats.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>
     ${building.ruined ? '' : actions}
     ${building.type === 'market' && isDone(building) ? '<section class="inspector-section"><button type="button" class="hut-upgrade" data-open-market>Abrir o Mercado</button></section>' : ''}
-    ${obra ? '' : `<footer class="inspector-foot">${moving ? '<span>Toque no novo lugar no mapa. Esc cancela.</span>' : ''}<button type="button" class="move-site-btn" data-move-site="${building.site}">${moving ? 'Cancelar mudança' : 'Mudar de lugar'}</button>${moving ? '' : `<button type="button" class="demolish-btn${state.demolishArmed === building.site ? ' armed' : ''}" data-demolish="${building.site}">${state.demolishArmed === building.site ? 'Confirmar demolição' : 'Demolir'}</button>`}</footer>`}
+    ${obra ? `<footer class="inspector-foot construction-actions"><button type="button" class="cancel-construction" data-cancel-construction="${building.site}">Cancelar obra</button><small>Ouro e madeira já gastos não são devolvidos.</small></footer>` : `<footer class="inspector-foot">${moving ? '<span>Toque no novo lugar no mapa. Esc cancela.</span>' : ''}<button type="button" class="move-site-btn" data-move-site="${building.site}">${moving ? 'Cancelar mudança' : 'Mudar de lugar'}</button>${moving ? '' : `<button type="button" class="demolish-btn${state.demolishArmed === building.site ? ' armed' : ''}" data-demolish="${building.site}">${state.demolishArmed === building.site ? 'Confirmar demolição' : 'Demolir'}</button>`}</footer>`}
   </section>`;
+}
+
+// Cancelar uma obra em andamento remove a construção nova ou volta uma melhoria ao nível anterior.
+function cancelConstruction(site) {
+  const building = state.buildings.find(item => item.site === site && item.underConstruction);
+  if (!building) return;
+  const name = buildingName(building);
+  const upgrade = !!(building.pendingUpgrade || building.armoryUpgradeTo);
+  const worker = building.builderId != null ? findActor(building.builderId) : null;
+  if (worker) { worker.buildSite = null; worker.route = []; worker.finalPoint = null; worker.wait = 0; worker.headingToWork = false; }
+  building.builderId = null;
+  if (upgrade) {
+    delete building.pendingUpgrade;
+    delete building.upgradeLabel;
+    delete building.armoryUpgradeTo;
+    building.underConstruction = false;
+    building.progress = BUILD_TIME;
+    if (state.selectedSite === site) state.selectedSite = site;
+  } else {
+    state.buildings = state.buildings.filter(item => item !== building);
+    if (state.selectedSite === site) state.selectedSite = null;
+  }
+  state.demolishArmed = null;
+  assignBuilders();
+  renderSites(); renderPanel(); renderHeroes(); updateHud();
+  say(upgrade ? `Obra de melhoria de ${name} cancelada. A construção manteve o nível anterior; os custos gastos não foram devolvidos.` : `Obra de ${name} cancelada e removida. Os custos gastos não foram devolvidos.`);
 }
 
 // Demolir: primeiro clique arma, segundo confirma. Não devolve ouro nem madeira.
@@ -1346,6 +1472,7 @@ function chooseBuild(id) {
   state.movingSite = null;
   state.selectedBuild = id;
   state.selectedSite = null;
+  selectedLairId = null;
   renderSites(); renderPanel();
   say(id === 'farm' ? 'Escolha alho, trigo, bacon, ovos ou leite e toque onde quiser no mapa. Esc cancela.' : `${item.name}: toque onde quiser no mapa. Esc cancela.`, `${item.name} procura um terreno. E alguém pra pagar.`);
 }
@@ -1401,7 +1528,8 @@ function placeBuilding(x, y) {
   state.gold -= item.cost;
   state.timber -= item.wood;
   const site = state.nextBuildingId++;
-  const building = { site, mapSet: currentMapSet, type: item.id, produce: item.id === 'farm' ? state.selectedFarmType : item.id === 'bakery' ? 'bread' : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
+  const resourcePlace = ['mine', 'quarry'].includes(item.id) ? extractionPlaces(item.id).find(place => Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5) : null;
+  const building = { site, mapId: currentMap, mapSet: currentMapSet, resourcePlaceId: resourcePlace?.id || null, type: item.id, produce: item.id === 'farm' ? state.selectedFarmType : item.id === 'bakery' ? 'bread' : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
   state.buildings.push(building);
   state.selectedBuild = null;
   // A obra nova não fica selecionada: a janela dela só abre quando o jogador clica na construção.
@@ -1803,11 +1931,17 @@ function nextActorGoal(actor) {
     if (actor.buildSite != null) {
       const site = buildSiteOf(actor);
       if (site) {
+        if (travelToMap(actor, site.mapId || 'city', site.mapSet || actor.mapSet || 1)) {
+          actor.headingToWork = false;
+          actor.task = `Indo construir ${buildingName(site)}`;
+          return;
+        }
         const spot = buildSpot(site);
         actor.headingToWork = false;
         actor.task = `${site.underConstruction ? 'Construindo' : 'Consertando'} ${buildingName(site)}`;
         if (Math.hypot(actor.x - spot.x, actor.y - spot.y) < 1.2) { actor.wait = 1.5; actor.actionTime = 1.5; actor.actionClock = 0; return; }
-        routeActor(actor, nearestNode(spot));
+        if (buildingMapId(site) === 'wilds') actor.route = [];
+        else routeActor(actor, nearestNode(spot));
         actor.finalPoint = spot;
         return;
       }
@@ -1826,7 +1960,7 @@ function nextActorGoal(actor) {
     if (job && job.type === 'bakery' && isDone(job)) { bakeRoutine(actor, job); return; }
     if (job && job.type === 'emberLab' && isDone(job)) { labRoutine(actor, job); return; }
     if (job && ['farm', 'mill'].includes(job.type) && isDone(job)) { haulRoutine(actor, job); return; }
-    const home = homeOf(actor);
+    const home = homeOf(actor) || (buildingMapId(job) === 'wilds' ? MANOR() : null);
     const workplace = actor.workTrip ? null : workplaceOf(actor);
     if (!workplace && !job && !actor.workTrip) {
       const spot = idleSpot(actor);
@@ -1840,7 +1974,13 @@ function nextActorGoal(actor) {
     if (workplace || job) actor.idleNode = null;
     actor.task = workplace ? (workplace.type === 'lumber' ? 'Cortando lenha na Cabana do Lenhador' : isPit(workplace) ? `Tirando ${PIT_GOODS[workplace.type].name} ${workPlaceName(workplace)}` : `Indo trabalhar ${workPlaceName(workplace)}`) : home ? 'Voltando pra casa' : job ? 'Voltando pro casarão' : 'À toa, sem fazenda pra trabalhar';
     const target = actor.workTrip ? home : workplace;
-    routeActor(actor, actor.workTrip ? (home ? nearestNode(home) : 0) : workerDestination(actor));
+    if (target && travelToMap(actor, target.mapId || 'city', target.mapSet || actor.mapSet || 1)) {
+      actor.headingToWork = !!workplace && !actor.workTrip;
+      actor.task = actor.workTrip ? 'Voltando para casa' : `Indo trabalhar ${workPlaceName(workplace)}`;
+      return;
+    }
+    if (target && buildingMapId(target) === 'wilds') actor.route = [];
+    else routeActor(actor, actor.workTrip ? (home ? nearestNode(home) : 0) : workerDestination(actor));
     // Da trilha até a porta da construção, em linha reta.
     actor.finalPoint = target ? { x: target.x, y: Math.min(198, target.y + 1.2) } : null;
     actor.headingToWork = !!workplace;
@@ -2022,6 +2162,11 @@ const HEIRS = [
   { id: 'severina', name: 'Severina Montalvo', house: 'montalvo', gender: 'f', age: 20, portrait: 'noble-portraits-v01/montalvo', tie: 'Credora do falecido. Veio cobrar e saiu com a herança.', about: 'Anota tudo num livro de capa vermelha. Seu nome já está lá, sublinhado duas vezes.' },
   { id: 'ilka', name: 'Ilka Kastrell', house: 'kastrell', gender: 'f', age: 19, portrait: 'noble-portraits-v01/kastrell', tie: 'Baronesa e marechal de uma guerra que nunca veio.', about: 'Abastece um exército há anos pra uma guerra que não chega. Desta vez, jura ela, vem.' },
   { id: 'brunhilde', name: 'Brunhilde Vaelmont', house: 'vaelmont', gender: 'f', age: 18, portrait: 'noble-portraits-v01/vaelmont', tie: 'Tia-avó do falecido. A idade verdadeira dela é segredo de família.', about: 'Ninguém sobrevive ao chá dela por muito tempo. Ela jura que é a receita da família.' },
+  { id: 'godefroy-vaelmont', name: 'Godefroy Vaelmont', house: 'vaelmont', gender: 'm', age: 20, tie: 'Herdeiro de um ramo cortesão da Casa Vaelmont.', about: 'Aprendeu que um brasão abre portas; a dívida da família costuma fechá-las.' },
+  { id: 'henri-kastrell', name: 'Henri Kastrell', house: 'kastrell', gender: 'm', age: 21, tie: 'Segundo filho de uma linhagem nobre da Casa Kastrell.', about: 'Prefere tratados a torneios, embora vista ambos com o mesmo cuidado.' },
+  { id: 'eleonore-grenholt', name: 'Éléonore Grenholt', house: 'grenholt', gender: 'f', age: 20, tie: 'Herdeira de um ramo antigo da Casa Grenholt.', about: 'Combina graça cortesã e determinação; até os rivais lembram de sua presença.' },
+  { id: 'adelaide-vaelmont', name: 'Adélaïde Vaelmont', house: 'vaelmont', gender: 'f', age: 20, tie: 'Herdeira de um ramo cortesão da Casa Vaelmont.', about: 'Conhece os códigos da corte e sabe quando um sorriso vale mais do que um brasão.' },
+  { id: 'gautier-lucerna', name: 'Gautier Lucerna', house: 'lucerna', gender: 'm', age: 22, tie: 'Herdeiro de um ramo menor da Casa Lucerna.', about: 'Seu nariz já foi assunto em três banquetes; os contratos que lê, esses ninguém esquece.' },
 ];
 const heirById = id => HEIRS.find(heir => heir.id === id) || null;
 
@@ -4179,6 +4324,7 @@ function hydrateState(data) {
   loaded.remains = { ...emptyRemains(), ...(data.remains || {}) };
   if (!Array.isArray(loaded.remainsPiles)) loaded.remainsPiles = [];
   loaded.buildings.forEach(building => { building.builtAt = 0; building.upgradedAt = 0; });
+  loaded.buildings.forEach(building => { if (!building.mapId) building.mapId = 'city'; });
   if (!data.food) loaded.food = { ...emptyFood(), wheat: data.grain || 0 };
   if (loaded.food.flour == null) loaded.food.flour = 0;
   if (loaded.diet && loaded.diet.flour == null) loaded.diet.flour = true;
@@ -4286,9 +4432,12 @@ function saveCard(slot, record) {
 
 // Aplica o jogo escolhido na tela e começa a rodar.
 function startGame(newState, slot) {
+  selectedLairId = null;
   state = newState;
   game.slot = slot;
   currentMapSet = state.mapSet === 2 ? 2 : 1;
+  worldScenario = loadScenario(state.scenario || 1);
+  migrateLegacyExtractionSites();
   switchMap('city');
   $('#hero-layer').innerHTML = '';
   $$('.speed-btn').forEach(button => button.classList.toggle('active', Number(button.dataset.speed) === state.speed));
@@ -4301,7 +4450,7 @@ function startGame(newState, slot) {
   homeCamera();
   window.Monarch?.reset();
   renderSites(); renderHeroes(); renderPanel(); updateHud();
-  worldScenario = loadScenario(state.scenario || 1); renderPlaces();
+  renderPlaces();
   $('#event-line').textContent = state.ticks ? 'De volta ao Vale do Luto.' : 'A herança foi aceita. Os credores já estão a caminho.';
   writeSave(slot);
   game.running = true;
@@ -5195,6 +5344,9 @@ function initMenus() {
       cancelMove();
     } else if (state.placingBounty) {
       cancelBountyPlacement();
+    } else if (selectedLairId != null) {
+      selectedLairId = null;
+      renderLairs(); renderPanel();
     } else if (state.selectedSite != null) {
       state.selectedSite = null; state.demolishArmed = null;
       renderSites(); renderPanel();
@@ -5648,6 +5800,7 @@ function initEditor() {
 function init() {
   initCamera();
   const scene = $('#map-scene');
+  $('#manor-inventory-trigger').addEventListener('click', openManorInventory);
   // O menu da construção fica em cima do mapa: cliques, arrasto e rolagem nele não mexem no mapa.
   ['pointerdown', 'click', 'wheel', 'contextmenu'].forEach(type => $('#site-inspector').addEventListener(type, event => event.stopPropagation()));
   scene.addEventListener('pointermove', event => { if (state.selectedBuild || state.movingSite != null) showPlacementPreview(event); });
@@ -5660,8 +5813,8 @@ function init() {
   scene.addEventListener('click', event => {
     // Clique no mapa fora de construções e personagens fecha o menu da construção.
     // O caminho do evento vale mesmo depois que o clique redesenhou a construção e tirou o alvo do botão.
-    if (state.selectedSite != null && state.movingSite == null && !state.selectedBuild && !state.placingBounty && !camera.dragMoved && !event.composedPath().some(node => node instanceof HTMLButtonElement)) {
-      state.selectedSite = null; state.demolishArmed = null;
+    if ((state.selectedSite != null || selectedLairId != null) && state.movingSite == null && !state.selectedBuild && !state.placingBounty && !camera.dragMoved && !event.composedPath().some(node => node instanceof HTMLButtonElement)) {
+      state.selectedSite = null; selectedLairId = null; state.demolishArmed = null;
       renderSites(); renderPanel();
       return;
     }
@@ -5673,6 +5826,7 @@ function init() {
   $('#site-layer').addEventListener('click', event => {
     const site = event.target.closest('.site');
     if (!site) return;
+    selectedLairId = null;
     const idx = Number(site.dataset.site);
     const building = state.buildings.find(item => item.site === idx);
     if (state.movingSite != null) { if (idx === state.movingSite) cancelMove(); else say('Aqui já tem construção. Escolha outro lugar.'); }
@@ -5709,10 +5863,24 @@ function init() {
       } else say(def.id === 'tavern' ? 'Taverna: o imposto vem de quem passa o tempo livre bebendo aqui.' : def.grain ? `${def.name}: produz provisões.` : `${def.name}.`);
     }
   });
+  $('#lair-layer').addEventListener('click', event => {
+    if (state.selectedBuild || state.movingSite != null || state.placingBounty) return;
+    const marker = event.target.closest('.lair-marker:not(.remains-pile)');
+    if (!marker) return;
+    const lair = (state.lairs || []).find(item => item.id === marker.dataset.lair && item.active);
+    if (!lair) return;
+    state.selectedBuild = null;
+    state.selectedSite = null;
+    state.demolishArmed = null;
+    selectedLairId = lair.id;
+    renderSites();
+    renderPanel();
+    $('#site-inspector').scrollTop = 0;
+  });
   $$('.tab').forEach(tab => tab.addEventListener('click', () => {
     state.tab = tab.dataset.tab;
     // Construir sempre abre a lista completa, mesmo com uma construção selecionada.
-    if (state.tab === 'build' && state.selectedSite != null) { if (state.movingSite != null) cancelMove(); state.selectedSite = null; renderSites(); }
+    if (state.tab === 'build' && (state.selectedSite != null || selectedLairId != null)) { if (state.movingSite != null) cancelMove(); state.selectedSite = null; selectedLairId = null; renderLairs(); renderSites(); }
     $$('.tab').forEach(other => { const active = other === tab; other.classList.toggle('active', active); other.setAttribute('aria-selected', String(active)); });
     renderPanel();
   }));

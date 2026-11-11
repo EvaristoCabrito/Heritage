@@ -1488,6 +1488,9 @@ const Monarch = (() => {
   // A tecla (ou o clique no espaço) faz o mesmo que escolher a magia no painel: entra na mira e o clique no mapa lança.
   const HOTBAR_SIZE = 12;
   let hotbar = null, drag = null, dragEndedAt = 0;
+  const HOTBAR_COLLAPSED_KEY = 'mordavia-hotbar-collapsed-v1';
+  let hotbarCollapsed = false;
+  try { hotbarCollapsed = localStorage.getItem(HOTBAR_COLLAPSED_KEY) === '1'; } catch {}
   const entrySpell = entry => (entry ? (entry.field ? fieldByKey[entry.key] : byKey[entry.key]) : null);
   const cleanEntry = entry => (entry && typeof entry.key === 'string' && entrySpell(entry) ? { key: entry.key, field: !!entry.field } : null);
   const sameEntry = (a, b) => !!a && !!b && a.key === b.key && !!a.field === !!b.field;
@@ -1542,7 +1545,16 @@ const Monarch = (() => {
     const scene = hotbar.parentElement;
     if (!active()) { hotbar.hidden = true; scene?.classList.remove('has-hotbar'); return; }
     hotbar.hidden = false;
-    scene?.classList.add('has-hotbar');
+    hotbar.classList.toggle('is-collapsed', hotbarCollapsed);
+    scene?.classList.toggle('has-hotbar', !hotbarCollapsed);
+    scene?.classList.toggle('hotbar-collapsed', hotbarCollapsed);
+    const toggle = hotbar.querySelector('.hotbar-toggle');
+    if (toggle) {
+      toggle.textContent = hotbarCollapsed ? '‹' : '⌄';
+      toggle.title = hotbarCollapsed ? 'Mostrar barra de magias' : 'Recolher barra de magias';
+      toggle.setAttribute('aria-label', toggle.title);
+      toggle.setAttribute('aria-expanded', String(!hotbarCollapsed));
+    }
     const m = ms();
     const list = hotbarSlots();
     const lv = level();
@@ -1603,7 +1615,7 @@ const Monarch = (() => {
   function buildHotbar() {
     hotbar = document.getElementById('spell-hotbar');
     if (!hotbar) return;
-    hotbar.innerHTML = Array.from({ length: HOTBAR_SIZE }, (_, i) => `<button type="button" class="hotbar-slot empty" data-slot="${i}" aria-disabled="true"><span class="spell-glyph"></span><i class="spell-cd"></i><b class="hotbar-key">F${i + 1}</b></button>`).join('');
+    hotbar.innerHTML = `<button type="button" class="hotbar-toggle" aria-controls="spell-hotbar" aria-expanded="true"></button>${Array.from({ length: HOTBAR_SIZE }, (_, i) => `<button type="button" class="hotbar-slot empty" data-slot="${i}" aria-disabled="true"><span class="spell-glyph"></span><i class="spell-cd"></i><b class="hotbar-key">F${i + 1}</b></button>`).join('')}`;
     const stop = event => event.stopPropagation();
     hotbar.addEventListener('wheel', stop, { passive: true });
     hotbar.addEventListener('pointerdown', event => {
@@ -1613,6 +1625,12 @@ const Monarch = (() => {
     });
     hotbar.addEventListener('click', event => {
       event.stopPropagation();
+      if (event.target.closest('.hotbar-toggle')) {
+        hotbarCollapsed = !hotbarCollapsed;
+        try { localStorage.setItem(HOTBAR_COLLAPSED_KEY, hotbarCollapsed ? '1' : '0'); } catch {}
+        renderHotbar(false);
+        return;
+      }
       const slot = event.target.closest('.hotbar-slot');
       if (slot) useSlot(Number(slot.dataset.slot));
     });

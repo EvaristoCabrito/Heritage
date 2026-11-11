@@ -78,7 +78,7 @@
               "icon": {
                 "id": "peasant-t01-armor",
                 "path": "public/art/equipment/icon-peasant-t01-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -107,7 +107,7 @@
               "icon": {
                 "id": "peasant-t01-mainHand",
                 "path": "public/art/equipment/icon-peasant-t01-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {},
@@ -136,7 +136,7 @@
               "icon": {
                 "id": "peasant-t01-accessory",
                 "path": "public/art/equipment/icon-peasant-t01-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -199,7 +199,7 @@
               "icon": {
                 "id": "peasant-t02-armor",
                 "path": "public/art/equipment/icon-peasant-t02-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -228,7 +228,7 @@
               "icon": {
                 "id": "peasant-t02-mainHand",
                 "path": "public/art/equipment/icon-peasant-t02-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {},
@@ -257,7 +257,7 @@
               "icon": {
                 "id": "peasant-t02-accessory",
                 "path": "public/art/equipment/icon-peasant-t02-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -320,7 +320,7 @@
               "icon": {
                 "id": "peasant-t03-armor",
                 "path": "public/art/equipment/icon-peasant-t03-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -349,7 +349,7 @@
               "icon": {
                 "id": "peasant-t03-mainHand",
                 "path": "public/art/equipment/icon-peasant-t03-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {},
@@ -378,7 +378,7 @@
               "icon": {
                 "id": "peasant-t03-accessory",
                 "path": "public/art/equipment/icon-peasant-t03-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -441,7 +441,7 @@
               "icon": {
                 "id": "peasant-t04-armor",
                 "path": "public/art/equipment/icon-peasant-t04-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -470,7 +470,7 @@
               "icon": {
                 "id": "peasant-t04-mainHand",
                 "path": "public/art/equipment/icon-peasant-t04-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {},
@@ -499,7 +499,7 @@
               "icon": {
                 "id": "peasant-t04-accessory",
                 "path": "public/art/equipment/icon-peasant-t04-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -562,7 +562,7 @@
               "icon": {
                 "id": "peasant-t05-armor",
                 "path": "public/art/equipment/icon-peasant-t05-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -591,7 +591,7 @@
               "icon": {
                 "id": "peasant-t05-mainHand",
                 "path": "public/art/equipment/icon-peasant-t05-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {},
@@ -620,7 +620,7 @@
               "icon": {
                 "id": "peasant-t05-accessory",
                 "path": "public/art/equipment/icon-peasant-t05-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -683,7 +683,7 @@
               "icon": {
                 "id": "peasant-t06-armor",
                 "path": "public/art/equipment/icon-peasant-t06-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -712,7 +712,7 @@
               "icon": {
                 "id": "peasant-t06-mainHand",
                 "path": "public/art/equipment/icon-peasant-t06-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {},
@@ -741,7 +741,7 @@
               "icon": {
                 "id": "peasant-t06-offHand",
                 "path": "public/art/equipment/icon-peasant-t06-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -804,7 +804,7 @@
               "icon": {
                 "id": "peasant-t07-armor",
                 "path": "public/art/equipment/icon-peasant-t07-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -833,7 +833,7 @@
               "icon": {
                 "id": "peasant-t07-mainHand",
                 "path": "public/art/equipment/icon-peasant-t07-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {},
@@ -862,7 +862,7 @@
               "icon": {
                 "id": "peasant-t07-accessory",
                 "path": "public/art/equipment/icon-peasant-t07-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -925,7 +925,7 @@
               "icon": {
                 "id": "peasant-t08-armor",
                 "path": "public/art/equipment/icon-peasant-t08-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -954,7 +954,7 @@
               "icon": {
                 "id": "peasant-t08-mainHand",
                 "path": "public/art/equipment/icon-peasant-t08-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {},
@@ -983,7 +983,7 @@
               "icon": {
                 "id": "peasant-t08-accessory",
                 "path": "public/art/equipment/icon-peasant-t08-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -1046,7 +1046,7 @@
               "icon": {
                 "id": "peasant-t09-armor",
                 "path": "public/art/equipment/icon-peasant-t09-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -1075,7 +1075,7 @@
               "icon": {
                 "id": "peasant-t09-mainHand",
                 "path": "public/art/equipment/icon-peasant-t09-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {},
@@ -1104,7 +1104,7 @@
               "icon": {
                 "id": "peasant-t09-offHand",
                 "path": "public/art/equipment/icon-peasant-t09-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -1167,7 +1167,7 @@
               "icon": {
                 "id": "peasant-t10-armor",
                 "path": "public/art/equipment/icon-peasant-t10-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -1196,7 +1196,7 @@
               "icon": {
                 "id": "peasant-t10-mainHand",
                 "path": "public/art/equipment/icon-peasant-t10-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {},
@@ -1225,7 +1225,7 @@
               "icon": {
                 "id": "peasant-t10-offHand",
                 "path": "public/art/equipment/icon-peasant-t10-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -1306,7 +1306,7 @@
               "icon": {
                 "id": "warrior-t01-armor",
                 "path": "public/art/equipment/icon-warrior-t01-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -1336,7 +1336,7 @@
               "icon": {
                 "id": "warrior-t01-mainHand",
                 "path": "public/art/equipment/icon-warrior-t01-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -1363,7 +1363,7 @@
               "icon": {
                 "id": "warrior-t01-accessory",
                 "path": "public/art/equipment/icon-warrior-t01-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -1426,7 +1426,7 @@
               "icon": {
                 "id": "warrior-t02-armor",
                 "path": "public/art/equipment/icon-warrior-t02-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -1456,7 +1456,7 @@
               "icon": {
                 "id": "warrior-t02-mainHand",
                 "path": "public/art/equipment/icon-warrior-t02-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -1483,7 +1483,7 @@
               "icon": {
                 "id": "warrior-t02-offHand",
                 "path": "public/art/equipment/icon-warrior-t02-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -1547,7 +1547,7 @@
               "icon": {
                 "id": "warrior-t03-armor",
                 "path": "public/art/equipment/icon-warrior-t03-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -1577,7 +1577,7 @@
               "icon": {
                 "id": "warrior-t03-mainHand",
                 "path": "public/art/equipment/icon-warrior-t03-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -1604,7 +1604,7 @@
               "icon": {
                 "id": "warrior-t03-offHand",
                 "path": "public/art/equipment/icon-warrior-t03-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -1668,7 +1668,7 @@
               "icon": {
                 "id": "warrior-t04-armor",
                 "path": "public/art/equipment/icon-warrior-t04-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -1698,7 +1698,7 @@
               "icon": {
                 "id": "warrior-t04-mainHand",
                 "path": "public/art/equipment/icon-warrior-t04-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -1725,7 +1725,7 @@
               "icon": {
                 "id": "warrior-t04-accessory",
                 "path": "public/art/equipment/icon-warrior-t04-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -1788,7 +1788,7 @@
               "icon": {
                 "id": "warrior-t05-armor",
                 "path": "public/art/equipment/icon-warrior-t05-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -1818,7 +1818,7 @@
               "icon": {
                 "id": "warrior-t05-mainHand",
                 "path": "public/art/equipment/icon-warrior-t05-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -1845,7 +1845,7 @@
               "icon": {
                 "id": "warrior-t05-offHand",
                 "path": "public/art/equipment/icon-warrior-t05-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -1909,7 +1909,7 @@
               "icon": {
                 "id": "warrior-t06-armor",
                 "path": "public/art/equipment/icon-warrior-t06-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -1939,7 +1939,7 @@
               "icon": {
                 "id": "warrior-t06-mainHand",
                 "path": "public/art/equipment/icon-warrior-t06-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -1966,7 +1966,7 @@
               "icon": {
                 "id": "warrior-t06-accessory",
                 "path": "public/art/equipment/icon-warrior-t06-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -2029,7 +2029,7 @@
               "icon": {
                 "id": "warrior-t07-armor",
                 "path": "public/art/equipment/icon-warrior-t07-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -2059,7 +2059,7 @@
               "icon": {
                 "id": "warrior-t07-mainHand",
                 "path": "public/art/equipment/icon-warrior-t07-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -2086,7 +2086,7 @@
               "icon": {
                 "id": "warrior-t07-accessory",
                 "path": "public/art/equipment/icon-warrior-t07-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -2149,7 +2149,7 @@
               "icon": {
                 "id": "warrior-t08-armor",
                 "path": "public/art/equipment/icon-warrior-t08-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -2179,7 +2179,7 @@
               "icon": {
                 "id": "warrior-t08-mainHand",
                 "path": "public/art/equipment/icon-warrior-t08-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -2206,7 +2206,7 @@
               "icon": {
                 "id": "warrior-t08-offHand",
                 "path": "public/art/equipment/icon-warrior-t08-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -2270,7 +2270,7 @@
               "icon": {
                 "id": "warrior-t09-armor",
                 "path": "public/art/equipment/icon-warrior-t09-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -2300,7 +2300,7 @@
               "icon": {
                 "id": "warrior-t09-mainHand",
                 "path": "public/art/equipment/icon-warrior-t09-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -2327,7 +2327,7 @@
               "icon": {
                 "id": "warrior-t09-accessory",
                 "path": "public/art/equipment/icon-warrior-t09-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -2390,7 +2390,7 @@
               "icon": {
                 "id": "warrior-t10-armor",
                 "path": "public/art/equipment/icon-warrior-t10-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -2420,7 +2420,7 @@
               "icon": {
                 "id": "warrior-t10-mainHand",
                 "path": "public/art/equipment/icon-warrior-t10-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -2447,7 +2447,7 @@
               "icon": {
                 "id": "warrior-t10-offHand",
                 "path": "public/art/equipment/icon-warrior-t10-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -2533,7 +2533,7 @@
               "icon": {
                 "id": "mage-t01-armor",
                 "path": "public/art/equipment/icon-mage-t01-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -2565,7 +2565,7 @@
               "icon": {
                 "id": "mage-t01-mainHand",
                 "path": "public/art/equipment/icon-mage-t01-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -2592,7 +2592,7 @@
               "icon": {
                 "id": "mage-t01-accessory",
                 "path": "public/art/equipment/icon-mage-t01-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -2656,7 +2656,7 @@
               "icon": {
                 "id": "mage-t02-armor",
                 "path": "public/art/equipment/icon-mage-t02-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -2688,7 +2688,7 @@
               "icon": {
                 "id": "mage-t02-mainHand",
                 "path": "public/art/equipment/icon-mage-t02-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -2715,7 +2715,7 @@
               "icon": {
                 "id": "mage-t02-accessory",
                 "path": "public/art/equipment/icon-mage-t02-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -2779,7 +2779,7 @@
               "icon": {
                 "id": "mage-t03-armor",
                 "path": "public/art/equipment/icon-mage-t03-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -2811,7 +2811,7 @@
               "icon": {
                 "id": "mage-t03-mainHand",
                 "path": "public/art/equipment/icon-mage-t03-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -2838,7 +2838,7 @@
               "icon": {
                 "id": "mage-t03-accessory",
                 "path": "public/art/equipment/icon-mage-t03-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -2902,7 +2902,7 @@
               "icon": {
                 "id": "mage-t04-armor",
                 "path": "public/art/equipment/icon-mage-t04-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -2934,7 +2934,7 @@
               "icon": {
                 "id": "mage-t04-mainHand",
                 "path": "public/art/equipment/icon-mage-t04-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -2961,7 +2961,7 @@
               "icon": {
                 "id": "mage-t04-offHand",
                 "path": "public/art/equipment/icon-mage-t04-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -3025,7 +3025,7 @@
               "icon": {
                 "id": "mage-t05-armor",
                 "path": "public/art/equipment/icon-mage-t05-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -3057,7 +3057,7 @@
               "icon": {
                 "id": "mage-t05-mainHand",
                 "path": "public/art/equipment/icon-mage-t05-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -3084,7 +3084,7 @@
               "icon": {
                 "id": "mage-t05-accessory",
                 "path": "public/art/equipment/icon-mage-t05-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -3148,7 +3148,7 @@
               "icon": {
                 "id": "mage-t06-armor",
                 "path": "public/art/equipment/icon-mage-t06-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -3180,7 +3180,7 @@
               "icon": {
                 "id": "mage-t06-mainHand",
                 "path": "public/art/equipment/icon-mage-t06-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -3207,7 +3207,7 @@
               "icon": {
                 "id": "mage-t06-offHand",
                 "path": "public/art/equipment/icon-mage-t06-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -3271,7 +3271,7 @@
               "icon": {
                 "id": "mage-t07-armor",
                 "path": "public/art/equipment/icon-mage-t07-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -3303,7 +3303,7 @@
               "icon": {
                 "id": "mage-t07-mainHand",
                 "path": "public/art/equipment/icon-mage-t07-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -3330,7 +3330,7 @@
               "icon": {
                 "id": "mage-t07-accessory",
                 "path": "public/art/equipment/icon-mage-t07-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -3394,7 +3394,7 @@
               "icon": {
                 "id": "mage-t08-armor",
                 "path": "public/art/equipment/icon-mage-t08-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -3426,7 +3426,7 @@
               "icon": {
                 "id": "mage-t08-mainHand",
                 "path": "public/art/equipment/icon-mage-t08-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -3453,7 +3453,7 @@
               "icon": {
                 "id": "mage-t08-offHand",
                 "path": "public/art/equipment/icon-mage-t08-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -3517,7 +3517,7 @@
               "icon": {
                 "id": "mage-t09-armor",
                 "path": "public/art/equipment/icon-mage-t09-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -3549,7 +3549,7 @@
               "icon": {
                 "id": "mage-t09-mainHand",
                 "path": "public/art/equipment/icon-mage-t09-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -3576,7 +3576,7 @@
               "icon": {
                 "id": "mage-t09-accessory",
                 "path": "public/art/equipment/icon-mage-t09-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -3640,7 +3640,7 @@
               "icon": {
                 "id": "mage-t10-armor",
                 "path": "public/art/equipment/icon-mage-t10-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -3672,7 +3672,7 @@
               "icon": {
                 "id": "mage-t10-mainHand",
                 "path": "public/art/equipment/icon-mage-t10-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -3699,7 +3699,7 @@
               "icon": {
                 "id": "mage-t10-offHand",
                 "path": "public/art/equipment/icon-mage-t10-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -3783,7 +3783,7 @@
               "icon": {
                 "id": "priest-t01-armor",
                 "path": "public/art/equipment/icon-priest-t01-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -3815,7 +3815,7 @@
               "icon": {
                 "id": "priest-t01-mainHand",
                 "path": "public/art/equipment/icon-priest-t01-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -3845,7 +3845,7 @@
               "icon": {
                 "id": "priest-t01-accessory",
                 "path": "public/art/equipment/icon-priest-t01-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -3909,7 +3909,7 @@
               "icon": {
                 "id": "priest-t02-armor",
                 "path": "public/art/equipment/icon-priest-t02-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -3941,7 +3941,7 @@
               "icon": {
                 "id": "priest-t02-mainHand",
                 "path": "public/art/equipment/icon-priest-t02-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -3971,7 +3971,7 @@
               "icon": {
                 "id": "priest-t02-offHand",
                 "path": "public/art/equipment/icon-priest-t02-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -4037,7 +4037,7 @@
               "icon": {
                 "id": "priest-t03-armor",
                 "path": "public/art/equipment/icon-priest-t03-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -4069,7 +4069,7 @@
               "icon": {
                 "id": "priest-t03-mainHand",
                 "path": "public/art/equipment/icon-priest-t03-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -4099,7 +4099,7 @@
               "icon": {
                 "id": "priest-t03-accessory",
                 "path": "public/art/equipment/icon-priest-t03-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -4163,7 +4163,7 @@
               "icon": {
                 "id": "priest-t04-armor",
                 "path": "public/art/equipment/icon-priest-t04-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -4195,7 +4195,7 @@
               "icon": {
                 "id": "priest-t04-mainHand",
                 "path": "public/art/equipment/icon-priest-t04-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -4225,7 +4225,7 @@
               "icon": {
                 "id": "priest-t04-offHand",
                 "path": "public/art/equipment/icon-priest-t04-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -4291,7 +4291,7 @@
               "icon": {
                 "id": "priest-t05-armor",
                 "path": "public/art/equipment/icon-priest-t05-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -4323,7 +4323,7 @@
               "icon": {
                 "id": "priest-t05-mainHand",
                 "path": "public/art/equipment/icon-priest-t05-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -4353,7 +4353,7 @@
               "icon": {
                 "id": "priest-t05-accessory",
                 "path": "public/art/equipment/icon-priest-t05-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -4417,7 +4417,7 @@
               "icon": {
                 "id": "priest-t06-armor",
                 "path": "public/art/equipment/icon-priest-t06-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -4449,7 +4449,7 @@
               "icon": {
                 "id": "priest-t06-mainHand",
                 "path": "public/art/equipment/icon-priest-t06-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -4479,7 +4479,7 @@
               "icon": {
                 "id": "priest-t06-accessory",
                 "path": "public/art/equipment/icon-priest-t06-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -4543,7 +4543,7 @@
               "icon": {
                 "id": "priest-t07-armor",
                 "path": "public/art/equipment/icon-priest-t07-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -4575,7 +4575,7 @@
               "icon": {
                 "id": "priest-t07-mainHand",
                 "path": "public/art/equipment/icon-priest-t07-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -4605,7 +4605,7 @@
               "icon": {
                 "id": "priest-t07-offHand",
                 "path": "public/art/equipment/icon-priest-t07-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -4671,7 +4671,7 @@
               "icon": {
                 "id": "priest-t08-armor",
                 "path": "public/art/equipment/icon-priest-t08-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -4703,7 +4703,7 @@
               "icon": {
                 "id": "priest-t08-mainHand",
                 "path": "public/art/equipment/icon-priest-t08-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -4733,7 +4733,7 @@
               "icon": {
                 "id": "priest-t08-offHand",
                 "path": "public/art/equipment/icon-priest-t08-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -4799,7 +4799,7 @@
               "icon": {
                 "id": "priest-t09-armor",
                 "path": "public/art/equipment/icon-priest-t09-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -4831,7 +4831,7 @@
               "icon": {
                 "id": "priest-t09-mainHand",
                 "path": "public/art/equipment/icon-priest-t09-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -4861,7 +4861,7 @@
               "icon": {
                 "id": "priest-t09-offHand",
                 "path": "public/art/equipment/icon-priest-t09-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -4927,7 +4927,7 @@
               "icon": {
                 "id": "priest-t10-armor",
                 "path": "public/art/equipment/icon-priest-t10-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -4959,7 +4959,7 @@
               "icon": {
                 "id": "priest-t10-mainHand",
                 "path": "public/art/equipment/icon-priest-t10-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -4989,7 +4989,7 @@
               "icon": {
                 "id": "priest-t10-accessory",
                 "path": "public/art/equipment/icon-priest-t10-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -5070,7 +5070,7 @@
               "icon": {
                 "id": "rogue-t01-armor",
                 "path": "public/art/equipment/icon-rogue-t01-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -5102,7 +5102,7 @@
               "icon": {
                 "id": "rogue-t01-mainHand",
                 "path": "public/art/equipment/icon-rogue-t01-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -5131,7 +5131,7 @@
               "icon": {
                 "id": "rogue-t01-accessory",
                 "path": "public/art/equipment/icon-rogue-t01-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -5194,7 +5194,7 @@
               "icon": {
                 "id": "rogue-t02-armor",
                 "path": "public/art/equipment/icon-rogue-t02-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -5226,7 +5226,7 @@
               "icon": {
                 "id": "rogue-t02-mainHand",
                 "path": "public/art/equipment/icon-rogue-t02-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -5255,7 +5255,7 @@
               "icon": {
                 "id": "rogue-t02-accessory",
                 "path": "public/art/equipment/icon-rogue-t02-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -5318,7 +5318,7 @@
               "icon": {
                 "id": "rogue-t03-armor",
                 "path": "public/art/equipment/icon-rogue-t03-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -5350,7 +5350,7 @@
               "icon": {
                 "id": "rogue-t03-mainHand",
                 "path": "public/art/equipment/icon-rogue-t03-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -5379,7 +5379,7 @@
               "icon": {
                 "id": "rogue-t03-accessory",
                 "path": "public/art/equipment/icon-rogue-t03-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -5442,7 +5442,7 @@
               "icon": {
                 "id": "rogue-t04-armor",
                 "path": "public/art/equipment/icon-rogue-t04-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -5474,7 +5474,7 @@
               "icon": {
                 "id": "rogue-t04-mainHand",
                 "path": "public/art/equipment/icon-rogue-t04-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -5503,7 +5503,7 @@
               "icon": {
                 "id": "rogue-t04-accessory",
                 "path": "public/art/equipment/icon-rogue-t04-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -5566,7 +5566,7 @@
               "icon": {
                 "id": "rogue-t05-armor",
                 "path": "public/art/equipment/icon-rogue-t05-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -5598,7 +5598,7 @@
               "icon": {
                 "id": "rogue-t05-mainHand",
                 "path": "public/art/equipment/icon-rogue-t05-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -5627,7 +5627,7 @@
               "icon": {
                 "id": "rogue-t05-accessory",
                 "path": "public/art/equipment/icon-rogue-t05-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -5690,7 +5690,7 @@
               "icon": {
                 "id": "rogue-t06-armor",
                 "path": "public/art/equipment/icon-rogue-t06-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -5722,7 +5722,7 @@
               "icon": {
                 "id": "rogue-t06-mainHand",
                 "path": "public/art/equipment/icon-rogue-t06-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -5751,7 +5751,7 @@
               "icon": {
                 "id": "rogue-t06-offHand",
                 "path": "public/art/equipment/icon-rogue-t06-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -5814,7 +5814,7 @@
               "icon": {
                 "id": "rogue-t07-armor",
                 "path": "public/art/equipment/icon-rogue-t07-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -5846,7 +5846,7 @@
               "icon": {
                 "id": "rogue-t07-mainHand",
                 "path": "public/art/equipment/icon-rogue-t07-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -5875,7 +5875,7 @@
               "icon": {
                 "id": "rogue-t07-accessory",
                 "path": "public/art/equipment/icon-rogue-t07-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -5938,7 +5938,7 @@
               "icon": {
                 "id": "rogue-t08-armor",
                 "path": "public/art/equipment/icon-rogue-t08-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -5970,7 +5970,7 @@
               "icon": {
                 "id": "rogue-t08-mainHand",
                 "path": "public/art/equipment/icon-rogue-t08-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -5999,7 +5999,7 @@
               "icon": {
                 "id": "rogue-t08-accessory",
                 "path": "public/art/equipment/icon-rogue-t08-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -6062,7 +6062,7 @@
               "icon": {
                 "id": "rogue-t09-armor",
                 "path": "public/art/equipment/icon-rogue-t09-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -6094,7 +6094,7 @@
               "icon": {
                 "id": "rogue-t09-mainHand",
                 "path": "public/art/equipment/icon-rogue-t09-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -6123,7 +6123,7 @@
               "icon": {
                 "id": "rogue-t09-accessory",
                 "path": "public/art/equipment/icon-rogue-t09-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -6186,7 +6186,7 @@
               "icon": {
                 "id": "rogue-t10-armor",
                 "path": "public/art/equipment/icon-rogue-t10-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -6218,7 +6218,7 @@
               "icon": {
                 "id": "rogue-t10-mainHand",
                 "path": "public/art/equipment/icon-rogue-t10-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -6247,7 +6247,7 @@
               "icon": {
                 "id": "rogue-t10-accessory",
                 "path": "public/art/equipment/icon-rogue-t10-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -6328,7 +6328,7 @@
               "icon": {
                 "id": "hunter-t01-armor",
                 "path": "public/art/equipment/icon-hunter-t01-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -6360,7 +6360,7 @@
               "icon": {
                 "id": "hunter-t01-mainHand",
                 "path": "public/art/equipment/icon-hunter-t01-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -6389,7 +6389,7 @@
               "icon": {
                 "id": "hunter-t01-accessory",
                 "path": "public/art/equipment/icon-hunter-t01-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -6452,7 +6452,7 @@
               "icon": {
                 "id": "hunter-t02-armor",
                 "path": "public/art/equipment/icon-hunter-t02-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -6484,7 +6484,7 @@
               "icon": {
                 "id": "hunter-t02-mainHand",
                 "path": "public/art/equipment/icon-hunter-t02-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -6513,7 +6513,7 @@
               "icon": {
                 "id": "hunter-t02-offHand",
                 "path": "public/art/equipment/icon-hunter-t02-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -6576,7 +6576,7 @@
               "icon": {
                 "id": "hunter-t03-armor",
                 "path": "public/art/equipment/icon-hunter-t03-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -6608,7 +6608,7 @@
               "icon": {
                 "id": "hunter-t03-mainHand",
                 "path": "public/art/equipment/icon-hunter-t03-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -6637,7 +6637,7 @@
               "icon": {
                 "id": "hunter-t03-offHand",
                 "path": "public/art/equipment/icon-hunter-t03-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -6700,7 +6700,7 @@
               "icon": {
                 "id": "hunter-t04-armor",
                 "path": "public/art/equipment/icon-hunter-t04-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -6732,7 +6732,7 @@
               "icon": {
                 "id": "hunter-t04-mainHand",
                 "path": "public/art/equipment/icon-hunter-t04-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -6761,7 +6761,7 @@
               "icon": {
                 "id": "hunter-t04-accessory",
                 "path": "public/art/equipment/icon-hunter-t04-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -6824,7 +6824,7 @@
               "icon": {
                 "id": "hunter-t05-armor",
                 "path": "public/art/equipment/icon-hunter-t05-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -6856,7 +6856,7 @@
               "icon": {
                 "id": "hunter-t05-mainHand",
                 "path": "public/art/equipment/icon-hunter-t05-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -6885,7 +6885,7 @@
               "icon": {
                 "id": "hunter-t05-accessory",
                 "path": "public/art/equipment/icon-hunter-t05-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -6948,7 +6948,7 @@
               "icon": {
                 "id": "hunter-t06-armor",
                 "path": "public/art/equipment/icon-hunter-t06-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -6980,7 +6980,7 @@
               "icon": {
                 "id": "hunter-t06-mainHand",
                 "path": "public/art/equipment/icon-hunter-t06-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -7009,7 +7009,7 @@
               "icon": {
                 "id": "hunter-t06-accessory",
                 "path": "public/art/equipment/icon-hunter-t06-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -7072,7 +7072,7 @@
               "icon": {
                 "id": "hunter-t07-armor",
                 "path": "public/art/equipment/icon-hunter-t07-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -7104,7 +7104,7 @@
               "icon": {
                 "id": "hunter-t07-mainHand",
                 "path": "public/art/equipment/icon-hunter-t07-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -7133,7 +7133,7 @@
               "icon": {
                 "id": "hunter-t07-offHand",
                 "path": "public/art/equipment/icon-hunter-t07-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -7196,7 +7196,7 @@
               "icon": {
                 "id": "hunter-t08-armor",
                 "path": "public/art/equipment/icon-hunter-t08-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -7228,7 +7228,7 @@
               "icon": {
                 "id": "hunter-t08-mainHand",
                 "path": "public/art/equipment/icon-hunter-t08-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -7257,7 +7257,7 @@
               "icon": {
                 "id": "hunter-t08-accessory",
                 "path": "public/art/equipment/icon-hunter-t08-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -7320,7 +7320,7 @@
               "icon": {
                 "id": "hunter-t09-armor",
                 "path": "public/art/equipment/icon-hunter-t09-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -7352,7 +7352,7 @@
               "icon": {
                 "id": "hunter-t09-mainHand",
                 "path": "public/art/equipment/icon-hunter-t09-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -7381,7 +7381,7 @@
               "icon": {
                 "id": "hunter-t09-accessory",
                 "path": "public/art/equipment/icon-hunter-t09-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -7444,7 +7444,7 @@
               "icon": {
                 "id": "hunter-t10-armor",
                 "path": "public/art/equipment/icon-hunter-t10-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -7476,7 +7476,7 @@
               "icon": {
                 "id": "hunter-t10-mainHand",
                 "path": "public/art/equipment/icon-hunter-t10-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -7505,7 +7505,7 @@
               "icon": {
                 "id": "hunter-t10-accessory",
                 "path": "public/art/equipment/icon-hunter-t10-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -7585,7 +7585,7 @@
               "icon": {
                 "id": "paladin-t01-armor",
                 "path": "public/art/equipment/icon-paladin-t01-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -7614,7 +7614,7 @@
               "icon": {
                 "id": "paladin-t01-mainHand",
                 "path": "public/art/equipment/icon-paladin-t01-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {},
@@ -7643,7 +7643,7 @@
               "icon": {
                 "id": "paladin-t01-offHand",
                 "path": "public/art/equipment/icon-paladin-t01-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -7709,7 +7709,7 @@
               "icon": {
                 "id": "paladin-t02-armor",
                 "path": "public/art/equipment/icon-paladin-t02-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -7738,7 +7738,7 @@
               "icon": {
                 "id": "paladin-t02-mainHand",
                 "path": "public/art/equipment/icon-paladin-t02-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {},
@@ -7767,7 +7767,7 @@
               "icon": {
                 "id": "paladin-t02-offHand",
                 "path": "public/art/equipment/icon-paladin-t02-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -7833,7 +7833,7 @@
               "icon": {
                 "id": "paladin-t03-armor",
                 "path": "public/art/equipment/icon-paladin-t03-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -7862,7 +7862,7 @@
               "icon": {
                 "id": "paladin-t03-mainHand",
                 "path": "public/art/equipment/icon-paladin-t03-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {},
@@ -7891,7 +7891,7 @@
               "icon": {
                 "id": "paladin-t03-offHand",
                 "path": "public/art/equipment/icon-paladin-t03-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -7957,7 +7957,7 @@
               "icon": {
                 "id": "paladin-t04-armor",
                 "path": "public/art/equipment/icon-paladin-t04-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -7986,7 +7986,7 @@
               "icon": {
                 "id": "paladin-t04-mainHand",
                 "path": "public/art/equipment/icon-paladin-t04-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {},
@@ -8015,7 +8015,7 @@
               "icon": {
                 "id": "paladin-t04-offHand",
                 "path": "public/art/equipment/icon-paladin-t04-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -8081,7 +8081,7 @@
               "icon": {
                 "id": "paladin-t05-armor",
                 "path": "public/art/equipment/icon-paladin-t05-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -8110,7 +8110,7 @@
               "icon": {
                 "id": "paladin-t05-mainHand",
                 "path": "public/art/equipment/icon-paladin-t05-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {},
@@ -8139,7 +8139,7 @@
               "icon": {
                 "id": "paladin-t05-accessory",
                 "path": "public/art/equipment/icon-paladin-t05-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -8205,7 +8205,7 @@
               "icon": {
                 "id": "paladin-t06-armor",
                 "path": "public/art/equipment/icon-paladin-t06-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -8234,7 +8234,7 @@
               "icon": {
                 "id": "paladin-t06-mainHand",
                 "path": "public/art/equipment/icon-paladin-t06-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {},
@@ -8263,7 +8263,7 @@
               "icon": {
                 "id": "paladin-t06-offHand",
                 "path": "public/art/equipment/icon-paladin-t06-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -8329,7 +8329,7 @@
               "icon": {
                 "id": "paladin-t07-armor",
                 "path": "public/art/equipment/icon-paladin-t07-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -8358,7 +8358,7 @@
               "icon": {
                 "id": "paladin-t07-mainHand",
                 "path": "public/art/equipment/icon-paladin-t07-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {},
@@ -8387,7 +8387,7 @@
               "icon": {
                 "id": "paladin-t07-accessory",
                 "path": "public/art/equipment/icon-paladin-t07-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -8453,7 +8453,7 @@
               "icon": {
                 "id": "paladin-t08-armor",
                 "path": "public/art/equipment/icon-paladin-t08-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -8482,7 +8482,7 @@
               "icon": {
                 "id": "paladin-t08-mainHand",
                 "path": "public/art/equipment/icon-paladin-t08-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {},
@@ -8511,7 +8511,7 @@
               "icon": {
                 "id": "paladin-t08-offHand",
                 "path": "public/art/equipment/icon-paladin-t08-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -8577,7 +8577,7 @@
               "icon": {
                 "id": "paladin-t09-armor",
                 "path": "public/art/equipment/icon-paladin-t09-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -8606,7 +8606,7 @@
               "icon": {
                 "id": "paladin-t09-mainHand",
                 "path": "public/art/equipment/icon-paladin-t09-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {},
@@ -8635,7 +8635,7 @@
               "icon": {
                 "id": "paladin-t09-offHand",
                 "path": "public/art/equipment/icon-paladin-t09-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -8701,7 +8701,7 @@
               "icon": {
                 "id": "paladin-t10-armor",
                 "path": "public/art/equipment/icon-paladin-t10-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -8730,7 +8730,7 @@
               "icon": {
                 "id": "paladin-t10-mainHand",
                 "path": "public/art/equipment/icon-paladin-t10-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {},
@@ -8759,7 +8759,7 @@
               "icon": {
                 "id": "paladin-t10-offHand",
                 "path": "public/art/equipment/icon-paladin-t10-offHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -8843,7 +8843,7 @@
               "icon": {
                 "id": "monarch-t01-armor",
                 "path": "public/art/equipment/icon-monarch-t01-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -8877,7 +8877,7 @@
               "icon": {
                 "id": "monarch-t01-mainHand",
                 "path": "public/art/equipment/icon-monarch-t01-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -8909,7 +8909,7 @@
               "icon": {
                 "id": "monarch-t01-accessory",
                 "path": "public/art/equipment/icon-monarch-t01-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 1,
               "primary": {
@@ -8978,7 +8978,7 @@
               "icon": {
                 "id": "monarch-t02-armor",
                 "path": "public/art/equipment/icon-monarch-t02-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -9012,7 +9012,7 @@
               "icon": {
                 "id": "monarch-t02-mainHand",
                 "path": "public/art/equipment/icon-monarch-t02-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -9044,7 +9044,7 @@
               "icon": {
                 "id": "monarch-t02-accessory",
                 "path": "public/art/equipment/icon-monarch-t02-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 4,
               "primary": {
@@ -9113,7 +9113,7 @@
               "icon": {
                 "id": "monarch-t03-armor",
                 "path": "public/art/equipment/icon-monarch-t03-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -9147,7 +9147,7 @@
               "icon": {
                 "id": "monarch-t03-mainHand",
                 "path": "public/art/equipment/icon-monarch-t03-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -9179,7 +9179,7 @@
               "icon": {
                 "id": "monarch-t03-accessory",
                 "path": "public/art/equipment/icon-monarch-t03-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 7,
               "primary": {
@@ -9248,7 +9248,7 @@
               "icon": {
                 "id": "monarch-t04-armor",
                 "path": "public/art/equipment/icon-monarch-t04-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -9282,7 +9282,7 @@
               "icon": {
                 "id": "monarch-t04-mainHand",
                 "path": "public/art/equipment/icon-monarch-t04-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -9314,7 +9314,7 @@
               "icon": {
                 "id": "monarch-t04-accessory",
                 "path": "public/art/equipment/icon-monarch-t04-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 10,
               "primary": {
@@ -9383,7 +9383,7 @@
               "icon": {
                 "id": "monarch-t05-armor",
                 "path": "public/art/equipment/icon-monarch-t05-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -9417,7 +9417,7 @@
               "icon": {
                 "id": "monarch-t05-mainHand",
                 "path": "public/art/equipment/icon-monarch-t05-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -9449,7 +9449,7 @@
               "icon": {
                 "id": "monarch-t05-accessory",
                 "path": "public/art/equipment/icon-monarch-t05-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 13,
               "primary": {
@@ -9518,7 +9518,7 @@
               "icon": {
                 "id": "monarch-t06-armor",
                 "path": "public/art/equipment/icon-monarch-t06-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -9552,7 +9552,7 @@
               "icon": {
                 "id": "monarch-t06-mainHand",
                 "path": "public/art/equipment/icon-monarch-t06-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -9584,7 +9584,7 @@
               "icon": {
                 "id": "monarch-t06-accessory",
                 "path": "public/art/equipment/icon-monarch-t06-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 16,
               "primary": {
@@ -9653,7 +9653,7 @@
               "icon": {
                 "id": "monarch-t07-armor",
                 "path": "public/art/equipment/icon-monarch-t07-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -9687,7 +9687,7 @@
               "icon": {
                 "id": "monarch-t07-mainHand",
                 "path": "public/art/equipment/icon-monarch-t07-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -9719,7 +9719,7 @@
               "icon": {
                 "id": "monarch-t07-accessory",
                 "path": "public/art/equipment/icon-monarch-t07-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 19,
               "primary": {
@@ -9788,7 +9788,7 @@
               "icon": {
                 "id": "monarch-t08-armor",
                 "path": "public/art/equipment/icon-monarch-t08-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -9822,7 +9822,7 @@
               "icon": {
                 "id": "monarch-t08-mainHand",
                 "path": "public/art/equipment/icon-monarch-t08-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -9854,7 +9854,7 @@
               "icon": {
                 "id": "monarch-t08-accessory",
                 "path": "public/art/equipment/icon-monarch-t08-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 22,
               "primary": {
@@ -9923,7 +9923,7 @@
               "icon": {
                 "id": "monarch-t09-armor",
                 "path": "public/art/equipment/icon-monarch-t09-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -9957,7 +9957,7 @@
               "icon": {
                 "id": "monarch-t09-mainHand",
                 "path": "public/art/equipment/icon-monarch-t09-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -9989,7 +9989,7 @@
               "icon": {
                 "id": "monarch-t09-accessory",
                 "path": "public/art/equipment/icon-monarch-t09-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 25,
               "primary": {
@@ -10058,7 +10058,7 @@
               "icon": {
                 "id": "monarch-t10-armor",
                 "path": "public/art/equipment/icon-monarch-t10-armor-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -10092,7 +10092,7 @@
               "icon": {
                 "id": "monarch-t10-mainHand",
                 "path": "public/art/equipment/icon-monarch-t10-mainHand-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {
@@ -10124,7 +10124,7 @@
               "icon": {
                 "id": "monarch-t10-accessory",
                 "path": "public/art/equipment/icon-monarch-t10-accessory-photo-v01.png",
-                "status": "pendente"
+                "status": "pronto"
               },
               "requiredLevel": 28,
               "primary": {

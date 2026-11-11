@@ -90,15 +90,22 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .site-layer { position: absolute; z-index: 4; inset: 0; }
 .site-layer { pointer-events: none; }
 .lair-layer { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
-.lair-marker { position: absolute; display: grid; justify-items: center; gap: 3px; width: clamp(70px, 11vw, 126px); transform: translate(-50%,-72%); filter: drop-shadow(2px 5px 4px rgba(0,0,0,.75)); }
+.lair-marker { position: absolute; display: grid; justify-items: center; gap: 3px; width: clamp(70px, 11vw, 126px); padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; pointer-events: auto; transform: translate(-50%,-72%); filter: drop-shadow(2px 5px 4px rgba(0,0,0,.75)); }
 .lair-marker[hidden] { display: none; }
+.lair-marker:hover { filter: brightness(1.14) drop-shadow(2px 5px 4px rgba(0,0,0,.75)); }
 .lair-marker img { display: block; width: 100%; max-height: 115px; object-fit: contain; }
 .lair-marker small { padding: 2px 4px; border: 1px solid rgba(190,168,128,.45); border-radius: 3px; color: #e8dec8; background: rgba(13,15,13,.86); font-size: 7px; white-space: nowrap; text-shadow: 0 1px 3px #000; }
 .lair-marker.level-two img { transform: scale(1.14); }
 .lair-marker.remains-pile { width: clamp(28px, 4vw, 44px); transform: translate(-50%,-85%); }
 .lair-marker:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
+.lair-marker.selected small { border-color: #f4da9a; color: #f4da9a; }
 /* Personagens ficam sempre por cima de construções e árvores, inteiros e opacos. */
 .hero-layer { position: absolute; z-index: 6; inset: 0; pointer-events: none; }
+.manor-inventory-trigger { position: absolute; z-index: 7; left: 25.5%; top: 11.5%; width: 34%; height: 15%; padding: 0; border: 1px solid transparent; border-radius: 8px; background: transparent; cursor: pointer; pointer-events: auto; }
+.manor-inventory-trigger:hover, .manor-inventory-trigger:focus-visible { border-color: rgba(238,210,145,.7); background: rgba(231,205,145,.08); outline: 2px solid rgba(244,218,154,.55); outline-offset: 2px; }
+.manor-inventory-trigger[hidden] { display: none; }
+.cancel-construction { display: block; width: 100%; margin-top: 10px; padding: 9px 11px; border: 1px solid rgba(194,116,91,.65); border-radius: 4px; color: #f0c7b7; background: rgba(98,43,33,.42); font: 600 10px 'Figtree',sans-serif; letter-spacing: .08em; cursor: pointer; }
+.cancel-construction:hover, .cancel-construction:focus-visible { border-color: #d8957d; background: rgba(125,52,39,.62); outline: 2px solid rgba(216,149,125,.35); }
 .site { position: absolute; left: var(--x); top: var(--y); display: flex; flex-direction: column; align-items: center; gap: 4px; transform: translate(-50%,-50%); min-width: 66px; padding: 0; border: 0; background: transparent; color: #e4d7b7; cursor: pointer; pointer-events: auto; text-shadow: 0 1px 6px #12120f, 0 1px 2px #000; transition: transform .18s, filter .18s; }
 .site:hover, .site:focus-visible { transform: translate(-50%,-54%) scale(1.06); filter: brightness(1.25); outline: none; }
 .site-ring { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid rgba(230,203,141,.8); border-radius: 50%; color: #f0d99e; background: rgba(27,31,24,.66); box-shadow: 0 0 0 5px rgba(213,185,124,.12), 0 4px 12px #10110e; font: 18px 'Figtree', sans-serif; }
@@ -1292,10 +1299,14 @@ input[type="number"], input[type="text"], textarea {
 .noble-roster-copy .noble-house { color: #d0b779; }
 
 /* Barra rápida de magias: 12 espaços nas teclas F1 a F12, embaixo do mapa */
-.spell-hotbar { position: absolute; z-index: 7; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; gap: 4px; max-width: calc(100% - 24px); padding: 5px 6px; border: 1px solid rgba(214,184,117,.4); border-radius: 8px; background: linear-gradient(180deg, rgba(28,25,18,.92), rgba(11,11,9,.94)); box-shadow: 0 6px 18px rgba(0,0,0,.55); touch-action: none; user-select: none; }
+.spell-hotbar { position: absolute; z-index: 7; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; max-width: calc(100% - 24px); padding: 5px 6px; border: 1px solid rgba(214,184,117,.4); border-radius: 8px; background: linear-gradient(180deg, rgba(28,25,18,.92), rgba(11,11,9,.94)); box-shadow: 0 6px 18px rgba(0,0,0,.55); touch-action: none; user-select: none; }
 .spell-hotbar[hidden] { display: none; }
+.hotbar-toggle { flex: none; width: 22px; height: 34px; padding: 0; border: 1px solid rgba(206,186,137,.24); border-radius: 4px; color: #bdb39d; background: rgba(10,10,8,.55); font: 15px/1 'Figtree', sans-serif; cursor: pointer; }
+.hotbar-toggle:hover, .hotbar-toggle:focus-visible { border-color: rgba(214,184,117,.7); color: #f3dca2; outline: none; }
+.spell-hotbar.is-collapsed { padding: 4px; border-color: rgba(214,184,117,.25); background: rgba(11,11,9,.72); box-shadow: 0 3px 10px rgba(0,0,0,.38); }
+.spell-hotbar.is-collapsed .hotbar-slot { display: none; }
 .hotbar-slot { --accent: #e9d08f; --cd: 0; position: relative; flex: 0 1 auto; width: 40px; min-width: 0; height: 40px; padding: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 6px; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--accent) 26%, #1b1a15), #121210 75%); color: var(--accent); cursor: pointer; }
-.hotbar-slot:nth-child(5), .hotbar-slot:nth-child(9) { margin-left: 6px; }
+.hotbar-slot[data-slot="4"], .hotbar-slot[data-slot="8"] { margin-left: 6px; }
 .hotbar-slot .spell-glyph { position: relative; z-index: 1; display: block; font-size: 19px; line-height: 38px; text-align: center; text-shadow: 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent); }
 .hotbar-slot .spell-cd { position: absolute; inset: 0; z-index: 2; background: conic-gradient(rgba(5,5,4,.78) calc(var(--cd) * 360deg), transparent 0); pointer-events: none; }
 .hotbar-slot .hotbar-key { position: absolute; z-index: 3; left: 3px; top: 1px; color: #d9cfb6; font: 700 8px 'Figtree', sans-serif; letter-spacing: .02em; text-shadow: 0 1px 1px #000, 0 0 2px #000; pointer-events: none; }
@@ -1308,19 +1319,20 @@ input[type="number"], input[type="text"], textarea {
 .hotbar-slot.targeting { border-color: #9df0b3; box-shadow: 0 0 0 2px rgba(157,240,179,.6); }
 .spell-hotbar.dragging .hotbar-slot { cursor: copy; }
 .hotbar-slot.drop-over { border-style: solid; border-color: #f1c66a; box-shadow: 0 0 0 2px rgba(241,198,106,.55); }
-.map-scene.has-hotbar .toast { bottom: 66px; }
+.map-scene.has-hotbar:not(.hotbar-collapsed) .toast { bottom: 66px; }
 .spell-drag-ghost { --accent: #e9d08f; position: fixed; z-index: 100; display: grid; place-items: center; width: 36px; height: 36px; margin: -18px 0 0 -18px; border: 1px solid var(--accent); border-radius: 6px; color: var(--accent); background: rgba(18,18,14,.92); font-size: 19px; text-shadow: 0 0 6px var(--accent); box-shadow: 0 4px 14px rgba(0,0,0,.6); pointer-events: none; user-select: none; }
 .spell-cast:not([disabled]) { touch-action: pan-y; }
 @media (max-width: 760px) {
   .hotbar-slot { height: 32px; }
   .hotbar-slot .spell-glyph { font-size: 15px; line-height: 30px; }
-  .hotbar-slot:nth-child(5), .hotbar-slot:nth-child(9) { margin-left: 3px; }
-  .map-scene.has-hotbar .toast { bottom: 54px; }
+  .hotbar-slot[data-slot="4"], .hotbar-slot[data-slot="8"] { margin-left: 3px; }
+  .hotbar-toggle { width: 20px; height: 28px; }
+  .map-scene.has-hotbar:not(.hotbar-collapsed) .toast { bottom: 54px; }
 }
 
 /* Cemitério do topo: heróis e camponeses perdidos na região aberta. */
 .graveyard-btn { display: grid; place-items: center; width: 40px; padding: 0; overflow: hidden; }
-.graveyard-btn img { width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transform: scale(1.35); filter: saturate(.85) brightness(1.1); }
+.graveyard-btn img { width: 100%; height: 100%; object-fit: cover; object-position: center; filter: saturate(.9) brightness(1.05); }
 .graveyard-btn:hover img { filter: brightness(1.35); }
 .grave-crest { flex: none; width: 96px; height: 72px; object-fit: cover; border: 1px solid rgba(206,184,135,.4); border-radius: 4px; background: #171612; }
 .grave-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }

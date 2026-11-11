@@ -17,4 +17,4 @@ Para este protótipo, um ano ficcional corresponde a 360 dias de jogo. A corrup�
 
 A linhagem Salazar é uma família ibérica ficcional de raízes mediterrâneas antigas — latinas, ibéricas e norte-africanas/mouriscas — apresentada como continuidade familiar, sem colagem de culturas modernas. Afonso e Isabel representam ramos da mesma linhagem e fazem parte do elenco jogável. Suas roupas nobres seguem a moda cortesã exagerada do período: veludo, brocado, mangas bufantes, golas elaboradas, joias e capas. Sem elmos de metal como elemento de design.
 
-O elenco jogável tem 17 personagens: oito homens e nove mulheres. Cada personagem tem quatro retratos, incluindo Afonso e Isabel Salazar.
+O elenco jogável tem 22 personagens: onze homens e onze mulheres. Cada personagem tem quatro retratos, incluindo Afonso e Isabel Salazar. Godefroy Vaelmont, Henri Kastrell, Éléonore Grenholt, Adélaïde Vaelmont e Gautier Lucerna completam o elenco; cada um tem sua própria sequência de quatro fases.
