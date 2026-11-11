@@ -990,6 +990,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .inspector-hp i { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #7fbf5a var(--hp), rgba(255,255,255,.08) var(--hp)); }
 .inspector-hp.hurt i { background: linear-gradient(90deg, #d0a23f var(--hp), rgba(255,255,255,.08) var(--hp)); }
 .inspector-hp.ruined i { background: linear-gradient(90deg, #b8432c var(--hp), rgba(255,255,255,.08) var(--hp)); }
+.inspector-hp.obra i { background: linear-gradient(90deg, var(--gold) var(--hp), rgba(255,255,255,.08) var(--hp)); }
 .inspector-hp b { color: #ece2cb; font-weight: 600; font-variant-numeric: tabular-nums; }
 .inspector-stats { display: grid; gap: 0; margin: 0; border-top: 1px solid var(--line); }
 .inspector-stats div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }

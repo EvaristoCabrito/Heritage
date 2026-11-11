@@ -914,7 +914,7 @@ function workerCard(worker) {
 // A aba Construir fica sempre com a lista de construções.
 function inspectorHTML() {
     const selectedFarm = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'farm' && isDone(building));
-    const selectedBuilding = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && !building.underConstruction);
+    const selectedBuilding = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite);
     const selectedArmory = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'armory' && isDone(building));
     const selectedProducer = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && ['farm', 'mill'].includes(building.type) && isDone(building));
     const selectedHut = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'hut' && isDone(building));
@@ -1063,10 +1063,15 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['Faz', 'Compra e vende comida e madeira a preço fixo']);
   } else if (building.type === 'tavern') {
     const drinkers = [...state.heroes, ...state.workers].filter(actor => actor.alive && isDrinking(actor));
+    const guest = state.heroes.filter(hero => hero.alive && hero.homeSite === building.site);
+    lines.push(['Faz', 'Uma cama para um herói, bebida e imposto']);
+    lines.push(['Hóspede', `${guest.length} de 1: ${names(guest)}`]);
     lines.push(['Bebendo agora', `${drinkers.length}: ${names(drinkers)}`]);
     lines.push(['Imposto de hoje', `${format((state.tavernTab || 0) * taxFactor())} de ouro, pago à meia-noite`]);
   } else if (building.type === 'hotel') {
+    const guests = state.heroes.filter(hero => hero.alive && hero.homeSite === building.site);
     lines.push(['Faz', '+4 camas para heróis']);
+    lines.push(['Hóspedes', `${guests.length} de 4: ${names(guests)}`]);
     lines.push(['Heróis no domínio', `${state.heroes.filter(hero => hero.alive).length} de ${heroCapacity()}`]);
   } else if (building.type === 'armory') {
     const geared = [...state.heroes, ...state.workers].filter(actor => actor.alive && Object.keys(gearOf(actor)).length).length;
@@ -1083,18 +1088,26 @@ function buildingInfoHTML(building, actions = '') {
     : building.type === 'armory' ? `Nível ${(building.level || 0) + 1} de ${ARMORY_LEVELS.length}`
     : building.type === 'depot' ? `Nível ${(building.level || 0) + 1} de ${STORAGE_LEVELS.length}`
     : def.heroClass ? `Nível ${guildTier(building) + 1} de 3` : building.type === 'hut' ? (building.big ? 'Grande' : 'Pequeno') : '';
-  const stats = building.ruined ? [['Estado', 'Em ruínas, parada'], ...lines] : lines.filter(([label]) => label !== 'Nível');
+  // Obra nova ainda não funciona: mostra o que ela vai fazer. Reforma mostra os dados de antes, parados até acabar.
+  const obra = building.underConstruction ? constructionStatus(building) : null;
+  const reform = obra && (building.pendingUpgrade || building.armoryUpgradeTo);
+  const workName = building.armoryUpgradeTo ? `Reforma do Arsenal · nível ${building.armoryUpgradeTo}` : building.upgradeLabel || 'Construção';
+  const state_ = building.ruined ? 'Em ruínas, parada' : obra ? (reform ? 'Em reforma, parada até acabar' : 'Em obra') : building.damage > 0 ? 'Danificada, funcionando' : 'Pronta, funcionando';
+  const obraLines = obra ? [['Obra', workName], ['Pedreiro', `<span data-obra-builder>${obra.builder}</span>`], ['Falta', `<span data-obra-eta>${obra.eta}</span>`]] : [];
+  const body = obra && !reform ? [['Quando pronta', def.detail]] : lines.filter(([label]) => label !== 'Nível');
+  const stats = [['Estado', state_], ...obraLines, ...body];
   return `<section class="inspector" aria-label="${siteLabel(building)}">
     <button type="button" class="inspector-back" data-inspector-close aria-label="Fechar" title="Fechar">×</button>
     <header class="inspector-id">
       <img class="inspector-thumb" src="${buildingImage(siteArt(building))}" alt="">
       <div><h3>${siteLabel(building)}</h3><small>${[def.name === siteLabel(building) ? '' : def.name, level].filter(Boolean).join(' · ')}</small></div>
     </header>
-    <div class="inspector-hp${building.ruined ? ' ruined' : building.damage > 0 ? ' hurt' : ''}" title="Vida da construção"><span>Vida</span><i style="--hp:${Math.round(hp / maxHp * 100)}%"></i><b>${hp} / ${maxHp}</b></div>
+    ${obra ? `<div class="inspector-hp obra" data-obra-bar title="Progresso da obra" style="--hp:${obra.pct}%"><span>Obra</span><i></i><b>${obra.pct}%</b></div>` : ''}
+    ${obra && !reform ? '' : `<div class="inspector-hp${building.ruined ? ' ruined' : building.damage > 0 ? ' hurt' : ''}" title="Vida da construção"><span>Vida</span><i style="--hp:${Math.round(hp / maxHp * 100)}%"></i><b>${hp} / ${maxHp}</b></div>`}
     <dl class="inspector-stats">${stats.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>
     ${building.ruined ? '' : actions}
-    ${building.type === 'market' && !building.ruined ? '<section class="inspector-section"><button type="button" class="hut-upgrade" data-open-market>Abrir o Mercado</button></section>' : ''}
-    <footer class="inspector-foot">${moving ? '<span>Toque no novo lugar no mapa. Esc cancela.</span>' : ''}<button type="button" class="move-site-btn" data-move-site="${building.site}">${moving ? 'Cancelar mudança' : 'Mudar de lugar'}</button>${moving ? '' : `<button type="button" class="demolish-btn${state.demolishArmed === building.site ? ' armed' : ''}" data-demolish="${building.site}">${state.demolishArmed === building.site ? 'Confirmar demolição' : 'Demolir'}</button>`}</footer>
+    ${building.type === 'market' && isDone(building) ? '<section class="inspector-section"><button type="button" class="hut-upgrade" data-open-market>Abrir o Mercado</button></section>' : ''}
+    ${obra ? '' : `<footer class="inspector-foot">${moving ? '<span>Toque no novo lugar no mapa. Esc cancela.</span>' : ''}<button type="button" class="move-site-btn" data-move-site="${building.site}">${moving ? 'Cancelar mudança' : 'Mudar de lugar'}</button>${moving ? '' : `<button type="button" class="demolish-btn${state.demolishArmed === building.site ? ' armed' : ''}" data-demolish="${building.site}">${state.demolishArmed === building.site ? 'Confirmar demolição' : 'Demolir'}</button>`}</footer>`}
   </section>`;
 }
 
@@ -1278,7 +1291,34 @@ function progressConstruction(dt) {
     }
     const label = $(`.site[data-site="${building.site}"] .build-progress`);
     if (label) label.textContent = constructionLabel(building);
+    refreshConstructionInspector(building);
   });
+}
+
+// Situação da obra para o inspetor: quanto falta, quem está nela e quanto tempo de trabalho resta.
+function constructionStatus(building) {
+  const worker = building.builderId != null ? findActor(building.builderId) : null;
+  const progress = building.progress || 0;
+  const pct = Math.floor(progress / BUILD_TIME * 100);
+  const spot = buildSpot(building);
+  const onSite = worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5;
+  const builder = worker ? `${worker.name}, ${onSite ? 'trabalhando' : 'a caminho'}` : 'Esperando um camponês livre';
+  let eta = 'Parada sem camponês';
+  if (worker) {
+    const left = Math.ceil((BUILD_TIME - progress) / (1 + skillOf(worker, 'building') / 100 + gearBonus(worker, 'build')));
+    eta = `${left >= 60 ? `${Math.floor(left / 60)} min ` : ''}${left % 60 || left < 60 ? `${left % 60} s` : ''}`.trim() + ' de trabalho';
+  }
+  return { pct, builder, eta };
+}
+function refreshConstructionInspector(building) {
+  if (state.selectedSite !== building.site) return;
+  const box = $('#site-inspector');
+  if (!box || box.hidden) return;
+  const status = constructionStatus(building);
+  const bar = $('[data-obra-bar]', box);
+  if (bar) { bar.style.setProperty('--hp', `${status.pct}%`); $('b', bar).textContent = `${status.pct}%`; }
+  const builder = $('[data-obra-builder]', box); if (builder) builder.textContent = status.builder;
+  const eta = $('[data-obra-eta]', box); if (eta) eta.textContent = status.eta;
 }
 
 function constructionLabel(building) {
@@ -4319,7 +4359,8 @@ function init() {
   });
   scene.addEventListener('click', event => {
     // Clique no mapa fora de construções e personagens fecha o menu da construção.
-    if (state.selectedSite != null && state.movingSite == null && !state.selectedBuild && !state.placingBounty && !camera.dragMoved && !event.target.closest('button')) {
+    // O caminho do evento vale mesmo depois que o clique redesenhou a construção e tirou o alvo do botão.
+    if (state.selectedSite != null && state.movingSite == null && !state.selectedBuild && !state.placingBounty && !camera.dragMoved && !event.composedPath().some(node => node instanceof HTMLButtonElement)) {
       state.selectedSite = null; state.demolishArmed = null;
       renderSites(); renderPanel();
       return;
@@ -4337,6 +4378,12 @@ function init() {
     if (state.movingSite != null) { if (idx === state.movingSite) cancelMove(); else say('Aqui já tem construção. Escolha outro lugar.'); }
     else if (state.selectedBuild) say('Aqui já tem construção. Escolha outro lugar.');
     else if (building && building.underConstruction) {
+      state.selectedBuild = null;
+      state.selectedSite = idx;
+      state.demolishArmed = null;
+      renderSites();
+      renderPanel();
+      $('#site-inspector').scrollTop = 0;
       const worker = building.builderId != null ? findActor(building.builderId) : null;
       say(`${buildingName(building)}: em obra, ${Math.floor((building.progress || 0) / BUILD_TIME * 100)}%. ${worker ? `${worker.name} está trabalhando.` : 'Esperando um camponês livre.'}`);
     } else if (building) {
