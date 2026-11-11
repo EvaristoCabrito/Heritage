@@ -11,10 +11,10 @@
     <link rel="preload" as="image" href="public/art/healer-walk-v01.webp">
     <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
     <link rel="preload" as="font" href="public/fonts/PirataOne.ttf" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="app.css?v=346">
+    <link rel="stylesheet" href="app.css?v=350">
     <script defer src="data/scenarios/01-floresta.js"></script>
     <script defer src="data/peasant-professions.js"></script>
-    <script defer src="app.js?v=346"></script>
+    <script defer src="app.js?v=350"></script>
     <script defer src="data/monarch-spells.js?v=344"></script>
     <script defer src="spell-fx.js?v=344"></script>
     <script defer src="monarch.js?v=345"></script>
@@ -42,8 +42,9 @@
             <button class="speed-btn" data-speed="2" aria-label="Velocidade rápida">2×</button>
             <button class="speed-btn" data-speed="3" aria-label="Velocidade máxima">3×</button>
           </div>
-          <button class="sheet-btn graveyard-btn" id="graveyard-btn" type="button" title="Memorial dos heróis e camponeses perdidos nesta região" aria-label="Abrir o memorial dos heróis desta região"><img src="public/art/icon-heroes-cemetery-photo-v01.png" alt="" aria-hidden="true"></button>
+          <button class="sheet-btn graveyard-btn" id="graveyard-btn" type="button" title="Cemitério: heróis e camponeses perdidos nesta região" aria-label="Abrir o cemitério desta região"><img src="public/art/mordavia-cemetery-l1-v01.png" alt="" aria-hidden="true"></button>
           <button class="sheet-btn" id="sheet-btn" type="button" title="Ficha do herdeiro" aria-label="Abrir a ficha do herdeiro">FICHA</button>
+          <button class="sheet-btn inventory-open-btn" id="inventory-open-btn" type="button" title="Abrir o inventário do domínio">INVENTÁRIO</button>
           <button class="music-toggle" type="button" data-music-toggle title="Música: ligada" aria-label="Desligar música" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/><path class="mute" d="M16 9l6 6M22 9l-6 6"/></svg></button>
           <button class="menu-btn" id="menu-btn" type="button" title="Menu (Esc)" aria-label="Abrir menu do jogo">MENU</button>
         </div>
@@ -115,6 +116,10 @@
       </main>
     </div>
 
+    <div class="inventory-layer" id="inventory-layer" hidden>
+      <div class="inventory-backdrop" data-inventory-close aria-hidden="true"></div>
+      <section class="inventory-dialog" id="inventory-content" role="dialog" aria-modal="true" aria-label="Inventário do Casarão"></section>
+    </div>
     <div class="menu-layer is-title" id="menu-layer">
       <div class="menu-backdrop" aria-hidden="true"></div>
       <div class="menu-panel" id="menu-panel" role="dialog" aria-modal="true" aria-label="Menu do jogo"></div>

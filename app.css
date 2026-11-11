@@ -106,8 +106,8 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .lair-marker.selected small { border-color: #f4da9a; color: #f4da9a; }
 /* Personagens ficam sempre por cima de construções e árvores, inteiros e opacos. */
 .hero-layer { position: absolute; z-index: 6; inset: 0; pointer-events: none; }
-.manor-inventory-trigger { position: absolute; z-index: 7; left: 25.5%; top: 11.5%; width: 34%; height: 15%; padding: 0; border: 1px solid transparent; border-radius: 8px; background: transparent; cursor: pointer; pointer-events: auto; }
-.manor-inventory-trigger:hover, .manor-inventory-trigger:focus-visible { border-color: rgba(238,210,145,.7); background: rgba(231,205,145,.08); outline: 2px solid rgba(244,218,154,.55); outline-offset: 2px; }
+.manor-inventory-trigger { position: absolute; z-index: 12; left: 33.5%; top: 10.3%; width: 5.5%; height: 4.5%; padding: 0; border: 0; outline: none; background: transparent; cursor: pointer; pointer-events: auto; touch-action: manipulation; }
+.manor-inventory-trigger:hover, .manor-inventory-trigger:focus-visible { border: 0; outline: none; background: transparent; box-shadow: none; }
 .manor-inventory-trigger[hidden] { display: none; }
 .cancel-construction { display: block; width: 100%; margin-top: 10px; padding: 9px 11px; border: 1px solid rgba(194,116,91,.65); border-radius: 4px; color: #f0c7b7; background: rgba(98,43,33,.42); font: 600 10px 'Figtree',sans-serif; letter-spacing: .08em; cursor: pointer; }
 .cancel-construction:hover, .cancel-construction:focus-visible { border-color: #d8957d; background: rgba(125,52,39,.62); outline: 2px solid rgba(216,149,125,.35); }
@@ -528,6 +528,40 @@ body { overflow: hidden; }
 .menu-layer.is-title .menu-backdrop { background: linear-gradient(90deg, rgba(10,12,9,.94) 0%, rgba(10,12,9,.72) 38%, rgba(10,12,9,.25) 70%, rgba(10,12,9,.45) 100%), url('public/art/mordavia-title.webp') center 30% / cover no-repeat, #121512; }
 .menu-layer.is-pause .menu-backdrop { background: rgba(8,10,8,.72); backdrop-filter: blur(4px); }
 .menu-panel { width: 100%; display: grid; place-items: center; }
+
+/* Inventário separado do painel de provisões. */
+.inventory-layer { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 24px; }
+.inventory-layer[hidden] { display: none; }
+.inventory-backdrop { position: absolute; inset: 0; background: rgba(5,7,5,.82); backdrop-filter: blur(5px); }
+.inventory-dialog { position: relative; width: min(940px, 100%); max-height: min(88vh, 900px); overflow: auto; padding: 26px; border: 1px solid rgba(214,184,117,.48); border-radius: 9px; background: linear-gradient(160deg, rgba(37,39,33,.99), rgba(18,20,17,.99)); box-shadow: 0 24px 90px rgba(0,0,0,.7); scrollbar-color: #5b5240 transparent; }
+.inventory-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding-bottom: 17px; border-bottom: 1px solid var(--line); }
+.inventory-head small { color: var(--gold); font-size: 10px; letter-spacing: .2em; }
+.inventory-head h2 { margin: 3px 0 2px; color: #f2e8d2; font: 34px/1.1 'Newsreader', Georgia, serif; }
+.inventory-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.inventory-close { width: 38px; height: 38px; flex: none; border: 1px solid rgba(206,186,137,.4); border-radius: 4px; color: #e8dfca; background: rgba(10,12,10,.75); font-size: 27px; cursor: pointer; }
+.inventory-close:hover, .inventory-close:focus-visible { color: #211f18; background: var(--gold); outline: none; }
+.inventory-capacity { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; align-items: center; margin: 16px 0 20px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 5px; background: rgba(8,10,8,.35); }
+.inventory-capacity b { color: #d9d0bc; font-size: 13px; }
+.inventory-capacity strong { color: var(--gold); font-size: 14px; }
+.inventory-capacity-bar { grid-column: 1 / -1; height: 6px; overflow: hidden; border-radius: 5px; background: rgba(255,255,255,.1); }
+.inventory-capacity-bar i { display: block; height: 100%; border-radius: inherit; background: var(--gold); }
+.inventory-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.inventory-section { min-width: 0; padding: 14px; border: 1px solid rgba(206,186,137,.2); border-radius: 6px; background: rgba(10,12,10,.35); }
+.inventory-section h3 { margin: 0 0 10px; color: #e6d4a9; font: 20px/1.1 'Newsreader', Georgia, serif; }
+.inventory-rows { display: grid; gap: 2px; }
+.inventory-row { display: grid; grid-template-columns: minmax(100px, 1fr) auto; gap: 2px 12px; align-items: center; padding: 8px 2px; border-bottom: 1px solid rgba(206,186,137,.1); }
+.inventory-row:last-child { border-bottom: 0; }
+.inventory-row b { color: #e6e0d3; font-size: 13px; }
+.inventory-row strong { color: #f1dcac; font-size: 15px; font-variant-numeric: tabular-nums; }
+.inventory-row small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }
+.inventory-row.empty strong { color: #858273; }
+.inventory-row.empty small { color: #777466; }
+.inventory-empty { margin: 0; color: var(--muted); font-size: 13px; }
+@media (max-width: 650px) {
+  .inventory-layer { padding: 10px; }
+  .inventory-dialog { max-height: 94vh; padding: 17px; }
+  .inventory-grid { grid-template-columns: 1fr; gap: 9px; }
+}
 
 /* Tela de entrada */
 .title-screen { width: min(1200px, 100%); min-height: calc(100vh - 48px); display: flex; flex-direction: column; justify-content: center; gap: 44px; padding: 0 3vw; }
@@ -1339,7 +1373,7 @@ input[type="number"], input[type="text"], textarea {
 
 /* Cemitério do topo: heróis e camponeses perdidos na região aberta. */
 .graveyard-btn { display: grid; place-items: center; width: 40px; padding: 0; overflow: hidden; }
-.graveyard-btn img { width: 100%; height: 100%; object-fit: cover; object-position: center; filter: saturate(.9) brightness(1.05); }
+.graveyard-btn img { width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transform: scale(1.35); filter: saturate(.85) brightness(1.1); }
 .graveyard-btn:hover img { filter: brightness(1.35); }
 .grave-crest { flex: none; width: 96px; height: 72px; object-fit: cover; border: 1px solid rgba(206,184,135,.4); border-radius: 4px; background: #171612; }
 .grave-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }

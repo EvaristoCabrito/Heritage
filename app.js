@@ -8,7 +8,8 @@ const BUILDINGS = [
   { id: 'depot', name: 'Depósito de Provisões', glyph: 'D', cost: 70, wood: 6, detail: 'Guarda mais 30 unidades de comida, armas e itens. Amplia para 45, 70 e 100. Os ratos aprovam.', gold: 0, grain: 0, people: 0 },
   { id: 'lumber', name: 'Cabana do Lenhador', glyph: 'L', cost: 80, wood: 2, detail: 'Coloque de 1 a 3 camponeses para cortar lenha: 0,05, 0,15 ou 0,25 de madeira por segundo.', gold: 0, grain: 0, people: 0 },
   { id: 'quarry', name: 'Pedreira', glyph: 'P', cost: 95, wood: 6, detail: 'Até 10 camponeses quebrando rocha: 0,05 de pedra por camponês por segundo. Você escolhe quem vai.', gold: 0, grain: 0, people: 0 },
-  { id: 'mine', name: 'Campo de Mineração', glyph: 'M', cost: 120, wood: 8, detail: 'Até 10 camponeses cavando metal: 0,025 por camponês por segundo. Sai pouco, mas sai brilhando.', gold: 0, grain: 0, people: 0 },
+  { id: 'mine', name: 'Campo de Mineração', glyph: 'M', cost: 120, wood: 8, detail: 'Até 10 camponeses extraem lotes variados de minério conforme o ranking do depósito.', gold: 0, grain: 0, people: 0 },
+  { id: 'blacksmith', name: 'Blacksmith', glyph: 'F', cost: 260, wood: 18, detail: 'Refina Iron, Steel, Silver e Gold. Melhora até o nível 2.', gold: 0, grain: 0, people: 0 },
   { id: 'market', name: 'Mercado', glyph: 'M', cost: 100, wood: 6, detail: 'Venda o que sobra e compre o que falta. Os mercadores cobram o dobro pra vender e pagam a metade pra comprar.', gold: 0, grain: 0, people: 0 },
   { id: 'tavern', name: 'Taverna', glyph: 'T', cost: 145, wood: 9, detail: 'Uma cama para um herói. Também recebe visitantes e serve bebida, que rende imposto.', gold: 1.15, grain: 0, people: 0 },
   { id: 'hotel', name: 'Hotel de Estrada', glyph: 'H', cost: 170, wood: 11, detail: 'Mais 4 camas para heróis. Os lençóis são trocados uma vez por viúva.', gold: 0.85, grain: 0, people: 0 },
@@ -86,15 +87,27 @@ const butcherRate = building => BUTCHER_RATE[Math.min(BUTCHER_RATE.length - 1, p
 const BAKED_ART = { bread: 'bread', cheese: 'cheese', quiche: 'quiche' };
 const bakeryRecipe = id => BAKERY_RECIPES.find(recipe => recipe.id === id) || BAKERY_RECIPES[0];
 // Construções com nível de produção (melhoria até o nível 3) e camponês fixo.
-const PRODUCER_TYPES = ['farm', 'mill', 'bakery', 'emberLab', 'butcher'];
+const PRODUCER_TYPES = ['farm', 'mill', 'bakery', 'emberLab', 'butcher', 'blacksmith'];
 // Laboratório de Ember: Dead Remains refinados por segundo, por nível. Cada grade rende um tanto de Ember.
 const LAB_RATE = [0.025, 0.035, 0.05];
 const labRate = building => LAB_RATE[producerLevel(building)];
+const BLACKSMITH_RATE = [0.025, 0.05]; // lotes refinados por segundo, níveis 1 e 2
+const BLACKSMITH_RECIPES = [
+  { id: 'iron', name: 'Iron', needs: { ironOre: 1 }, makes: { iron: 1 }, minLevel: 1 },
+  { id: 'silver', name: 'Silver', needs: { silverOre: 1 }, makes: { silver: 1 }, minLevel: 1 },
+  { id: 'gold', name: 'Gold', needs: { goldOre: 1 }, makes: { gold: 1 }, minLevel: 1 },
+  { id: 'steel', name: 'Steel', needs: { iron: 2 }, makes: { steel: 1 }, minLevel: 2 },
+];
+const METAL_STOCK = ['ironOre', 'silverOre', 'goldOre', 'iron', 'steel', 'silver', 'gold'];
+const METAL_NAMES = { ironOre: 'Iron Ore', silverOre: 'Silver Ore', goldOre: 'Gold Ore', iron: 'Iron', steel: 'Steel', silver: 'Silver', gold: 'Gold' };
+const metalStockTotal = () => METAL_STOCK.reduce((sum, id) => sum + (state.metals?.[id] || 0), 0);
+const blacksmithRate = building => BLACKSMITH_RATE[producerLevel(building)];
+const blacksmithRecipe = building => BLACKSMITH_RECIPES.find(recipe => recipe.id === building?.produce && recipe.minLevel <= (producerLevel(building) + 1)) || BLACKSMITH_RECIPES[0];
 // Arte por nível: quando houver desenho do upgrade, liste aqui. Ex.: 'farm-garlic': [null, 'farm-garlic-l2', 'farm-garlic-l3']
 const LEVEL_ART = {
-  bakery: [null, 'bakery-l2'], 'ember-lab': [null, 'ember-lab-l2'], butcher: [null, 'butcher-l2'],
+  bakery: [null, 'bakery-l2'], 'ember-lab': [null, 'ember-lab-l2'], butcher: [null, 'butcher-l2'], blacksmith: [null, 'blacksmith-l2'],
 };
-const producerLevel = building => Math.min(PRODUCER_LEVELS.length - 1, building?.level || 0);
+const producerLevel = building => Math.min(building?.type === 'blacksmith' ? BLACKSMITH_RATE.length - 1 : PRODUCER_LEVELS.length - 1, building?.level || 0);
 const farmOutput = building => farmType(building.produce).grain[producerLevel(building)];
 const millRate = building => MILL_RATE[producerLevel(building)];
 const bakeRate = building => BAKE_RATE[producerLevel(building)];
@@ -115,7 +128,7 @@ const PORTRAIT_ART = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', '
 const PRESTIGE_ART = { Paladin: 'paladin', 'Heavy Knight': 'heavy-knight', Ranger: 'ranger', Assassin: 'assassin', Sentinel: 'sentinel', Templar: 'templar', Elementalist: 'elementalist', Warlock: 'warlock', Sorcerer: 'sorcerer', Necromancer: 'necromancer', Bishop: 'bishop', Cleric: 'cleric' };
 const actorArt = actor => PRESTIGE_ART[actor.prestige] || actor.spriteId || (actor.kind === 'skeleton' ? 'skeleton-v02' : actor.kind === 'zombie' ? 'zombie-v01' : actor.kind === 'wolf' ? 'mordavian-wolf-v01' : actor.kind === 'goblin' ? 'mordavian-goblin-v01' : actor.kind === 'troll' ? 'mordavian-troll-v01' : null) || CLASS_ART[actor.className];
 const actorPortrait = actor => PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || 'male-peasant';
-const actorSheet = actor => actor.action === 'build' ? 'build' : actor.action === 'idle' ? 'idle' : actor.action === 'action' && !actor.prestige ? 'action' : 'walk';
+const actorSheet = actor => actor.action === 'build' ? 'build' : actor.action === 'idle' ? 'idle' : actor.action === 'work' && actor.className === 'Peasant' ? (actor.spriteId === 'female-peasant' ? 'action' : 'work') : actor.action === 'action' && !actor.prestige ? 'action' : 'walk';
 // Nomes, manias e falas vindos do Herança de Cinzas original.
 const FIRST_NAMES = ['Vasile','Mirela','Bogdan','Ileana','Radu','Doina','Grigore','Anca','Toma','Zoia','Petru','Lenuța','Costel','Viorica','Mircea','Sanda','Dorin','Floarea','Ion','Rodica'];
 const EPITHETS = ['Três Dedos','Sem Sorte','do Brejo','da Vala','Meio Surdo','Olho Torto','de Ninguém','Dente Mole','do Poço'];
@@ -191,28 +204,28 @@ const freeLodging = () => {
 // Construção livre: vai onde o jogador colocar. Só não pode sair do mapa nem encostar em outra construção.
 const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
-  bakery: 'bakery', emberLab: 'ember-lab', butcher: 'butcher',
+  bakery: 'bakery', emberLab: 'ember-lab', butcher: 'butcher', blacksmith: 'blacksmith',
   farm: 'farm-wheat', mill: 'mill-body', hut: 'hut', depot: 'depot', lumber: 'lumber', quarry: 'lumber', mine: 'lumber', market: 'market', tavern: 'tavern', hotel: 'hotel', warrior: 'guild', archer: 'archer', lancer: 'lancer',
   blackMage: 'tower', conjurer: 'conjurer', healer: 'healer', armory: 'armory',
 };
 const PHOTOREAL_BUILDING_ART = new Set([
   'farm-garlic', 'farm-wheat', 'farm-bacon', 'farm-eggs', 'farm-milk',
   'mill-body', 'mill-sails', 'hut', 'hut-big', 'depot', 'lumber', 'market',
-  'tavern', 'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'manor', 'bakery', 'ember-lab', 'butcher', 'bakery-l2', 'ember-lab-l2', 'butcher-l2',
+  'tavern', 'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'manor', 'bakery', 'ember-lab', 'butcher', 'blacksmith', 'bakery-l2', 'ember-lab-l2', 'butcher-l2', 'blacksmith-l2',
 ]);
 // Artes de obra: o sprite final existente continua sendo a fase completa.
 // Para adicionar uma construção nova, inclua a chave aqui e os arquivos -early/-mid.
 const CONSTRUCTION_STAGE_ART = new Set([
   'farm-garlic', 'farm-wheat', 'farm-bacon', 'farm-eggs', 'farm-milk',
   'mill-body', 'hut', 'hut-big', 'depot', 'lumber', 'market', 'tavern',
-  'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'bakery', 'ember-lab', 'butcher',
+  'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'bakery', 'ember-lab', 'butcher', 'blacksmith', 'blacksmith-l2',
 ]);
 const BUILDING_ART_ASPECTS = {
   'farm-garlic': 1.5, 'farm-wheat': 1.5, 'farm-bacon': 1.5, 'farm-eggs': 1.5, 'farm-milk': 1.5,
   'mill-body': 1105 / 1424, 'mill-sails': 1312 / 1199, hut: 1.5, 'hut-big': 1.5,
   depot: 2, lumber: 1.5, market: 2, tavern: 1.5, hotel: 2, guild: 1.5,
   archer: 1199 / 1312, lancer: 1.5, tower: 1202 / 1308, conjurer: 1312 / 1199, bakery: 1.5, 'ember-lab': 1200 / 1003,
-  'bakery-l2': 1.5, 'ember-lab-l2': 1200 / 1003, butcher: 1.5, 'butcher-l2': 1.5,
+  'bakery-l2': 1.5, 'ember-lab-l2': 1200 / 1003, butcher: 1.5, 'butcher-l2': 1.5, blacksmith: 1.5, 'blacksmith-l2': 1.5,
   healer: 1.5, armory: 1.5, manor: 1.5,
 };
 const buildingImage = (art, constructionStage = null, building = null) => {
@@ -220,7 +233,8 @@ const buildingImage = (art, constructionStage = null, building = null) => {
     const artId = BUILDING_ART[building.type];
     const targetArt = LEVEL_ART[artId]?.[producerLevel(building) + 1];
     if (targetArt) {
-      if ((building.progress || 0) < BUILD_TIME / 2) return buildingImage(art, null);
+      if ((building.progress || 0) < BUILD_TIME / 3) return buildingImage(art, null);
+      if ((building.progress || 0) < BUILD_TIME * 2 / 3) return `public/art/buildings-construction-dark-v01/${targetArt}-early.webp`;
       return `public/art/buildings-construction-dark-v01/${targetArt}-mid.webp`;
     }
   }
@@ -293,7 +307,7 @@ const WORKER_START_PURSE = 5;
 const HERO_START_PURSE = 15;
 function newGameState(testMode = false, heir = null) {
   return {
-    gold: 240, grain: 58, timber: 30, stone: 0, metal: 0, ember: 0, remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
+    gold: 240, grain: 58, timber: 30, stone: 0, metal: 0, metals: { ironOre: 0, silverOre: 0, goldOre: 0, iron: 0, steel: 0, silver: 0, gold: 0 }, ember: 0, remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
     food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false, goalStep: 0, goalKills: 0,
@@ -445,19 +459,52 @@ function switchMap(name) {
 
 function updateManorInventoryTrigger() {
   const trigger = $('#manor-inventory-trigger');
-  if (trigger) trigger.hidden = currentMap !== 'city' || currentMapSet !== 1;
+  if (trigger) trigger.hidden = currentMap !== 'city';
 }
 
 function openManorInventory() {
-  if (!game.slot) return;
-  state.selectedSite = null;
-  selectedLairId = null;
-  renderSites();
-  state.tab = 'food';
-  $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
-  renderPanel();
-  $('#panel-view').scrollTop = 0;
-  say('Inventário do Casarão: provisões, itens, Dead Remains e Ember.');
+  if (!game.slot) {
+    say('Carregue uma partida para abrir o inventário do Casarão.');
+    return;
+  }
+  renderManorInventory();
+  $('#inventory-layer').hidden = false;
+  $('#inventory-close').focus();
+}
+
+function inventorySection(title, rows) {
+  return `<section class="inventory-section"><h3>${title}</h3>${rows.length ? `<div class="inventory-rows">${rows.map(([name, amount, source]) => `<div class="inventory-row${amount > 0 ? '' : ' empty'}"><b>${name}</b><strong>${format(amount)}</strong><small>${source}</small></div>`).join('')}</div>` : '<p class="inventory-empty">Nada guardado.</p>'}</section>`;
+}
+function renderManorInventory() {
+  const keepFocus = document.activeElement?.id === 'inventory-close';
+  const used = storedUnits();
+  const items = (state.items || []).map(item => [item?.name || item?.id || String(item), 1, 'Arma ou item']);
+  const foodRows = FOOD_TYPES.map(food => [food.name, state.food?.[food.id] || 0, food.raw ? 'Matéria-prima' : food.baked || food.meat ? 'Produzido no domínio' : 'Provisão']);
+  const metalRows = METAL_STOCK.map(id => [METAL_NAMES[id], state.metals?.[id] || 0, id.endsWith('Ore') ? 'Extraído na Mina' : id === 'steel' || id === 'iron' || id === 'silver' || id === 'gold' ? 'Refinado no Blacksmith' : '']);
+  const remainsRows = REMAINS_GRADES.map(grade => [`Dead Remains ${grade.id}`, state.remains?.[grade.id] || 0, 'Guardado · matéria-prima do Laboratório de Ember']);
+  const workRows = state.buildings.filter(isDone).flatMap(building => {
+    const name = buildingName(building);
+    const crew = state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site).length;
+    if (building.type === 'farm') return [[`${foodName(farmFoodId(building))} · ${name}`, building.stock || 0, `Colhido na Fazenda · esperando transporte · ${crew} camponês${crew === 1 ? '' : 'es'}`]];
+    if (building.type === 'mill') return [['Trigo · Moinho', building.input || 0, `Aguardando moagem · ${crew} camponês${crew === 1 ? '' : 'es'} no Moinho`], ['Farinha · Moinho', building.stock || 0, `Moída · aguardando transporte · capacidade ${rateNumber(millRate(building) * (1 + crewWork(building)))}/s`]];
+    if (building.type === 'bakery') return [[`Insumos · ${name}`, Object.values(building.pantry || {}).reduce((sum, amount) => sum + amount, 0), 'Ingredientes aguardando preparo'], [`${foodName(building.stockFood || building.produce || 'bread')} · ${name}`, building.stock || 0, 'Pronto · aguardando transporte']];
+    if (building.type === 'butcher') return [[`Insumos · ${name}`, Object.values(building.pantry || {}).reduce((sum, amount) => sum + amount, 0), 'Ingredientes aguardando preparo'], [`${foodName(building.stockFood || building.produce || 'bacon')} · ${name}`, building.stock || 0, 'Pronto · aguardando transporte']];
+    return [];
+  });
+  const rows = [
+    inventorySection('Moedas e materiais', [['Ouro', state.gold || 0, 'Cofre'], ['Madeira', state.timber || 0, 'Lenhadores'], ['Pedra', state.stone || 0, 'Pedreira'], ['Ember', state.ember || 0, 'Laboratório de Ember']]),
+    inventorySection('Metais', metalRows),
+    inventorySection('Provisões', foodRows),
+    inventorySection('Produção nos prédios', workRows),
+    inventorySection('Restos e equipamento', [...remainsRows, ['Armas e itens', items.length, items.map(([name]) => name).join(', ')]])
+  ];
+  $('#inventory-content').innerHTML = `<header class="inventory-head"><div><small>CASARÃO</small><h2>Inventário</h2><p>Estoque do depósito e produção que ainda está nos prédios.</p></div><button type="button" class="inventory-close" id="inventory-close" aria-label="Fechar inventário">×</button></header><div class="inventory-capacity"><b>Espaço usado no depósito</b><strong>${format(used)} / ${format(storageCap())}</strong><div class="inventory-capacity-bar"><i style="width:${Math.min(100, Math.round(used / storageCap() * 100))}%"></i></div></div><div class="inventory-grid">${rows.join('')}</div>`;
+  $('#inventory-close').addEventListener('click', closeManorInventory);
+  if (keepFocus) $('#inventory-close').focus();
+}
+function closeManorInventory() {
+  $('#inventory-layer').hidden = true;
+  $('#manor-inventory-trigger').focus();
 }
 
 function moveCamera(dx, dy) {
@@ -653,9 +700,51 @@ function marketPanelHTML() {
 // Cabana do Lenhador: até 3 camponeses escalados pelo painel.
 const LUMBER_RATE = [0, 0.05, 0.15, 0.25];
 const lumberCrew = camp => state.workers.filter(worker => worker.alive && worker.workplace && worker.workplace.site === camp.site);
-// Pedreira (pedra) e Campo de Mineração (metal): até 10 camponeses cada, escolhidos pelo jogador.
+// Pedreira (pedra) e Campo de Mineração: até 10 camponeses cada, escolhidos pelo jogador.
 const PIT_CREW_MAX = 10;
-const PIT_GOODS = { quarry: { good: 'stone', name: 'pedra', rate: 0.05 }, mine: { good: 'metal', name: 'metal', rate: 0.025 } };
+const PIT_GOODS = { quarry: { good: 'stone', name: 'pedra', rate: 0.05 }, mine: { good: 'metal', name: 'lotes de minério', rate: 0.025 } };
+const METAL_DEPOSIT_RANKS = [
+  { id: 'I', name: 'Pobre', chance: { ironOre: 90, silverOre: 8, goldOre: 2 }, qty: { ironOre: [1, 2], silverOre: [1, 1], goldOre: [1, 1] } },
+  { id: 'II', name: 'Comum', chance: { ironOre: 100, silverOre: 15, goldOre: 5 }, qty: { ironOre: [1, 3], silverOre: [1, 1], goldOre: [1, 1] } },
+  { id: 'III', name: 'Bom', chance: { ironOre: 100, silverOre: 25, goldOre: 10 }, qty: { ironOre: [2, 4], silverOre: [1, 2], goldOre: [1, 1] } },
+  { id: 'IV', name: 'Rico', chance: { ironOre: 100, silverOre: 40, goldOre: 20 }, qty: { ironOre: [3, 5], silverOre: [1, 2], goldOre: [1, 2] } },
+  { id: 'V', name: 'Excepcional', chance: { ironOre: 100, silverOre: 65, goldOre: 35 }, qty: { ironOre: [4, 7], silverOre: [1, 3], goldOre: [1, 2] } },
+];
+const metalDepositRank = pit => METAL_DEPOSIT_RANKS.find(rank => rank.id === pit?.depositRank)?.id || ((pit?.mapSet || currentMapSet) === 2 ? 'IV' : 'II');
+const metalRankData = pit => METAL_DEPOSIT_RANKS.find(rank => rank.id === metalDepositRank(pit)) || METAL_DEPOSIT_RANKS[1];
+const randomBetween = ([min, max]) => min + Math.floor(Math.random() * (max - min + 1));
+function expectedMineYield(pit) {
+  const rank = metalRankData(pit);
+  let none = 1, mean = 0;
+  ['ironOre', 'silverOre', 'goldOre'].forEach(id => {
+    const chance = rank.chance[id] / 100;
+    none *= 1 - chance;
+    mean += chance * (rank.qty[id][0] + rank.qty[id][1]) / 2;
+  });
+  return mean + none; // Se nenhum metal aparecer, a extração garante uma unidade de minério de ferro.
+}
+function addMetalStock(id, amount) {
+  const free = Math.max(0, Math.floor(storageCap() - storedUnits()));
+  const added = Math.min(amount, free);
+  state.metals[id] = (state.metals[id] || 0) + added;
+  if (added < amount && !state.storageWarned) { state.storageWarned = true; say('O depósito está cheio. Parte dos metais extraídos ficou do lado de fora.'); }
+  return added;
+}
+function mineDeposit(pit) {
+  const rank = metalRankData(pit);
+  let total = 0;
+  ['ironOre', 'silverOre', 'goldOre'].forEach(id => {
+    if (Math.random() * 100 < rank.chance[id]) total += addMetalStock(id, randomBetween(rank.qty[id]));
+  });
+  if (!total) addMetalStock('ironOre', 1);
+}
+function advanceMines(dt) {
+  state.buildings.filter(building => building.type === 'mine' && isDone(building)).forEach(pit => {
+    const work = pitRate(pit) * dt;
+    pit.mineProgress = (pit.mineProgress || 0) + work;
+    while (pit.mineProgress >= 1) { pit.mineProgress -= 1; mineDeposit(pit); }
+  });
+}
 const isPit = building => !!PIT_GOODS[building?.type];
 const pitRate = pit => PIT_GOODS[pit.type].rate * lumberCrew(pit).length * (1 + crewWork(pit));
 // Metal rende 0,025: duas casas cortariam pra 0,03.
@@ -726,7 +815,10 @@ function rates() {
     }
     return sum;
   }, { gold: 0, grain: 0, timber: 0.14, stone: 0, metal: 0, people: 0 });
-  state.buildings.filter(building => isPit(building) && isDone(building)).forEach(pit => { sum[PIT_GOODS[pit.type].good] += pitRate(pit); });
+  state.buildings.filter(building => isPit(building) && isDone(building)).forEach(pit => {
+    if (pit.type === 'quarry') sum.stone += pitRate(pit);
+    else sum.metal += pitRate(pit) * expectedMineYield(pit);
+  });
   state.workers.filter(worker => worker.alive && worker.profession === 'fisher').forEach(worker => { sum.grain += FISHING_RATE * (1 + skillOf(worker, 'fishing') / 100); });
   sum.timber += state.buildings.filter(building => building.type === 'lumber' && isDone(building)).reduce((total, camp) => total + LUMBER_RATE[lumberCrew(camp).length] * (1 + crewWork(camp)), 0);
   // Farinha: o moinho só mói o trigo que existe; sem estoque, fica limitado ao que as fazendas colhem.
@@ -823,6 +915,7 @@ function updateHud() {
   $('#timber-rate').textContent = `+${rateNumber(r.timber)}/s`;
   $('#stone').textContent = format(state.stone || 0);
   $('#stone-rate').textContent = `+${fineRate(r.stone)}/s`;
+  state.metal = metalStockTotal(); // mantém o campo antigo para saves e integrações
   $('#metal').textContent = format(state.metal || 0);
   $('#metal-rate').textContent = `+${fineRate(r.metal)}/s`;
   if ($('#ember')) { $('#ember').textContent = format(state.ember || 0); $('#ember-rate').textContent = `${remainsCount()} ${remainsCount() === 1 ? 'resto' : 'restos'}`; }
@@ -1042,11 +1135,11 @@ function renderLairs() {
 
 function extractionPlaces(type) {
   const marked = (worldScenario?.places || []).filter(place => place.type === type);
-  if (marked.length) return marked;
+  if (marked.length) return marked.map(place => type === 'mine' ? { ...place, rank: METAL_DEPOSIT_RANKS.some(rank => rank.id === place.rank) ? place.rank : 'II' } : place);
   // Esses pontos ja estao pintados no mapa dos Wilds; servem mesmo sem marcador do editor.
   const defaults = {
     quarry: { id: `map-${currentMapSet}-stone-quarry`, x: 22, y: 18 },
-    mine: { id: `map-${currentMapSet}-metal-mine`, x: 72, y: 61 },
+    mine: { id: `map-${currentMapSet}-metal-mine`, x: 72, y: 61, rank: currentMapSet === 2 ? 'IV' : 'II' },
   };
   return defaults[type] ? [{ ...defaults[type], type }] : [];
 }
@@ -1093,6 +1186,7 @@ function migrateLegacyExtractionSites() {
       building.x = deposit.x;
       building.y = deposit.y;
       building.resourcePlaceId = deposit.id;
+      if (building.type === 'mine') building.depositRank = deposit.rank || 'II';
       used.add(`${building.mapSet || 1}:${deposit.id}`);
     }
   });
@@ -1170,7 +1264,7 @@ function renderHeroes() {
       // e os quatro quadros mantêm a passada alternada sem espelhar metade do ciclo.
       const backWalk = art === 'peasant' && sheet === 'walk' && token.dataset.facing === 'back';
       const verticalTrollWalk = actor.kind === 'troll' && sheet === 'walk' && ['up', 'down'].includes(actor.walkDirection);
-      const extension = actor.className === 'Wildlife' || (art === 'peasant' && sheet === 'build') || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp';
+      const extension = actor.className === 'Wildlife' || (art === 'peasant' && ['build', 'work'].includes(sheet)) || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp';
       const spriteFile = backWalk ? 'peasant-walk-back-v02.png' : verticalTrollWalk ? 'mordavian-troll-v01-walk-vertical-v01.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : actor.className === 'Wildlife' && sheet === 'idle' ? `${art}-idle-v02.png` : actor.className === 'Wildlife' && art === 'elk' && sheet === 'walk' ? 'elk-walk-v02.png' : `${art}-${sheet}-v01.${extension}`;
       if (token.dataset.spriteFile !== spriteFile) {
         $('.character-sprite', token).style.backgroundImage = `url('public/art/${spriteFile}')`;
@@ -1265,6 +1359,7 @@ function inspectorHTML() {
         <div class="farm-type-grid compact">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="+${rateNumber(type.grain[producerLevel(selectedFarm)])} por segundo"><img src="public/art/${type.art}-v01.webp" alt=""><b>${type.name}</b></button>`).join('')}</div></section>` : ''}
       ${selectedProducer?.type === 'bakery' ? bakeryRecipeBoxHTML(selectedProducer) : ''}
       ${selectedProducer?.type === 'butcher' ? butcherRecipeBoxHTML(selectedProducer) : ''}
+      ${selectedProducer?.type === 'blacksmith' ? blacksmithRecipeBoxHTML(selectedProducer) : ''}
       ${selectedProducer ? producerBoxHTML(selectedProducer) : ''}
       ${selectedHut && !selectedHut.big ? `<section class="inspector-section"><h4>Ampliação</h4><button type="button" class="hut-upgrade" data-hut-upgrade="${selectedHut.site}">Casebre Grande · +3 moradores · ${costHTML(HUT_UPGRADE.gold, HUT_UPGRADE.wood)}</button></section>` : ''}
       ${selectedGuild ? guildBoxHTML(selectedGuild) : ''}
@@ -1289,6 +1384,7 @@ function bindPanel(host) {
   $$('[data-farm-type]', host).forEach(button => button.addEventListener('click', () => chooseFarmType(button.dataset.farmType)));
   $$('[data-bakery-recipe]', host).forEach(button => button.addEventListener('click', () => chooseBakeryRecipe(button.dataset.bakeryRecipe)));
   $$('[data-butcher-recipe]', host).forEach(button => button.addEventListener('click', () => chooseButcherRecipe(button.dataset.butcherRecipe)));
+  $$('[data-blacksmith-recipe]', host).forEach(button => button.addEventListener('click', () => chooseBlacksmithRecipe(button.dataset.blacksmithRecipe)));
   $$('[data-guild-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeGuild(Number(button.dataset.guildUpgrade), button.dataset.branch || null)));
   $$('[data-ration]', host).forEach(button => button.addEventListener('click', () => { state.ration = Number(button.dataset.ration); say(`Ração ${RATIONS[state.ration].label.toLowerCase()}.`); renderPanel(); updateHud(); }));
   $$('[data-diet]', host).forEach(button => button.addEventListener('click', () => { state.diet[button.dataset.diet] = !state.diet[button.dataset.diet]; renderPanel(); }));
@@ -1323,7 +1419,7 @@ function bindPanel(host) {
 // A aba Construir mostra as construções agrupadas por tipo, uma seção embaixo da outra.
 const BUILD_CATEGORIES = [
   { id: 'houses', name: 'Casas', types: ['hut', 'depot'] },
-  { id: 'production', name: 'Produção', types: ['farm', 'mill', 'bakery', 'emberLab', 'butcher', 'lumber', 'quarry', 'mine', 'market'] },
+  { id: 'production', name: 'Produção', types: ['farm', 'mill', 'bakery', 'emberLab', 'butcher', 'lumber', 'quarry', 'mine', 'blacksmith', 'market'] },
   { id: 'guilds', name: 'Guildas', types: ['warrior', 'archer', 'lancer', 'conjurer', 'healer', 'armory', 'tavern', 'hotel'] },
 ];
 const buildCardHTML = item => `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira">
@@ -1417,6 +1513,13 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['No depósito', REMAINS_GRADES.map(grade => `${grade.id} ${state.remains?.[grade.id] || 0}`).join(' · ')]);
     lines.push(['Ember', format(state.ember || 0)]);
     lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
+  } else if (building.type === 'blacksmith') {
+    const recipe = blacksmithRecipe(building);
+    lines.push(['Produz', `${rateNumber(blacksmithRate(building))} ${recipe.name} por segundo`]);
+    lines.push(['Receita', `${Object.entries(recipe.needs).map(([id, qty]) => `${qty} ${METAL_NAMES[id]}`).join(' + ')} → ${Object.entries(recipe.makes).map(([id, qty]) => `${qty} ${METAL_NAMES[id]}`).join(' + ')}`]);
+    lines.push(['Metais guardados', METAL_STOCK.map(id => `${format(state.metals[id] || 0)} ${METAL_NAMES[id]}`).join(' · ')]);
+    if (crewWork(building)) lines.push(['Ofício', `+${Math.round(crewWork(building) * 100)}% de produção`]);
+    lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
   } else if (building.type === 'hut') {
     const residents = alive.filter(worker => worker.homeSite === building.site);
     lines.push(['Moradores', `${residents.length} de ${building.big ? 5 : 2}: ${names(residents)}`]);
@@ -1429,9 +1532,14 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['Lenhadores', `${crew.length} de 3: ${names(crew)}`]);
   } else if (isPit(building)) {
     const crew = lumberCrew(building);
-    lines.push(['Produz', `${fineRate(pitRate(building))} de ${PIT_GOODS[building.type].name} por segundo`]);
+    lines.push(['Produz', building.type === 'mine' ? `${fineRate(pitRate(building) * expectedMineYield(building))} de minério por segundo (média)` : `${fineRate(pitRate(building))} de pedra por segundo`]);
+    if (building.type === 'mine') {
+      const rank = metalRankData(building);
+      lines.push(['Depósito', `Ranking ${rank.id} · ${rank.name}`]);
+      lines.push(['Chances por extração', `Iron Ore ${rank.chance.ironOre}% · Silver Ore ${rank.chance.silverOre}% · Gold Ore ${rank.chance.goldOre}%`]);
+    }
     if (crewWork(building)) lines.push(['Ferramentas', `+${Math.round(crewWork(building) * 100)}% de produção`]);
-    lines.push(['No estoque', `${format(state.stone || 0)} de pedra · ${format(state.metal || 0)} de metal`]);
+    lines.push(['No estoque', building.type === 'mine' ? METAL_STOCK.map(id => `${format(state.metals[id] || 0)} ${METAL_NAMES[id]}`).join(' · ') : `${format(state.stone || 0)} de pedra`]);
   } else if (building.type === 'market') {
     lines.push(['Faz', 'Compra e vende comida e madeira a preço fixo']);
   } else if (building.type === 'tavern') {
@@ -1457,7 +1565,7 @@ function buildingInfoHTML(building, actions = '') {
   }
   const moving = state.movingSite === building.site;
   const hp = buildingHp(building), maxHp = buildingMaxHp(building);
-  const level = PRODUCER_TYPES.includes(building.type) ? `Nível ${producerLevel(building) + 1} de ${building.type === 'butcher' ? BUTCHER_MAX_LEVEL : PRODUCER_LEVELS.length}`
+  const level = PRODUCER_TYPES.includes(building.type) ? `Nível ${producerLevel(building) + 1} de ${building.type === 'butcher' ? BUTCHER_MAX_LEVEL : building.type === 'blacksmith' ? BLACKSMITH_RATE.length : PRODUCER_LEVELS.length}`
     : building.type === 'armory' ? `Nível ${(building.level || 0) + 1} de ${ARMORY_LEVELS.length}`
     : building.type === 'depot' ? `Nível ${(building.level || 0) + 1} de ${STORAGE_LEVELS.length}`
     : def.heroClass ? `Nível ${guildTier(building) + 1} de 3` : building.type === 'hut' ? (building.big ? 'Grande' : 'Pequeno') : '';
@@ -1628,6 +1736,15 @@ function chooseButcherRecipe(id) {
   renderSites(); renderPanel(); updateHud();
   say(`O açougue agora prepara ${butcherActiveRecipe(butcher).name.toLowerCase()}.`);
 }
+function chooseBlacksmithRecipe(id) {
+  const blacksmith = state.buildings.find(building => building.site === state.selectedSite && building.type === 'blacksmith' && isDone(building));
+  const recipe = BLACKSMITH_RECIPES.find(item => item.id === id && item.minLevel <= producerLevel(blacksmith) + 1);
+  if (!blacksmith || !recipe) return;
+  blacksmith.produce = recipe.id;
+  blacksmith.refineProgress = 0;
+  renderSites(); renderPanel(); updateHud();
+  say(`Blacksmith agora produz ${recipe.name}.`);
+}
 
 // Obras e melhorias: um camponês trabalha no local durante dois minutos de jogo.
 // A habilidade de construção e as ferramentas dele aceleram (veja progressConstruction).
@@ -1647,7 +1764,7 @@ function placeBuilding(x, y) {
   state.timber -= item.wood;
   const site = state.nextBuildingId++;
   const resourcePlace = ['mine', 'quarry'].includes(item.id) ? extractionPlaces(item.id).find(place => Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5) : null;
-  const building = { site, mapId: currentMap, mapSet: currentMapSet, resourcePlaceId: resourcePlace?.id || null, type: item.id, produce: item.id === 'farm' ? state.selectedFarmType : item.id === 'bakery' ? 'bread' : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
+  const building = { site, mapId: currentMap, mapSet: currentMapSet, resourcePlaceId: resourcePlace?.id || null, depositRank: item.id === 'mine' ? (resourcePlace?.rank || (currentMapSet === 2 ? 'IV' : 'II')) : null, type: item.id, produce: ['bakery', 'blacksmith'].includes(item.id) ? (item.id === 'bakery' ? 'bread' : 'iron') : item.id === 'farm' ? state.selectedFarmType : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
   state.buildings.push(building);
   state.selectedBuild = null;
   // A obra nova não fica selecionada: a janela dela só abre quando o jogador clica na construção.
@@ -2168,10 +2285,10 @@ function animateActors(now) {
     }
     if (actor.wait > 0) {
       actor.wait = Math.max(0, actor.wait - delta);
-      actor.action = actor.actionTime > 0 ? 'action' : 'walk';
+      actor.action = actor.actionTime > 0 ? (actor.className === 'Peasant' ? 'work' : 'action') : 'walk';
       if (actor.actionTime > 0) actor.actionTime = Math.max(0, actor.actionTime - delta);
       actor.actionClock = (actor.actionClock || 0) + delta;
-      actor.frame = actor.action === 'action' && !reducedMotion ? Math.floor(actor.actionClock * 5) % 4 : 0;
+      actor.frame = ['action', 'work'].includes(actor.action) && !reducedMotion ? Math.floor(actor.actionClock * 5) % 4 : 0;
       return;
     }
     if (!actor.route) actor.route = [];
@@ -2227,13 +2344,15 @@ function tick() {
   if (options.autosave && state.playSeconds % (options.autosave * 60) === 0) writeSave(game.slot);
   const r = rates();
   feedWorkers(state.speed);
+  if (!$('#inventory-layer').hidden && state.ticks % 5 === 0) renderManorInventory();
   progressConstruction(state.speed);
   state.grain = totalFood();
   if ((state.tab === 'food' || state.tab === 'market') && !document.querySelector('#panel-view button:hover')) renderPanel();
   if (state.tab === 'economy' && state.ticks % 10 === 0 && !document.querySelector('#panel-view button:hover, #panel-view details[open]')) renderPanel();
   state.timber += r.timber * state.speed;
   state.stone = (state.stone || 0) + r.stone * state.speed;
-  state.metal = (state.metal || 0) + r.metal * state.speed;
+  advanceMines(state.speed);
+  processMetalworks(state.speed);
   accrueTavern(state.speed);
   if (state.minutes % 60 < state.speed) { shopAtArmory(); processDemands(); processBounties(); }
   state.minutes += state.speed;
@@ -3092,7 +3211,7 @@ const STORAGE_LEVELS = [
 const depots = () => state.buildings.filter(building => building.type === 'depot' && isDone(building));
 const depotCap = depot => STORAGE_LEVELS[depot.level || 0].cap;
 const storageCap = () => MANOR_STORAGE + depots().reduce((sum, depot) => sum + depotCap(depot), 0);
-const storedUnits = () => totalFood() + (state.items?.length || 0) + remainsCount();
+const storedUnits = () => totalFood() + (state.items?.length || 0) + remainsCount() + metalStockTotal();
 function upgradeDepot(site) {
   const depot = state.buildings.find(building => building.site === site && building.type === 'depot');
   const next = depot && STORAGE_LEVELS[(depot.level || 0) + 1];
@@ -3167,6 +3286,21 @@ function processButcher(dt) {
     recipe.needs.forEach(id => { pantry[id] -= qty; });
     butcher.stockFood = recipe.id;
     butcher.stock = (butcher.stock || 0) + qty;
+  });
+}
+function processMetalworks(dt) {
+  state.buildings.filter(building => building.type === 'blacksmith' && isDone(building)).forEach(building => {
+    const recipe = blacksmithRecipe(building);
+    if (!Object.entries(recipe.needs).every(([id, qty]) => (state.metals[id] || 0) >= qty)) return;
+    building.refineProgress = (building.refineProgress || 0) + blacksmithRate(building) * (1 + crewWork(building)) * dt;
+    while (building.refineProgress >= 1 && Object.entries(recipe.needs).every(([id, qty]) => (state.metals[id] || 0) >= qty)) {
+      const input = Object.values(recipe.needs).reduce((sum, qty) => sum + qty, 0);
+      const output = Object.values(recipe.makes).reduce((sum, qty) => sum + qty, 0);
+      if (storedUnits() - input + output > storageCap()) break;
+      Object.entries(recipe.needs).forEach(([id, qty]) => { state.metals[id] -= qty; });
+      Object.entries(recipe.makes).forEach(([id, qty]) => { state.metals[id] = (state.metals[id] || 0) + qty; });
+      building.refineProgress -= 1;
+    }
   });
 }
 function butcherMissing(butcher) {
@@ -3337,7 +3471,7 @@ function deliverLoad(actor) {
   if (put >= load.qty - 1e-6) state.storageWarned = false;
 }
 const foodName = id => (FOOD_TYPES.find(food => food.id === id)?.name || id).toLowerCase();
-const workPlaceName = building => building.type === 'fishing' ? `em ${building.name}` : building.type === 'hunting' ? 'nas Wilds, caçando e recolhendo carne' : building.type === 'mill' ? 'no moinho' : building.type === 'emberLab' ? 'no Laboratório de Ember' : building.type === 'lumber' ? 'na Cabana do Lenhador' : building.type === 'quarry' ? 'na Pedreira' : building.type === 'mine' ? 'no Campo de Mineração' : `na ${buildingName(building)}`;
+const workPlaceName = building => building.type === 'fishing' ? `em ${building.name}` : building.type === 'hunting' ? 'nas Wilds, caçando e recolhendo carne' : building.type === 'mill' ? 'no moinho' : building.type === 'emberLab' ? 'no Laboratório de Ember' : building.type === 'lumber' ? 'na Cabana do Lenhador' : building.type === 'quarry' ? 'na Pedreira' : building.type === 'mine' ? 'no Campo de Mineração' : `no ${buildingName(building)}`;
 function walkTo(actor, point) {
   routeActor(actor, nearestNode(point));
   actor.finalPoint = { x: point.x, y: Math.min(198, point.y + 1.2) };
@@ -3400,12 +3534,12 @@ function peasantActivity(actor) {
 }
 function producerBoxHTML(building) {
   const level = producerLevel(building);
-  const maxLevel = building.type === 'butcher' ? BUTCHER_MAX_LEVEL : PRODUCER_LEVELS.length;
+  const maxLevel = building.type === 'butcher' ? BUTCHER_MAX_LEVEL : building.type === 'blacksmith' ? BLACKSMITH_RATE.length : PRODUCER_LEVELS.length;
   const next = level + 1 < maxLevel ? PRODUCER_LEVELS[level + 1] : null;
   const mill = building.type === 'mill';
   const bakery = building.type === 'bakery';
-  const rateAt = lv => mill ? MILL_RATE[lv] : bakery ? BAKE_RATE[lv] : building.type === 'emberLab' ? LAB_RATE[lv] : building.type === 'butcher' ? BUTCHER_RATE[lv] : farmType(building.produce).grain[lv];
-  const unit = mill ? 'de trigo moído em farinha por segundo' : `de ${farmType(building.produce).name.toLowerCase()} por segundo`;
+  const rateAt = lv => mill ? MILL_RATE[lv] : bakery ? BAKE_RATE[lv] : building.type === 'emberLab' ? LAB_RATE[lv] : building.type === 'butcher' ? BUTCHER_RATE[lv] : building.type === 'blacksmith' ? BLACKSMITH_RATE[lv] : farmType(building.produce).grain[lv];
+  const unit = building.type === 'blacksmith' ? 'lotes por segundo' : mill ? 'de trigo moído em farinha por segundo' : `de ${farmType(building.produce).name.toLowerCase()} por segundo`;
   return `<section class="inspector-section"><h4>Melhoria</h4>
     ${next ? `<button type="button" class="hut-upgrade" data-producer-upgrade="${building.site}">Nível ${level + 2} · ${rateNumber(rateAt(level + 1))}/s · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. Mais que isso, só com milagre.</p>'}</section>`;
 }
@@ -3418,6 +3552,16 @@ function bakeryRecipeBoxHTML(bakery) {
       return `<button class="farm-type${current === recipe.id ? ' selected' : ''}${locked ? ' locked' : ''}" data-bakery-recipe="${recipe.id}" aria-pressed="${current === recipe.id}"${locked ? ' disabled aria-disabled="true"' : ''} title="${detail}"><img src="public/art/${BAKED_ART[recipe.id]}-v01.webp" alt=""><b>${recipe.name}</b>${locked ? '<small>nível 2</small>' : ''}</button>`;
     }).join('')}</div></section>`;
 }
+function blacksmithRecipeBoxHTML(building) {
+  const current = blacksmithRecipe(building).id;
+  return `<section class="inspector-section" aria-label="Metais produzidos no Blacksmith"><h4>Produção</h4>
+    <div class="farm-type-grid compact">${BLACKSMITH_RECIPES.map(recipe => {
+      const locked = recipe.minLevel > producerLevel(building) + 1;
+      const inputs = Object.entries(recipe.needs).map(([id, qty]) => `${qty} ${METAL_NAMES[id]}`).join(' + ');
+      const outputs = Object.entries(recipe.makes).map(([id, qty]) => `${qty} ${METAL_NAMES[id]}`).join(' + ');
+      return `<button class="farm-type${current === recipe.id ? ' selected' : ''}${locked ? ' locked' : ''}" data-blacksmith-recipe="${recipe.id}" aria-pressed="${current === recipe.id}"${locked ? ' disabled aria-disabled="true"' : ''} title="${inputs} → ${outputs}"><b>${recipe.name}</b><small>${locked ? 'Nível 2' : `${inputs} → ${outputs}`}</small></button>`;
+    }).join('')}</div></section>`;
+}
 function butcherRecipeBoxHTML(butcher) {
   const current = butcherActiveRecipe(butcher).id;
   return `<section class="inspector-section" aria-label="Receita do açougue"><h4>Produção</h4>
@@ -3425,7 +3569,7 @@ function butcherRecipeBoxHTML(butcher) {
 }
 function upgradeProducer(site) {
   const building = state.buildings.find(item => item.site === site && PRODUCER_TYPES.includes(item.type) && isDone(item));
-  const maxLevel = building?.type === 'butcher' ? BUTCHER_MAX_LEVEL : PRODUCER_LEVELS.length;
+  const maxLevel = building?.type === 'butcher' ? BUTCHER_MAX_LEVEL : building?.type === 'blacksmith' ? BLACKSMITH_RATE.length : PRODUCER_LEVELS.length;
   const next = building && producerLevel(building) + 1 < maxLevel ? PRODUCER_LEVELS[producerLevel(building) + 1] : null;
   if (!next) return;
   if (state.gold < next.gold || state.timber < next.wood) { say('Falta ouro ou madeira. A colheita vai continuar do mesmo tamanho.'); return; }
@@ -3898,11 +4042,12 @@ function economyPanelHTML() {
       ${camps.map((camp, i) => row(`Cabana do Lenhador ${camps.length > 1 ? i + 1 : ''}`, per(woodRates[i]), `${lumberCrew(camp).length} de 3 lenhadores`)).join('')}
       ${row('<b>Total</b>', `<b>${per(wood)}</b>`, `${format(state.timber)} no estoque`)}
     </dl></div>
-    ${pits.length ? `<div class="econ-block"><div class="food-label">PEDRA E METAL POR SEGUNDO</div><dl class="econ-lines">
-      ${pits.map(pit => row(buildingName(pit), `${fineRate(pitRate(pit))}/s de ${PIT_GOODS[pit.type].name}`, `${lumberCrew(pit).length} de ${PIT_CREW_MAX} camponeses`)).join('')}
+    ${pits.length ? `<div class="econ-block"><div class="food-label">PEDRA E EXTRAÇÃO POR SEGUNDO</div><dl class="econ-lines">
+      ${pits.map(pit => row(buildingName(pit), `${fineRate(pit.type === 'mine' ? pitRate(pit) * expectedMineYield(pit) : pitRate(pit))}/s ${pit.type === 'mine' ? 'em média' : 'de pedra'}`, `${pit.type === 'mine' ? `Ranking ${metalDepositRank(pit)} · ` : ''}${lumberCrew(pit).length} de ${PIT_CREW_MAX} camponeses`)).join('')}
       ${row('<b>Pedra</b>', `<b>${fineRate(rates().stone)}/s</b>`, `${format(state.stone || 0)} no estoque`)}
-      ${row('<b>Metal</b>', `<b>${fineRate(rates().metal)}/s</b>`, `${format(state.metal || 0)} no estoque`)}
+      ${METAL_STOCK.map(id => row(`<b>${METAL_NAMES[id]}</b>`, id.endsWith('Ore') ? 'extraído na Mina' : id === 'steel' ? 'criado no Blacksmith com Iron' : 'refinado no Blacksmith', `${format(state.metals[id] || 0)} no estoque`)).join('')}
     </dl></div>` : ''}
+    ${state.buildings.some(building => building.type === 'blacksmith' && isDone(building)) ? `<div class="econ-block"><div class="food-label">BLACKSMITH</div><dl class="econ-lines">${state.buildings.filter(building => building.type === 'blacksmith' && isDone(building)).map(building => row(siteLabel(building), `${blacksmithRecipe(building).name} · ${rateNumber(blacksmithRate(building) * (1 + crewWork(building)))}/s`, `nível ${producerLevel(building) + 1} de 2 · receita selecionada`)).join('')}</dl></div>` : ''}
     <div class="econ-block"><div class="food-label">COMIDA POR SEGUNDO</div><dl class="econ-lines">
       ${FOOD_TYPES.filter(food => food.id !== 'flour').map(food => row(food.name, produced[food.id] ? `${food.baked ? 'até ' : ''}+${per(produced[food.id])}` : '—', `${format(state.food[food.id] || 0)} no depósito${food.raw ? ' · vai pro moinho' : food.baked ? ' · da padaria' : ''} · alimenta ${food.feeds}×`)).join('')}
       ${row('Farinha', milling ? `até +${per(milling)}` : '—', `${format(state.food.flour || 0)} no depósito · ${mills.length ? `${mills.length} ${mills.length === 1 ? 'moinho' : 'moinhos'}` : 'sem moinho'}`)}
@@ -4690,6 +4835,9 @@ function serializeState() {
 
 function hydrateState(data) {
   const loaded = Object.assign(newGameState(!!data.testMode), data);
+  loaded.metals = { ...newGameState(!!data.testMode).metals, ...(data.metals || {}) };
+  delete loaded.metals.steelScrap;
+  if (!data.metals && Number(data.metal) > 0) loaded.metals.ironOre = Number(data.metal);
   loaded.fishingStock = { ...Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])), ...(data.fishingStock || {}) };
   loaded.mapSet = data.mapSet === 2 ? 2 : 1;
   const defaultLairs = newGameState(!!data.testMode).lairs;
@@ -4702,6 +4850,12 @@ function hydrateState(data) {
   if (!Number.isFinite(loaded.wildlifeSpawnDay)) loaded.wildlifeSpawnDay = Math.floor((loaded.minutes || 0) / 1440);
   loaded.buildings.forEach(building => { building.builtAt = 0; building.upgradedAt = 0; });
   loaded.buildings.forEach(building => { if (!building.mapId) building.mapId = 'city'; });
+  loaded.buildings.filter(building => building.type === 'mine').forEach(building => {
+    if (!METAL_DEPOSIT_RANKS.some(rank => rank.id === building.depositRank)) building.depositRank = (building.mapSet || loaded.mapSet) === 2 ? 'IV' : 'II';
+  });
+  loaded.buildings.filter(building => building.type === 'blacksmith').forEach(building => {
+    if (!BLACKSMITH_RECIPES.some(recipe => recipe.id === building.produce && recipe.minLevel <= (building.level || 0) + 1)) building.produce = 'iron';
+  });
   if (!data.food) loaded.food = { ...emptyFood(), wheat: data.grain || 0 };
   loaded.food = { ...emptyFood(), ...(loaded.food || {}) };
   loaded.diet = { ...newGameState(!!data.testMode).diet, ...(loaded.diet || {}) };
@@ -5013,6 +5167,15 @@ const HOWTO = [
       <li>Ouro e madeira saem na hora. Depois a construção vira <b>obra</b>: um camponês livre vai até lá e trabalha. Sem camponês livre, a obra espera.</li>
       <li>Toque numa construção pronta para ver o que ela faz, melhorar, <b>mudar de lugar</b> (de graça) ou <b>demolir</b> (sem reembolso).</li>
     </ul>` },
+  { title: 'Metais', html: () => `
+    <h3>Minas e depósitos</h3>
+    <p>Cada extração verifica separadamente a chance de encontrar Iron Ore, Silver Ore e Gold Ore. O depósito pode gerar mais de um minério por extração. Se nenhum aparecer, sai ao menos 1 Iron Ore.</p>
+    ${howTable(['Ranking', 'Iron Ore', 'Silver Ore', 'Gold Ore'], METAL_DEPOSIT_RANKS.map(rank => [`${rank.id} · ${rank.name}`, `${rank.chance.ironOre}%`, `${rank.chance.silverOre}%`, `${rank.chance.goldOre}%`]))}
+    ${howTable(['Ranking', 'Iron Ore por achado', 'Silver Ore por achado', 'Gold Ore por achado'], METAL_DEPOSIT_RANKS.map(rank => [`${rank.id} · ${rank.name}`, `${rank.qty.ironOre[0]}–${rank.qty.ironOre[1]}`, `${rank.qty.silverOre[0]}–${rank.qty.silverOre[1]}`, `${rank.qty.goldOre[0]}–${rank.qty.goldOre[1]}`]))}
+    <h3>Blacksmith · nível 1 e nível 2</h3>
+    <p>No nível 1, refina os minérios em Iron, Silver e Gold. No nível 2, também transforma 2 Iron em 1 Steel. Depósitos do mapa podem receber seu ranking no Editor de Mapas.</p>
+    ${howTable(['Nível', 'Receita', 'Produção'], [['1', '1 Iron Ore → 1 Iron', `${hn(BLACKSMITH_RATE[0])}/s`], ['1', '1 Silver Ore → 1 Silver', `${hn(BLACKSMITH_RATE[0])}/s`], ['1', '1 Gold Ore → 1 Gold', `${hn(BLACKSMITH_RATE[0])}/s`], ['2', '2 Iron → 1 Steel', `${hn(BLACKSMITH_RATE[1])}/s`]])}
+    <p>Os metais ocupam espaço no depósito. A produção do Blacksmith para quando falta matéria-prima ou espaço.</p>` },
   { title: 'Tempo', html: () => `
     <h3>Relógio</h3>
     <p>Na velocidade <b>1×</b>, cada segundo real é um minuto de jogo. Em <b>2×</b> e <b>3×</b> tudo anda duas ou três vezes mais rápido: produção, obras, fome, viagens. Todo valor "por segundo" deste manual é na velocidade 1×.</p>
@@ -5721,6 +5884,7 @@ function initMenus() {
     else { menu.stack = []; showScreen('title'); }
   });
   document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !$('#inventory-layer').hidden) { event.preventDefault(); closeManorInventory(); return; }
     if (event.key !== 'Escape' || editor.active) return;
     if (!$('#menu-layer').hidden) {
       const top = menu.stack[menu.stack.length - 1]?.name;
@@ -5822,7 +5986,7 @@ let worldScenario = null;
 })();
 
 const cleanPlaces = list => (Array.isArray(list) ? list : []).filter(place => placeType(place?.type) && Number.isFinite(+place.x) && Number.isFinite(+place.y))
-  .map(place => ({ id: String(place.id), type: place.type, x: +place.x, y: +place.y }));
+  .map(place => ({ id: String(place.id), type: place.type, x: +place.x, y: +place.y, ...(place.type === 'mine' ? { rank: METAL_DEPOSIT_RANKS.some(rank => rank.id === place.rank) ? place.rank : 'II' } : {}) }));
 // O registro de um cenário: {id, name, updatedAt, active, versions: [{serial, savedAt, places}]}.
 // Aceita o formato antigo ({savedAt, places}) como a versão 1.
 function normalizeRecord(data) {
@@ -5859,7 +6023,8 @@ function scenarioFileText(record) {
 function placeMarkerHTML(place, editable) {
   const type = placeType(place.type);
   const tag = editable ? 'button' : 'div';
-  return `<${tag} ${editable ? 'type="button" ' : ''}class="poi ${type.group}${editable && editor.selected === place.id ? ' selected' : ''}" data-place="${place.id}" style="--x:${place.x}%;--y:${place.y / WORLD_Y_UNITS * 100}%;z-index:${Math.round(place.y * 10)}" title="${type.name}"><span class="poi-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${type.icon}</svg></span><small>${type.name}</small></${tag}>`;
+  const name = place.type === 'mine' ? `Mina · ${place.rank || 'II'}` : type.name;
+  return `<${tag} ${editable ? 'type="button" ' : ''}class="poi ${type.group}${editable && editor.selected === place.id ? ' selected' : ''}" data-place="${place.id}" style="--x:${place.x}%;--y:${place.y / WORLD_Y_UNITS * 100}%;z-index:${Math.round(place.y * 10)}" title="${name}"><span class="poi-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${type.icon}</svg></span><small>${name}</small></${tag}>`;
 }
 function renderPlaces() {
   const editing = editor.active && !editor.preview;
@@ -6037,6 +6202,7 @@ function editorPanelHTML() {
     <div class="editor-groups" role="tablist">${groups}</div>
     <div class="editor-tools">${tools}</div>
     <div class="editor-selected">${place ? `<span><b>${placeType(place.type).name}</b> · x ${place.x.toFixed(1)} · y ${place.y.toFixed(1)}</span><button type="button" class="editor-remove" data-remove="${place.id}">Remover</button>` : `<span>${count ? `${count} ${count === 1 ? 'local' : 'locais'} no mapa` : 'Nada no mapa ainda'}${editor.base ? ` · da ${versionLabel(editor.base)}` : ''}${dirty ? ' · <em>mudanças não salvas</em>' : ''}</span>`}</div>
+    ${place?.type === 'mine' ? `<label class="editor-rank"><span>Ranking do depósito</span><select data-deposit-rank="${place.id}">${METAL_DEPOSIT_RANKS.map(rank => `<option value="${rank.id}"${(place.rank || 'II') === rank.id ? ' selected' : ''}>${rank.id} · ${rank.name}</option>`).join('')}</select></label>` : ''}
     <p class="editor-hint">Escolha um objeto e clique no mapa. Arraste para mover. Botão direito ou Delete remove. Esc solta o objeto.</p>
     <div class="editor-actions"><button type="button" class="editor-save" id="editor-save">Salvar</button><button type="button" class="editor-preview${editor.preview ? ' active' : ''}" id="editor-preview" aria-pressed="${editor.preview}">Preview</button><button type="button" class="editor-exit" id="editor-exit">Sair</button></div>
     <p class="editor-status" id="editor-status">${editor.status}</p>
@@ -6087,7 +6253,7 @@ function selectPlace(id) {
 }
 const editorCoord = (value, max) => Math.round(Math.max(2, Math.min(max - 2, value)) * 10) / 10;
 function addPlace(x, y) {
-  const place = { id: `p${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`, type: editor.tool, x: editorCoord(x, 100), y: editorCoord(y, WORLD_Y_UNITS) };
+  const place = { id: `p${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`, type: editor.tool, x: editorCoord(x, 100), y: editorCoord(y, WORLD_Y_UNITS), ...(editor.tool === 'mine' ? { rank: 'II' } : {}) };
   editor.places.push(place);
   editor.selected = place.id;
   editorChanged();
@@ -6116,6 +6282,11 @@ function initEditor() {
     else if (button.id === 'editor-exit') closeEditor();
   });
   $('#editor-card').addEventListener('change', event => {
+    if (event.target.dataset.depositRank) {
+      const place = editor.places.find(item => item.id === event.target.dataset.depositRank);
+      if (place) { place.rank = event.target.value; keepDraft(); renderEditor(); }
+      return;
+    }
     if (event.target.id !== 'editor-scenario') return;
     editor.scenario = Number(event.target.value);
     openEditor();
@@ -6190,7 +6361,13 @@ function initEditor() {
 function init() {
   initCamera();
   const scene = $('#map-scene');
-  $('#manor-inventory-trigger').addEventListener('click', openManorInventory);
+  $('#inventory-layer').addEventListener('click', event => { if (event.target.closest('[data-inventory-close]')) closeManorInventory(); });
+  $('#inventory-open-btn').addEventListener('click', openManorInventory);
+  $('#manor-inventory-trigger').addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    openManorInventory();
+  });
   // O menu da construção fica em cima do mapa: cliques, arrasto e rolagem nele não mexem no mapa.
   ['pointerdown', 'click', 'wheel', 'contextmenu'].forEach(type => $('#site-inspector').addEventListener(type, event => event.stopPropagation()));
   scene.addEventListener('pointermove', event => { if (state.selectedBuild || state.movingSite != null) showPlacementPreview(event); });
