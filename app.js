@@ -79,28 +79,36 @@ const NIGHT_MSG = ['Primeira noite. Dizem que a primeira é a mais fácil. Dizem
 const LOSS_MSG = ['Um camponês morreu. Os outros pediram aumento.', 'Um camponês foi levado. A colheita atrasou.', 'Perdemos um camponês. Ele tinha nome. Ninguém lembra qual.'];
 
 const isDone = building => !building.underConstruction && !building.ruined;
-// Vida das construções. Monstros atacam (damageBuilding); camponeses consertam sozinhos.
+// Vida das construções. Monstros atacam (damageBuilding); camponeses consertam gastando madeira.
 // Cada nível de melhoria dá +50% de vida. Em ruínas, a construção para até ser consertada.
-const BASE_HP = { farm: 100, mill: 120, hut: 80, depot: 150, lumber: 90, quarry: 110, mine: 120, market: 120, tavern: 140, hotel: 160, armory: 200 };
-const GUILD_HP = 180;
-const REPAIR_RATE = 3; // vida por segundo de jogo, antes da habilidade e das ferramentas
+const BASE_HP = { farm: 400, mill: 480, hut: 320, depot: 600, lumber: 360, quarry: 440, mine: 480, market: 480, tavern: 560, hotel: 640, armory: 800 };
+const GUILD_HP = 720;
+const REPAIR_RATE = 8; // vida por segundo de jogo, antes da habilidade e das ferramentas
+const REPAIR_HP_PER_WOOD = 20; // cada madeira devolve esta vida
+// O casarão também apanha: vida própria mais a Resistência (RES) do herdeiro x 3. Se cair, o herdeiro morre.
+const MANOR_BASE_HP = 1000;
+const MANOR = () => state.manor || (state.manor = { site: 'manor', type: 'manor', x: MANOR_DOOR.x, y: MANOR_DOOR.y, damage: 0, ruined: false, builderId: null });
+const repairSites = () => [...state.buildings, MANOR()];
+const buildSiteOf = actor => actor.buildSite != null ? repairSites().find(building => building.site === actor.buildSite && needsBuilder(building)) || null : null;
 function buildingLevel(building) {
   if (building.type === 'hut') return building.big ? 1 : 0;
   if (building.tier != null || building.branch) return building.tier ?? 2;
   return building.level || 0;
 }
-const buildingMaxHp = building => Math.round((BASE_HP[building.type] ?? GUILD_HP) * (1 + 0.5 * buildingLevel(building)));
-const buildingHp = building => Math.max(0, buildingMaxHp(building) - (building.damage || 0));
+const buildingMaxHp = building => building.type === 'manor' ? MANOR_BASE_HP + heirStat('RES') * 3 : Math.round((BASE_HP[building.type] ?? GUILD_HP) * (1 + 0.5 * buildingLevel(building)));
+const buildingHp = building => Math.max(0, Math.round(buildingMaxHp(building) - (building.damage || 0)));
 const needsBuilder = building => !!building.underConstruction || (building.damage || 0) > 0;
 function damageBuilding(building, amount) {
   if (!building || building.underConstruction) return;
   building.damage = Math.min(buildingMaxHp(building), (building.damage || 0) + amount);
   if (building.damage >= buildingMaxHp(building) && !building.ruined) {
     building.ruined = true;
+    if (building.type === 'manor') { manorFell(); return; }
     say(`${siteLabel(building)} virou ruína. Os camponeses vão juntar os pedaços.`);
   }
   assignBuilders();
   renderSites();
+  renderManorHp();
   if (state.selectedSite === building.site) renderPanel();
 }
 const guildHousing = () => state.buildings.filter(building => BUILDINGS.some(item => item.id === building.type && item.heroClass) && isDone(building)).length;
@@ -718,12 +726,36 @@ function updateHud() {
 
 const BRANCH_NAMES = { Bishop: 'Templo Bishop', Cleric: 'Treino Cleric', Elementalist: 'Torre dos Elementalistas', Warlock: 'Torre dos Arcanistas' };
 function siteLabel(building) {
+  if (building.type === 'manor') return 'O Casarão';
   const def = BUILDINGS.find(item => item.id === building.type);
   return building.type === 'farm' ? `Fazenda de ${farmType(building.produce).name}` : building.type === 'hut' ? (building.big ? 'Casebre Grande' : 'Casebre Pequeno') : building.branch ? (BRANCH_NAMES[building.branch] || `Guilda ${building.branch}`) : def.name;
 }
 function siteArt(building) {
   const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
   return ['farm', 'mill'].includes(building.type) ? levelArt(art, building) : art;
+}
+
+// Vida do casarão: aparece acima dele só quando está ferido.
+function renderManorHp() {
+  const layer = $('#site-layer');
+  if (!layer) return;
+  let tag = $('.manor-hp', layer);
+  const manor = MANOR();
+  if (!(manor.damage > 0) || currentMapSet !== 1) { tag?.remove(); return; }
+  if (!tag) { tag = document.createElement('div'); tag.className = 'manor-hp'; layer.append(tag); }
+  const hp = buildingHp(manor), maxHp = buildingMaxHp(manor);
+  tag.style.setProperty('--x', `${manor.x}%`);
+  tag.style.setProperty('--y', `${(manor.y - 9) / WORLD_Y_UNITS * 100}%`);
+  tag.innerHTML = `<small>O Casarão · ${manor.noWood ? 'falta madeira' : manor.builderId != null ? 'consertando' : 'vida'} ${hp}/${maxHp}</small><i style="--hp:${Math.round(hp / maxHp * 100)}%"></i>`;
+}
+
+// O casarão caiu: o herdeiro morre lá dentro e o jogo acaba. O save fica como estava no último salvamento.
+function manorFell() {
+  state.gameOver = true;
+  renderManorHp();
+  say('O Casarão desabou. O herdeiro estava lá dentro.');
+  menu.stack = [];
+  showScreen('gameOver');
 }
 
 // Uma construção por botão no mapa, no ponto onde foi erguida.
@@ -734,6 +766,7 @@ function renderSites() {
   $$('.site', layer).filter(site => !ids.has(site.dataset.site)).forEach(site => site.remove());
   const moving = state.movingSite != null;
   renderBountyFlags();
+  renderManorHp();
   $('#map-scene').classList.toggle('placing', !!state.selectedBuild || moving || !!state.placingBounty);
   if (!state.selectedBuild && !moving) $('#placement-preview').hidden = true;
   visibleBuildings.forEach(building => {
@@ -1035,7 +1068,7 @@ function buildingInfoHTML(building, actions = '') {
   const names = list => list.length ? list.map(actor => actor.name).join(', ') : 'ninguém';
   const lines = [];
   const repairer = needsBuilder(building) && building.builderId != null ? findActor(building.builderId) : null;
-  if (building.damage > 0) lines.push(['Conserto', repairer ? `${repairer.name} está consertando` : 'Esperando um camponês livre']);
+  if (building.damage > 0) lines.push(['Conserto', `${building.noWood ? 'Parado: falta madeira' : repairer ? `${repairer.name} está consertando` : 'Esperando um camponês livre'} · ${Math.ceil(building.damage / REPAIR_HP_PER_WOOD)} madeira`]);
   if (building.type === 'farm') {
     lines.push(['Produz', `${rateNumber(farmOutput(building))} de ${farmType(building.produce).name.toLowerCase()} por segundo${building.produce === 'wheat' ? ' (vai pro moinho)' : ''}`]);
     lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
@@ -1205,7 +1238,7 @@ function chooseFarmType(id) {
 // Obras e melhorias: um camponês trabalha no local durante dois minutos de jogo.
 // A habilidade de construção e as ferramentas dele aceleram (veja progressConstruction).
 const BUILD_TIME = 120;
-const buildingName = building => building.type === 'farm' ? `Fazenda de ${farmType(building.produce).name}` : BUILDINGS.find(item => item.id === building.type)?.name || 'Construção';
+const buildingName = building => building.type === 'manor' ? 'o Casarão' : building.type === 'farm' ? `Fazenda de ${farmType(building.produce).name}` : BUILDINGS.find(item => item.id === building.type)?.name || 'Construção';
 
 function placeBuilding(x, y) {
   const item = BUILDINGS.find(building => building.id === state.selectedBuild);
@@ -1230,12 +1263,12 @@ function placeBuilding(x, y) {
 }
 
 function busyBuilders() {
-  return new Set(state.buildings.filter(building => needsBuilder(building) && building.builderId != null).map(building => String(building.builderId)));
+  return new Set(repairSites().filter(building => needsBuilder(building) && building.builderId != null).map(building => String(building.builderId)));
 }
 
 // Cada obra sem camponês recebe o primeiro camponês livre.
 function assignBuilders() {
-  state.buildings.filter(needsBuilder).sort((a, b) => Number(!!b.underConstruction) - Number(!!a.underConstruction)).forEach(building => {
+  repairSites().filter(needsBuilder).sort((a, b) => Number(!!b.underConstruction) - Number(!!a.underConstruction)).forEach(building => {
     const current = building.builderId != null ? findActor(building.builderId) : null;
     if (current && current.alive) return;
     const busy = busyBuilders();
@@ -1252,25 +1285,32 @@ const buildSpot = building => ({ x: building.x + (building.x > 92 ? -5 : 5), y: 
 // Uma vez por segundo de jogo: a obra avança só com o camponês no local.
 function progressConstruction(dt) {
   assignBuilders();
-  state.buildings.filter(needsBuilder).forEach(building => {
+  repairSites().filter(needsBuilder).forEach(building => {
     const worker = building.builderId != null ? findActor(building.builderId) : null;
     const spot = buildSpot(building);
     if (!building.underConstruction) {
+      building.noWood = false;
       if (worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5) {
-        building.damage = Math.max(0, building.damage - REPAIR_RATE * dt * (1 + skillOf(worker, 'building') / 100 + gearBonus(worker, 'build')));
-        gainSkill(worker, 'building', 0.02 * dt);
+        // Conserto custa madeira: sem madeira no estoque, o camponês fica parado esperando.
+        const wanted = Math.min(building.damage, REPAIR_RATE * dt * (1 + skillOf(worker, 'building') / 100 + gearBonus(worker, 'build')));
+        const repaired = state.testMode ? wanted : Math.min(wanted, Math.max(0, state.timber) * REPAIR_HP_PER_WOOD);
+        if (!state.testMode) state.timber = Math.max(0, state.timber - repaired / REPAIR_HP_PER_WOOD);
+        building.noWood = repaired < wanted;
+        building.damage = Math.max(0, building.damage - repaired);
+        if (repaired > 0) gainSkill(worker, 'building', 0.02 * dt);
         if (building.damage <= 0) {
           building.damage = 0;
           building.ruined = false;
           building.builderId = null;
           worker.buildSite = null; worker.route = []; worker.finalPoint = null; worker.wait = 0;
-          renderSites();
-          say(`${siteLabel(building)} consertada por ${worker.name}. Até o próximo monstro.`);
+          renderSites(); renderManorHp();
+          say(`${siteLabel(building)} consertad${building.type === 'manor' ? 'o' : 'a'} por ${worker.name}. Até o próximo monstro.`);
           return;
         }
       }
+      if (building.type === 'manor') { renderManorHp(); return; }
       const label = $(`.site[data-site="${building.site}"] small`);
-      if (label) label.textContent = `${siteLabel(building)} · ${building.ruined ? 'em ruínas' : 'consertando'} ${buildingHp(building)}/${buildingMaxHp(building)}`;
+      if (label) label.textContent = `${siteLabel(building)} · ${building.ruined ? 'em ruínas' : building.noWood ? 'falta madeira' : 'consertando'} ${buildingHp(building)}/${buildingMaxHp(building)}`;
       return;
     }
     if (worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5) {
@@ -1575,7 +1615,7 @@ function idleSpot(actor) {
 function nextActorGoal(actor) {
   if (actor.className === 'Peasant') {
     if (actor.buildSite != null) {
-      const site = state.buildings.find(building => building.site === actor.buildSite && needsBuilder(building));
+      const site = buildSiteOf(actor);
       if (site) {
         const spot = buildSpot(site);
         actor.headingToWork = false;
@@ -1651,7 +1691,7 @@ function animateActors(now) {
     if (actor.className !== 'Peasant' && window.Monarch?.chargeStep(actor, delta, reducedMotion)) return;
     if (actor.className === 'Peasant' ? peasantDefenseStep(actor, delta, reducedMotion) : heroCombatStep(actor, delta, reducedMotion)) return;
     const construction = actor.className === 'Peasant' && actor.buildSite != null
-      ? state.buildings.find(building => building.site === actor.buildSite && needsBuilder(building))
+      ? buildSiteOf(actor)
       : null;
     if (construction) {
       const spot = buildSpot(construction);
@@ -2284,7 +2324,14 @@ const HEIR_STATS = [
   { key: 'MAG', name: 'Magia', base: 10, per: 3 },
   { key: 'INT', name: 'Inteligência', base: 9, per: 2 },
   { key: 'WIS', name: 'Sabedoria', base: 7, per: 2 },
+  { key: 'RES', name: 'Resistência', base: 10, per: 2 },
 ];
+// Valor final de um atributo do herdeiro: o do nível mais o do equipamento.
+function heirStat(key) {
+  const stat = HEIR_STATS.find(item => item.key === key);
+  const lv = Math.max(1, Math.min(HEIR_MAX_LEVEL, state.heirLevel || 1));
+  return stat ? stat.base + stat.per * (lv - 1) + monarchBonus(key) : 0;
+}
 function heirAttributesHTML(level) {
   const lv = Math.max(1, Math.min(HEIR_MAX_LEVEL, level));
   return `<div class="sheet-section-label">ATRIBUTOS</div><dl class="attr-grid heir-attrs">${HEIR_STATS.map(stat => { const base = stat.base + stat.per * (lv - 1), extra = monarchBonus(stat.key); return `<div title="${stat.name}: ${base} do nível${extra ? ` + ${extra} do equipamento` : ''}"><dt>${stat.key}</dt><dd>${base + extra}${extra ? `<i>+${extra}</i>` : ''}</dd><small>${stat.name}</small></div>`; }).join('')}</dl>`;
@@ -2500,7 +2547,7 @@ function haulRoutine(actor, workplace) {
 // O que o camponês está fazendo agora, para a ficha e o cartão.
 function peasantActivity(actor) {
   if (actor.buildSite != null) {
-    const site = state.buildings.find(building => building.site === actor.buildSite && needsBuilder(building));
+    const site = buildSiteOf(actor);
     if (site) return `${site.underConstruction ? 'Construindo' : 'Consertando'} ${buildingName(site)}`;
   }
   if (actor.drinkUntil > state.minutes && openTavern()) return 'Bebendo na taverna';
@@ -3088,9 +3135,9 @@ function monsterStep(monster, delta, reducedMotion) {
     return;
   }
   // Na cidade: escolhe a construção mais perto e bate até virar ruína.
-  let target = monster.targetSite != null ? state.buildings.find(building => building.site === monster.targetSite && !building.ruined && !building.underConstruction) : null;
+  let target = monster.targetSite != null ? repairSites().find(building => building.site === monster.targetSite && !building.ruined && !building.underConstruction) : null;
   if (!target) {
-    const options = state.buildings.filter(building => !building.ruined && !building.underConstruction);
+    const options = repairSites().filter(building => !building.ruined && !building.underConstruction);
     target = options.sort((a, b) => distanceTo(monster, a) - distanceTo(monster, b))[0] || null;
     monster.targetSite = target ? target.site : null;
   }
@@ -3523,7 +3570,7 @@ function hydrateState(data) {
 }
 
 function writeSave(slot) {
-  if (!slot) return false;
+  if (!slot || state.gameOver) return false;
   const ok = writeStore(SAVE_KEY(slot), { version: 1, savedAt: Date.now(), state: serializeState() });
   if (ok) game.lastSaved = Date.now();
   return ok;
@@ -3817,6 +3864,15 @@ const SCREENS = {
       <p class="sheet-house">${actorOrigin(actor)}</p>
     </section>` };
   },
+  gameOver() {
+    const heir = heirById(state.heir);
+    const first = heir ? heir.name.split(' ')[0] : 'O herdeiro';
+    return { cls: 'is-pause', html: `<section class="menu-card">
+      <header class="menu-card-head"><span class="eyebrow">FIM DE JOGO</span><h2>O Casarão caiu</h2>
+        <p>${first} estava lá dentro. Os monstros não pediram licença, e as paredes não aguentaram. A herança volta para os credores, que ficaram com os escombros.</p></header>
+      <div class="menu-actions">${game.slot && readSave(game.slot) ? `<button type="button" class="primary" data-action="load-slot" data-slot="${game.slot}">Carregar o último save</button>` : ''}<button type="button" data-action="dead-quit">Voltar ao menu principal</button></div>
+    </section>` };
+  },
   scenarioEnd({ servants, protectors }) {
     const heir = heirById(state.heir);
     const workers = state.workers.filter(worker => worker.alive);
@@ -4040,6 +4096,7 @@ function initMenus() {
       case 'confirm-yes': { const run = menu.pending; menu.pending = null; run?.(); break; }
       case 'save': say(writeSave(game.slot) ? 'Jogo salvo.' : 'Não deu pra salvar. O navegador recusou.'); renderMenu(); break;
       case 'save-quit': writeSave(game.slot); toTitle(); break;
+      case 'dead-quit': toTitle(); break;
     }
   });
   $('#menu-btn').addEventListener('click', openPause);
@@ -4067,7 +4124,7 @@ function initMenus() {
     // Só conta clique no fundo: um botão que acabou de trocar a tela já saiu da página e não é clique fora.
     if (!event.target.isConnected || event.target.closest('#menu-panel > *')) return;
     const top = menu.stack[menu.stack.length - 1]?.name;
-    if (!top || top === 'title' || top === 'scenarioEnd') return;
+    if (!top || top === 'title' || top === 'scenarioEnd' || top === 'gameOver') return;
     menu.pending = null;
     if (game.slot) closeMenu();
     else { menu.stack = []; showScreen('title'); }
@@ -4078,7 +4135,7 @@ function initMenus() {
       const top = menu.stack[menu.stack.length - 1]?.name;
       if (top === 'title') return;
       event.preventDefault();
-      if (top === 'scenarioEnd') return;
+      if (top === 'scenarioEnd' || top === 'gameOver') return;
       if (['pause', 'sheet', 'actor', 'retinueDone'].includes(top)) closeMenu(); else goBack();
     } else if (state.selectedBuild) {
       cancelPlacement();
