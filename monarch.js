@@ -1348,6 +1348,7 @@ const Monarch = (() => {
     const open = force ?? panel.hidden;
     panel.hidden = !open;
     panelBtn?.classList.toggle('on', open);
+    if (!open) rt.hoverSpell = null;
     if (!open && rt.targeting) { rt.targeting = null; refreshCursor(); }
     if (open) renderPanel(true);
   }
@@ -1415,7 +1416,7 @@ const Monarch = (() => {
     panel.hidden = true;
     panel.innerHTML = `<header><b>MAGIAS</b><span class="spell-panel-level"></span><button type="button" class="spell-panel-close" aria-label="Fechar" title="Fechar">×</button></header>
       <div class="spell-panel-mp"><i></i><span></span></div>
-      <p class="spell-panel-help">Escolha a magia e clique no alvo. Esc ou clique direito cancela.</p>
+      <p class="spell-panel-help">Escolha a magia e clique no alvo. Esc ou clique direito cancela. Para a barra de baixo: arraste a magia até um espaço, ou passe o mouse nela e aperte F1 a F12.</p>
       <div class="spell-panel-list"></div>
       <footer class="spell-panel-next"></footer>`;
     scene.append(panel);
@@ -1433,15 +1434,25 @@ const Monarch = (() => {
       if (!button || button.disabled) return;
       if (button.dataset.field === '1') fieldPress(button.dataset.spell); else press(button.dataset.spell);
       renderPanel(false);
+      renderHotbar(false);
     });
+    // Arrastar uma magia do painel até a barra F1–F12. E a magia sob o mouse, para a tecla F guardar ali.
+    const panelEntry = target => {
+      const button = target.closest?.('.spell-cast');
+      return button && !button.disabled ? { key: button.dataset.spell, field: button.dataset.field === '1' } : null;
+    };
+    panel.addEventListener('pointerdown', event => dragArm(event, panelEntry(event.target), null));
+    panel.addEventListener('pointerover', event => { rt.hoverSpell = panelEntry(event.target); });
+    panel.addEventListener('pointerleave', () => { rt.hoverSpell = null; });
     scene.addEventListener('pointermove', event => { rt.hover = worldPoint(event); });
     scene.addEventListener('click', event => {
-      if (!rt.targeting || !active() || camera.dragMoved || event.target.closest('.spell-panel, .map-tools')) return;
+      if (!rt.targeting || !active() || camera.dragMoved || event.target.closest('.spell-panel, .map-tools, .spell-hotbar')) return;
       event.stopPropagation();
       event.preventDefault();
       const point = worldPoint(event);
       if (rt.targeting.field) fieldClick(point); else onMapClick(point);
       renderPanel(false);
+      renderHotbar(false);
     }, true);
     scene.addEventListener('contextmenu', event => {
       if (!rt.targeting) return;
@@ -1455,6 +1466,185 @@ const Monarch = (() => {
       if (rt.targeting) { event.preventDefault(); event.stopPropagation(); rt.targeting = null; refreshCursor(); renderPanel(false); return; }
       if (panelOpen()) { event.preventDefault(); event.stopPropagation(); togglePanel(false); }
     }, true);
+  }
+
+  // ----- Barra rápida: 12 espaços nas teclas F1 a F12 -----
+  // Cada espaço guarda uma magia ({ key, field }) em state.monarch.hotbar, que vai junto no save.
+  // A tecla (ou o clique no espaço) faz o mesmo que escolher a magia no painel: entra na mira e o clique no mapa lança.
+  const HOTBAR_SIZE = 12;
+  let hotbar = null, drag = null, dragEndedAt = 0;
+  const entrySpell = entry => (entry ? (entry.field ? fieldByKey[entry.key] : byKey[entry.key]) : null);
+  const cleanEntry = entry => (entry && typeof entry.key === 'string' && entrySpell(entry) ? { key: entry.key, field: !!entry.field } : null);
+  const sameEntry = (a, b) => !!a && !!b && a.key === b.key && !!a.field === !!b.field;
+  function hotbarSlots() {
+    const m = ms();
+    if (!Array.isArray(m.hotbar) || m.hotbar.length !== HOTBAR_SIZE) {
+      const old = Array.isArray(m.hotbar) ? m.hotbar : [];
+      m.hotbar = Array.from({ length: HOTBAR_SIZE }, (_, i) => cleanEntry(old[i]));
+    }
+    return m.hotbar;
+  }
+  const entryGlyph = entry => (entry.field ? FIELD_GLYPH[entry.key] : GLYPHS[entry.key]) || '✦';
+  const entryColor = (entry, spell) => (entry.field ? SCHOOL_HEX[spell.school] : ACCENT[spell.type]) || '#e9d08f';
+  const entryLocked = (entry, spell) => (entry.field ? !fieldUnlocked(spell) : !isUnlocked(spell));
+  function entryTitle(entry, spell) {
+    if (entry.field) return fieldUnlocked(spell) ? fieldTitle(spell) : `${spell.name}: chega no nível ${spell.unlockLevel}.`;
+    if (isUnlocked(spell)) return spellTitle(spell);
+    return level() >= spell.unlockLevel ? `${spell.name}: substituída por outra magia.` : `${spell.name}: chega no nível ${spell.unlockLevel}.`;
+  }
+  function assignSlot(i, entry) {
+    const list = hotbarSlots();
+    const clean = cleanEntry(entry);
+    if (!clean) return;
+    // A mesma magia não fica em dois espaços: sai do antigo e vai para o novo.
+    list.forEach((other, j) => { if (j !== i && sameEntry(other, clean)) list[j] = null; });
+    list[i] = clean;
+    say(`${entrySpell(clean).name} em F${i + 1}.`);
+    renderHotbar(true);
+  }
+  function swapSlots(from, to) {
+    const list = hotbarSlots();
+    if (from === to) return;
+    [list[from], list[to]] = [list[to], list[from]];
+    renderHotbar(true);
+  }
+  function clearSlot(i) {
+    const list = hotbarSlots();
+    if (!list[i]) return;
+    list[i] = null;
+    renderHotbar(true);
+  }
+  function useSlot(i) {
+    if (!active()) return;
+    const entry = hotbarSlots()[i];
+    if (!entry) { say(`F${i + 1} está vazio. Abra as MAGIAS e arraste uma para cá.`); return; }
+    if (entry.field) fieldPress(entry.key); else press(entry.key);
+    renderPanel(false);
+    renderHotbar(false);
+  }
+  function renderHotbar(force) {
+    if (!hotbar) return;
+    const scene = hotbar.parentElement;
+    if (!active()) { hotbar.hidden = true; scene?.classList.remove('has-hotbar'); return; }
+    hotbar.hidden = false;
+    scene?.classList.add('has-hotbar');
+    const m = ms();
+    const list = hotbarSlots();
+    const lv = level();
+    hotbar.querySelectorAll('.hotbar-slot').forEach((button, i) => {
+      const entry = list[i];
+      const spell = entrySpell(entry);
+      const sig = spell ? `${entry.field ? 'f' : 'm'}:${entry.key}:${lv}` : '';
+      if (force || button.dataset.sig !== sig) {
+        button.dataset.sig = sig;
+        button.classList.toggle('empty', !spell);
+        if (spell) button.style.setProperty('--accent', entryColor(entry, spell)); else button.style.removeProperty('--accent');
+        button.querySelector('.spell-glyph').textContent = spell ? entryGlyph(entry) : '';
+        button.title = spell
+          ? `${entryTitle(entry, spell)}\n\nF${i + 1}. Arraste para outro espaço para trocar; arraste para fora ou clique direito para tirar.`
+          : `F${i + 1}: vazio. Arraste uma magia do painel MAGIAS para cá, ou passe o mouse nela no painel e aperte F${i + 1}.`;
+        button.setAttribute('aria-label', spell ? `F${i + 1}: ${spell.name}` : `F${i + 1}: vazio`);
+      }
+      if (!spell) {
+        button.setAttribute('aria-disabled', 'true');
+        ['off', 'cooling', 'poor', 'on', 'targeting'].forEach(cls => button.classList.remove(cls));
+        button.style.setProperty('--cd', 0);
+        return;
+      }
+      const cdMax = entry.field ? spell.cooldownSeconds : stats(spell).cooldownSeconds;
+      const cost = entry.field ? spell.manaCost : stats(spell).manaCost;
+      const cd = m.cd[entry.key] || 0;
+      const on = !entry.field && (m.auras.includes(entry.key) || rt.channel?.key === entry.key);
+      const off = entryLocked(entry, spell) || (!on && !!(entry.field ? fieldCanCast(spell) : canCast(spell)));
+      button.style.setProperty('--cd', cd ? (cd / Math.max(0.1, cdMax)).toFixed(3) : 0);
+      button.classList.toggle('cooling', cd > 0);
+      button.classList.toggle('poor', !on && m.mp < cost);
+      button.classList.toggle('on', on);
+      button.classList.toggle('off', off);
+      button.classList.toggle('targeting', rt.targeting?.key === entry.key && !!rt.targeting.field === entry.field);
+      button.setAttribute('aria-disabled', String(off));
+    });
+  }
+  // Arrastar com o ponteiro (funciona igual em qualquer navegador): do painel para um espaço,
+  // de um espaço para outro (troca) ou de um espaço para fora da barra (tira).
+  const slotUnder = event => document.elementFromPoint(event.clientX, event.clientY)?.closest('.hotbar-slot') || null;
+  function dragArm(event, entry, from) {
+    if (event.button !== 0 || !entry || !active()) return;
+    drag = { entry, from, x: event.clientX, y: event.clientY, ghost: null, over: null };
+  }
+  function dragEnd(event, drop) {
+    const d = drag;
+    drag = null;
+    if (!d?.ghost) return;
+    d.ghost.remove();
+    d.over?.classList.remove('drop-over');
+    hotbar?.classList.remove('dragging');
+    dragEndedAt = performance.now();
+    if (!drop) return;
+    const slot = slotUnder(event);
+    if (slot) { const to = Number(slot.dataset.slot); if (d.from != null) swapSlots(d.from, to); else assignSlot(to, d.entry); }
+    else if (d.from != null && !event.target.closest?.('.spell-hotbar')) clearSlot(d.from);
+  }
+  function buildHotbar() {
+    hotbar = document.getElementById('spell-hotbar');
+    if (!hotbar) return;
+    hotbar.innerHTML = Array.from({ length: HOTBAR_SIZE }, (_, i) => `<button type="button" class="hotbar-slot empty" data-slot="${i}" aria-disabled="true"><span class="spell-glyph"></span><i class="spell-cd"></i><b class="hotbar-key">F${i + 1}</b></button>`).join('');
+    const stop = event => event.stopPropagation();
+    hotbar.addEventListener('wheel', stop, { passive: true });
+    hotbar.addEventListener('pointerdown', event => {
+      event.stopPropagation();
+      const slot = event.target.closest('.hotbar-slot');
+      if (slot) dragArm(event, hotbarSlots()[Number(slot.dataset.slot)], Number(slot.dataset.slot));
+    });
+    hotbar.addEventListener('click', event => {
+      event.stopPropagation();
+      const slot = event.target.closest('.hotbar-slot');
+      if (slot) useSlot(Number(slot.dataset.slot));
+    });
+    hotbar.addEventListener('contextmenu', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (rt.targeting) { rt.targeting = null; refreshCursor(); renderPanel(false); return; }
+      const slot = event.target.closest('.hotbar-slot');
+      if (slot) clearSlot(Number(slot.dataset.slot));
+    });
+    window.addEventListener('pointermove', event => {
+      if (!drag) return;
+      if (!drag.ghost) {
+        if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 6) return;
+        const spell = entrySpell(drag.entry);
+        drag.ghost = document.createElement('div');
+        drag.ghost.className = 'spell-drag-ghost';
+        drag.ghost.style.setProperty('--accent', entryColor(drag.entry, spell));
+        drag.ghost.textContent = entryGlyph(drag.entry);
+        document.body.append(drag.ghost);
+        hotbar.classList.add('dragging');
+      }
+      drag.ghost.style.left = `${event.clientX}px`;
+      drag.ghost.style.top = `${event.clientY}px`;
+      const over = slotUnder(event);
+      if (over !== drag.over) { drag.over?.classList.remove('drop-over'); over?.classList.add('drop-over'); drag.over = over; }
+    });
+    window.addEventListener('pointerup', event => dragEnd(event, true));
+    window.addEventListener('pointercancel', event => dragEnd(event, false));
+    // O clique que o navegador solta logo depois de largar o arraste não conta como clique.
+    window.addEventListener('click', event => {
+      if (performance.now() - dragEndedAt < 80) { event.stopPropagation(); event.preventDefault(); }
+    }, true);
+    // F1 a F12: durante o jogo são da barra (o navegador não recarrega, não abre tela cheia nem ferramentas).
+    // Nos menus, as teclas ficam com o navegador como sempre.
+    const fSlot = event => (/^F([1-9]|1[0-2])$/.test(event.key) ? Number(event.key.slice(1)) - 1 : -1);
+    const inGame = () => !!game.slot && !!document.getElementById('menu-layer')?.hidden;
+    ['keydown', 'keyup'].forEach(type => window.addEventListener(type, event => {
+      const i = fSlot(event);
+      if (i < 0 || !inGame()) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (type !== 'keydown' || event.repeat || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+      // Painel aberto com o mouse sobre uma magia: a tecla guarda a magia nesse espaço.
+      if (panelOpen() && rt.hoverSpell) { assignSlot(i, rt.hoverSpell); return; }
+      useSlot(i);
+    }, true));
   }
 
   // ----- Ganchos chamados pelo combate do app.js -----
@@ -1743,7 +1933,7 @@ const Monarch = (() => {
     rt.barClock -= dt;
     if (rt.barClock <= 0) { rt.barClock = 0.1; renderBar(false); }
     rt.panelClock -= dt;
-    if (rt.panelClock <= 0) { rt.panelClock = 0.15; renderPanel(false); }
+    if (rt.panelClock <= 0) { rt.panelClock = 0.15; renderPanel(false); renderHotbar(false); }
   }
 
   // ----- Desenho -----
@@ -1955,6 +2145,7 @@ const Monarch = (() => {
   function refreshCursor() {
     document.getElementById('map-scene')?.classList.toggle('monarch-aiming', !!rt.targeting);
     renderBar(false);
+    renderHotbar(false);
   }
   function sheetHTML(all) {
     if (!state.heir) return '';
@@ -1982,11 +2173,15 @@ const Monarch = (() => {
     togglePanel(false);
     SpellFX.clear();
     if (state.monarch) { state.monarch.pending = null; state.monarch.walkTo = null; }
+    // Barra do save carregado: espaço com magia que não existe mais fica vazio.
+    if (Array.isArray(state.monarch?.hotbar)) state.monarch.hotbar = state.monarch.hotbar.map(cleanEntry);
+    rt.hoverSpell = null;
     refreshCursor();
+    renderHotbar(true);
   }
 
   // Sem Monarca no mapa: nada de estandarte nem barra. As magias ficam no painel do botão MAGIAS, no canto do mapa.
-  function init() { buildPanel(); }
+  function init() { buildPanel(); buildHotbar(); }
 
   init();
   return {

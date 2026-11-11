@@ -1203,3 +1203,30 @@ input[type="number"], input[type="text"], textarea {
 .noble-roster-copy b { color: #e8d8b7; font: 16px 'Newsreader', Georgia, serif; }
 .noble-roster-copy small { color: #aaa18e; font-size: 12px; line-height: 1.3; }
 .noble-roster-copy .noble-house { color: #d0b779; }
+
+/* Barra rápida de magias: 12 espaços nas teclas F1 a F12, embaixo do mapa */
+.spell-hotbar { position: absolute; z-index: 7; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; gap: 4px; max-width: calc(100% - 24px); padding: 5px 6px; border: 1px solid rgba(214,184,117,.4); border-radius: 8px; background: linear-gradient(180deg, rgba(28,25,18,.92), rgba(11,11,9,.94)); box-shadow: 0 6px 18px rgba(0,0,0,.55); touch-action: none; user-select: none; }
+.spell-hotbar[hidden] { display: none; }
+.hotbar-slot { --accent: #e9d08f; --cd: 0; position: relative; flex: 0 1 auto; width: 40px; min-width: 0; height: 40px; padding: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 6px; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--accent) 26%, #1b1a15), #121210 75%); color: var(--accent); cursor: pointer; }
+.hotbar-slot:nth-child(5), .hotbar-slot:nth-child(9) { margin-left: 6px; }
+.hotbar-slot .spell-glyph { position: relative; z-index: 1; display: block; font-size: 19px; line-height: 38px; text-align: center; text-shadow: 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent); }
+.hotbar-slot .spell-cd { position: absolute; inset: 0; z-index: 2; background: conic-gradient(rgba(5,5,4,.78) calc(var(--cd) * 360deg), transparent 0); pointer-events: none; }
+.hotbar-slot .hotbar-key { position: absolute; z-index: 3; left: 3px; top: 1px; color: #d9cfb6; font: 700 8px 'Figtree', sans-serif; letter-spacing: .02em; text-shadow: 0 1px 1px #000, 0 0 2px #000; pointer-events: none; }
+.hotbar-slot:hover { border-color: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 45%, transparent); }
+.hotbar-slot.empty { border-style: dashed; border-color: rgba(160,148,118,.35); background: rgba(10,10,8,.6); cursor: default; }
+.hotbar-slot.empty .hotbar-key { color: #7d7563; }
+.hotbar-slot.off .spell-glyph { opacity: .35; filter: grayscale(.7); }
+.hotbar-slot.off { border-color: rgba(140,130,108,.4); }
+.hotbar-slot.on { border-color: #fff0c2; box-shadow: 0 0 0 1px var(--accent), 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent); }
+.hotbar-slot.targeting { border-color: #9df0b3; box-shadow: 0 0 0 2px rgba(157,240,179,.6); }
+.spell-hotbar.dragging .hotbar-slot { cursor: copy; }
+.hotbar-slot.drop-over { border-style: solid; border-color: #f1c66a; box-shadow: 0 0 0 2px rgba(241,198,106,.55); }
+.map-scene.has-hotbar .toast { bottom: 66px; }
+.spell-drag-ghost { --accent: #e9d08f; position: fixed; z-index: 100; display: grid; place-items: center; width: 36px; height: 36px; margin: -18px 0 0 -18px; border: 1px solid var(--accent); border-radius: 6px; color: var(--accent); background: rgba(18,18,14,.92); font-size: 19px; text-shadow: 0 0 6px var(--accent); box-shadow: 0 4px 14px rgba(0,0,0,.6); pointer-events: none; user-select: none; }
+.spell-cast:not([disabled]) { touch-action: pan-y; }
+@media (max-width: 760px) {
+  .hotbar-slot { height: 32px; }
+  .hotbar-slot .spell-glyph { font-size: 15px; line-height: 30px; }
+  .hotbar-slot:nth-child(5), .hotbar-slot:nth-child(9) { margin-left: 3px; }
+  .map-scene.has-hotbar .toast { bottom: 54px; }
+}
