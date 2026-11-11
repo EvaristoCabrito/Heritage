@@ -43,9 +43,7 @@ const BAKERY_RECIPES = [
   { id: 'quiche', name: 'Quiche Lorraine', needs: ['flour', 'milk', 'bacon'] },
 ];
 const BAKE_RATE = [0.15, 0.2, 0.27]; // fornadas por segundo, por nível
-// ÍCONES DO PÃO, QUEIJO E QUICHE: provisórios, emprestados das fazendas. Troque aqui pelas chaves
-// das artes novas (o jogo procura public/art/<chave>-v01.webp); vale para o cardápio, o mercado e a padaria.
-const BAKED_ART = { bread: 'farm-wheat', cheese: 'farm-milk', quiche: 'farm-bacon' };
+const BAKED_ART = { bread: 'bread', cheese: 'cheese', quiche: 'quiche' };
 const bakeryRecipe = id => BAKERY_RECIPES.find(recipe => recipe.id === id) || BAKERY_RECIPES[0];
 // Construções com nível de produção (melhoria até o nível 3) e camponês fixo.
 const PRODUCER_TYPES = ['farm', 'mill', 'bakery', 'emberLab'];
@@ -135,31 +133,27 @@ const freeLodging = () => {
 // Construção livre: vai onde o jogador colocar. Só não pode sair do mapa nem encostar em outra construção.
 const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
-  // ARTE DA PADARIA: 'hut' é provisório. Quando a arte chegar, troque aqui pela chave dela
-  // (e inclua a chave em PHOTOREAL_BUILDING_ART, CONSTRUCTION_STAGE_ART e BUILDING_ART_ASPECTS se tiver essas versões).
-  bakery: 'hut',
-  // ARTE DO LABORATÓRIO DE EMBER: 'tower' é provisório. Troque pela chave da arte nova, como na Padaria.
-  emberLab: 'tower',
+  bakery: 'bakery', emberLab: 'ember-lab',
   farm: 'farm-wheat', mill: 'mill-body', hut: 'hut', depot: 'depot', lumber: 'lumber', quarry: 'lumber', mine: 'lumber', market: 'market', tavern: 'tavern', hotel: 'hotel', warrior: 'guild', archer: 'archer', lancer: 'lancer',
   blackMage: 'tower', conjurer: 'conjurer', healer: 'healer', armory: 'armory',
 };
 const PHOTOREAL_BUILDING_ART = new Set([
   'farm-garlic', 'farm-wheat', 'farm-bacon', 'farm-eggs', 'farm-milk',
   'mill-body', 'mill-sails', 'hut', 'hut-big', 'depot', 'lumber', 'market',
-  'tavern', 'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'manor',
+  'tavern', 'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'manor', 'bakery', 'ember-lab',
 ]);
 // Artes de obra: o sprite final existente continua sendo a fase completa.
 // Para adicionar uma construção nova, inclua a chave aqui e os arquivos -early/-mid.
 const CONSTRUCTION_STAGE_ART = new Set([
   'farm-garlic', 'farm-wheat', 'farm-bacon', 'farm-eggs', 'farm-milk',
   'mill-body', 'hut', 'hut-big', 'depot', 'lumber', 'market', 'tavern',
-  'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory',
+  'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'bakery', 'ember-lab',
 ]);
 const BUILDING_ART_ASPECTS = {
   'farm-garlic': 1.5, 'farm-wheat': 1.5, 'farm-bacon': 1.5, 'farm-eggs': 1.5, 'farm-milk': 1.5,
   'mill-body': 1105 / 1424, 'mill-sails': 1312 / 1199, hut: 1.5, 'hut-big': 1.5,
   depot: 2, lumber: 1.5, market: 2, tavern: 1.5, hotel: 2, guild: 1.5,
-  archer: 1199 / 1312, lancer: 1.5, tower: 1202 / 1308, conjurer: 1312 / 1199,
+  archer: 1199 / 1312, lancer: 1.5, tower: 1202 / 1308, conjurer: 1312 / 1199, bakery: 1.5, 'ember-lab': 1200 / 1003,
   healer: 1.5, armory: 1.5, manor: 1.5,
 };
 const buildingImage = (art, constructionStage = null, building = null) => {
@@ -3593,8 +3587,7 @@ const REMAINS_GRADES = [
 ];
 // Chance de cada grade (D, C, B, A) pelo nível do covil.
 const REMAINS_ODDS = { 1: [0.6, 0.3, 0.1, 0], 2: [0.1, 0.3, 0.4, 0.2] };
-// ÍCONES DOS DEAD REMAINS: provisórios. Troque pelos caminhos das artes novas (um por grade).
-const REMAINS_ART = { D: 'icon-ring-bone-photo-v01.png', C: 'icon-ring-bone-photo-v01.png', B: 'icon-ring-bone-photo-v01.png', A: 'icon-ring-bone-photo-v01.png' };
+const REMAINS_ART = { D: 'icon-dead-remains-d-photo-v01.png', C: 'icon-dead-remains-c-photo-v01.png', B: 'icon-dead-remains-b-photo-v01.png', A: 'icon-dead-remains-a-photo-v01.png' };
 const remainsImage = grade => `public/art/${REMAINS_ART[grade]}`;
 const remainsGrade = id => REMAINS_GRADES.find(grade => grade.id === id) || REMAINS_GRADES[0];
 const emptyRemains = () => ({ D: 0, C: 0, B: 0, A: 0 });
