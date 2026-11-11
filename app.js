@@ -32,6 +32,7 @@ const FARM_TYPES = [
   { id: 'eggs', name: 'Galinheiro', foodId: 'eggs', secondary: 'chicken', art: 'farm-eggs', grain: [0.1, 0.166, 0.264], gold: 0.65 },
   { id: 'milk', name: 'Leite e carne de vaca', foodId: 'milk', secondary: 'beef', art: 'farm-milk', grain: [0.1025, 0.1725, 0.275], gold: 0.6 },
 ];
+const FARM_OUTPUT_MULTIPLIER = 2;
 const farmType = id => FARM_TYPES.find(type => type.id === id) || FARM_TYPES[1];
 const FARM_ANIMAL_RATE = 0.1; // produção secundária de carne nas fazendas de ovos e leite
 const farmFoodId = building => farmType(building.produce).foodId || farmType(building.produce).id;
@@ -108,7 +109,7 @@ const LEVEL_ART = {
   bakery: [null, 'bakery-l2'], 'ember-lab': [null, 'ember-lab-l2'], butcher: [null, 'butcher-l2'], blacksmith: [null, 'blacksmith-l2'],
 };
 const producerLevel = building => Math.min(building?.type === 'blacksmith' ? BLACKSMITH_RATE.length - 1 : PRODUCER_LEVELS.length - 1, building?.level || 0);
-const farmOutput = building => farmType(building.produce).grain[producerLevel(building)];
+const farmOutput = building => farmType(building.produce).grain[producerLevel(building)] * FARM_OUTPUT_MULTIPLIER;
 const millRate = building => MILL_RATE[producerLevel(building)];
 const bakeRate = building => BAKE_RATE[producerLevel(building)];
 const levelArt = (art, building) => LEVEL_ART[art]?.[producerLevel(building)] || art;
@@ -131,10 +132,10 @@ const actorPortrait = actor => PRESTIGE_ART[actor.prestige] || actor.portraitId 
 const actorSheet = actor => {
   if (actor.action === 'build') return 'build';
   if (actor.action === 'idle') return 'idle';
-  if (actor.className === 'Peasant' && actor.action === 'work') return 'work';
+  if (actor.className === 'Peasant' && actor.action === 'work') return actor.spriteId === 'female-peasant' ? 'action' : 'work';
   // Camponeses usam as ferramentas de trabalho também para se defender: o homem
   // usa a folha de enxada fornecida pelo jogador; a mulher mantém sua folha original.
-  if (actor.className === 'Peasant' && actor.action === 'action' && actor.attackAnim > 0) return 'work';
+  if (actor.className === 'Peasant' && actor.action === 'action' && actor.attackAnim > 0) return actor.spriteId === 'female-peasant' ? 'action' : 'work';
   if (actor.action === 'action' && !actor.prestige) return 'action';
   return 'walk';
 };
@@ -494,7 +495,12 @@ function renderManorInventory() {
   const workRows = state.buildings.filter(isDone).flatMap(building => {
     const name = buildingName(building);
     const crew = state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site).length;
-    if (building.type === 'farm') return [[`${foodName(farmFoodId(building))} · ${name}`, building.stock || 0, `Colhido · esperando transporte · ${crew} trabalhador${crew === 1 ? '' : 'es'} · produção ${rateNumber(farmOutput(building) * (1 + crewWork(building)))}/s`]];
+    if (building.type === 'farm') {
+      const type = farmType(building.produce);
+      const rows = [[`${foodName(farmFoodId(building))} · ${name}`, building.stock || 0, `Colhido · esperando transporte · ${crew} trabalhador${crew === 1 ? '' : 'es'} · produção ${rateNumber(farmOutput(building) * (1 + crewWork(building)))}/s`]];
+      if (type.secondary) rows.push([`${foodName(type.secondary)} · ${name}`, building.secondaryStock || 0, `Produção animal · esperando transporte · ${rateNumber(farmSecondaryRate(building) * (1 + crewWork(building)))}/s`]);
+      return rows;
+    }
     if (building.type === 'mill') return [['Trigo · Moinho', building.input || 0, `Aguardando moagem · ${crew} trabalhador${crew === 1 ? '' : 'es'} no Moinho · capacidade ${rateNumber(millRate(building) * (1 + crewWork(building)))}/s`], ['Farinha · Moinho', building.stock || 0, `Moída · aguardando transporte · capacidade ${rateNumber(millRate(building) * (1 + crewWork(building)))}/s`]];
     if (building.type === 'bakery') return [[`Insumos · ${name}`, Object.values(building.pantry || {}).reduce((sum, amount) => sum + amount, 0), 'Ingredientes aguardando preparo'], [`${foodName(building.stockFood || building.produce || 'bread')} · ${name}`, building.stock || 0, 'Pronto · aguardando transporte']];
     if (building.type === 'butcher') return [[`Insumos · ${name}`, Object.values(building.pantry || {}).reduce((sum, amount) => sum + amount, 0), 'Ingredientes aguardando preparo'], [`${foodName(building.stockFood || building.produce || 'bacon')} · ${name}`, building.stock || 0, 'Pronto · aguardando transporte']];
@@ -1275,8 +1281,8 @@ function renderHeroes() {
       // e os quatro quadros mantêm a passada alternada sem espelhar metade do ciclo.
       const backWalk = art === 'peasant' && sheet === 'walk' && token.dataset.facing === 'back';
       const verticalTrollWalk = actor.kind === 'troll' && sheet === 'walk' && ['up', 'down'].includes(actor.walkDirection);
-      const extension = actor.className === 'Wildlife' || (['peasant', 'female-peasant'].includes(art) && ['build', 'work'].includes(sheet)) || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp';
-      const spriteFile = backWalk ? 'peasant-walk-back-v02.png' : verticalTrollWalk ? 'mordavian-troll-v01-walk-vertical-v01.png' : art === 'female-peasant' && sheet === 'work' ? 'female-peasant-work-v02.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : actor.className === 'Wildlife' && sheet === 'idle' ? `${art}-idle-v02.png` : actor.className === 'Wildlife' && art === 'elk' && sheet === 'walk' ? 'elk-walk-v02.png' : `${art}-${sheet}-v01.${extension}`;
+      const extension = actor.className === 'Wildlife' || (art === 'peasant' && ['build', 'work'].includes(sheet)) || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp';
+      const spriteFile = backWalk ? 'peasant-walk-back-v02.png' : verticalTrollWalk ? 'mordavian-troll-v01-walk-vertical-v01.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : actor.className === 'Wildlife' && sheet === 'idle' ? `${art}-idle-v02.png` : actor.className === 'Wildlife' && art === 'elk' && sheet === 'walk' ? 'elk-walk-v02.png' : `${art}-${sheet}-v01.${extension}`;
       if (token.dataset.spriteFile !== spriteFile) {
         $('.character-sprite', token).style.backgroundImage = `url('public/art/${spriteFile}')`;
         token.dataset.spriteFile = spriteFile;
@@ -1367,7 +1373,7 @@ function inspectorHTML() {
     const selectedGuild = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && isDone(building) && BUILDINGS.find(item => item.id === building.type)?.heroClass);
     const currentFarmType = selectedFarm ? farmType(selectedFarm.produce).id : state.selectedFarmType;
     const inspectorActions = selectedBuilding ? `${selectedFarm ? `<section class="inspector-section" aria-label="Tipo de fazenda"><h4>Produção</h4>
-        <div class="farm-type-grid compact">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="+${rateNumber(type.grain[producerLevel(selectedFarm)])} por segundo"><img src="public/art/${type.art}-v01.webp" alt=""><b>${type.name}</b></button>`).join('')}</div></section>` : ''}
+        <div class="farm-type-grid compact">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="+${rateNumber(type.grain[producerLevel(selectedFarm)] * FARM_OUTPUT_MULTIPLIER)} por segundo"><img src="public/art/${type.art}-v01.webp" alt=""><b>${type.name}</b></button>`).join('')}</div></section>` : ''}
       ${selectedProducer?.type === 'bakery' ? bakeryRecipeBoxHTML(selectedProducer) : ''}
       ${selectedProducer?.type === 'butcher' ? butcherRecipeBoxHTML(selectedProducer) : ''}
       ${selectedProducer?.type === 'blacksmith' ? blacksmithRecipeBoxHTML(selectedProducer) : ''}
@@ -1450,7 +1456,7 @@ function renderPanel() {
     const currentFarmType = state.selectedFarmType;
     host.innerHTML = `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
       ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
-        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0])} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small></span></button>`).join('')}</div></section>` : ''}
+        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0] * FARM_OUTPUT_MULTIPLIER)} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small>${type.secondary ? `<small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0] * FARM_OUTPUT_MULTIPLIER * FARM_ANIMAL_RATE)} ${foodName(type.secondary)}/s</small>` : ''}</span></button>`).join('')}</div></section>` : ''}
       ${BUILD_CATEGORIES.map(category => `<section class="build-section" aria-label="${category.name}"><h4 class="build-section-title">${category.name}</h4><div class="build-grid">${BUILDINGS.filter(item => buildCategoryOf(item.id) === category.id).map(buildCardHTML).join('')}</div></section>`).join('')}
       <p class="build-note">A moeda é o custo em ouro e a lenha é o custo em madeira.</p>`;
   } else if (state.tab === 'heroes') {
@@ -1933,6 +1939,10 @@ function completeBuilding(building) {
   if (item.housing) for (let i = 0; i < item.housing; i++) hireWorker(building, i % 2 === 1);
   // Fazenda ou moinho novo: todo mundo é redistribuído para ninguém ficar vazio.
   if (PRODUCER_TYPES.includes(item.id)) state.workers.forEach(worker => { worker.jobSite = null; });
+  if (['farm', 'mill'].includes(item.id)) {
+    const producerWorker = hireWorker(building, Math.random() < 0.5);
+    producerWorker.jobSite = building.site;
+  }
   assignBuilders();
   renderSites(); renderPanel(); updateHud();
   setTimeout(() => $(`.site[data-site="${building.site}"]`)?.classList.remove('just-built'), 1400);
@@ -2024,7 +2034,7 @@ function upgradeHut(site) {
 
 function hireWorker(home, female) {
   const n = state.workers.length + 1;
-  state.workers.push({
+  const worker = {
     id: `worker-${Date.now()}-${n}`,
     name: peasantName(female),
     level: 1, xp: 0,
@@ -2032,10 +2042,26 @@ function hireWorker(home, female) {
     spriteId: female ? 'female-peasant' : 'peasant',
     portraitId: female ? 'female-peasant' : 'male-peasant',
     x: home.x, y: home.y, alive: true, workTrip: false, homeSite: home.site, purse: WORKER_START_PURSE,
-  });
+  };
+  state.workers.push(worker);
   renderHeroes();
   updateHud();
   if (state.tab === 'heroes') renderPanel();
+  return worker;
+}
+
+function ensureFarmWorkers() {
+  state.buildings.filter(building => ['farm', 'mill'].includes(building.type) && isDone(building)).forEach(building => {
+    const worker = state.workers.find(candidate => candidate.alive && (
+      candidate.homeSite === building.site || candidate.jobSite === building.site || candidate.workplace?.site === building.site
+    ));
+    if (worker) {
+      if (worker.homeSite === building.site && !worker.workplace) worker.jobSite = building.site;
+      return;
+    }
+    const added = hireWorker(building, Math.random() < 0.5);
+    added.jobSite = building.site;
+  });
 }
 
 // Nível 1 traz um morador da guilda; níveis 2 e 3 trazem heróis extras, alojados em taverna/hotel.
@@ -4971,6 +4997,8 @@ function saveCard(slot, record) {
 function startGame(newState, slot) {
   selectedLairId = null;
   state = newState;
+  state.speed = [1, 2, 3].includes(Number(state.speed)) ? Number(state.speed) : 1;
+  ensureFarmWorkers();
   game.slot = slot;
   currentMapSet = state.mapSet === 2 ? 2 : 1;
   worldScenario = loadScenario(state.scenario || 1);
@@ -5222,7 +5250,7 @@ const HOWTO = [
   { title: 'Comida', html: () => `
     <h3>Fazendas</h3>
     <p>Cada fazenda produz um alimento. Dá para trocar a produção a qualquer hora. A colheita fica na fazenda (até ${FARM_STOCK_CAP}) até um camponês levar ao casarão ou ao Depósito mais perto.</p>
-    ${howTable(['Fazenda', 'Nível 1', 'Nível 2', 'Nível 3'], FARM_TYPES.map(type => [type.name, ...type.grain.map(value => `${hn(value)}/s`)]))}
+    ${howTable(['Fazenda', 'Nível 1', 'Nível 2', 'Nível 3'], FARM_TYPES.map(type => [type.name, ...type.grain.map(value => `${hn(value * FARM_OUTPUT_MULTIPLIER)}/s`)]))}
     ${howFormula(`Produção = valor da tabela × (1 + bônus da equipe)<br>Bônus da equipe = soma, de quem trabalha ali, de (bônus de trabalho do equipamento + habilidade do ofício/200)`)}
     <h3>Moinho</h3>
     <p>Trigo cru não alimenta ninguém. O moinho mói trigo em farinha, 1 para 1: o camponês busca trigo no depósito e leva a farinha de volta. Moagem por nível: ${MILL_RATE.map(value => `${hn(value)}/s`).join(', ')}, com o mesmo bônus da equipe.</p>
