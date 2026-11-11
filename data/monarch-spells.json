@@ -231,7 +231,7 @@
         "cooldownSeconds": 14,
         "castRange": 0,
         "auraRadius": 8,
-        "durationSeconds": 4,
+        "durationSeconds": 60,
         "auraRadiusFollows": "aura-da-presenca"
       },
       "ranks": [
@@ -246,7 +246,7 @@
         {
           "level": 9,
           "changes": {
-            "durationSeconds": 5
+            "durationSeconds": 60
           },
           "effects": {
             "slowPercent": 40
@@ -265,7 +265,7 @@
         {
           "level": 26,
           "changes": {
-            "durationSeconds": 6
+            "durationSeconds": 60
           },
           "effects": {
             "slowPercent": 60,
@@ -849,14 +849,14 @@
         "cooldownSeconds": 30,
         "castRange": 16,
         "auraRadius": 5,
-        "durationSeconds": 3
+        "durationSeconds": 60
       },
       "ranks": [
         {
           "level": 13,
           "changes": {},
           "effects": {
-            "silenceSeconds": 3
+            "silenceSeconds": 60
           },
           "description": "Inimigos na área marcada não conjuram magias por 3 s."
         },
@@ -864,10 +864,10 @@
           "level": 20,
           "changes": {
             "auraRadius": 6,
-            "durationSeconds": 4
+            "durationSeconds": 60
           },
           "effects": {
-            "silenceSeconds": 4,
+            "silenceSeconds": 60,
             "interruptsCasting": true
           },
           "description": "Silêncio de 4 s num raio de 6 m. Interrompe conjurações em andamento."
@@ -876,10 +876,10 @@
           "level": 28,
           "changes": {
             "auraRadius": 7,
-            "durationSeconds": 5
+            "durationSeconds": 60
           },
           "effects": {
-            "silenceSeconds": 5,
+            "silenceSeconds": 60,
             "interruptsCasting": true,
             "silencedMagicDamageTakenPercent": 15
           },
@@ -1119,14 +1119,14 @@
         "cooldownSeconds": 28,
         "castRange": 16,
         "auraRadius": 5,
-        "durationSeconds": 2.5
+        "durationSeconds": 60
       },
       "ranks": [
         {
           "level": 18,
           "changes": {},
           "effects": {
-            "rootSeconds": 2.5,
+            "rootSeconds": 60,
             "maxTargets": 5
           },
           "description": "Prende até 5 inimigos na área ao solo por 2,5 s, sem nenhum movimento."
@@ -1134,10 +1134,10 @@
         {
           "level": 27,
           "changes": {
-            "durationSeconds": 3
+            "durationSeconds": 60
           },
           "effects": {
-            "rootSeconds": 3,
+            "rootSeconds": 60,
             "maxTargets": 7,
             "dotBase": 20,
             "dotMagPercent": 40
@@ -1165,14 +1165,14 @@
         "cooldownSeconds": 35,
         "castRange": 0,
         "auraRadius": 7,
-        "durationSeconds": 1.5
+        "durationSeconds": 60
       },
       "ranks": [
         {
           "level": 19,
           "changes": {},
           "effects": {
-            "stunSeconds": 1.5
+            "stunSeconds": 60
           },
           "description": "Grito de comando atordoa inimigos a até 7 m por 1,5 s."
         },
@@ -1180,10 +1180,10 @@
           "level": 25,
           "changes": {
             "auraRadius": 8,
-            "durationSeconds": 2
+            "durationSeconds": 60
           },
           "effects": {
-            "stunSeconds": 2
+            "stunSeconds": 60
           },
           "description": "Atordoa por 2 s num raio de 8 m."
         }
