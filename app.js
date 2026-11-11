@@ -768,7 +768,7 @@ function updateHud() {
 const SCENARIO_GOALS = [
   { title: 'Acumule 600 moedas',
     progress: () => ({ have: state.gold, need: 600, text: `${state.testMode ? '∞' : format(state.gold)} / 600` }),
-    done: ['Dívidas quitadas. Os credores foram embora decepcionados.', 'Agora os mortos do vale querem a parte deles. Abata 4 caveiras ou ladrões.'] },
+    done: ['Dívidas quitadas. Os credores levaram as 600 moedas e deixaram o recibo.', 'Agora os mortos do vale querem a parte deles. Abata 4 caveiras ou ladrões.'] },
   { title: 'Noites de Ossos: abata 4 caveiras ou ladrões',
     progress: () => ({ have: state.goalKills || 0, need: 4, text: `${Math.min(4, state.goalKills || 0)} / 4 abatidos` }),
     done: ['Os mortos do Vale do Luto aprenderam a ficar deitados. Pelo menos estes.', 'Último desafio: 10 camponeses e uma Taverna de pé. Gente feliz não pega forcado.'] },
@@ -790,9 +790,18 @@ function updateGoal() {
   $('#objective-bar').style.width = `${Math.max(0, Math.min(100, have / need * 100))}%`;
   if (state.testMode || (state.goalStep || 0) >= SCENARIO_GOALS.length || have < need) return;
   state.goalStep = (state.goalStep || 0) + 1;
-  if (state.goalStep === 1) state.goalKills = 0;
+  if (state.goalStep === 1) { state.goalKills = 0; payDebt(); }
   say(...goal.done);
   if (state.goalStep < SCENARIO_GOALS.length) updateGoal();
+}
+
+// Primeiro objetivo cumprido: os credores levam as 600 moedas e os nobres dão Favor.
+const DEBT_GOLD = 600;
+const DEBT_FAVOR = 16;
+function payDebt() {
+  state.gold -= DEBT_GOLD;
+  changeFavor(DEBT_FAVOR);
+  if (game.slot) { menu.stack = []; showScreen('debtPaid'); }
 }
 
 const BRANCH_NAMES = { Bishop: 'Templo Bishop', Cleric: 'Treino Cleric', Elementalist: 'Torre dos Elementalistas', Warlock: 'Torre dos Arcanistas' };
@@ -4771,6 +4780,20 @@ const SCREENS = {
       <header class="menu-card-head"><span class="eyebrow">LOG</span><h2>Mensagens do domínio</h2><p>${entries.length ? 'Da mais nova para a mais antiga. Ninguém leu as outras também.' : 'Nada aconteceu ainda. Aproveite enquanto dura.'}</p></header>
       ${entries.length ? `<ol class="message-log">${entries.map(entry => `<li><small>${when(entry.t)}</small><span>${safe(entry.text)}${entry.n > 1 ? ` <em>×${entry.n}</em>` : ''}</span></li>`).join('')}</ol>` : ''}
       <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
+    </section>` };
+  },
+  // Continuação do primeiro objetivo: os credores levam o ouro e os nobres mandam cuidar dos mortos.
+  debtPaid() {
+    const heir = heirById(state.heir);
+    const first = heir ? heir.name.split(' ')[0] : 'o herdeiro';
+    return { cls: 'is-pause', html: `<section class="menu-card wide mission-story">
+      <header class="menu-card-head"><span class="eyebrow">OBJETIVO 1 CUMPRIDO · A DÍVIDA</span><h2>Os credores levaram tudo. Os nobres gostaram.</h2>
+        <p>À meia-noite, três homens de luto bateram no casarão e contaram as ${DEBT_GOLD} moedas duas vezes. Levaram todas. Deixaram um recibo e um cheiro de vela.</p>
+        <p>De manhã chegou uma carta com o selo do Conselho dos Nobres. Eles ficaram impressionados: ninguém nunca tinha pago aquela dívida. Nem o falecido, que morreu justamente pra não pagar.</p>
+        <p>O favor tem preço. Os mortos do Vale do Luto pararam de ficar deitados, e os ladrões da estrada acham que o vale agora tem dinheiro. Os nobres querem os dois problemas resolvidos antes do próximo enterro. Mandam ${first} cuidar disso. Pessoalmente, não: mandar heróis serve.</p></header>
+      <div class="mission-rewards"><span class="reward-chip loss">−${DEBT_GOLD} ouro</span><span class="reward-chip gain">+${DEBT_FAVOR} Favor dos nobres</span></div>
+      <p class="mission-goal"><b>Próximo objetivo:</b> Noites de Ossos. Abata 4 caveiras ou ladrões.</p>
+      <div class="menu-actions"><button type="button" class="primary" data-action="resume">Voltar ao jogo</button></div>
     </section>` };
   },
   pause() {

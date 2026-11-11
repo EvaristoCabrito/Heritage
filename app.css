@@ -1400,3 +1400,12 @@ body.map-editing #site-layer, body.map-editing #hero-layer, body.map-editing .ma
 .demand-alert:hover { border-color: var(--gold); }
 .demand-alert.late { border-color: rgba(194,116,91,.7); border-left-color: var(--danger); }
 .demand-alert.late small { color: #e7a58d; }
+
+/* Tela da dívida paga (primeiro objetivo do Cenário 01). */
+.mission-story .menu-card-head p + p { margin-top: 8px; }
+.mission-rewards { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 10px; }
+.reward-chip { padding: 5px 10px; border: 1px solid rgba(214,184,117,.45); border-radius: 4px; color: #e6dcc4; background: rgba(15,17,14,.6); font: 700 12px 'Figtree', sans-serif; letter-spacing: .04em; }
+.reward-chip.loss { border-color: rgba(217,69,43,.7); color: #f2b3a6; }
+.reward-chip.gain { border-color: rgba(224,190,100,.8); color: #f4da9a; }
+.mission-goal { margin: 0 0 12px; color: #e7dcc4; font-size: 14px; line-height: 1.5; }
+.mission-goal b { color: #f0c98a; }
