@@ -90,6 +90,11 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .site-layer { position: absolute; z-index: 4; inset: 0; }
 .site-layer { pointer-events: none; }
 .lair-layer { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
+.fishing-layer { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
+.fishing-spot { position: absolute; display: grid; justify-items: center; gap: 2px; transform: translate(-50%,-50%); color: #d8e5d6; text-shadow: 0 1px 4px #101510; }
+.fishing-spot[hidden] { display: none; }
+.fishing-spot i { width: 18px; height: 18px; border: 2px solid rgba(205,226,206,.8); border-radius: 50%; background: rgba(70,113,105,.48); box-shadow: 0 0 0 4px rgba(95,144,131,.18), 0 0 14px rgba(179,219,202,.65); }
+.fishing-spot small { padding: 2px 4px; border: 1px solid rgba(190,212,187,.35); border-radius: 3px; background: rgba(13,18,14,.75); font-size: 7px; letter-spacing: .08em; }
 .lair-marker { position: absolute; display: grid; justify-items: center; gap: 3px; width: clamp(70px, 11vw, 126px); transform: translate(-50%,-72%); filter: drop-shadow(2px 5px 4px rgba(0,0,0,.75)); }
 .lair-marker[hidden] { display: none; }
 .lair-marker img { display: block; width: 100%; max-height: 115px; object-fit: contain; }
@@ -124,6 +129,9 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .site.selected .site-ring { outline: 2px solid #f4da9a; outline-offset: 3px; }
 .character { position: absolute; display: block; width: clamp(30px, 5vw, 52px); aspect-ratio: 1; padding: 0; border: 0; background: transparent; transform: translate(-50%,-96%); cursor: pointer; pointer-events: auto; filter: drop-shadow(0 3px 2px rgba(8,10,8,.8)); }
 .character.worker { width: clamp(27px, 4.4vw, 46px); }
+.character.wildlife { width: clamp(44px, 6.4vw, 72px); aspect-ratio: 1; }
+.character.wildlife .character-sprite { width: 100%; aspect-ratio: 1; background-size: 400% 200%; background-position: var(--frame-x, 0%) 0%; }
+.character.wildlife[data-facing="back"] .character-sprite { background-position-y: 100%; }
 .character.wolf { width: clamp(44px, 6vw, 68px); aspect-ratio: 1.65; }
 .character.wolf .character-sprite { width: 100%; aspect-ratio: 1.65; background-size: 400% 100%; background-position: var(--frame-x, 0%) 50%; }
 .character.troll { width: clamp(38px, 5.5vw, 62px); aspect-ratio: .78; }
@@ -207,6 +215,8 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .farm-type { display: grid; grid-template-columns: 44px minmax(0,1fr); align-items: center; gap: 7px; min-height: 54px; padding: 4px 6px; border: 1px solid rgba(193,176,135,.22); border-radius: 4px; color: #ded5bf; background: rgba(19,22,18,.64); text-align: left; cursor: pointer; }
 .farm-type:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .farm-type:hover, .farm-type.selected { border-color: #d9ba76; background: rgba(106,87,51,.32); }
+.farm-type.locked { opacity: .48; cursor: not-allowed; }
+.farm-type.locked:hover { border-color: rgba(193,176,135,.22); background: rgba(19,22,18,.64); }
 .farm-type img { display: block; width: 44px; height: 44px; object-fit: contain; }
 .farm-type span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .farm-type b { color: #ebdec1; font-size: 10px; }
