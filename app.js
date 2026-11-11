@@ -230,7 +230,7 @@ function writeStore(key, value) {
 // Opções do jogador e do debug ficam salvas no navegador.
 const options = readStore(OPTIONS_KEY, { startZoom: 0, names: 'selected', autosave: 3, buildingArtStyle: 'dark' });
 if (options.zoomVersion !== 3 || ![0, 1, 2].includes(options.startZoom)) { options.startZoom = 0; options.zoomVersion = 3; }
-// Som: 1 ligado, 0 desligado. O jogo ainda não toca áudio; todo som futuro deve respeitar esta opção.
+// Som: 1 ligado, 0 desligado. Vale para a música (ver setMusic) e para todo som futuro.
 if (![0, 1].includes(options.sound)) options.sound = 1;
 if (!['dark', 'color'].includes(options.buildingArtStyle)) options.buildingArtStyle = 'dark';
 // Modo teste: ouro e madeira infinitos. Só existe ligado pela tela de Debug.
@@ -4067,6 +4067,7 @@ function startGame(newState, slot) {
   $('#event-line').textContent = state.ticks ? 'De volta ao Vale do Luto.' : 'A herança foi aceita. Os credores já estão a caminho.';
   writeSave(slot);
   game.running = true;
+  setMusic('game');
 }
 
 function newGame(slot, heir) {
@@ -4093,6 +4094,81 @@ function setTestMode(on) {
 function applyOptions() {
   document.body.classList.toggle('names-always', options.names === 'always');
   document.documentElement.style.setProperty('--mill-sails-image', `url('${buildingImage('mill-sails')}')`);
+  syncMusic();
+}
+
+// Música: tema principal nas telas de entrada; durante o jogo, as faixas do Ciclo 01 tocam uma depois da outra.
+// O navegador só deixa tocar depois do primeiro clique ou tecla; até lá a música espera.
+const MUSIC = {
+  title: ['Music/MainTheme/LANDR-Dragonomicon i - usesuno.com-Balanced-Medium.mp3'],
+  game: [
+    'Music/Cycle01/LANDR-Connard The Barbarian 18 - usesuno.com-Balanced-Medium.mp3',
+    'Music/Cycle01/LANDR-Connard The Barbarian 18 - usesuno.com (1)-Balanced-Medium.mp3',
+  ],
+};
+const MUSIC_VOLUME = 0.45;
+const MUSIC_FADE_MS = 900;
+const music = { audio: new Audio(), mode: null, index: 0, fade: 0 };
+music.audio.preload = 'auto';
+music.audio.addEventListener('ended', () => {
+  const list = MUSIC[music.mode];
+  if (!list) return;
+  music.index = (music.index + 1) % list.length;
+  music.audio.src = encodeURI(list[music.index]);
+  syncMusic();
+});
+
+function fadeMusic(target, done) {
+  cancelAnimationFrame(music.fade);
+  const audio = music.audio;
+  const from = audio.volume;
+  const start = performance.now();
+  const step = now => {
+    const t = Math.min(1, (now - start) / MUSIC_FADE_MS);
+    audio.volume = from + (target - from) * t;
+    if (t < 1) music.fade = requestAnimationFrame(step); else done?.();
+  };
+  music.fade = requestAnimationFrame(step);
+}
+
+// Troca a trilha: 'title' nas telas de entrada, 'game' com uma partida aberta.
+function setMusic(mode) {
+  if (music.mode === mode) return;
+  music.mode = mode;
+  music.index = 0;
+  cancelAnimationFrame(music.fade);
+  music.audio.src = encodeURI(MUSIC[mode][0]);
+  music.audio.volume = 0;
+  syncMusic();
+}
+
+// Toca ou para conforme a opção de som e atualiza o botão de música.
+function syncMusic() {
+  const on = options.sound === 1;
+  $$('[data-music-toggle]').forEach(button => {
+    button.classList.toggle('off', !on);
+    button.setAttribute('aria-pressed', String(on));
+    button.title = on ? 'Música: ligada' : 'Música: desligada';
+    button.setAttribute('aria-label', on ? 'Desligar música' : 'Ligar música');
+  });
+  if (!music.mode || !music.audio.src) return;
+  if (!on) { fadeMusic(0, () => music.audio.pause()); return; }
+  const playing = music.audio.play();
+  playing?.then(() => fadeMusic(MUSIC_VOLUME)).catch(() => {});
+}
+
+function toggleMusic() {
+  options.sound = options.sound === 1 ? 0 : 1;
+  writeStore(OPTIONS_KEY, options);
+  syncMusic();
+  if (menu.stack[menu.stack.length - 1]?.name === 'options') renderMenu();
+}
+
+function initMusic() {
+  $$('[data-music-toggle]').forEach(button => button.addEventListener('click', event => { event.stopPropagation(); toggleMusic(); }));
+  // Primeiro clique ou tecla da página libera o áudio no navegador.
+  const unlock = () => { if (options.sound === 1 && music.audio.paused) syncMusic(); };
+  ['pointerdown', 'keydown'].forEach(type => document.addEventListener(type, unlock, true));
 }
 
 const menu = { stack: [], pending: null };
@@ -4691,9 +4767,11 @@ function toTitle() {
   game.running = false;
   menu.stack = [];
   showScreen('title');
+  setMusic('title');
 }
 
 function initMenus() {
+  initMusic();
   applyOptions();
   $('#menu-panel').addEventListener('click', event => {
     const button = event.target.closest('button');
@@ -4841,6 +4919,7 @@ function initMenus() {
   window.addEventListener('resize', () => { if (!$('#menu-layer').hidden) fitMenu(); });
   window.addEventListener('pagehide', () => { if (game.slot && options.autosave) writeSave(game.slot); });
   showScreen('title');
+  setMusic('title');
 }
 
 function init() {
