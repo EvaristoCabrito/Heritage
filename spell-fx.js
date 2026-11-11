@@ -2,7 +2,7 @@
 // Efeitos visuais das magias do Monarca em WebGL.
 // Duas telas sobre o mapa: "ground" (no chão, abaixo dos personagens) e "sky" (acima deles).
 // Cada tela cobre só a parte visível do mundo e acompanha a câmera; as coordenadas de entrada
-// são as do jogo (x de 0 a 100, y de 0 a 200), as mesmas dos personagens.
+// são as do jogo (x de 0 a 100, y de 0 a WORLD_Y_UNITS), as mesmas dos personagens.
 // Tudo é desenhado como quads com um shader que escolhe a forma (brilho, anel, feixe, escudo...).
 // ==========================================================================
 const SpellFX = (() => {
@@ -237,7 +237,7 @@ const SpellFX = (() => {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const left = (sr.left - wr.left) / zoom, top = (sr.top - wr.top) / zoom;
     const cssW = sr.width / zoom, cssH = sr.height / zoom;
-    return { left, top, cssW, cssH, backW: Math.max(1, Math.round(sr.width * dpr)), backH: Math.max(1, Math.round(sr.height * dpr)), scale: zoom * dpr, ux: worldW / 100, uy: worldH / 200 };
+    return { left, top, cssW, cssH, backW: Math.max(1, Math.round(sr.width * dpr)), backH: Math.max(1, Math.round(sr.height * dpr)), scale: zoom * dpr, ux: worldW / 100, uy: worldH / (typeof WORLD_Y_UNITS === "number" ? WORLD_Y_UNITS : 200) };
   }
 
   // Posição do jogo -> pixel da tela de efeitos.

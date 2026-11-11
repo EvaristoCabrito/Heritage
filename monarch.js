@@ -1816,6 +1816,18 @@ const Monarch = (() => {
       D.wisp(s.x, s.y - BODY, 1.8, 3.2, C.astral, 0.32, s.id.length);
       if (s.taunting > 0) D.ring(s.x, s.y, s.tauntRadius, C.crimson, 0.35, 0.03, 0, 0);
     });
+    // Aura em quem está sob um comando ou dentro de uma aura do herdeiro: brilho no chão, anel pulsando e chama no corpo.
+    fAllies().forEach(a => {
+      const f = a.mfx || {};
+      const o = rt.mods.get(a);
+      const color = f.annihilate ? C.crimson : f.order ? C.gold : f.charge || f.haste ? C.ember : f.invuln ? C.holy : f.shield ? C.steel
+        : o?.primary ? C.holy : o?.atkSpd ? C.ember : o?.armor || o?.armorPct ? C.gold : null;
+      if (!color) return;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 4 + a.x);
+      D.glow('ground', a.x, a.y, 2.6, color, 0.65 + 0.25 * pulse);
+      D.ring(a.x, a.y, 1.6, color, 0.7 + 0.25 * pulse, 0.1, 6, t * 0.4);
+      D.wisp(a.x, a.y - BODY, 1.6, 3.2, color, 0.45, a.x);
+    });
     [...fAllies(), ...fEnemies()].forEach(a => {
       const f = a.mfx;
       if (!f) return;
