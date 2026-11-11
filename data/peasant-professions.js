@@ -1,4 +1,6 @@
-{
+// Profissões dos camponeses. Carregado como script para o jogo abrir direto do arquivo (JOGAR.bat), sem servidor.
+// Tudo depois do sinal de igual é JSON puro.
+window.PEASANT_PROFESSIONS = {
   "version": 1,
   "maxLevel": 50,
   "specializationLevel": 50,
@@ -12,7 +14,7 @@
     "mastery": "Depois da escolha, o XP das ações vira XP de maestria. Os ranks 1, 2 e 3 começam em 0, 5000 e 15000 de XP de maestria.",
     "passives": "Um passivo a cada 10 níveis (10, 20, 30, 40 e 50). Eles se acumulam.",
     "attributes": "Os pontos de atributo dos passivos viram atributos de combate pela tabela attributes.combat.",
-    "hook": "action.hook liga a ação ao que já existe no jogo: lumber = Cabana do Lenhador, farm:<produção> = fazenda daquela produção, mill = moinho, build = obra. null = ação ainda sem lugar no jogo.",
+    "hook": "action.hook liga a ação ao que já existe no jogo: lumber = Cabana do Lenhador, quarry = Pedreira, mine = Campo de Mineração, farm:<produção> = fazenda daquela produção, mill = moinho, bakery = padaria, build = obra. null = ação ainda sem lugar no jogo.",
     "equipOutputs": "Saídas \"equip:<id>\" apontam para uma peça de data/equipment-tiers.json."
   },
   "attributes": {
@@ -350,14 +352,14 @@
           "name": "Picar rocha",
           "baseXp": 12,
           "level": 5,
-          "hook": null
+          "hook": "quarry"
         },
         {
           "id": "mineOre",
           "name": "Minerar minério bruto",
           "baseXp": 16,
           "level": 15,
-          "hook": null
+          "hook": "mine"
         }
       ],
       "passives": [
@@ -2390,7 +2392,7 @@
           "name": "Assar pão",
           "baseXp": 12,
           "level": 5,
-          "hook": null
+          "hook": "bakery"
         },
         {
           "id": "saltMeat",
@@ -2751,4 +2753,4 @@
       ]
     }
   ]
-}
+};

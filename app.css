@@ -1409,3 +1409,36 @@ body.map-editing #site-layer, body.map-editing #hero-layer, body.map-editing .ma
 .reward-chip.gain { border-color: rgba(224,190,100,.8); color: #f4da9a; }
 .mission-goal { margin: 0 0 12px; color: #e7dcc4; font-size: 14px; line-height: 1.5; }
 .mission-goal b { color: #f0c98a; }
+
+/* Profissões na ficha do camponês: uma linha por profissão, que abre com passivos, liberações e especialização. */
+.trade-list { display: grid; gap: 4px; margin: 0 0 6px; }
+.trade { border: 1px solid rgba(193,176,135,.16); border-radius: 5px; background: rgba(15,17,14,.5); }
+.trade summary { display: grid; grid-template-columns: 150px 1fr 28px; grid-template-areas: "name bar level" "status status status"; align-items: center; gap: 2px 8px; padding: 6px 8px; cursor: pointer; list-style: none; }
+.trade summary::-webkit-details-marker { display: none; }
+.trade-name { grid-area: name; color: #9d9583; font-size: 12px; }
+.trade.main .trade-name { color: #e7cf98; }
+.trade-bar { grid-area: bar; height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+.trade-bar i { display: block; height: 100%; background: linear-gradient(90deg, #6f5a2e, #d6b875); }
+.trade summary b { grid-area: level; color: #ece2cb; font-size: 12px; text-align: right; }
+.trade summary small { grid-area: status; color: #8f8a7a; font-size: 10px; }
+.trade.ready { border-color: rgba(231,207,152,.55); }
+.trade.ready summary small { color: #e7cf98; }
+.trade-body { padding: 0 8px 8px; }
+.trade-body ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.trade-body li { color: #7f7a6c; font-size: 11px; line-height: 1.35; }
+.trade-body li.got { color: #d9cfb8; }
+.trade-body li em { display: inline-block; min-width: 46px; color: #8f8a7a; font-style: normal; }
+.trade-body li.got em { color: #9fcf7f; }
+.trade-body li b { color: inherit; font-weight: 600; }
+.trade-sub { margin: 8px 0 3px; color: #9d9583; font: 700 9px 'Figtree', sans-serif; letter-spacing: .16em; }
+.trade-note { margin: 4px 0; color: #8f8a7a; font-size: 11px; line-height: 1.4; }
+.trade-specs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.trade-spec { display: flex; flex-direction: column; gap: 3px; padding: 8px; border: 1px solid rgba(214,184,117,.45); border-radius: 5px; color: #ece2cb; background: rgba(46,38,24,.6); font: inherit; text-align: left; cursor: pointer; }
+.trade-spec:hover { border-color: #e7cf98; background: rgba(70,56,30,.7); }
+.trade-spec b { color: #e7cf98; font-size: 12px; }
+.trade-spec small { color: #b8ad94; font-size: 10px; line-height: 1.35; }
+@media (max-width: 600px) {
+  .trade summary { grid-template-columns: 110px 1fr 24px; }
+  .trade-specs { grid-template-columns: 1fr; }
+}
+

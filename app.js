@@ -603,7 +603,7 @@ function pitBoxHTML(pit) {
   const doing = worker => worker.workplace?.site === pit.site ? 'trabalhando aqui' : worker.buildSite != null ? 'em obra' : worker.workplace ? workPlaceName(worker.workplace).replace(/^(na|no) /, '') : workplaceOf(worker) ? workPlaceName(workplaceOf(worker)).replace(/^(na|no) /, '') : 'à toa';
   return `<section class="inspector-section"><h4>Quem trabalha aqui · ${crew.length} de ${PIT_CREW_MAX}</h4>
     <small class="pit-hint">Clique no nome para colocar ou tirar.</small>
-    <div class="pit-crew">${people.map(worker => { const here = worker.workplace?.site === pit.site; return `<button type="button" class="pit-worker${here ? ' here' : ''}" data-pit="${pit.site}" data-worker="${worker.id}" aria-pressed="${here}" ${!here && crew.length >= PIT_CREW_MAX ? 'disabled' : ''}><b>${here ? '✓ ' : ''}${worker.name}</b><small>${doing(worker)} · Mineração ${Math.floor(skillOf(worker, 'mining'))}</small></button>`; }).join('') || '<div class="empty-state">Nenhum camponês. Construa um casebre.</div>'}</div></section>`;
+    <div class="pit-crew">${people.map(worker => { const here = worker.workplace?.site === pit.site; return `<button type="button" class="pit-worker${here ? ' here' : ''}" data-pit="${pit.site}" data-worker="${worker.id}" aria-pressed="${here}" ${!here && crew.length >= PIT_CREW_MAX ? 'disabled' : ''}><b>${here ? '✓ ' : ''}${worker.name}</b><small>${doing(worker)} · Extrator nv ${tradeLevel(worker, 'extractor')}</small></button>`; }).join('') || '<div class="empty-state">Nenhum camponês. Construa um casebre.</div>'}</div></section>`;
 }
 function setLumberCrew(site, change) {
   const camp = state.buildings.find(building => building.site === site && building.type === 'lumber' && isDone(building));
@@ -1053,7 +1053,7 @@ function heroCard(hero) {
 function workerCard(worker) {
   return `<article class="hero-card worker-card">
     <img class="hero-portrait" data-actor-sheet="${worker.id}" title="Ver ficha" src="public/art/portraits/${actorPortrait(worker)}-portrait-v01.webp" alt="Retrato de ${worker.name}">
-    <div class="hero-details"><b>${worker.name}</b><small>${actorLabel(worker)}</small><small>${homeOf(worker) ? 'Mora no casebre.' : 'Mora no casarão, como as dívidas.'} ${workplaceOf(worker) ? `Trabalha ${workPlaceName(workplaceOf(worker))}.` : 'Sem fazenda pra trabalhar.'}</small><small class="worker-task">Agora: ${peasantActivity(worker)}.</small><label class="prof-select"><span>Profissão</span><select data-profession="${worker.id}"><option value="">Nenhuma</option>${Object.entries(PROFESSIONS).map(([id, prof]) => `<option value="${id}"${worker.profession === id ? ' selected' : ''}>${isFemalePeasant(worker) ? prof.fem : prof.name}</option>`).join('')}</select></label><small>Bolsa: ${format(purseOf(worker))} de ouro</small></div>
+    <div class="hero-details"><b>${worker.name}</b><small>${actorLabel(worker)}</small><small>${homeOf(worker) ? 'Mora no casebre.' : 'Mora no casarão, como as dívidas.'} ${workplaceOf(worker) ? `Trabalha ${workPlaceName(workplaceOf(worker))}.` : 'Sem fazenda pra trabalhar.'}</small><small class="worker-task">Agora: ${peasantActivity(worker)}.</small><label class="prof-select"><span>Ofício</span><select data-profession="${worker.id}"><option value="">Nenhum</option>${Object.entries(PROFESSIONS).map(([id, prof]) => `<option value="${id}"${worker.profession === id ? ' selected' : ''}>${isFemalePeasant(worker) ? prof.fem : prof.name}</option>`).join('')}</select></label><small>Bolsa: ${format(purseOf(worker))} de ouro</small></div>
     <div class="hero-xp">NÍV. ${worker.level || 1}<i style="--xp:${(worker.level || 1) >= HEIR_MAX_LEVEL ? 100 : Math.round((worker.xp || 0) / xpToNext(worker.level || 1) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${worker.id}">FICHA</button></div>
   </article>`;
 }
@@ -1187,7 +1187,7 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['Produz', `${rateNumber(farmOutput(building))} de ${farmType(building.produce).name.toLowerCase()} por segundo${building.produce === 'wheat' ? ' (vai pro moinho)' : ''}`]);
     lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
     lines.push(['Esperando carregador', `${format(building.stock || 0)} de ${FARM_STOCK_CAP}`]);
-    if (crewWork(building)) lines.push(['Ferramentas', `+${Math.round(crewWork(building) * 100)}% de produção`]);
+    if (crewWork(building)) lines.push(['Ferramentas e profissão', `+${Math.round(crewWork(building) * 100)}% de produção`]);
     lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
   } else if (building.type === 'mill') {
     lines.push(['Mói', `${rateNumber(millRate(building))} de trigo em farinha por segundo`]);
@@ -1203,7 +1203,7 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
     lines.push(['No forno', `${recipe.needs.map(id => `${format(pantry[id] || 0)} de ${foodName(id)}`).join(' · ')} · ${format(building.stock || 0)} de ${foodName(building.stockFood || recipe.id)} esperando`]);
     lines.push(['No depósito', recipe.needs.map(id => `${format(state.food[id] || 0)} de ${foodName(id)}`).join(' · ')]);
-    if (crewWork(building)) lines.push(['Ferramentas', `+${Math.round(crewWork(building) * 100)}% de produção`]);
+    if (crewWork(building)) lines.push(['Ferramentas e profissão', `+${Math.round(crewWork(building) * 100)}% de produção`]);
     lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
   } else if (building.type === 'emberLab') {
     lines.push(['Refina', `${rateNumber(labRate(building))} Dead Remains por segundo`]);
@@ -1435,6 +1435,13 @@ function assignBuilders() {
   });
 }
 
+// A cada BUILD_ACTION_SECONDS de obra ou conserto, uma ação de profissão.
+function buildPractice(worker, dt, repairing) {
+  const every = BUILD_ACTION_SECONDS / (1 + tradeBuildBonus(worker, repairing) / 2);
+  worker.buildClock = (worker.buildClock || 0) + dt;
+  while (worker.buildClock >= every) { worker.buildClock -= every; gainTrade(worker, 'build'); }
+}
+
 // O camponês trabalha ao lado da obra, na base. O rótulo de progresso fica no alto da obra, longe dele.
 const buildSpot = building => ({ x: building.x + (building.x > 92 ? -5 : 5), y: building.y });
 
@@ -1448,12 +1455,12 @@ function progressConstruction(dt) {
       building.noWood = false;
       if (worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5) {
         // Conserto custa madeira: sem madeira no estoque, o camponês fica parado esperando.
-        const wanted = Math.min(building.damage, REPAIR_RATE * dt * (1 + skillOf(worker, 'building') / 100 + gearBonus(worker, 'build')));
+        const wanted = Math.min(building.damage, REPAIR_RATE * dt * (1 + tradeBuildBonus(worker, true) / 2 + gearBonus(worker, 'build')));
         const repaired = state.testMode ? wanted : Math.min(wanted, Math.max(0, state.timber) * REPAIR_HP_PER_WOOD);
         if (!state.testMode) state.timber = Math.max(0, state.timber - repaired / REPAIR_HP_PER_WOOD);
         building.noWood = repaired < wanted;
         building.damage = Math.max(0, building.damage - repaired);
-        if (repaired > 0) gainSkill(worker, 'building', 0.02 * dt);
+        if (repaired > 0) buildPractice(worker, dt, true);
         if (building.damage <= 0) {
           building.damage = 0;
           building.ruined = false;
@@ -1471,8 +1478,8 @@ function progressConstruction(dt) {
     }
     if (worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5) {
       const previousProgress = building.progress || 0;
-      building.progress = Math.min(BUILD_TIME, previousProgress + dt * (1 + skillOf(worker, 'building') / 100 + gearBonus(worker, 'build')));
-      gainSkill(worker, 'building', 0.02 * dt);
+      building.progress = Math.min(BUILD_TIME, previousProgress + dt * (1 + tradeBuildBonus(worker, false) / 2 + gearBonus(worker, 'build')));
+      buildPractice(worker, dt, false);
       if (building.progress >= BUILD_TIME) { completeBuilding(building); return; }
       if (previousProgress < BUILD_TIME / 2 && building.progress >= BUILD_TIME / 2) renderSites();
     }
@@ -1492,7 +1499,7 @@ function constructionStatus(building) {
   const builder = worker ? `${worker.name}, ${onSite ? 'trabalhando' : 'a caminho'}` : 'Esperando um camponês livre';
   let eta = 'Parada sem camponês';
   if (worker) {
-    const left = Math.ceil((BUILD_TIME - progress) / (1 + skillOf(worker, 'building') / 100 + gearBonus(worker, 'build')));
+    const left = Math.ceil((BUILD_TIME - progress) / (1 + tradeBuildBonus(worker, false) / 2 + gearBonus(worker, 'build')));
     eta = `${left >= 60 ? `${Math.floor(left / 60)} min ` : ''}${left % 60 || left < 60 ? `${left % 60} s` : ''}`.trim() + ' de trabalho';
   }
   return { pct, builder, eta };
@@ -1923,9 +1930,9 @@ function animateActors(now) {
         if (onTrail) actor.route.shift(); else actor.finalPoint = null;
         if (!actor.route.length && !actor.finalPoint) {
           // Quem trabalha tem ritmo fixo; quem só anda para um tempo diferente a cada vez, para ninguém andar em fila sincronizada.
-          actor.wait = actor.className === 'Peasant' ? (actor.headingToWork ? 2.3 : 1.8 + Math.random() * 3) : 1.2;
-          if (actor.className === 'Peasant' && actor.headingToWork && workplaceOf(actor)?.type === 'lumber') gainSkill(actor, 'woodcutting', 0.3);
-          if (actor.className === 'Peasant' && actor.headingToWork && isPit(workplaceOf(actor))) gainSkill(actor, 'mining', 0.3);
+          actor.wait = actor.className === 'Peasant' ? (actor.headingToWork ? 2.3 / taskSpeed(actor, workplaceOf(actor)) : 1.8 + Math.random() * 3) : 1.2;
+          if (actor.className === 'Peasant' && actor.headingToWork && workplaceOf(actor)?.type === 'lumber') gainTrade(actor, 'lumber');
+          if (actor.className === 'Peasant' && actor.headingToWork && isPit(workplaceOf(actor))) gainTrade(actor, workplaceOf(actor).type);
           if (actor.className === 'Peasant' && actor.headingToWork) { actor.actionTime = actor.wait; actor.actionClock = 0; gainActorXp(actor, 13); actor.headingToWork = false; }
           actor.goal = null;
         }
@@ -2327,28 +2334,181 @@ const SLOT_PRIORITY = {
   Ganancioso: ['ring1', 'ring2', 'amulet', 'weapon', 'body', 'head', 'offhand', 'cloak', 'feet', 'hands'],
   Bêbado: ['cloak', 'feet', 'weapon', 'body', 'head', 'offhand', 'hands', 'amulet', 'ring1', 'ring2'],
 };
-// Profissões: você escolhe. Sem profissão o camponês faz o que houver e não compra ferramenta de ofício.
+// Ofício: você escolhe onde o camponês trabalha. Sem ofício ele faz o que houver e não compra ferramenta de ofício.
+// O que ele sabe fazer são as profissões de data/peasant-professions.js (abaixo), que sobem com o trabalho.
 const PROFESSIONS = {
-  farmer: { name: 'Fazendeiro', fem: 'Fazendeira', skill: 'farming', types: ['farm'] },
-  miller: { name: 'Moleiro', fem: 'Moleira', skill: 'milling', types: ['mill', 'bakery'] },
-  woodcutter: { name: 'Lenhador', fem: 'Lenhadora', skill: 'woodcutting', types: ['lumber'] },
-  miner: { name: 'Minerador', fem: 'Mineradora', skill: 'mining', types: ['quarry', 'mine'] },
-  builder: { name: 'Pedreiro', fem: 'Pedreira', skill: 'building', types: [] },
+  farmer: { name: 'Fazendeiro', fem: 'Fazendeira', types: ['farm'] },
+  miller: { name: 'Moleiro', fem: 'Moleira', types: ['mill', 'bakery'] },
+  woodcutter: { name: 'Lenhador', fem: 'Lenhadora', types: ['lumber'] },
+  miner: { name: 'Minerador', fem: 'Mineradora', types: ['quarry', 'mine'] },
+  builder: { name: 'Pedreiro', fem: 'Pedreira', types: [] },
 };
-// Habilidades de 0 a 100. Sobem devagar com o que o camponês faz, e mais devagar quanto mais alto.
-const SKILLS = [
-  { id: 'farming', name: 'Lavoura' }, { id: 'milling', name: 'Moagem' }, { id: 'woodcutting', name: 'Lenha' }, { id: 'mining', name: 'Mineração' },
-  { id: 'building', name: 'Construção' }, { id: 'hauling', name: 'Carga' },
-];
-const SKILL_OF_TYPE = { farm: 'farming', mill: 'milling', bakery: 'milling', lumber: 'woodcutting', quarry: 'mining', mine: 'mining' };
+// Carga vai de 0 a 100 e sobe devagar a cada entrega, mais devagar quanto mais alta.
+const SKILLS = [{ id: 'hauling', name: 'Carga' }];
 const skillOf = (actor, id) => actor?.skills?.[id] || 0;
+// ==========================================================================
+// Profissões (data/peasant-professions.js). Todo camponês começa generalista, com as sete no nível 1.
+// Cada trabalho feito no jogo rende XP para a profissão ligada a ele pelo "hook" da ação.
+// No nível 50 a profissão para e libera a especialização, escolhida uma vez na ficha.
+// ==========================================================================
+const TRADE_DATA = window.PEASANT_PROFESSIONS || { maxLevel: 50, levelTable: [], masteryRanks: [0], attributes: {}, professions: [] };
+const TRADES = TRADE_DATA.professions;
+const TRADE_MAX = TRADE_DATA.maxLevel;
+const TRADE_BY_KEY = Object.fromEntries(TRADES.map(trade => [trade.key, trade]));
+const TRADE_HOOKS = {};
+TRADES.forEach(trade => trade.actions.forEach(action => { if (action.hook) TRADE_HOOKS[action.hook] = { trade: trade.key, action }; }));
+// Cada segundo de obra ou conserto conta como um pedaço do "consertar equipamento de madeira".
+const BUILD_ACTION_SECONDS = 3;
+const hookOf = building => building.type === 'farm' ? `farm:${farmType(building.produce).id}` : building.type;
+// Rendimento extra que só vale num tipo de trabalho.
+const HOOK_YIELD = { lumber: 'woodYieldPercent', quarry: 'oreYieldPercent', mine: 'oreYieldPercent', 'farm:wheat': 'harvestYieldPercent', 'farm:garlic': 'harvestYieldPercent', 'farm:bacon': 'animalYieldPercent', 'farm:milk': 'animalYieldPercent', 'farm:eggs': 'animalYieldPercent' };
+const EFFECT_LABELS = {
+  workSpeedPercent: 'trabalho', yieldPercent: 'rendimento', toolDurabilityPercent: 'durabilidade da ferramenta', doubleYieldChancePercent: 'chance de render dobrado',
+  growthTimePercent: 'tempo de crescimento', harvestYieldPercent: 'colheita', animalYieldPercent: 'rendimento dos animais', animalDeathChancePercent: 'chance de animal morrer',
+  catchChancePercent: 'chance de pegar', rareCatchChancePercent: 'chance de pegar coisa rara', repairAmountPercent: 'conserto', buildSpeedPercent: 'obra',
+  fuelCostPercent: 'gasto de carvão', masterworkChancePercent: 'chance de obra-prima', foodSpoilagePercent: 'comida estragando', mealHappinessBonus: 'felicidade por refeição',
+  woodYieldPercent: 'madeira', oreYieldPercent: 'minério', yieldPerSwingPercent: 'rendimento por golpe', gemChancePercent: 'chance de gema',
+  herbYieldPercent: 'ervas', rareHerbChancePercent: 'chance de erva rara', breedingSpeedPercent: 'reprodução', tamingSpeedPercent: 'doma', beastHpPercent: 'vida das feras',
+  fishYieldPercent: 'peixe', treasureChancePercent: 'chance de tesouro', hideQualityPercent: 'qualidade do couro', gameYieldPercent: 'carne de caça',
+  clothArmorQualityPercent: 'qualidade de roupa e couro', constructionWoodCostPercent: 'madeira gasta em obra', armorQualityPercent: 'qualidade da armadura', batchSizeBonus: 'peças por fornada',
+  bladeQualityPercent: 'qualidade da lâmina', mealBuffDurationPercent: 'duração do efeito da comida', mealQualityPercent: 'qualidade da comida', storageCapacityPercent: 'espaço de depósito',
+  xpGainPercent: 'XP',
+};
+// Efeitos que o jogo já usa; os outros ficam guardados até a parte do jogo existir.
+const LIVE_EFFECTS = new Set(['workSpeedPercent', 'yieldPercent', 'woodYieldPercent', 'oreYieldPercent', 'harvestYieldPercent', 'animalYieldPercent', 'growthTimePercent', 'buildSpeedPercent', 'repairAmountPercent', 'xpGainPercent']);
+// mark: põe * nos efeitos que o jogo ainda não usa.
+const effectText = (effects, mark = false) => Object.entries(effects).map(([key, value]) => {
+  const sign = value > 0 ? '+' : '−';
+  if (TRADE_DATA.attributes[key]) return `${sign}${Math.abs(value)} ${TRADE_DATA.attributes[key].name}`;
+  return `${sign}${Math.abs(value)}${key.endsWith('Percent') ? '%' : ''} ${EFFECT_LABELS[key] || key}${mark && !LIVE_EFFECTS.has(key) ? '*' : ''}`;
+}).join(', ');
+function tradeOf(actor, key) {
+  actor.trades = actor.trades || {};
+  return actor.trades[key] || (actor.trades[key] = { xp: 0, level: 1, spec: null, mastery: 0 });
+}
+const tradeLevel = (actor, key) => actor?.trades?.[key]?.level || 1;
+const tradeSpec = (actor, key) => TRADE_BY_KEY[key]?.specializations.find(spec => spec.key === actor?.trades?.[key]?.spec) || null;
+const masteryRank = progress => TRADE_DATA.masteryRanks.filter(start => (progress.mastery || 0) >= start).length;
+// Passivos ganhos e bônus da especialização, somados.
+function tradeEffects(actor, key) {
+  const trade = TRADE_BY_KEY[key];
+  const total = {};
+  if (!trade || !actor?.trades?.[key]) return total;
+  const add = effects => Object.entries(effects).forEach(([id, value]) => { total[id] = (total[id] || 0) + value; });
+  trade.passives.filter(passive => passive.level <= tradeLevel(actor, key)).forEach(passive => add(passive.effects));
+  const spec = tradeSpec(actor, key);
+  if (spec) add(spec.bonus);
+  return total;
+}
+// Pontos de atributo de todas as profissões, já convertidos em atributos de luta (hp, atk, def, dex, mag).
+function tradeCombat(actor) {
+  const combat = {};
+  if (!actor?.trades) return combat;
+  TRADES.forEach(trade => Object.entries(tradeEffects(actor, trade.key)).forEach(([id, points]) => {
+    Object.entries(TRADE_DATA.attributes[id]?.combat || {}).forEach(([stat, per]) => { combat[stat] = (combat[stat] || 0) + points * per; });
+  }));
+  return combat;
+}
+const tradeAttribute = (actor, id) => TRADES.reduce((sum, trade) => sum + (tradeEffects(actor, trade.key)[id] || 0), 0);
+// Bônus total da profissão ligada a esse trabalho (0,1 = +10%). No trabalho ele se divide no meio:
+// metade aumenta a produção do lugar (crewWork) e metade encurta cada tarefa (taskSpeed).
+// Na obra e no conserto é igual: metade no avanço da obra, metade no ritmo de cada ação (buildPractice).
+function tradeWorkBonus(actor, hook) {
+  const link = TRADE_HOOKS[hook];
+  if (!link) return 0;
+  const fx = tradeEffects(actor, link.trade);
+  return ((fx.workSpeedPercent || 0) + (fx.yieldPercent || 0) + (fx[HOOK_YIELD[hook]] || 0) - (hook.startsWith('farm:') ? fx.growthTimePercent || 0 : 0)) / 100;
+}
+const taskSpeed = (actor, place) => 1 + (place ? tradeWorkBonus(actor, hookOf(place)) / 2 : 0);
+function tradeBuildBonus(actor, repairing) {
+  const fx = tradeEffects(actor, TRADE_HOOKS.build?.trade);
+  return ((fx.workSpeedPercent || 0) + (fx.buildSpeedPercent || 0) + (repairing ? fx.repairAmountPercent || 0 : 0)) / 100;
+}
+// Uma ação feita no mundo: xp = baseXp × max(0,25; 1 − 0,03 × (nível − nível da ação)) × (1 + xpGainPercent / 100).
+function gainTrade(actor, hook) {
+  if (!actor || actor.className !== 'Peasant') return;
+  const link = TRADE_HOOKS[hook];
+  if (!link) return;
+  const trade = TRADE_BY_KEY[link.trade];
+  const progress = tradeOf(actor, trade.key);
+  const xp = Math.round(link.action.baseXp * Math.max(0.25, 1 - 0.03 * (progress.level - link.action.level)) * (1 + (tradeEffects(actor, trade.key).xpGainPercent || 0) / 100));
+  if (progress.level >= TRADE_MAX) {
+    // Sem especialização escolhida, o XP se perde. Com ela, vira maestria.
+    if (!progress.spec) return;
+    const before = masteryRank(progress);
+    progress.mastery = (progress.mastery || 0) + xp;
+    const rank = masteryRank(progress);
+    if (rank > before) say(`${actor.name} chegou ao rank ${rank} de ${tradeSpec(actor, trade.key).name}. Liberou ${tradeSpec(actor, trade.key).unlocks.filter(unlock => unlock.rank === rank).map(unlock => unlock.name).join(', ')}.`);
+    return;
+  }
+  progress.xp += xp;
+  const before = progress.level;
+  while (progress.level < TRADE_MAX && progress.xp >= TRADE_DATA.levelTable[progress.level].totalXp) progress.level++;
+  for (let level = before + 1; level <= progress.level; level++) {
+    const passive = trade.passives.find(item => item.level === level);
+    const unlocked = trade.unlocks.filter(unlock => unlock.level === level).map(unlock => unlock.name);
+    if (level === TRADE_MAX) say(`${actor.name} chegou ao nível ${TRADE_MAX} de ${trade.name}. Ganhou ${passive?.name || 'nada'} e agora escolhe a especialização, na ficha. Pra sempre.`);
+    else if (passive) say(`${actor.name} chegou ao nível ${level} de ${trade.name} e ganhou ${passive.name} (${effectText(passive.effects)}).${unlocked.length ? ` Liberou ${unlocked.join(', ')}.` : ''} Ninguém comemorou.`);
+  }
+}
+const UNLOCK_TYPES = { tool: 'Ferramenta', recipe: 'Receita', action: 'Ação' };
+const unlockLine = (unlock, got, tag) => `<li class="${got ? 'got' : ''}"><em>${tag}</em> ${UNLOCK_TYPES[unlock.type] || unlock.type}: <b>${unlock.name}</b>${unlock.about ? ` · ${unlock.about}` : ''}</li>`;
+// Ficha do camponês: as sete profissões, com XP, passivos, o que liberam e a especialização.
+function tradesHTML(actor) {
+  const place = actor.buildSite != null ? null : workplaceOf(actor);
+  const current = actor.buildSite != null ? TRADE_HOOKS.build?.trade : place ? TRADE_HOOKS[hookOf(place)]?.trade : null;
+  const table = TRADE_DATA.levelTable;
+  const rows = TRADES.map(trade => {
+    const progress = actor.trades?.[trade.key] || { xp: 0, level: 1, spec: null, mastery: 0 };
+    const spec = tradeSpec(actor, trade.key);
+    const maxed = progress.level >= TRADE_MAX;
+    let fill = 100, status;
+    if (spec) {
+      const rank = masteryRank(progress);
+      const start = TRADE_DATA.masteryRanks[rank - 1], next = TRADE_DATA.masteryRanks[rank];
+      if (next != null) fill = ((progress.mastery || 0) - start) / (next - start) * 100;
+      status = `${spec.name} · rank ${rank}${next != null ? ` · ${format(progress.mastery || 0)}/${format(next)} de maestria` : ' · maestria completa'}`;
+    } else if (maxed) status = 'Pronto para especializar';
+    else {
+      const from = table[progress.level - 1].totalXp, to = table[progress.level].totalXp;
+      fill = (progress.xp - from) / (to - from) * 100;
+      status = `${format(progress.xp - from)}/${format(to - from)} XP`;
+    }
+    const actions = trade.actions.map(action => `${action.name}${action.hook ? '' : '*'}`).join(', ');
+    const passives = trade.passives.map(passive => `<li class="${progress.level >= passive.level ? 'got' : ''}"><em>Nv ${passive.level}</em> <b>${passive.name}</b> · ${effectText(passive.effects, true)}</li>`).join('');
+    const unlocks = trade.unlocks.map(unlock => unlockLine(unlock, progress.level >= unlock.level, `Nv ${unlock.level}`)).join('');
+    const specs = spec
+      ? `<p class="trade-note"><b>${spec.option} · ${spec.name}</b>: ${spec.focus}. ${effectText(spec.bonus, true)}.</p><ul>${spec.unlocks.map(unlock => unlockLine(unlock, masteryRank(progress) >= unlock.rank, `Rank ${unlock.rank}`)).join('')}</ul>`
+      : maxed
+        ? `<p class="trade-note">Escolha uma. É definitiva.</p><div class="trade-specs">${trade.specializations.map(item => `<button type="button" class="trade-spec" data-action="pick-spec" data-id="${actor.id}" data-trade="${trade.key}" data-spec="${item.key}"><b>${item.option} · ${item.name}</b><small>${item.focus}. ${effectText(item.bonus, true)}</small></button>`).join('')}</div>`
+        : `<ul>${trade.specializations.map(item => `<li><em>Nv ${TRADE_DATA.specializationLevel}</em> <b>${item.option} · ${item.name}</b> · ${item.focus}</li>`).join('')}</ul>`;
+    return `<details class="trade${current === trade.key ? ' main' : ''}${maxed && !spec ? ' ready' : ''}"><summary><span class="trade-name">${trade.name}</span><span class="trade-bar"><i style="width:${Math.max(0, Math.min(100, fill))}%"></i></span><b>${progress.level}</b><small>${status}</small></summary>
+      <div class="trade-body"><p class="trade-note">${trade.area}. Sobe com: ${actions}.</p>
+        <div class="trade-sub">PASSIVOS</div><ul>${passives}</ul>
+        <div class="trade-sub">LIBERA</div><ul>${unlocks}</ul>
+        <div class="trade-sub">ESPECIALIZAÇÃO</div>${specs}</div></details>`;
+  });
+  return `<div class="sheet-section-label">PROFISSÕES</div><div class="trade-list">${rows.join('')}</div>
+    <p class="trade-note">* Ainda sem lugar no jogo: a ação não rende XP e o efeito não muda nada. Receitas e ferramentas ficam liberadas, mas ainda não há oficina para fazê-las.</p>`;
+}
+function chooseSpecialization(id, key, specKey) {
+  const actor = findActor(id);
+  const trade = TRADE_BY_KEY[key];
+  const spec = trade?.specializations.find(item => item.key === specKey);
+  if (!actor || !spec) return;
+  const progress = tradeOf(actor, key);
+  if (progress.level < TRADE_DATA.specializationLevel || progress.spec) return;
+  progress.spec = spec.key;
+  progress.mastery = 0;
+  say(`${actor.name} agora é ${spec.name}. Não tem volta, como quase tudo em Mordavia.`);
+}
 function gainSkill(actor, id, amount) {
   if (!actor || actor.className !== 'Peasant') return;
   actor.skills = actor.skills || {};
   const now = actor.skills[id] || 0;
   actor.skills[id] = Math.min(100, now + amount * (1 - now / 110));
 }
-const professionName = actor => { const prof = PROFESSIONS[actor.profession]; return prof ? (isFemalePeasant(actor) ? prof.fem : prof.name) : 'Sem profissão'; };
+const professionName = actor => { const prof = PROFESSIONS[actor.profession]; return prof ? (isFemalePeasant(actor) ? prof.fem : prof.name) : 'Nenhum, faz o que aparece'; };
 function setProfession(id, profession) {
   const worker = findActor(id);
   if (!worker || worker.className !== 'Peasant') return;
@@ -2359,7 +2519,7 @@ function setProfession(id, profession) {
   worker.route = []; worker.finalPoint = null; worker.wait = 0;
   workplaceOf(worker);
   renderPanel();
-  say(worker.profession ? `${worker.name} agora é ${professionName(worker).toLowerCase()}. Ninguém perguntou se queria.` : `${worker.name} ficou sem profissão. Vai fazer o que aparecer.`);
+  say(worker.profession ? `${worker.name} agora é ${professionName(worker).toLowerCase()}. Ninguém perguntou se queria.` : `${worker.name} ficou sem ofício. Vai fazer o que aparecer.`);
 }
 const PEASANT_PRIORITY = ['tool', 'clothes', 'feet', 'hands', 'head'];
 const ARMORY_LEVELS = [
@@ -2376,10 +2536,10 @@ const fitsSlot = (item, actor, slot) => item.slot === slotKind(slot) && (actor.c
 const gearBonus = (actor, key) => Object.values(gearOf(actor)).reduce((sum, id) => sum + (GEAR[id]?.bonus[key] || 0), 0);
 const bonusText = bonus => Object.entries(bonus).map(([key, value]) => ['work', 'speed', 'build'].includes(key) ? `+${Math.round(value * 100)}% ${BONUS_LABELS[key]}` : `+${value} ${BONUS_LABELS[key]}`).join(', ');
 const carryLoad = actor => CARRY_LOAD + gearBonus(actor, 'carry') + Math.floor(skillOf(actor, 'hauling') / 25);
-// Bônus de trabalho de quem está escalado nesta construção (fazenda, moinho ou cabana).
+// Bônus de trabalho de quem está escalado nesta construção: equipamento e metade do bônus da profissão.
 function crewWork(building) {
   return state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site)
-    .reduce((sum, worker) => sum + gearBonus(worker, 'work') + skillOf(worker, SKILL_OF_TYPE[building.type]) / 200, 0);
+    .reduce((sum, worker) => sum + gearBonus(worker, 'work') + tradeWorkBonus(worker, hookOf(building)) / 2, 0);
 }
 const armoryTier = () => state.buildings.filter(building => building.type === 'armory' && isDone(building))
   .reduce((best, armory) => Math.max(best, ARMORY_LEVELS[Math.min(armory.level || 0, ARMORY_LEVELS.length - 1)].tierCap), 0);
@@ -2504,7 +2664,7 @@ function attributesAt(table, level) {
 }
 function attributesHTML(attrs, actor = null) {
   const rows = [['Vida', attrs.hp, 'hp'], ['Ataque', attrs.atk, 'atk'], ['Magia', attrs.mag, 'mag'], ['Defesa', attrs.def, 'def'], ['Destreza', attrs.dex, 'dex'], ['Movimento', attrs.mov, null]];
-  return `<div class="sheet-section-label">ATRIBUTOS</div><dl class="attr-grid">${rows.map(([label, value, key]) => { const extra = actor && key ? gearBonus(actor, key) : 0; return `<div><dt>${label}</dt><dd>${value + extra}${extra ? `<small class="attr-bonus">+${extra}</small>` : ''}</dd></div>`; }).join('')}</dl>`;
+  return `<div class="sheet-section-label">ATRIBUTOS</div><dl class="attr-grid">${rows.map(([label, value, key]) => { const extra = actor && key ? statBonus(actor, key) : 0; return `<div><dt>${label}</dt><dd>${value + extra}${extra ? `<small class="attr-bonus">+${extra}</small>` : ''}</dd></div>`; }).join('')}</dl>`;
 }
 // Monarca: não luta, só usa magia. Atributos MP, CHA, MAG, INT e WIS.
 // MAG segue o Mago Negro do Ember (+3 por nível); os outros crescem em linha reta até o nível 30.
@@ -2534,10 +2694,13 @@ function levelHTML(level, xp) {
     <div class="xp-bar"><i style="width:${maxed ? 100 : Math.round(xp / xpToNext(level) * 100)}%"></i></div></div>`;
 }
 // Experiência de heróis e camponeses, na mesma regra do Ember (1 a 30).
+// O herdeiro fica com uma parte do XP de cada súdito (herói ou camponês do domínio), sem tirar nada dele.
+const HEIR_SUBJECT_SHARE = 0.1;
 function gainActorXp(actor, amount) {
   actor.level = actor.level || 1;
   actor.xp = actor.xp || 0;
   if (actor.level >= HEIR_MAX_LEVEL) return 0;
+  if (state.workers.includes(actor) || state.heroes.includes(actor)) gainHeirXp(amount * HEIR_SUBJECT_SHARE);
   actor.xp += amount;
   let gained = 0;
   while (actor.level < HEIR_MAX_LEVEL && actor.xp >= xpToNext(actor.level)) { actor.xp -= xpToNext(actor.level); actor.level++; gained++; }
@@ -2733,8 +2896,8 @@ function bakeRoutine(actor, bakery) {
     }
     const baking = bakeryCanBake(bakery);
     actor.task = baking ? `Assando ${foodName(recipe.id)} na padaria` : `Na padaria, esperando ${recipe.needs.map(id => foodName(id)).join(', ')}`;
-    if (baking) gainSkill(actor, SKILL_OF_TYPE.bakery, 0.3);
-    actor.wait = 3; actor.actionTime = 3; actor.actionClock = 0;
+    if (baking) gainTrade(actor, 'bakery');
+    actor.wait = 3 / taskSpeed(actor, bakery); actor.actionTime = actor.wait; actor.actionClock = 0;
     return;
   }
   if (isAt(actor, store)) {
@@ -2800,8 +2963,8 @@ function haulRoutine(actor, workplace) {
       return;
     }
     actor.task = mill ? (workplace.input > 0 ? 'Moendo trigo no moinho' : 'No moinho, esperando trigo') : `Trabalhando ${workPlaceName(workplace)}`;
-    if (!mill || workplace.input > 0) gainSkill(actor, SKILL_OF_TYPE[workplace.type], 0.3);
-    actor.wait = 3; actor.actionTime = 3; actor.actionClock = 0;
+    if (!mill || workplace.input > 0) gainTrade(actor, hookOf(workplace));
+    actor.wait = 3 / taskSpeed(actor, workplace); actor.actionTime = actor.wait; actor.actionClock = 0;
     return;
   }
   if (isAt(actor, store)) {
@@ -2890,8 +3053,9 @@ function feedWorkers(dt) {
     food: ration.mult > 0 ? [...eaten].reduce((sum, id) => sum + (FOOD_TYPES.find(food => food.id === id)?.mood || 0), 0) : 0,
     tax: taxMood(),
     hunger: demand > 0 ? -Math.round(20 * (1 - fulfilled)) : 0,
-  } : { ration: 0, food: 0, tax: 0, hunger: 0 };
-  const target = Math.max(0, Math.min(100, 50 + parts.ration + parts.food + parts.tax + parts.hunger));
+    empathy: Math.round(state.workers.filter(worker => worker.alive).reduce((sum, worker) => sum + tradeAttribute(worker, 'emp'), 0) * 0.5),
+  } : { ration: 0, food: 0, tax: 0, hunger: 0, empathy: 0 };
+  const target = Math.max(0, Math.min(100, 50 + parts.ration + parts.food + parts.tax + parts.hunger + parts.empathy));
   // Não muda agora: acumula o alvo para a média da semana (ver applyWeeklyMood).
   state.moodSum = (state.moodSum || 0) + target * dt;
   state.moodTime = (state.moodTime || 0) + dt;
@@ -3328,7 +3492,7 @@ function economyPanelHTML() {
 function foodPanelHTML() {
   const prod = foodProduction();
   const milling = millCapacity();
-  const parts = { ration: 0, food: 0, tax: 0, hunger: 0, ...(state.moodParts || {}) };
+  const parts = { ration: 0, food: 0, tax: 0, hunger: 0, empathy: 0, ...(state.moodParts || {}) };
   const signed = n => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n)}`;
   const n = eaters();
   const used = storedUnits();
@@ -3351,7 +3515,7 @@ function foodPanelHTML() {
         ${food.raw ? '<button type="button" disabled>PRO MOINHO</button>' : `<button type="button" data-diet="${food.id}" class="${on ? 'on' : ''}">${on ? 'SERVINDO' : 'GUARDADO'}</button>`}</div>`; }).join('')}</div>
     <div class="mood-box"><div class="mood-head"><span>FELICIDADE</span><b>${Math.round(state.happiness)}</b><em>${happinessLabel(state.happiness)}</em><small>média da semana ${Math.round(moodWeekAverage())} · muda no dia ${nextMoodDay()}</small></div>
       <div class="mood-bar"><i style="width:${Math.round(state.happiness)}%"></i></div>
-      <dl class="mood-parts"><div><dt>Ração</dt><dd>${signed(parts.ration)}</dd></div><div><dt>Comida</dt><dd>${signed(parts.food)}</dd></div><div><dt>Imposto</dt><dd>${signed(parts.tax)}</dd></div><div><dt>Fome</dt><dd>${signed(parts.hunger)}</dd></div></dl></div>
+      <dl class="mood-parts"><div><dt>Ração</dt><dd>${signed(parts.ration)}</dd></div><div><dt>Comida</dt><dd>${signed(parts.food)}</dd></div><div><dt>Imposto</dt><dd>${signed(parts.tax)}</dd></div><div><dt>Fome</dt><dd>${signed(parts.hunger)}</dd></div><div><dt>Empatia</dt><dd>${signed(parts.empathy || 0)}</dd></div></dl></div>
     <div class="mood-rules"><div class="food-label">O QUE MUDA A FELICIDADE</div>
       <p>A felicidade muda uma vez por semana, à meia-noite do 7º dia: anda até ${MOOD_WEEKLY_STEP} pontos na direção da média da semana, que é 50 somado a estes efeitos:</p>
       <dl>
@@ -3359,6 +3523,7 @@ function foodPanelHTML() {
         <div><dt>Comida</dt><dd>Cada alimento servido soma: ${FOOD_TYPES.filter(food => !food.raw).map(food => `${food.name.toLowerCase()} +${food.mood}`).join(' · ')}</dd></div>
         <div><dt>Imposto</dt><dd>0% +10 · 5% +5 · 10% 0 · 15% −5 · 20% −10</dd></div>
         <div><dt>Fome</dt><dd>Quando a comida servida não dá pra todos: até −20</dd></div>
+        <div><dt>Empatia</dt><dd>Cada ponto de Empatia dos camponeses (passivos de Criador) soma +0,5</dd></div>
       </dl>
       <p>Só conta o que está marcado como SERVINDO e tem estoque. Trigo cru não vai pra mesa: o moinho transforma em farinha.</p></div>`;
 }
@@ -3484,10 +3649,12 @@ const isBandit = actor => actor.className === 'Bandit';
 const classOf = actor => actor.prestige || actor.className;
 // Atributos de luta: os da classe no nível, mais o equipamento.
 // Invocações do Monarca trazem os próprios atributos (fixedStats); auras e debuffs dele entram por último.
+// No camponês, os atributos das profissões também entram.
+const statBonus = (actor, key) => (actor.gear ? gearBonus(actor, key) : 0) + (tradeCombat(actor)[key] || 0);
 const statsOf = actor => {
   const raw = actor.fixedStats ? { ...actor.fixedStats } : attributesAt(tableFor(actor), actor.level || 1);
-  const base = !actor.gear ? raw
-    : { ...raw, hp: raw.hp + gearBonus(actor, 'hp'), atk: raw.atk + gearBonus(actor, 'atk'), mag: raw.mag + gearBonus(actor, 'mag'), def: raw.def + gearBonus(actor, 'def'), dex: raw.dex + gearBonus(actor, 'dex') };
+  const base = !actor.gear && !actor.trades ? raw
+    : { ...raw, hp: raw.hp + statBonus(actor, 'hp'), atk: raw.atk + statBonus(actor, 'atk'), mag: raw.mag + statBonus(actor, 'mag'), def: raw.def + statBonus(actor, 'def'), dex: raw.dex + statBonus(actor, 'dex') };
   return window.Monarch ? Monarch.statMods(actor, base) : base;
 };
 const maxHpOf = actor => statsOf(actor).hp;
@@ -4408,11 +4575,12 @@ const HOWTO = [
     <h3>De onde vêm</h3>
     <p>Cada Casebre Pequeno traz um casal. Ampliar para Casebre Grande traz mais três (5 moradores). Sem moradia, ninguém chega.</p>
     <h3>Profissões</h3>
-    ${howTable(['Profissão', 'Trabalha em', 'Habilidade'], Object.values(PROFESSIONS).map(prof => [prof.name, prof.types.length ? prof.types.map(type => BUILDINGS.find(item => item.id === type)?.name).join(', ') : 'Obras e consertos', SKILLS.find(skill => skill.id === prof.skill).name]))}
-    <p>Sem profissão, o camponês faz o que houver e só compra equipamento básico.</p>
-    <h3>Habilidades</h3>
-    <p>Lavoura, Moagem, Lenha, Mineração, Construção e Carga vão de 0 a 100 e sobem com o uso, mais devagar quanto mais altas.</p>
-    ${howFormula(`Ganho = quantidade × (1 − habilidade atual/110)<br>Trabalho na fazenda ou moinho: 0,3 por ciclo · Obra: 0,02 por segundo`)}
+    ${howTable(['Ofício', 'Trabalha em'], Object.values(PROFESSIONS).map(prof => [prof.name, prof.types.length ? prof.types.map(type => BUILDINGS.find(item => item.id === type)?.name).join(', ') : 'Obras e consertos']))}
+    <p>Sem ofício, o camponês faz o que houver e só compra equipamento básico.</p>
+    <h3>Profissões</h3>
+    <p>Todo camponês começa com as sete profissões no nível 1: ${TRADES.map(trade => trade.name).join(', ')}. Cada trabalho rende XP para a profissão ligada a ele, até o nível ${TRADE_MAX}. A cada 10 níveis vem um passivo; no ${TRADE_MAX}, a especialização, escolhida uma vez na ficha.</p>
+    ${howFormula(`XP da ação = XP base × max(0,25; 1 − 0,03 × (nível − nível da ação)) × (1 + bônus de XP)<br>Bônus no trabalho: metade na produção do lugar, metade no ritmo de cada tarefa`)}
+    <p>Carga vai de 0 a 100 e sobe a cada entrega, mais devagar quanto mais alta.</p>
     <h3>Carga</h3>
     ${howFormula(`Carga por viagem = ${CARRY_LOAD} + bônus de carga do equipamento + (Carga/25, arredondado para baixo)`)}` },
   { title: 'Heróis', html: () => `
@@ -4655,7 +4823,7 @@ const SCREENS = {
       <div class="sheet-top"><img class="sheet-portrait" src="${heirPortraitSrc(heir.id, phase)}" alt="${heir.name}, fase ${phase}">
         <div><span class="eyebrow">FICHA DO HERDEIRO · FASE ${phase} DE 4</span><h2>${heir.name}</h2><p class="heir-motto">${house.name} · “${house.motto}”</p><p class="heir-age">${heirAge(heir)} anos · ${elapsed ? `${elapsed} anos de Ember` : 'sem corrupção de Ember'}</p></div></div>
       <div class="sheet-level">
-        <div class="sheet-level-head"><b>Nível ${state.heirLevel}</b><span>de ${HEIR_MAX_LEVEL}</span><small>${state.heirLevel >= HEIR_MAX_LEVEL ? 'Nível máximo. O tédio também.' : `${state.heirXp} / ${xpToNext(state.heirLevel)} XP`}</small></div>
+        <div class="sheet-level-head"><b>Nível ${state.heirLevel}</b><span>de ${HEIR_MAX_LEVEL}</span><small>${state.heirLevel >= HEIR_MAX_LEVEL ? 'Nível máximo. O tédio também.' : `${Math.floor(state.heirXp)} / ${xpToNext(state.heirLevel)} XP`}</small></div>
         <div class="xp-bar"><i style="width:${state.heirLevel >= HEIR_MAX_LEVEL ? 100 : Math.round(state.heirXp / xpToNext(state.heirLevel) * 100)}%"></i></div>
       </div>
       ${heirAttributesHTML(state.heirLevel)}
@@ -4698,8 +4866,8 @@ const SCREENS = {
       <p class="sheet-house">Vida agora: ${Math.ceil(hpOf(actor))} de ${maxHpOf(actor)}</p>
       ${attributesHTML(attributesAt(tableFor(actor), level), actor)}
       ${actor.trait ? `<p class="sheet-about"><b>${actor.trait}.</b> ${TRAITS[actor.trait] || ''}</p>` : ''}
-      ${actor.className === 'Peasant' ? `<dl class="info-lines sheet-work"><div><dt>Profissão</dt><dd>${professionName(actor)}</dd></div><div><dt>Trabalha</dt><dd>${workplaceOf(actor) ? siteLabel(workplaceOf(actor)) : 'Em lugar nenhum'}</dd></div><div><dt>Mora</dt><dd>${homeOf(actor) ? siteLabel(homeOf(actor)) : 'Casarão'}</dd></div><div><dt>Agora</dt><dd>${peasantActivity(actor)}</dd></div>${actor.carrying ? `<div><dt>Carregando</dt><dd>${format(actor.carrying.qty)} de ${foodName(actor.carrying.food)}</dd></div>` : ''}<div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro · salário ${WORKER_WAGE} por dia</dd></div></dl>` : `<dl class="info-lines sheet-work"><div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro, ganho no loot</dd></div></dl>`}
-      ${actor.className === 'Peasant' ? `<div class="sheet-section-label">HABILIDADES</div><dl class="skill-grid">${SKILLS.map(skill => { const value = skillOf(actor, skill.id); return `<div${PROFESSIONS[actor.profession]?.skill === skill.id ? ' class="main"' : ''}><dt>${skill.name}</dt><dd><i style="width:${value}%"></i></dd><small>${Math.floor(value)}</small></div>`; }).join('')}</dl>` : ''}
+      ${actor.className === 'Peasant' ? `<dl class="info-lines sheet-work"><div><dt>Ofício</dt><dd>${professionName(actor)}</dd></div><div><dt>Trabalha</dt><dd>${workplaceOf(actor) ? siteLabel(workplaceOf(actor)) : 'Em lugar nenhum'}</dd></div><div><dt>Mora</dt><dd>${homeOf(actor) ? siteLabel(homeOf(actor)) : 'Casarão'}</dd></div><div><dt>Agora</dt><dd>${peasantActivity(actor)}</dd></div>${actor.carrying ? `<div><dt>Carregando</dt><dd>${format(actor.carrying.qty)} de ${foodName(actor.carrying.food)}</dd></div>` : ''}<div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro · salário ${WORKER_WAGE} por dia</dd></div></dl>` : `<dl class="info-lines sheet-work"><div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro, ganho no loot</dd></div></dl>`}
+      ${actor.className === 'Peasant' ? `${tradesHTML(actor)}<div class="sheet-section-label">HABILIDADES</div><dl class="skill-grid">${SKILLS.map(skill => { const value = skillOf(actor, skill.id); return `<div><dt>${skill.name}</dt><dd><i style="width:${value}%"></i></dd><small>${Math.floor(value)}</small></div>`; }).join('')}</dl>` : ''}
       ${gearHTML(actor)}
       <p class="sheet-house">${actorOrigin(actor)}</p>
     </section>` };
@@ -4969,6 +5137,14 @@ function initMenus() {
         break;
       }
       case 'confirm-yes': { const run = menu.pending; menu.pending = null; run?.(); break; }
+      case 'pick-spec': {
+        const actor = findActor(button.dataset.id);
+        const spec = TRADE_BY_KEY[button.dataset.trade]?.specializations.find(item => item.key === button.dataset.spec);
+        if (!actor || !spec) break;
+        const { id, trade, spec: specKey } = button.dataset;
+        confirmThen({ title: `${actor.name} vira ${spec.name}?`, text: 'A especialização é definitiva. A outra opção some pra sempre, como o resto da família.', confirmLabel: 'Escolher' }, () => { chooseSpecialization(id, trade, specKey); goBack(); });
+        break;
+      }
       case 'save': say(writeSave(game.slot) ? 'Jogo salvo.' : 'Não deu pra salvar. O navegador recusou.'); renderMenu(); break;
       case 'save-quit': writeSave(game.slot); toTitle(); break;
       case 'dead-quit': toTitle(); break;
