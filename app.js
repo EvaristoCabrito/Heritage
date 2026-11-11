@@ -3645,6 +3645,211 @@ function economySnapshot(source) {
 
 const economyRate = value => `${value.toFixed(2).replace('.', ',')}`;
 
+// ==========================================================================
+// Como jogar: manual com as regras e as fórmulas do jogo. Os números saem das mesmas
+// constantes que o jogo usa, então o manual acompanha qualquer ajuste de balanço.
+// ==========================================================================
+const hn = value => Number(value).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
+const howTable = (head, rows) => `<div class="howto-table-wrap"><table class="howto-table"><thead><tr>${head.map(cell => `<th>${cell}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${row.map((cell, i) => i ? `<td>${cell}</td>` : `<th>${cell}</th>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const howFormula = text => `<p class="howto-formula">${text}</p>`;
+const HOWTO = [
+  { title: 'Começo', html: () => `
+    <h3>O objetivo</h3>
+    <p>Junte <b>600 moedas</b> no cofre. Quando o cofre chega lá, o cenário termina e você escolhe quem segue com o herdeiro: <b>2 servos</b> (camponeses) e <b>3 protetores</b> (heróis). No modo teste o objetivo não conta.</p>
+    <h3>O que você recebe</h3>
+    <p>240 de ouro, 30 de madeira, 40 de farinha e 18 de alho. O casarão vem com um casal de camponeses e um Warrior Valente. O casarão guarda ${MANOR_STORAGE} unidades de comida e itens.</p>
+    <h3>Você não manda em ninguém</h3>
+    <p>Camponeses trabalham sozinhos onde houver trabalho. Heróis decidem tudo: quando lutar, beber, comprar e aceitar recompensas. Você só constrói, ajusta imposto e ração, oferece recompensas e lança magias.</p>
+    <h3>Construir</h3>
+    <ul>
+      <li>Escolha a carta na aba <b>Construir</b>: a prévia fica dourada onde dá e vermelha onde não dá. Toque no mapa para erguer. <b>Esc</b>, botão direito ou tocar de novo na carta cancela.</li>
+      <li>Não dá para construir na borda do mapa nem encostado em outra construção (distância mínima de ${hn(BUILD_SPACING)}).</li>
+      <li>Ouro e madeira saem na hora. Depois a construção vira <b>obra</b>: um camponês livre vai até lá e trabalha. Sem camponês livre, a obra espera.</li>
+      <li>Toque numa construção pronta para ver o que ela faz, melhorar, <b>mudar de lugar</b> (de graça) ou <b>demolir</b> (sem reembolso).</li>
+    </ul>` },
+  { title: 'Tempo', html: () => `
+    <h3>Relógio</h3>
+    <p>Na velocidade <b>1×</b>, cada segundo real é um minuto de jogo. Em <b>2×</b> e <b>3×</b> tudo anda duas ou três vezes mais rápido: produção, obras, fome, viagens. Todo valor "por segundo" deste manual é na velocidade 1×.</p>
+    ${howTable(['Unidade', 'Duração'], [['1 hora de jogo', '1 minuto real (a 1×)'], ['1 dia', '24 minutos reais (a 1×)'], ['1 semana', `${DAYS_PER_WEEK} dias`], ['1 mês', `${WEEKS_PER_MONTH} semanas (${DAYS_PER_MONTH} dias)`], ['1 ano', `${MONTHS_PER_YEAR} meses (${DAYS_PER_YEAR} dias)`]])}
+    <p>Períodos: madrugada (0h–6h), manhã (6h–12h), tarde (12h–18h) e noite (18h–24h). O jogo começa às 6h20 do dia 1.</p>
+    <h3>O que acontece em cada hora certa</h3>
+    <ul>
+      <li><b>Toda hora:</b> heróis e camponeses livres podem passar no Arsenal; tributos e recompensas são conferidos.</li>
+      <li><b>Meia-noite:</b> impostos, depois salários. O herdeiro ganha 40 de experiência.</li>
+      <li><b>Meia-noite do 7º dia:</b> a felicidade muda.</li>
+      <li><b>Virada do ano:</b> o herdeiro faz aniversário. A cada 25 anos ele muda de fase e o retrato mostra a corrupção de Ember.</li>
+    </ul>
+    <h3>Controles</h3>
+    <ul>
+      <li>Arraste o mapa com mouse ou toque; a roda do mouse e as setas do teclado também movem a câmera.</li>
+      <li>Zoom 1, 2 e 3: ampla (100%), normal (130%) e próxima (160%). O botão <b>WILDS</b> leva ao segundo mapa e volta.</li>
+      <li><b>Esc</b> ou <b>MENU</b> pausa. <b>FICHA</b> abre a ficha do herdeiro. Mensagens ficam na tela até você clicar.</li>
+      <li>Salvar sozinho (Opções) grava a cada 1, 3 ou 5 minutos e quando a página fecha.</li>
+    </ul>` },
+  { title: 'Construções', html: () => `
+    <h3>Custo e vida</h3>
+    ${howTable(['Construção', 'Ouro', 'Madeira', 'Vida'], BUILDINGS.map(building => [building.name, building.cost, building.wood, BASE_HP[building.id] ?? GUILD_HP]))}
+    ${howFormula(`Vida máxima = vida base × (1 + 0,5 × nível da melhoria)`)}
+    <h3>Obra</h3>
+    <p>Toda construção e toda melhoria precisa de ${BUILD_TIME} de trabalho de um camponês no local (2 minutos reais a 1×, sem bônus). Pedreiros são chamados primeiro, depois quem não tem profissão.</p>
+    ${howFormula(`Avanço por segundo = 1 + Construção/100 + bônus de obra do equipamento`)}
+    <h3>Melhorias</h3>
+    ${howTable(['Melhoria', 'Ouro', 'Madeira', 'Efeito'], [
+      ['Fazenda ou moinho, nível 2', PRODUCER_LEVELS[1].gold, PRODUCER_LEVELS[1].wood, 'produz mais'],
+      ['Fazenda ou moinho, nível 3', PRODUCER_LEVELS[2].gold, PRODUCER_LEVELS[2].wood, 'produz mais'],
+      ['Casebre Grande', HUT_UPGRADE.gold, HUT_UPGRADE.wood, '+3 moradores (5 no total)'],
+      ...STORAGE_LEVELS.slice(1).map(level => [`Depósito para ${level.cap}`, level.gold, level.wood, `guarda ${level.cap}`]),
+      ['Guilda, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, 'recruta mais um herói'],
+      ['Guilda, nível 3', GUILD_UPGRADES[1].gold, GUILD_UPGRADES[1].wood, 'especialização e mais um herói'],
+      ...ARMORY_LEVELS.slice(1).map((level, i) => [`Arsenal, nível ${i + 2}`, level.gold, level.wood, `vende até tier ${level.tierCap}`]),
+    ])}
+    <h3>Dano e conserto</h3>
+    <p>Construção com a vida zerada vira <b>ruína</b> e para de funcionar. Os camponeses consertam sozinhos, pedreiros primeiro.</p>
+    ${howFormula(`Conserto por segundo = ${REPAIR_RATE} × (1 + Construção/100 + bônus de obra)`)}` },
+  { title: 'Comida', html: () => `
+    <h3>Fazendas</h3>
+    <p>Cada fazenda produz um alimento. Dá para trocar a produção a qualquer hora. A colheita fica na fazenda (até ${FARM_STOCK_CAP}) até um camponês levar ao casarão ou ao Depósito mais perto.</p>
+    ${howTable(['Fazenda', 'Nível 1', 'Nível 2', 'Nível 3'], FARM_TYPES.map(type => [type.name, ...type.grain.map(value => `${hn(value)}/s`)]))}
+    ${howFormula(`Produção = valor da tabela × (1 + bônus da equipe)<br>Bônus da equipe = soma, de quem trabalha ali, de (bônus de trabalho do equipamento + habilidade do ofício/200)`)}
+    <h3>Moinho</h3>
+    <p>Trigo cru não alimenta ninguém. O moinho mói trigo em farinha, 1 para 1: o camponês busca trigo no depósito e leva a farinha de volta. Moagem por nível: ${MILL_RATE.map(value => `${hn(value)}/s`).join(', ')}, com o mesmo bônus da equipe.</p>
+    <h3>Ração e consumo</h3>
+    ${howFormula(`Consumo por segundo = camponeses × ${hn(WORKER_UPKEEP)} × multiplicador da ração`)}
+    ${howTable(['Ração', 'Multiplicador', 'Felicidade'], RATIONS.map(ration => [ration.label, `${hn(ration.mult)}×`, ration.mood > 0 ? `+${ration.mood}` : ration.mood]))}
+    <p>A mesa divide a ração em partes iguais entre os alimentos marcados na aba <b>Provisões</b>. Cada alimento servido soma felicidade:</p>
+    ${howTable(['Alimento', 'Felicidade'], FOOD_TYPES.filter(food => !food.raw).map(food => [food.name, `+${food.mood}`]))}
+    <h3>Depósito</h3>
+    <p>O casarão guarda ${MANOR_STORAGE}. Cada Depósito de Provisões soma ${STORAGE_LEVELS.map(level => level.cap).join(', ')} conforme o nível. Comida e itens contam; ouro e madeira não. Com tudo cheio, o excesso se perde.</p>` },
+  { title: 'Felicidade', html: () => `
+    <p>A felicidade dos camponeses vai de 0 a 100 e começa em 50. A cada segundo o jogo calcula um <b>alvo</b>:</p>
+    ${howFormula(`Alvo = 50 + ração + alimentos servidos + imposto + fome<br>Imposto = 10 − porcentagem do imposto<br>Fome = −20 × (parte da ração que faltou)`)}
+    ${howTable(['Imposto', '0%', '5%', '10%', '15%', '20%'], [['Felicidade', '+10', '+5', '0', '−5', '−10']])}
+    <p>A felicidade não muda na hora. Na meia-noite do 7º dia ela anda até <b>${MOOD_WEEKLY_STEP} pontos</b> na direção da média dos alvos da semana.</p>
+    ${howTable(['Faixa', 'Humor'], [['0 a 19', 'Revoltados'], ['20 a 39', 'Infelizes'], ['40 a 59', 'Conformados'], ['60 a 79', 'Contentes'], ['80 a 100', 'Felizes']])}` },
+  { title: 'Ouro', html: () => `
+    <p>Construções não geram ouro. O cofre recebe impostos, a conta da taverna, as vendas do Arsenal e do Mercado, e o que se recupera dos ladrões.</p>
+    <h3>Impostos e salários (meia-noite)</h3>
+    ${howFormula(`Imposto de cada camponês = menor valor entre a bolsa dele e 2 × (imposto/10%)<br>Taverna = conta acumulada × (imposto/10%)`)}
+    <p>O imposto vai de 0% a ${TAX_MAX}%, de 5 em 5. Depois do imposto, cada trabalhador recebe <b>${WORKER_WAGE} de ouro</b> de salário, tirado do cofre. Se o cofre não der, alguém fica sem.</p>
+    <h3>Taverna</h3>
+    <p>Quem bebe paga da própria bolsa, por hora de jogo: <b>1</b> por camponês, <b>2</b> por herói e <b>3</b> por herói de prestígio. Sem dinheiro, bebe fiado e a taverna não ganha. Camponeses bebem das 18h às 22h; heróis param entre uma ronda e outra (20% das vezes, o Bêbado 60%), por 1 a 3 horas.</p>
+    <h3>Bolsas</h3>
+    <p>Cada personagem tem a própria bolsa. Camponeses chegam com ${WORKER_START_PURSE} e heróis com ${HERO_START_PURSE}. Heróis enchem a bolsa com loot e recompensas.</p>
+    <h3>Mercado</h3>
+    ${howTable(['Produto', 'Vender', 'Comprar'], MARKET_GOODS.map(good => [good.name, hn(good.sell), hn(good.buy)]))}
+    <p>Sem a construção do Mercado, só passa a carroça de trigo, alho e madeira: vende por 75% e compra por 125% do preço. A comida comprada precisa caber no depósito.</p>` },
+  { title: 'Madeira', html: () => `
+    <p>O casarão rende 0,14 de madeira por segundo sozinho. A Cabana do Lenhador aceita de 1 a 3 camponeses escalados no painel.</p>
+    ${howTable(['Lenhadores', '1', '2', '3'], [['Madeira por segundo', ...LUMBER_RATE.slice(1).map(hn)]])}
+    <p>Pedreira e Campo de Mineração aceitam até ${PIT_CREW_MAX} camponeses cada: ${hn(PIT_GOODS.quarry.rate)} de pedra e ${hn(PIT_GOODS.mine.rate)} de metal por camponês por segundo.</p>
+    ${howFormula(`Produção = valor base × (1 + bônus da equipe)`)}
+    <p>Quem está escalado numa cabana, pedreira ou mina trabalha lá em vez da fazenda.</p>` },
+  { title: 'Camponeses', html: () => `
+    <h3>De onde vêm</h3>
+    <p>Cada Casebre Pequeno traz um casal. Ampliar para Casebre Grande traz mais três (5 moradores). Sem moradia, ninguém chega.</p>
+    <h3>Profissões</h3>
+    ${howTable(['Profissão', 'Trabalha em', 'Habilidade'], Object.values(PROFESSIONS).map(prof => [prof.name, prof.types.length ? prof.types.map(type => BUILDINGS.find(item => item.id === type)?.name).join(', ') : 'Obras e consertos', SKILLS.find(skill => skill.id === prof.skill).name]))}
+    <p>Sem profissão, o camponês faz o que houver e só compra equipamento básico.</p>
+    <h3>Habilidades</h3>
+    <p>Lavoura, Moagem, Lenha, Mineração, Construção e Carga vão de 0 a 100 e sobem com o uso, mais devagar quanto mais altas.</p>
+    ${howFormula(`Ganho = quantidade × (1 − habilidade atual/110)<br>Trabalho na fazenda ou moinho: 0,3 por ciclo · Obra: 0,02 por segundo`)}
+    <h3>Carga</h3>
+    ${howFormula(`Carga por viagem = ${CARRY_LOAD} + bônus de carga do equipamento + (Carga/25, arredondado para baixo)`)}` },
+  { title: 'Heróis', html: () => `
+    <h3>Alojamento</h3>
+    ${howFormula(`Vagas = 1 (Warrior do casarão) + 1 por guilda + 4 por hotel + 1 por taverna`)}
+    <p>Cada guilda abriga só o seu morador. Quem chega de fora e os heróis dos níveis 2 e 3 da guilda precisam de cama na taverna ou no hotel; sem cama, vão embora.</p>
+    <h3>Quem chega</h3>
+    <ul>
+      <li>Guilda pronta: chega um herói da classe.</li>
+      <li>Taverna: um visitante a cada 3 horas de jogo. Hotel: a cada 2h30.</li>
+      <li>Com hotel e guildas, os visitantes são das classes das guildas; sem isso, de qualquer classe.</li>
+    </ul>
+    <h3>Prestígio</h3>
+    <p>No nível 15 o herói procura a guilda especializada da classe mais perto e vira a especialização dela. Especialize as guildas no nível 3.</p>
+    ${howTable(['Classe', 'Especializações'], Object.entries(PRESTIGE).map(([cls, paths]) => [cls, paths.join(' / ')]))}
+    <h3>Manias</h3>
+    ${howTable(['Mania', 'O que faz'], Object.entries(TRAITS).map(([trait, about]) => [trait, about]))}
+    <h3>Experiência</h3>
+    <p>Heróis só ganham experiência lutando ou curando. O nível vai até ${HEIR_MAX_LEVEL}.</p>
+    ${howFormula(`Por golpe = 13 + 3 × (nível do alvo − nível do herói), no mínimo 1<br>Golpe que mata: × 1,25 · Cura: 13`)}
+    ${howTable(['Do nível', 'Experiência para subir'], [['1 e 2', 100], ['3 a 7', 150], ['8 a 12', 225], ['13 a 17', 300], ['18 a 22', 400], ['23 a 27', 500], ['28 e 29', 600]])}` },
+  { title: 'Atributos', html: () => {
+    const table = (name, key) => { const [hp, atk, mag, def, dex] = EMBER_CLASSES[key].stats[0]; return [name, hp, atk, mag, def, dex, EMBER_CLASSES[key].mov]; };
+    const rows = Object.entries(CLASS_TABLE).map(([cls, key]) => table(cls, key));
+    rows.push(table('Camponês', 'peasant1'), table('Camponesa', 'villagerF1'), table('Salteador', 'rogue'), table('Besteiro', 'brigandCrossbowman'));
+    rows.push(['Caveira', ...SKELETON_TABLE.stats[0], SKELETON_TABLE.mov]);
+    return `<p>Valores no nível 1. Todas as classes crescem no mesmo ritmo, então só a diferença de nível muda quem leva vantagem.</p>
+    ${howFormula(`Atributo no nível N = valor do nível 1 × (1 + ${hn(STAT_GROWTH)} × (N − 1)), arredondado<br>Atributo final = atributo do nível + bônus do equipamento`)}
+    ${howTable(['Classe', 'Vida', 'Ataque', 'Magia', 'Defesa', 'Destreza', 'Mov.'], rows)}`;
+  } },
+  { title: 'Combate', html: () => `
+    <p>Heróis enxergam inimigos até ${AGGRO_RANGE} de distância e largam o que estavam fazendo para lutar, com ou sem recompensa. Cada inimigo na cidade atrai pelo menos o herói livre mais perto, até quem estava bebendo.</p>
+    <h3>Dano</h3>
+    ${howFormula(`Poder = Ataque (magos usam Magia) · Guarda = Defesa do alvo (contra magia, metade)<br>Dano = Poder² / (Poder + Guarda) × variação de 0,8 a 1,2 × 1,5 se crítico, no mínimo 1`)}
+    <p>Defesa alta reduz o dano, mas nunca zera.</p>
+    <h3>Crítico e esquiva</h3>
+    ${howFormula(`Chance = (40 × minha Destreza / (minha Destreza + Destreza dele) − 15)%, entre 0% e 30%`)}
+    <p>Com Destreza igual, 5%. A mesma conta vale para acertar crítico e para desviar.</p>
+    <h3>Ritmo e alcance</h3>
+    <ul>
+      <li>Um golpe a cada ${hn(ATTACK_COOLDOWN)} s. Corpo a corpo alcança ${hn(MELEE_RANGE)}; arqueiros e magos, ${SHOT_RANGE}.</li>
+      <li>Curandeiros (Healer, Bishop, Cleric) curam aliados abaixo de 70% da vida: cura = Magia do curandeiro.</li>
+      <li>Fora de combate, todos recuperam 3% da vida máxima por minuto de jogo.</li>
+      <li>Camponeses não caçam ninguém, mas revidam quem bater neles.</li>
+    </ul>` },
+  { title: 'Inimigos', html: () => `
+    <h3>Ladrões</h3>
+    <p>O primeiro bando chega ao meio-dia do dia 1 pela estrada velha; depois, um bando a cada ${RAID_EVERY / 60} horas.</p>
+    ${howFormula(`Ladrões no bando = 1 + (dia − 1)/2, arredondado para baixo, no máximo 4<br>Nível = 1 + (dia − 1)/2, arredondado para baixo`)}
+    <p>40% são besteiros, o resto salteadores. Cada um escolhe um alvo (o casarão ou uma construção), rouba e foge.</p>
+    ${howFormula(`Roubo = menor valor entre o ouro do cofre e 10 + 5 × nível<br>Sem ouro: até 10 do alimento mais estocado`)}
+    <p>Quem derruba o ladrão devolve o roubo ao cofre e, se for herói, fica com o bolso dele: 2 a 5 + 2 × nível de ouro.</p>
+    <h3>Caveiras</h3>
+    <p>Toda noite, às 22h, o cemitério solta uma caveira com nível igual ao dia. Ela sobe a estrada devagar (velocidade ${hn(SKELETON_SPEED)}) e aparece na aba Heróis com o tempo que falta. Na cidade, bate na construção mais perto até virar ruína, depois na próxima.</p>
+    ${howFormula(`Dano da caveira na construção = 1,5 × Ataque, a cada ${hn(ATTACK_COOLDOWN * 1.5)} s`)}
+    <h3>Covis dos Wilds</h3>
+    <p>Covis ativos de lobos, goblins e trolls soltam uma criatura a cada ${LAIR_SPAWN_EVERY / 60} horas de jogo. Elas descem pela estrada velha.</p>` },
+  { title: 'Recompensas', html: () => `
+    <p>Na aba <b>Heróis</b> você escolhe o valor (mínimo 5) e onde: um ponto do mapa (vigiar ${BOUNTY_GUARD / 60} hora), a patrulha do segundo mapa (ida e volta), as ruínas do covil ou caçar uma caveira na estrada. O ouro sai do cofre na hora.</p>
+    <h3>Quem aceita</h3>
+    ${howFormula(`Interesse = valor / (10 + 0,3 × distância) × mania × 0,85 se for longe<br>O herói aceita a de maior interesse, se for 1 ou mais e ele tiver pelo menos metade da vida`)}
+    ${howTable(['Mania', 'Efeito'], [['Ganancioso', 'recusa abaixo de 40; × 1,5'], ['Covarde', 'recusa abaixo de 20, e abaixo de 60 se for longe; × 0,6'], ['Bêbado', '× 0,7'], ['Valente', '× 1,25'], ['Teimoso', 'metade das vezes nem escuta; × 1,2'], ['Honesto, Amaldiçoado', 'sem mudança']])}
+    <p>Quem cumpre embolsa o valor inteiro. Na caça, quem derruba a caveira embolsa. Cancelar, deixar vencer (${BOUNTY_DAYS} dias sem ninguém) ou a caveira sumir devolve o ouro ao cofre.</p>` },
+  { title: 'Nobres', html: () => `
+    <h3>Tributos</h3>
+    <p>O primeiro tributo chega às 10h do dia 1; depois, um a cada 1 ou 2 dias, com no máximo 2 abertos. Em 15% das vezes quem pede é o Barão das Cinzas.</p>
+    ${howFormula(`Quantidade = base × (1 + 0,15 × dia) × 2 se for o Barão, arredondado`)}
+    ${howTable(['Recurso', 'Base'], Object.entries(DEMAND_BASE).map(([res, base]) => [resourceName(res).replace(/^./, c => c.toUpperCase()), base]))}
+    <p>Prazo: 24 horas (Barão, 18). Entregue na aba <b>Economia</b>.</p>
+    <h3>Favor</h3>
+    ${howTable(['Situação', 'Nobre', 'Barão'], [['Entregar no prazo', '+8', '+15'], ['Entregar atrasado', '+2', '+2'], ['Atrasar', '−5 na hora e −1 por hora', '−5 na hora e −1 por hora'], [`${DEMAND_GRACE / 60} horas depois do prazo`, '−10, leva o recurso e tira 30% da vida de 1 construção', '−20, leva o recurso e tira 60% da vida de 2 construções']])}
+    <p>Com Favor abaixo de ${FAVOR_ATTACK}, uma vez por dia algum nobre ataca e tira de 25% a 50% da vida de 1 ou 2 construções.</p>
+    ${howTable(['Favor', 'Fama'], [['0 a 19', 'Inimigo'], ['20 a 39', 'Mal-visto'], ['40 a 59', 'Tolerado'], ['60 a 79', 'Bem-visto'], ['80 a 100', 'Favorito']])}` },
+  { title: 'Equipamento', html: () => `
+    <p>Heróis têm 10 espaços e chegam com a arma básica da classe. Camponeses têm 5 (ferramenta, roupa, mãos, pés e cabeça). Ninguém recebe ordem de compra.</p>
+    <h3>Arsenal</h3>
+    ${howTable(['Nível', 'Ouro', 'Madeira', 'Vende até'], ARMORY_LEVELS.map((level, i) => { const base = BUILDINGS.find(item => item.id === 'armory'); return [i + 1, i ? level.gold : base.cost, i ? level.wood : base.wood, `tier ${level.tierCap}`]; }))}
+    <p>Toda hora, cada herói ou camponês livre tem 30% de chance de passar no Arsenal, no máximo uma compra por dia. Compra com a própria bolsa a melhor peça que puder pagar, no primeiro espaço da sua lista de prioridade que tiver melhora. O ouro da venda vai para o cofre.</p>
+    ${howTable(['Mania', 'Compra primeiro'], [['Covarde', 'armadura, cabeça'], ['Ganancioso', 'anéis, amuleto'], ['Valente', 'arma, mãos'], ['Teimoso', 'arma, anéis'], ['Amaldiçoado', 'amuleto, armadura'], ['Bêbado', 'capa, pés'], ['Outros', 'arma, armadura']])}
+    <p>Camponeses compram na ordem ferramenta, roupa, pés, mãos e cabeça; sem profissão, pulam a ferramenta. O equipamento deles dá trabalho, carga, passo ou obra.</p>
+    <h3>Loja do monarca</h3>
+    <p>No Arsenal, o herdeiro compra com o cofre peças para Cetro, Globo, Manto, Coroa, Medalhão e dois anéis. Preço por tier: ${MONARCH_TIER_PRICE.slice(1).map((price, i) => `T${i + 2} ${price}`).join(', ')}.</p>` },
+  { title: 'Herdeiro', html: () => {
+    const spells = typeof MONARCH_SPELLS !== 'undefined' ? MONARCH_SPELLS : null;
+    const field = spells?.fieldSpells || [];
+    return `<h3>Nível</h3>
+    <p>O herdeiro vai até o nível ${HEIR_MAX_LEVEL}, com a mesma tabela de experiência dos heróis. Ganha 10 por herói recrutado, 25 por obra ou melhoria pronta, 40 por dia e 4 por inimigo morto com magia.</p>
+    ${howTable(['Atributo', 'Nível 1', 'Por nível'], HEIR_STATS.map(stat => [`${stat.name} (${stat.key})`, stat.base, `+${stat.per}`]))}
+    <h3>Magia</h3>
+    <p>O herdeiro não aparece no mapa. Abra o botão <b>✦ MAGIAS</b> no canto do mapa, escolha a magia e clique no alvo. Esc ou botão direito cancela.</p>
+    ${howFormula(`Mana máxima = MP − reserva das auras ligadas<br>Recuperação = Sabedoria × 0,10 + Inteligência × 0,04 por segundo (metade em combate)`)}
+    <p>Auras ao mesmo tempo: 1 no nível 2, 2 no nível 12 e 3 no nível 20. São 30 magias do Monarca (ordens, auras, editos, decretos e invocações) e 30 magias de campo, uma nova por nível.</p>
+    ${howFormula(`Valor de uma magia de campo = base + por nível × (nível do herdeiro − nível da magia) + % da Magia do herdeiro<br>Dano de magia = valor² / (valor + metade da Defesa do alvo)`)}
+    ${field.length ? howTable(['Nível', 'Magia de campo', 'MP', 'Recarga'], field.map(spell => [spell.unlockLevel, spell.name, spell.manaCost, `${spell.cooldownSeconds} s`])) : ''}`;
+  } },
+];
+
 const SCREENS = {
   title() {
     const latest = latestSave();
@@ -3654,6 +3859,7 @@ const SCREENS = {
         ${latest ? '<button type="button" class="primary" data-action="load">Continuar</button>' : ''}
         <button type="button" class="${latest ? '' : 'primary'}" data-action="new">Novo jogo</button>
         ${latest ? '<button type="button" data-action="load">Carregar jogo</button>' : ''}
+        <button type="button" data-action="howto">Como jogar</button>
         <button type="button" data-action="nobles">Nobres</button>
         <button type="button" data-action="options">Opções</button>
         <button type="button" data-action="debug">Debug</button>
@@ -3755,6 +3961,15 @@ const SCREENS = {
     return { cls: 'is-title', html: `<section class="menu-card nobles-screen">
       <header class="menu-card-head"><span class="eyebrow">NOBRES</span><h2>Nobres e linhagens</h2><p>${all.length} personagens · ${men} homens · ${all.length - men} mulheres.</p></header>
       <div class="noble-roster">${all.map(card).join('')}</div>
+      <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
+    </section>` };
+  },
+  howto({ section = 0 }) {
+    const current = HOWTO[section] || HOWTO[0];
+    return { cls: menuMode(), html: `<section class="menu-card wide howto-screen">
+      <header class="menu-card-head"><span class="eyebrow">COMO JOGAR</span><h2>Manual do herdeiro</h2><p>Tudo o que o tio não explicou antes de morrer. Regras e fórmulas do jogo.</p></header>
+      <nav class="howto-nav" aria-label="Seções do manual">${HOWTO.map((item, i) => `<button type="button" data-action="howto-section" data-index="${i}" class="${item === current ? 'active' : ''}" aria-pressed="${item === current}">${item.title}</button>`).join('')}</nav>
+      <article class="howto-body">${current.html()}</article>
       <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
     </section>` };
   },
@@ -3893,7 +4108,7 @@ function renderMenu() {
 function fitMenu() {
   $('#menu-layer').scrollTop = 0;
   const card = $('#menu-panel').firstElementChild;
-  if (!card || card.classList.contains('sheet') || card.classList.contains('heir-screen') || card.classList.contains('nobles-screen')) return;
+  if (!card || card.classList.contains('sheet') || card.classList.contains('heir-screen') || card.classList.contains('nobles-screen') || card.classList.contains('howto-screen')) return;
   card.style.zoom = '';
   const layer = $('#menu-layer');
   const pad = parseFloat(getComputedStyle(layer).paddingTop) + parseFloat(getComputedStyle(layer).paddingBottom);
@@ -3967,6 +4182,12 @@ function initMenus() {
       case 'new': showScreen('saves', { mode: 'new' }); break;
       case 'load': showScreen('saves', { mode: 'load' }); break;
       case 'nobles': showScreen('nobles'); break;
+      case 'howto': showScreen('howto', { section: 0 }); break;
+      case 'howto-section':
+        menu.stack[menu.stack.length - 1].params.section = Number(button.dataset.index);
+        renderMenu();
+        $('.howto-body')?.scrollTo(0, 0);
+        break;
       case 'economy': showScreen('economy'); break;
       case 'options': showScreen('options'); break;
       case 'debug': showScreen('debug'); break;
