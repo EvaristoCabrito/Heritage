@@ -1,6 +1,8 @@
 const BUILDINGS = [
   { id: 'farm', name: 'Fazenda', glyph: 'F', cost: 115, wood: 6, detail: 'Alho, trigo, bacon, ovos ou leite. Os camponeses trabalham aqui. Melhora até o nível 3.', gold: 0.55, grain: 0.225, people: 0 },
   { id: 'mill', name: 'Moinho', glyph: 'M', cost: 155, wood: 10, detail: 'Mói o trigo em farinha. Trigo cru não alimenta ninguém. As pás giram; a vila, nem tanto.', gold: 0.4, grain: 0, people: 0 },
+  { id: 'bakery', name: 'Padaria', glyph: 'P', cost: 165, wood: 10, detail: 'Assa pão, queijo ou quiche lorraine com o que tem no depósito. Você escolhe a fornada; o forno não discute. Melhora até o nível 3.', gold: 0.4, grain: 0, people: 0 },
+  { id: 'emberLab', name: 'Laboratório de Ember', glyph: 'E', cost: 220, wood: 14, detail: 'Refina em Ember os Dead Remains que os heróis trazem dos covis. Quanto melhor a grade, mais Ember. Ninguém pergunta de onde vieram.', gold: 0, grain: 0, people: 0 },
   { id: 'hut', name: 'Casebre Pequeno', glyph: 'C', cost: 60, wood: 4, detail: 'Moradia para 2 camponeses. Amplia para Casebre Grande, com 5. Eles não tinham pra onde ir mesmo.', gold: 0, grain: 0, people: 0, housing: 2 },
   { id: 'depot', name: 'Depósito de Provisões', glyph: 'D', cost: 70, wood: 6, detail: 'Guarda mais 30 unidades de comida, armas e itens. Amplia para 45, 70 e 100. Os ratos aprovam.', gold: 0, grain: 0, people: 0 },
   { id: 'lumber', name: 'Cabana do Lenhador', glyph: 'L', cost: 80, wood: 2, detail: 'Coloque de 1 a 3 camponeses para cortar lenha: 0,05, 0,15 ou 0,25 de madeira por segundo.', gold: 0, grain: 0, people: 0 },
@@ -33,11 +35,29 @@ const MANOR_DOOR = { x: 42, y: 39 };
 // Fazendas e moinhos sobem até o nível 3. O moinho melhorado mói mais rápido, sem exagero.
 const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 90, wood: 6 }, { gold: 160, wood: 10 }];
 const MILL_RATE = [0.225, 0.3, 0.4]; // trigo moído em farinha por segundo, por nível
+// Padaria: o camponês busca os ingredientes no depósito, o forno transforma 1 de cada em 1 do produto
+// e ele leva a fornada de volta. O produto alimenta o mesmo que os ingredientes somados e ocupa menos espaço.
+const BAKERY_RECIPES = [
+  { id: 'bread', name: 'Pão', needs: ['flour'] },
+  { id: 'cheese', name: 'Queijo', needs: ['flour', 'milk'] },
+  { id: 'quiche', name: 'Quiche Lorraine', needs: ['flour', 'milk', 'bacon'] },
+];
+const BAKE_RATE = [0.15, 0.2, 0.27]; // fornadas por segundo, por nível
+// ÍCONES DO PÃO, QUEIJO E QUICHE: provisórios, emprestados das fazendas. Troque aqui pelas chaves
+// das artes novas (o jogo procura public/art/<chave>-v01.webp); vale para o cardápio, o mercado e a padaria.
+const BAKED_ART = { bread: 'farm-wheat', cheese: 'farm-milk', quiche: 'farm-bacon' };
+const bakeryRecipe = id => BAKERY_RECIPES.find(recipe => recipe.id === id) || BAKERY_RECIPES[0];
+// Construções com nível de produção (melhoria até o nível 3) e camponês fixo.
+const PRODUCER_TYPES = ['farm', 'mill', 'bakery', 'emberLab'];
+// Laboratório de Ember: Dead Remains refinados por segundo, por nível. Cada grade rende um tanto de Ember.
+const LAB_RATE = [0.025, 0.035, 0.05];
+const labRate = building => LAB_RATE[producerLevel(building)];
 // Arte por nível: quando houver desenho do upgrade, liste aqui. Ex.: 'farm-garlic': [null, 'farm-garlic-l2', 'farm-garlic-l3']
 const LEVEL_ART = {};
 const producerLevel = building => Math.min(PRODUCER_LEVELS.length - 1, building?.level || 0);
 const farmOutput = building => farmType(building.produce).grain[producerLevel(building)];
 const millRate = building => MILL_RATE[producerLevel(building)];
+const bakeRate = building => BAKE_RATE[producerLevel(building)];
 const levelArt = (art, building) => LEVEL_ART[art]?.[producerLevel(building)] || art;
 const rateNumber = value => value.toFixed(2).replace('.', ',');
 
@@ -81,7 +101,7 @@ const LOSS_MSG = ['Um camponês morreu. Os outros pediram aumento.', 'Um campon�
 const isDone = building => !building.underConstruction && !building.ruined;
 // Vida das construções. Monstros atacam (damageBuilding); camponeses consertam sozinhos.
 // Cada nível de melhoria dá +50% de vida. Em ruínas, a construção para até ser consertada.
-const BASE_HP = { farm: 100, mill: 120, hut: 80, depot: 150, lumber: 90, quarry: 110, mine: 120, market: 120, tavern: 140, hotel: 160, armory: 200 };
+const BASE_HP = { farm: 100, mill: 120, bakery: 110, emberLab: 150, hut: 80, depot: 150, lumber: 90, quarry: 110, mine: 120, market: 120, tavern: 140, hotel: 160, armory: 200 };
 const GUILD_HP = 180;
 const REPAIR_RATE = 3; // vida por segundo de jogo, antes da habilidade e das ferramentas
 function buildingLevel(building) {
@@ -115,6 +135,11 @@ const freeLodging = () => {
 // Construção livre: vai onde o jogador colocar. Só não pode sair do mapa nem encostar em outra construção.
 const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
+  // ARTE DA PADARIA: 'hut' é provisório. Quando a arte chegar, troque aqui pela chave dela
+  // (e inclua a chave em PHOTOREAL_BUILDING_ART, CONSTRUCTION_STAGE_ART e BUILDING_ART_ASPECTS se tiver essas versões).
+  bakery: 'hut',
+  // ARTE DO LABORATÓRIO DE EMBER: 'tower' é provisório. Troque pela chave da arte nova, como na Padaria.
+  emberLab: 'tower',
   farm: 'farm-wheat', mill: 'mill-body', hut: 'hut', depot: 'depot', lumber: 'lumber', quarry: 'lumber', mine: 'lumber', market: 'market', tavern: 'tavern', hotel: 'hotel', warrior: 'guild', archer: 'archer', lancer: 'lancer',
   blackMage: 'tower', conjurer: 'conjurer', healer: 'healer', armory: 'armory',
 };
@@ -207,8 +232,8 @@ const WORKER_START_PURSE = 5;
 const HERO_START_PURSE = 15;
 function newGameState(testMode = false, heir = null) {
   return {
-    gold: 240, grain: 58, timber: 30, stone: 0, metal: 0,
-    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, eggs: 0, milk: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, eggs: true, milk: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
+    gold: 240, grain: 58, timber: 30, stone: 0, metal: 0, ember: 0, remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [],
+    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, eggs: true, milk: true, bread: true, cheese: true, quiche: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false,
     bandits: [], nextRaidAt: 720,
@@ -481,6 +506,10 @@ const MARKET_GOODS = [
   { id: 'eggs', name: 'Ovos', art: 'farm-eggs', sell: 2, buy: 4 },
   { id: 'milk', name: 'Leite', art: 'farm-milk', sell: 2, buy: 4 },
   { id: 'bacon', name: 'Bacon', art: 'farm-bacon', sell: 3, buy: 6 },
+  // Da Padaria. Vale um pouco mais que os ingredientes: o forno também cobra.
+  { id: 'bread', name: 'Pão', art: BAKED_ART.bread, sell: 3, buy: 6 },
+  { id: 'cheese', name: 'Queijo', art: BAKED_ART.cheese, sell: 5, buy: 10 },
+  { id: 'quiche', name: 'Quiche Lorraine', art: BAKED_ART.quiche, sell: 9, buy: 18 },
   { id: 'timber', name: 'Madeira', icon: 'icon-logs-photo-v01.png', sell: 2, buy: 4 },
 ];
 const BASIC_GOODS = ['wheat', 'garlic', 'timber'];
@@ -521,7 +550,7 @@ function marketPanelHTML() {
       <span class="market-side"><small>VENDER ${formatPrice(unitPrice(good, 'sell'))} ${coin}</small><span><button type="button" data-trade="${good.id}" data-amount="-1">1</button><button type="button" data-trade="${good.id}" data-amount="-10">10</button></span></span>
       <span class="market-side"><small>COMPRAR ${formatPrice(unitPrice(good, 'buy'))} ${coin}</small><span><button type="button" class="buy" data-trade="${good.id}" data-amount="1">1</button><button type="button" class="buy" data-trade="${good.id}" data-amount="10">10</button></span></span>
     </div>`).join('')}</div>
-    <p class="build-note">${hasMarket() ? 'Armas e itens ainda não chegaram aos mercadores.' : 'Sem um Mercado, só passa a carroça de trigo, alho e madeira, e o carroceiro cobra 25% a mais. Construa um Mercado para preços justos e para negociar ovos, leite e bacon.'}</p>`;
+    <p class="build-note">${hasMarket() ? 'Armas e itens ainda não chegaram aos mercadores.' : 'Sem um Mercado, só passa a carroça de trigo, alho e madeira, e o carroceiro cobra 25% a mais. Construa um Mercado para preços justos e para negociar ovos, leite, bacon e o que sai da padaria.'}</p>`;
 }
 
 // Cabana do Lenhador: até 3 camponeses escalados pelo painel.
@@ -592,9 +621,10 @@ function rates() {
   const sum = state.buildings.reduce((sum, building) => {
     const def = BUILDINGS.find(item => item.id === building.type);
     if (def && isDone(building)) {
-      // Provisões comestíveis: trigo cru não conta; o moinho conta a farinha que mói.
-      if (building.type === 'farm') sum.grain += building.produce === 'wheat' ? 0 : farmOutput(building);
-      else if (building.type !== 'mill') sum.grain += def.grain;
+      // Provisões comestíveis, pelo quanto alimentam: trigo cru não conta; o moinho conta a farinha que mói.
+      // A padaria não soma: o produto alimenta o mesmo que os ingredientes que gasta.
+      if (building.type === 'farm') sum.grain += building.produce === 'wheat' ? 0 : farmOutput(building) * foodFeeds(building.produce);
+      else if (!['mill', 'bakery'].includes(building.type)) sum.grain += def.grain;
       sum.people += def.people;
     }
     return sum;
@@ -696,6 +726,7 @@ function updateHud() {
   $('#stone-rate').textContent = `+${fineRate(r.stone)}/s`;
   $('#metal').textContent = format(state.metal || 0);
   $('#metal-rate').textContent = `+${fineRate(r.metal)}/s`;
+  if ($('#ember')) { $('#ember').textContent = format(state.ember || 0); $('#ember-rate').textContent = `${remainsCount()} ${remainsCount() === 1 ? 'resto' : 'restos'}`; }
   // Personagens: quantos existem e quantos o domínio comporta.
   const heroes = state.heroes.filter(hero => hero.alive).length;
   const heroCap = heroCapacity();
@@ -729,7 +760,7 @@ function siteLabel(building) {
 }
 function siteArt(building) {
   const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
-  return ['farm', 'mill'].includes(building.type) ? levelArt(art, building) : art;
+  return PRODUCER_TYPES.includes(building.type) ? levelArt(art, building) : art;
 }
 
 // Uma construção por botão no mapa, no ponto onde foi erguida.
@@ -794,6 +825,24 @@ function renderLairs() {
     marker.setAttribute('aria-label', lair.name);
     const image = `public/art/${lair.art}`;
     if (marker.dataset.image !== image) { marker.innerHTML = `<img src="${image}" alt=""><small>${lair.name}</small>`; marker.dataset.image = image; }
+    const label = lair.damage > 0 ? `${lair.name} · vida ${lairHp(lair)}/${lairMaxHp(lair)}` : lair.name;
+    if ($('small', marker).textContent !== label) $('small', marker).textContent = label;
+  });
+  (state.remainsPiles || []).forEach(pile => {
+    visibleIds.add(pile.id);
+    let marker = $(`.lair-marker[data-lair="${pile.id}"]`, layer);
+    if (!marker) {
+      marker = document.createElement('div');
+      marker.className = 'lair-marker remains-pile';
+      marker.dataset.lair = pile.id;
+      marker.innerHTML = `<img src="${remainsImage(pile.grade)}" alt=""><small>Dead Remains ${pile.grade}</small>`;
+      layer.append(marker);
+    }
+    marker.style.left = `${pile.x}%`;
+    marker.style.top = `${pile.y / WORLD_Y_UNITS * 100}%`;
+    marker.style.zIndex = String(Math.round(pile.y * 10));
+    marker.hidden = (pile.mapId || 'city') !== currentMap || (pile.mapSet || 1) !== currentMapSet;
+    marker.setAttribute('aria-label', `Dead Remains grade ${pile.grade}`);
   });
   $$('.lair-marker', layer).filter(marker => !visibleIds.has(marker.dataset.lair)).forEach(marker => marker.remove());
 }
@@ -926,7 +975,7 @@ function inspectorHTML() {
     const selectedFarm = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'farm' && isDone(building));
     const selectedBuilding = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite);
     const selectedArmory = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'armory' && isDone(building));
-    const selectedProducer = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && ['farm', 'mill'].includes(building.type) && isDone(building));
+    const selectedProducer = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && PRODUCER_TYPES.includes(building.type) && isDone(building));
     const selectedHut = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'hut' && isDone(building));
     const selectedLumber = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'lumber' && isDone(building));
     const selectedPit = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && isPit(building) && isDone(building));
@@ -935,6 +984,7 @@ function inspectorHTML() {
     const currentFarmType = selectedFarm ? farmType(selectedFarm.produce).id : state.selectedFarmType;
     const inspectorActions = selectedBuilding ? `${selectedFarm ? `<section class="inspector-section" aria-label="Tipo de fazenda"><h4>Produção</h4>
         <div class="farm-type-grid compact">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="+${rateNumber(type.grain[producerLevel(selectedFarm)])} por segundo"><img src="public/art/${type.art}-v01.webp" alt=""><b>${type.name}</b></button>`).join('')}</div></section>` : ''}
+      ${selectedProducer?.type === 'bakery' ? bakeryRecipeBoxHTML(selectedProducer) : ''}
       ${selectedProducer ? producerBoxHTML(selectedProducer) : ''}
       ${selectedHut && !selectedHut.big ? `<section class="inspector-section"><h4>Ampliação</h4><button type="button" class="hut-upgrade" data-hut-upgrade="${selectedHut.site}">Casebre Grande · +3 moradores · ${costHTML(HUT_UPGRADE.gold, HUT_UPGRADE.wood)}</button></section>` : ''}
       ${selectedGuild ? guildBoxHTML(selectedGuild) : ''}
@@ -957,6 +1007,7 @@ function renderInspector() {
 function bindPanel(host) {
   $$('.build-card', host).forEach(button => button.addEventListener('click', () => chooseBuild(button.dataset.build)));
   $$('[data-farm-type]', host).forEach(button => button.addEventListener('click', () => chooseFarmType(button.dataset.farmType)));
+  $$('[data-bakery-recipe]', host).forEach(button => button.addEventListener('click', () => chooseBakeryRecipe(button.dataset.bakeryRecipe)));
   $$('[data-guild-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeGuild(Number(button.dataset.guildUpgrade), button.dataset.branch || null)));
   $$('[data-ration]', host).forEach(button => button.addEventListener('click', () => { state.ration = Number(button.dataset.ration); say(`Ração ${RATIONS[state.ration].label.toLowerCase()}.`); renderPanel(); updateHud(); }));
   $$('[data-diet]', host).forEach(button => button.addEventListener('click', () => { state.diet[button.dataset.diet] = !state.diet[button.dataset.diet]; renderPanel(); }));
@@ -971,6 +1022,7 @@ function bindPanel(host) {
   $$('[data-bounty-place]', host).forEach(button => button.addEventListener('click', () => (state.placingBounty ? cancelBountyPlacement() : startBountyPlacement())));
   $$('[data-bounty-preset]', host).forEach(button => button.addEventListener('click', () => createBounty(BOUNTY_PRESETS[button.dataset.bountyPreset])));
   $$('[data-bounty-hunt]', host).forEach(button => button.addEventListener('click', () => huntBounty(button.dataset.bountyHunt)));
+  $$('[data-bounty-lair]', host).forEach(button => button.addEventListener('click', () => lairBounty(button.dataset.bountyLair)));
   $$('[data-bounty-cancel]', host).forEach(button => button.addEventListener('click', () => cancelBounty(button.dataset.bountyCancel)));
   $$('[data-deliver]', host).forEach(button => button.addEventListener('click', () => deliverDemand(button.dataset.deliver)));
   $$('[data-monarch-buy]', host).forEach(button => button.addEventListener('click', () => {
@@ -989,7 +1041,7 @@ function bindPanel(host) {
 // A aba Construir mostra as construções agrupadas por tipo, uma seção embaixo da outra.
 const BUILD_CATEGORIES = [
   { id: 'houses', name: 'Casas', types: ['hut', 'depot'] },
-  { id: 'production', name: 'Produção', types: ['farm', 'mill', 'lumber', 'quarry', 'mine', 'market'] },
+  { id: 'production', name: 'Produção', types: ['farm', 'mill', 'bakery', 'emberLab', 'lumber', 'quarry', 'mine', 'market'] },
   { id: 'guilds', name: 'Guildas', types: ['warrior', 'archer', 'lancer', 'conjurer', 'healer', 'armory', 'tavern', 'hotel'] },
 ];
 const buildCardHTML = item => `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira">
@@ -1054,6 +1106,24 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['No moinho', `${format(building.input || 0)} de trigo · ${format(building.stock || 0)} de farinha esperando`]);
     lines.push(['No depósito', `${format(state.food.wheat || 0)} de trigo · ${format(state.food.flour || 0)} de farinha`]);
     lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
+  } else if (building.type === 'bakery') {
+    const recipe = bakeryRecipe(building.produce);
+    const pantry = building.pantry || {};
+    lines.push(['Assa', `${rateNumber(bakeRate(building))} de ${recipe.name.toLowerCase()} por segundo`]);
+    lines.push(['Receita', `${recipe.needs.map(id => `1 de ${foodName(id)}`).join(' + ')} → 1 de ${recipe.name.toLowerCase()}`]);
+    lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
+    lines.push(['No forno', `${recipe.needs.map(id => `${format(pantry[id] || 0)} de ${foodName(id)}`).join(' · ')} · ${format(building.stock || 0)} de ${foodName(building.stockFood || recipe.id)} esperando`]);
+    lines.push(['No depósito', recipe.needs.map(id => `${format(state.food[id] || 0)} de ${foodName(id)}`).join(' · ')]);
+    if (crewWork(building)) lines.push(['Ferramentas', `+${Math.round(crewWork(building) * 100)}% de produção`]);
+    lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
+  } else if (building.type === 'emberLab') {
+    lines.push(['Refina', `${rateNumber(labRate(building))} Dead Remains por segundo`]);
+    lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
+    lines.push(['Rende', REMAINS_GRADES.map(grade => `${grade.id} → ${grade.ember} de Ember`).join(' · ')]);
+    lines.push(['No laboratório', building.input?.length ? `${building.input.join(', ')} · ${Math.floor((building.progress || 0) * 100)}% do primeiro` : 'nada']);
+    lines.push(['No depósito', REMAINS_GRADES.map(grade => `${grade.id} ${state.remains?.[grade.id] || 0}`).join(' · ')]);
+    lines.push(['Ember', format(state.ember || 0)]);
+    lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
   } else if (building.type === 'hut') {
     const residents = alive.filter(worker => worker.homeSite === building.site);
     lines.push(['Moradores', `${residents.length} de ${building.big ? 5 : 2}: ${names(residents)}`]);
@@ -1094,7 +1164,7 @@ function buildingInfoHTML(building, actions = '') {
   }
   const moving = state.movingSite === building.site;
   const hp = buildingHp(building), maxHp = buildingMaxHp(building);
-  const level = ['farm', 'mill'].includes(building.type) ? `Nível ${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`
+  const level = PRODUCER_TYPES.includes(building.type) ? `Nível ${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`
     : building.type === 'armory' ? `Nível ${(building.level || 0) + 1} de ${ARMORY_LEVELS.length}`
     : building.type === 'depot' ? `Nível ${(building.level || 0) + 1} de ${STORAGE_LEVELS.length}`
     : def.heroClass ? `Nível ${guildTier(building) + 1} de 3` : building.type === 'hut' ? (building.big ? 'Grande' : 'Pequeno') : '';
@@ -1221,10 +1291,20 @@ function chooseFarmType(id) {
   say(`Fazenda agora produz ${type.name.toLowerCase()}.`, `A fazenda mudou sua produção para ${type.name.toLowerCase()}.`);
 }
 
+// Padaria: troca a fornada. Os ingredientes já no forno ficam; a fornada antiga sai primeiro.
+function chooseBakeryRecipe(id) {
+  const bakery = state.buildings.find(building => building.site === state.selectedSite && building.type === 'bakery' && isDone(building));
+  if (!bakery) return;
+  const recipe = bakeryRecipe(id);
+  bakery.produce = recipe.id;
+  renderSites(); renderPanel(); updateHud();
+  say(`A padaria agora assa ${recipe.name.toLowerCase()}: ${recipe.needs.map(need => foodName(need)).join(', ')}.`, `A padaria mudou a fornada para ${recipe.name.toLowerCase()}.`);
+}
+
 // Obras e melhorias: um camponês trabalha no local durante dois minutos de jogo.
 // A habilidade de construção e as ferramentas dele aceleram (veja progressConstruction).
 const BUILD_TIME = 120;
-const buildingName = building => building.type === 'farm' ? `Fazenda de ${farmType(building.produce).name}` : BUILDINGS.find(item => item.id === building.type)?.name || 'Construção';
+const buildingName = building => building.type === 'farm' ? `Fazenda de ${farmType(building.produce).name}` : building.type === 'bakery' ? 'Padaria' : BUILDINGS.find(item => item.id === building.type)?.name || 'Construção';
 
 function placeBuilding(x, y) {
   const item = BUILDINGS.find(building => building.id === state.selectedBuild);
@@ -1238,7 +1318,7 @@ function placeBuilding(x, y) {
   state.gold -= item.cost;
   state.timber -= item.wood;
   const site = state.nextBuildingId++;
-  const building = { site, mapSet: currentMapSet, type: item.id, produce: item.id === 'farm' ? state.selectedFarmType : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
+  const building = { site, mapSet: currentMapSet, type: item.id, produce: item.id === 'farm' ? state.selectedFarmType : item.id === 'bakery' ? 'bread' : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
   state.buildings.push(building);
   state.selectedBuild = null;
   state.selectedSite = site;
@@ -1378,7 +1458,7 @@ function completeBuilding(building) {
   const arrived = item.heroClass ? recruit(item.heroClass, building, null, true) : null;
   if (item.housing) for (let i = 0; i < item.housing; i++) hireWorker(building, i % 2 === 1);
   // Fazenda ou moinho novo: todo mundo é redistribuído para ninguém ficar vazio.
-  if (['farm', 'mill'].includes(item.id)) state.workers.forEach(worker => { worker.jobSite = null; });
+  if (PRODUCER_TYPES.includes(item.id)) state.workers.forEach(worker => { worker.jobSite = null; });
   assignBuilders();
   renderSites(); renderPanel(); updateHud();
   setTimeout(() => $(`.site[data-site="${building.site}"]`)?.classList.remove('just-built'), 1400);
@@ -1431,7 +1511,7 @@ function finishUpgrade(building, upgrade) {
     say(`Depósito de Provisões ampliado para ${depotCap(building)} unidades. Os ratos agradecem o espaço extra.`);
   } else if (upgrade.kind === 'producer') {
     building.level = producerLevel(building) + 1;
-    say(building.type === 'mill' ? `Moinho no nível ${building.level + 1}: mói ${rateNumber(millRate(building))} de trigo por segundo.` : `${buildingName(building)} no nível ${building.level + 1}: ${rateNumber(farmOutput(building))} por segundo. A terra não pediu, mas aceitou.`);
+    say(building.type === 'mill' ? `Moinho no nível ${building.level + 1}: mói ${rateNumber(millRate(building))} de trigo por segundo.` : building.type === 'emberLab' ? `Laboratório de Ember no nível ${building.level + 1}: refina ${rateNumber(labRate(building))} Dead Remains por segundo. Os vapores também melhoraram.` : building.type === 'bakery' ? `Padaria no nível ${building.level + 1}: ${rateNumber(bakeRate(building))} fornadas por segundo. O forno esquenta mais; o padeiro, também.` : `${buildingName(building)} no nível ${building.level + 1}: ${rateNumber(farmOutput(building))} por segundo. A terra não pediu, mas aceitou.`);
   } else if (upgrade.kind === 'guild') {
     const def = BUILDINGS.find(item => item.id === building.type);
     if (upgrade.tier === 0) {
@@ -1560,7 +1640,7 @@ function workplaceOf(actor) {
     const pit = state.buildings.find(building => isPit(building) && isDone(building) && lumberCrew(building).length < PIT_CREW_MAX);
     if (pit) { actor.workplace = pit; actor.jobSite = null; return pit; }
   }
-  const all = state.buildings.filter(building => ['farm', 'mill'].includes(building.type) && isDone(building));
+  const all = state.buildings.filter(building => PRODUCER_TYPES.includes(building.type) && isDone(building));
   if (!all.length) return null;
   // Com profissão, só os lugares dela; se não houver nenhum, faz o que estiver disponível.
   const own = all.filter(building => PROFESSIONS[actor?.profession]?.types.includes(building.type));
@@ -1631,6 +1711,8 @@ function nextActorGoal(actor) {
       return;
     }
     const job = workplaceOf(actor);
+    if (job && job.type === 'bakery' && isDone(job)) { bakeRoutine(actor, job); return; }
+    if (job && job.type === 'emberLab' && isDone(job)) { labRoutine(actor, job); return; }
     if (job && ['farm', 'mill'].includes(job.type) && isDone(job)) { haulRoutine(actor, job); return; }
     const home = homeOf(actor);
     const workplace = actor.workTrip ? null : workplaceOf(actor);
@@ -1653,9 +1735,12 @@ function nextActorGoal(actor) {
     actor.workTrip = !actor.workTrip;
     return;
   }
+  if (actor.remains) { carryRemainsStep(actor); return; }
   const current = actor.bountyId ? (state.bounties || []).find(bounty => bounty.id === actor.bountyId && String(bounty.takenBy) === String(actor.id)) : null;
   if (current) { bountyStep(actor, current); return; }
   actor.bountyId = null;
+  if (remainsPileStep(actor)) return;
+  if ((actor.mapId || 'city') !== 'city') { actor.task = 'Voltando dos Wilds'; travelToMap(actor, 'city'); return; }
   const tavern = openTavern();
   if (tavern && actor.drinkUntil > state.minutes) { goDrink(actor, tavern); return; }
   if (tavern && Math.random() < (actor.trait === 'Bêbado' ? 0.6 : 0.2)) {
@@ -2134,7 +2219,7 @@ const SLOT_PRIORITY = {
 // Profissões: você escolhe. Sem profissão o camponês faz o que houver e não compra ferramenta de ofício.
 const PROFESSIONS = {
   farmer: { name: 'Fazendeiro', fem: 'Fazendeira', skill: 'farming', types: ['farm'] },
-  miller: { name: 'Moleiro', fem: 'Moleira', skill: 'milling', types: ['mill'] },
+  miller: { name: 'Moleiro', fem: 'Moleira', skill: 'milling', types: ['mill', 'bakery'] },
   woodcutter: { name: 'Lenhador', fem: 'Lenhadora', skill: 'woodcutting', types: ['lumber'] },
   miner: { name: 'Minerador', fem: 'Mineradora', skill: 'mining', types: ['quarry', 'mine'] },
   builder: { name: 'Pedreiro', fem: 'Pedreira', skill: 'building', types: [] },
@@ -2144,7 +2229,7 @@ const SKILLS = [
   { id: 'farming', name: 'Lavoura' }, { id: 'milling', name: 'Moagem' }, { id: 'woodcutting', name: 'Lenha' }, { id: 'mining', name: 'Mineração' },
   { id: 'building', name: 'Construção' }, { id: 'hauling', name: 'Carga' },
 ];
-const SKILL_OF_TYPE = { farm: 'farming', mill: 'milling', lumber: 'woodcutting', quarry: 'mining', mine: 'mining' };
+const SKILL_OF_TYPE = { farm: 'farming', mill: 'milling', bakery: 'milling', lumber: 'woodcutting', quarry: 'mining', mine: 'mining' };
 const skillOf = (actor, id) => actor?.skills?.[id] || 0;
 function gainSkill(actor, id, amount) {
   if (!actor || actor.className !== 'Peasant') return;
@@ -2364,14 +2449,20 @@ function actorOrigin(actor) {
 // Comida e felicidade, no estilo Lords of the Realm: estoque por alimento, ração escolhida
 // e cardápio servido. Carne e variedade alegram; ração pequena e fome entristecem.
 // ==========================================================================
+// feeds: quanto cada unidade alimenta. O pão é a base (1×): 1 de pão mata 1 de fome.
+// baked: sai da Padaria, não de fazenda nem moinho.
 const FOOD_TYPES = [
-  { id: 'flour', name: 'Farinha', art: 'mill-body', mood: 2, note: 'Sai do moinho. Eles que cozinhem em casa.' },
-  { id: 'wheat', name: 'Trigo', art: 'farm-wheat', raw: true, note: 'Cru não serve pra nada. Vai pro moinho virar farinha.' },
-  { id: 'garlic', name: 'Alho', art: 'farm-garlic', mood: 1, note: 'Afasta strigoi. E todo o resto também.' },
-  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', meat: true, mood: 2, note: 'Carne. Deixa os camponeses mais felizes.' },
-  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', mood: 1, note: 'Variedade. Os camponeses notam.' },
-  { id: 'milk', name: 'Leite', art: 'farm-milk', mood: 1, note: 'Variedade. Às vezes azeda antes.' },
+  { id: 'flour', name: 'Farinha', art: 'mill-body', mood: 2, feeds: 1, note: 'Sai do moinho. Eles que cozinhem em casa.' },
+  { id: 'wheat', name: 'Trigo', art: 'farm-wheat', raw: true, feeds: 0, note: 'Cru não serve pra nada. Vai pro moinho virar farinha.' },
+  { id: 'garlic', name: 'Alho', art: 'farm-garlic', mood: 1, feeds: 1, note: 'Afasta strigoi. E todo o resto também.' },
+  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', meat: true, mood: 2, feeds: 2, note: 'Carne. Deixa os camponeses mais felizes.' },
+  { id: 'eggs', name: 'Ovos', art: 'farm-eggs', mood: 1, feeds: 2, note: 'Variedade. Os camponeses notam.' },
+  { id: 'milk', name: 'Leite', art: 'farm-milk', mood: 1, feeds: 1, note: 'Variedade. Às vezes azeda antes.' },
+  { id: 'bread', name: 'Pão', art: BAKED_ART.bread, baked: true, mood: 2, feeds: 1, note: 'Da padaria. Duro como a vida, mas é pão.' },
+  { id: 'cheese', name: 'Queijo', art: BAKED_ART.cheese, baked: true, mood: 2, feeds: 2, note: 'Da padaria. Farinha e leite que resolveram durar mais.' },
+  { id: 'quiche', name: 'Quiche Lorraine', art: BAKED_ART.quiche, baked: true, meat: true, mood: 3, feeds: 4, note: 'Da padaria. Comida de nobre na mesa de servo. Ninguém conta pro Barão.' },
 ];
+const foodFeeds = id => FOOD_TYPES.find(food => food.id === id)?.feeds ?? 1;
 const RATIONS = [
   { label: 'Nenhuma', mult: 0, mood: -20 }, { label: 'Meia', mult: 0.5, mood: -8 }, { label: 'Normal', mult: 1, mood: 0 },
   { label: 'Dobrada', mult: 2, mood: 5 }, { label: 'Tripla', mult: 3, mood: 10 },
@@ -2420,7 +2511,7 @@ function applyWeeklyMood() {
   updateHud();
   if (state.tab === 'food') renderPanel();
 }
-const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, eggs: 0, milk: 0 });
+const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0 });
 // O casarão guarda 200 unidades. Cada Depósito de Provisões construído soma 30, e amplia para 45, 70 e 100.
 // Guardam comida, armas e itens; madeira e ouro ficam fora.
 const MANOR_STORAGE = 200;
@@ -2430,7 +2521,7 @@ const STORAGE_LEVELS = [
 const depots = () => state.buildings.filter(building => building.type === 'depot' && isDone(building));
 const depotCap = depot => STORAGE_LEVELS[depot.level || 0].cap;
 const storageCap = () => MANOR_STORAGE + depots().reduce((sum, depot) => sum + depotCap(depot), 0);
-const storedUnits = () => totalFood() + (state.items?.length || 0);
+const storedUnits = () => totalFood() + (state.items?.length || 0) + remainsCount();
 function upgradeDepot(site) {
   const depot = state.buildings.find(building => building.site === site && building.type === 'depot');
   const next = depot && STORAGE_LEVELS[(depot.level || 0) + 1];
@@ -2467,6 +2558,85 @@ function grindWheat(dt) {
     mill.stock = (mill.stock || 0) + qty;
   });
 }
+// Padarias prontas: quanto de cada produto conseguem assar por segundo, somados.
+const bakingCapacity = id => state.buildings.filter(building => building.type === 'bakery' && isDone(building) && bakeryRecipe(building.produce).id === id).reduce((sum, bakery) => sum + bakeRate(bakery), 0);
+// A fornada só sai com todos os ingredientes no forno; a fornada antiga precisa sair antes de começar outra.
+function bakeryCanBake(bakery) {
+  const recipe = bakeryRecipe(bakery.produce);
+  if ((bakery.stock || 0) > 1e-6 && bakery.stockFood && bakery.stockFood !== recipe.id) return false;
+  return recipe.needs.every(id => (bakery.pantry?.[id] || 0) > 1e-6) && (bakery.stock || 0) < FARM_STOCK_CAP;
+}
+function bakeFood(dt) {
+  state.buildings.filter(building => building.type === 'bakery' && isDone(building)).forEach(bakery => {
+    if (!bakeryCanBake(bakery)) return;
+    const recipe = bakeryRecipe(bakery.produce);
+    const pantry = bakery.pantry;
+    const qty = Math.min(bakeRate(bakery) * (1 + crewWork(bakery)) * dt, ...recipe.needs.map(id => pantry[id]), FARM_STOCK_CAP - (bakery.stock || 0));
+    if (qty <= 0) return;
+    recipe.needs.forEach(id => { pantry[id] -= qty; });
+    bakery.stockFood = recipe.id;
+    bakery.stock = (bakery.stock || 0) + qty;
+  });
+}
+// O ingrediente que mais falta no forno e que o depósito tem. Conta o que outro padeiro já está trazendo.
+function bakeryMissing(bakery) {
+  const pantry = { ...(bakery.pantry || {}) };
+  state.workers.forEach(worker => {
+    const load = worker.alive && worker.carrying?.toBakery === bakery.site ? worker.carrying : null;
+    if (load) pantry[load.food] = (pantry[load.food] || 0) + load.qty;
+  });
+  return bakeryRecipe(bakery.produce).needs
+    .filter(id => (pantry[id] || 0) < CARRY_LOAD && (state.food[id] || 0) >= 0.5)
+    .sort((a, b) => (pantry[a] || 0) - (pantry[b] || 0))[0] || null;
+}
+// Rotina do padeiro: busca um ingrediente por viagem, assa e leva a fornada ao depósito.
+function bakeRoutine(actor, bakery) {
+  const store = nearestStorage(bakery);
+  const recipe = bakeryRecipe(bakery.produce);
+  if (isAt(actor, bakery)) {
+    if (actor.carrying?.toBakery) {
+      bakery.pantry = bakery.pantry || {};
+      bakery.pantry[actor.carrying.food] = (bakery.pantry[actor.carrying.food] || 0) + actor.carrying.qty;
+      actor.carrying = null;
+    }
+    if ((bakery.stock || 0) >= 1) {
+      const qty = Math.min(carryLoad(actor), bakery.stock);
+      bakery.stock -= qty;
+      actor.carrying = { food: bakery.stockFood || recipe.id, qty };
+      actor.task = `Carregando ${format(qty)} de ${foodName(actor.carrying.food)} para o depósito`;
+      walkTo(actor, store);
+      return;
+    }
+    const need = bakeryMissing(bakery);
+    if (need) {
+      actor.task = `Indo buscar ${foodName(need)} no depósito`;
+      walkTo(actor, store);
+      return;
+    }
+    const baking = bakeryCanBake(bakery);
+    actor.task = baking ? `Assando ${foodName(recipe.id)} na padaria` : `Na padaria, esperando ${recipe.needs.map(id => foodName(id)).join(', ')}`;
+    if (baking) gainSkill(actor, SKILL_OF_TYPE.bakery, 0.3);
+    actor.wait = 3; actor.actionTime = 3; actor.actionClock = 0;
+    return;
+  }
+  if (isAt(actor, store)) {
+    if (actor.carrying && !actor.carrying.toBakery) deliverLoad(actor);
+    const need = !actor.carrying && bakeryMissing(bakery);
+    if (need) {
+      const qty = Math.min(carryLoad(actor), state.food[need]);
+      state.food[need] -= qty;
+      actor.carrying = { food: need, qty, toBakery: bakery.site };
+    }
+  }
+  if (actor.carrying && !actor.carrying.toBakery) {
+    actor.task = `Carregando ${format(actor.carrying.qty)} de ${foodName(actor.carrying.food)} para o depósito`;
+    walkTo(actor, store);
+    return;
+  }
+  actor.task = actor.carrying ? `Levando ${format(actor.carrying.qty)} de ${foodName(actor.carrying.food)} pra padaria` : 'Indo trabalhar na padaria';
+  actor.headingToWork = true;
+  walkTo(actor, bakery);
+}
 // Depósitos onde o camponês descarrega: o casarão e os Depósitos de Provisões prontos.
 function nearestStorage(from) {
   const points = [MANOR_DOOR, ...depots()];
@@ -2477,13 +2647,15 @@ function deliverLoad(actor) {
   actor.carrying = null;
   if (!load) return;
   gainSkill(actor, 'hauling', 0.25);
+  // Dead Remains que ia pro laboratório volta pro depósito.
+  if (load.remains) { state.remains[load.remains] = (state.remains[load.remains] || 0) + 1; return; }
   const put = Math.min(load.qty, Math.max(0, storageCap() - storedUnits()));
   state.food[load.food] = (state.food[load.food] || 0) + put;
   if (put < load.qty - 1e-6 && !state.storageWarned) { state.storageWarned = true; say('O Depósito de Provisões está cheio. O resto da carga apodreceu do lado de fora.'); }
   if (put >= load.qty - 1e-6) state.storageWarned = false;
 }
 const foodName = id => (FOOD_TYPES.find(food => food.id === id)?.name || id).toLowerCase();
-const workPlaceName = building => building.type === 'mill' ? 'no moinho' : building.type === 'lumber' ? 'na Cabana do Lenhador' : building.type === 'quarry' ? 'na Pedreira' : building.type === 'mine' ? 'no Campo de Mineração' : `na ${buildingName(building)}`;
+const workPlaceName = building => building.type === 'mill' ? 'no moinho' : building.type === 'emberLab' ? 'no Laboratório de Ember' : building.type === 'lumber' ? 'na Cabana do Lenhador' : building.type === 'quarry' ? 'na Pedreira' : building.type === 'mine' ? 'no Campo de Mineração' : `na ${buildingName(building)}`;
 function walkTo(actor, point) {
   routeActor(actor, nearestNode(point));
   actor.finalPoint = { x: point.x, y: Math.min(198, point.y + 1.2) };
@@ -2544,13 +2716,19 @@ function producerBoxHTML(building) {
   const level = producerLevel(building);
   const next = PRODUCER_LEVELS[level + 1];
   const mill = building.type === 'mill';
-  const rateAt = lv => mill ? MILL_RATE[lv] : farmType(building.produce).grain[lv];
+  const bakery = building.type === 'bakery';
+  const rateAt = lv => mill ? MILL_RATE[lv] : bakery ? BAKE_RATE[lv] : building.type === 'emberLab' ? LAB_RATE[lv] : farmType(building.produce).grain[lv];
   const unit = mill ? 'de trigo moído em farinha por segundo' : `de ${farmType(building.produce).name.toLowerCase()} por segundo`;
   return `<section class="inspector-section"><h4>Melhoria</h4>
     ${next ? `<button type="button" class="hut-upgrade" data-producer-upgrade="${building.site}">Nível ${level + 2} · ${rateNumber(rateAt(level + 1))}/s · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. Mais que isso, só com milagre.</p>'}</section>`;
 }
+function bakeryRecipeBoxHTML(bakery) {
+  const current = bakeryRecipe(bakery.produce).id;
+  return `<section class="inspector-section" aria-label="Fornada da padaria"><h4>Produção</h4>
+    <div class="farm-type-grid compact">${BAKERY_RECIPES.map(recipe => `<button class="farm-type${current === recipe.id ? ' selected' : ''}" data-bakery-recipe="${recipe.id}" aria-pressed="${current === recipe.id}" title="${recipe.needs.map(id => foodName(id)).join(' + ')} · alimenta ${foodFeeds(recipe.id)}×"><img src="public/art/${BAKED_ART[recipe.id]}-v01.webp" alt=""><b>${recipe.name}</b></button>`).join('')}</div></section>`;
+}
 function upgradeProducer(site) {
-  const building = state.buildings.find(item => item.site === site && ['farm', 'mill'].includes(item.type) && isDone(item));
+  const building = state.buildings.find(item => item.site === site && PRODUCER_TYPES.includes(item.type) && isDone(item));
   const next = building && PRODUCER_LEVELS[producerLevel(building) + 1];
   if (!next) return;
   if (state.gold < next.gold || state.timber < next.wood) { say('Falta ouro ou madeira. A colheita vai continuar do mesmo tamanho.'); return; }
@@ -2570,6 +2748,8 @@ function feedWorkers(dt) {
     farm.stock = Math.min(FARM_STOCK_CAP, (farm.stock || 0) + farmOutput(farm) * (1 + crewWork(farm)) * dt);
   });
   grindWheat(dt);
+  bakeFood(dt);
+  refineRemains(dt);
   const ration = RATIONS[state.ration];
   const demand = foodDemand() * dt;
   let remaining = demand;
@@ -2577,9 +2757,10 @@ function feedWorkers(dt) {
   let pool = FOOD_TYPES.filter(food => !food.raw && state.diet[food.id] && state.food[food.id] > 0);
   for (let pass = 0; pass < 6 && remaining > 1e-9 && pool.length; pass++) {
     const share = remaining / pool.length;
+    // A fome se mede em pão: 1 de quiche mata 4 de fome, então sai 1/4 do estoque para a mesma parte.
     pool.forEach(food => {
-      const take = Math.min(share, state.food[food.id]);
-      state.food[food.id] -= take;
+      const take = Math.min(share, state.food[food.id] * food.feeds);
+      state.food[food.id] -= take / food.feeds;
       remaining -= take;
       if (take > 0) eaten.add(food.id);
     });
@@ -2765,7 +2946,7 @@ function createBounty(spec) {
   const node = spec.node ?? nearestNode(spec);
   const point = spec.x != null ? { x: spec.x, y: spec.y } : { x: PATH_NODES[node].x, y: PATH_NODES[node].y };
   const bounty = { id: `bounty-${Date.now()}-${Math.floor(Math.random() * 1000)}`, label: spec.label || bountyLabelAt(point.x, point.y), reward, x: point.x, y: point.y, node,
-    route: spec.route || null, target: spec.target || null, takenBy: null, until: state.minutes + BOUNTY_DAYS * 1440 };
+    route: spec.route || null, target: spec.target || null, lairId: spec.lairId || null, takenBy: null, until: state.minutes + BOUNTY_DAYS * 1440 };
   state.bounties.push(bounty);
   renderSites(); renderPanel(); updateHud();
   say(`Recompensa de ${reward} de ouro: ${bounty.label.toLowerCase()}. Agora é ver quem tem coragem. Ou dívida.`);
@@ -2863,6 +3044,7 @@ function completeBounty(hero, bounty) {
 }
 // Um passo da recompensa: anda até o ponto (ou pelo roteiro da patrulha) e vigia.
 function bountyStep(hero, bounty) {
+  if (bounty.lairId) { lairBountyStep(hero, bounty); return; }
   if (bounty.target) {
     const monster = (state.bandits || []).find(actor => actor.id === bounty.target && actor.alive);
     if (!monster) return;
@@ -2895,6 +3077,13 @@ function processBounties() {
   (state.bounties || []).forEach(bounty => {
     if (bounty.takenBy != null && !bountyTaker(bounty)) { bounty.takenBy = null; bounty.leg = 0; bounty.arrivedAt = null; }
   });
+  // Covil que já caiu ou sumiu: o ouro volta.
+  (state.bounties || []).filter(bounty => bounty.lairId && !(state.lairs || []).some(lair => lair.id === bounty.lairId && lair.active)).forEach(bounty => {
+    const taker = bountyTaker(bounty);
+    if (taker) taker.bountyId = null;
+    if (!state.testMode) state.gold += bounty.reward;
+    state.bounties = state.bounties.filter(item => item !== bounty);
+  });
   // Caça cuja caveira sumiu sem ninguém derrubar: o ouro volta.
   (state.bounties || []).filter(bounty => bounty.target && !(state.bandits || []).some(actor => actor.id === bounty.target && actor.alive)).forEach(bounty => {
     if (!state.testMode) state.gold += bounty.reward;
@@ -2914,9 +3103,13 @@ function bountyPanelHTML() {
     const eta = skeletonEta(monster);
     return `<div class="bounty-row monster-row"><span><b>${monster.name}</b><small>nível ${monster.level} · ${eta > 0 ? `chega à cidade em ~${Math.max(1, Math.round(eta / 60))}h` : 'atacando a cidade agora'}</small></span><button type="button" class="hut-upgrade hunt-btn" data-bounty-hunt="${monster.id}">Recompensa · ${state.bountyAmount}</button></div>`;
   }).join('');
+  const dens = (state.lairs || []).filter(lair => lair.active && CREATURE_DENS.includes(lair.kind) && !(state.bounties || []).some(bounty => bounty.lairId === lair.id)).map(lair =>
+    `<div class="bounty-row monster-row"><span><b>${lair.name}</b><small>nível ${lair.level || 1} · vida ${lairHp(lair)}/${lairMaxHp(lair)} · deixa um Dead Remains</small></span><button type="button" class="hut-upgrade hunt-btn" data-bounty-lair="${lair.id}">Destruir · ${state.bountyAmount}</button></div>`).join('');
   const rows = (state.bounties || []).map(bounty => {
     const taker = bountyTaker(bounty);
-    const status = bounty.target ? (taker ? `${taker.name} foi caçar` : 'Ninguém aceitou ainda') : taker ? (bounty.route ? `${taker.name} · trecho ${Math.min(bounty.leg || 0, bounty.route.length)} de ${bounty.route.length}` : bounty.arrivedAt != null ? `${taker.name} vigiando · ${Math.max(0, BOUNTY_GUARD - (state.minutes - bounty.arrivedAt))} min` : `${taker.name} a caminho`) : 'Ninguém aceitou ainda';
+    const lair = bounty.lairId ? (state.lairs || []).find(item => item.id === bounty.lairId) : null;
+    const status = lair ? `${taker ? `${taker.name} ${(taker.mapId || 'city') === (lair.mapId || 'wilds') ? 'atacando' : 'a caminho'}` : 'Ninguém aceitou ainda'} · vida ${lairHp(lair)}/${lairMaxHp(lair)}`
+      : bounty.target ? (taker ? `${taker.name} foi caçar` : 'Ninguém aceitou ainda') : taker ? (bounty.route ? `${taker.name} · trecho ${Math.min(bounty.leg || 0, bounty.route.length)} de ${bounty.route.length}` : bounty.arrivedAt != null ? `${taker.name} vigiando · ${Math.max(0, BOUNTY_GUARD - (state.minutes - bounty.arrivedAt))} min` : `${taker.name} a caminho`) : 'Ninguém aceitou ainda';
     return `<div class="bounty-row"><span><b>${bounty.label}</b><small>${status}${bounty.target ? '' : ` · vence em ${Math.max(0, Math.ceil((bounty.until - state.minutes) / 60))}h`}</small></span><em>${bounty.reward}</em><button type="button" class="bounty-cancel" data-bounty-cancel="${bounty.id}" title="Cancelar e devolver o ouro">×</button></div>`;
   }).join('');
   return `<section class="farm-selector hut-box bounty-box"><div class="farm-selector-heading"><b>Recompensas</b><small>você paga, eles decidem</small></div>
@@ -2925,13 +3118,14 @@ function bountyPanelHTML() {
     <button type="button" class="hut-upgrade bounty-lair" data-bounty-preset="lair">Vigiar as ruínas do covil</button>
     <p class="storage-items">O ouro sai do cofre agora. Ganancioso só vai por 40 ou mais; Covarde não vai longe por pouco; Teimoso às vezes nem escuta.</p>
     ${hunts ? `<div class="food-label">CAVEIRAS NA ESTRADA</div><div class="bounty-list">${hunts}</div>` : ''}
+    ${dens ? `<div class="food-label">COVIS NOS WILDS</div><div class="bounty-list">${dens}</div>` : ''}
     ${rows ? `<div class="bounty-list">${rows}</div>` : ''}</section>`;
 }
 function renderBountyFlags() {
   const layer = $('#site-layer');
-  const ids = new Set((state.bounties || []).filter(bounty => !bounty.target).map(bounty => bounty.id));
+  const ids = new Set((state.bounties || []).filter(bounty => !bounty.target && !bounty.lairId).map(bounty => bounty.id));
   $$('.bounty-flag', layer).filter(flag => !ids.has(flag.dataset.bounty)).forEach(flag => flag.remove());
-  (state.bounties || []).filter(bounty => !bounty.target).forEach(bounty => {
+  (state.bounties || []).filter(bounty => !bounty.target && !bounty.lairId).forEach(bounty => {
     let flag = $(`.bounty-flag[data-bounty="${bounty.id}"]`, layer);
     if (!flag) {
       flag = document.createElement('div');
@@ -2953,17 +3147,19 @@ function economyPanelHTML() {
   const row = (label, value, note = '') => `<div><dt>${label}${note ? `<small>${note}</small>` : ''}</dt><dd>${value}</dd></div>`;
   const farms = state.buildings.filter(building => building.type === 'farm' && isDone(building));
   const mills = state.buildings.filter(building => building.type === 'mill' && isDone(building));
+  const bakeries = state.buildings.filter(building => building.type === 'bakery' && isDone(building));
   const camps = state.buildings.filter(building => building.type === 'lumber' && isDone(building));
   const pits = state.buildings.filter(building => isPit(building) && isDone(building));
   const crewOf = building => state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site).length;
   const produced = emptyFood();
   farms.forEach(farm => { produced[farm.produce] += farmOutput(farm) * (1 + crewWork(farm)); });
+  bakeries.forEach(bakery => { produced[bakeryRecipe(bakery.produce).id] += bakeRate(bakery) * (1 + crewWork(bakery)); });
   const milling = mills.reduce((sum, mill) => sum + millRate(mill) * (1 + crewWork(mill)), 0);
   const woodRates = camps.map(camp => LUMBER_RATE[lumberCrew(camp).length] * (1 + crewWork(camp)));
   const wood = 0.28 + woodRates.reduce((a, b) => a + b, 0);
   const taxes = dailyTaxEstimate();
   const wages = dailyWages();
-  const waiting = farms.reduce((sum, farm) => sum + (farm.stock || 0), 0) + mills.reduce((sum, mill) => sum + (mill.stock || 0), 0);
+  const waiting = [...farms, ...mills, ...bakeries].reduce((sum, building) => sum + (building.stock || 0), 0);
   return `<div class="panel-title"><h3>Economia</h3><span>${state.testMode ? '∞' : format(state.gold)} de ouro no cofre</span></div>
     ${demandsHTML()}
     <div class="econ-block"><div class="food-label">OURO POR DIA</div><dl class="econ-lines">
@@ -2984,15 +3180,15 @@ function economyPanelHTML() {
       ${row('<b>Metal</b>', `<b>${fineRate(rates().metal)}/s</b>`, `${format(state.metal || 0)} no estoque`)}
     </dl></div>` : ''}
     <div class="econ-block"><div class="food-label">COMIDA POR SEGUNDO</div><dl class="econ-lines">
-      ${FOOD_TYPES.filter(food => food.id !== 'flour').map(food => row(food.name, produced[food.id] ? `+${per(produced[food.id])}` : '—', `${format(state.food[food.id] || 0)} no depósito${food.raw ? ' · vai pro moinho' : ''}`)).join('')}
+      ${FOOD_TYPES.filter(food => food.id !== 'flour').map(food => row(food.name, produced[food.id] ? `${food.baked ? 'até ' : ''}+${per(produced[food.id])}` : '—', `${format(state.food[food.id] || 0)} no depósito${food.raw ? ' · vai pro moinho' : food.baked ? ' · da padaria' : ''} · alimenta ${food.feeds}×`)).join('')}
       ${row('Farinha', milling ? `até +${per(milling)}` : '—', `${format(state.food.flour || 0)} no depósito · ${mills.length ? `${mills.length} ${mills.length === 1 ? 'moinho' : 'moinhos'}` : 'sem moinho'}`)}
       ${row('Consumo dos camponeses', `−${per(foodDemand())}`, `${eaters()} bocas · ração ${RATIONS[state.ration].label.toLowerCase()}`)}
-      ${row('Esperando carregador', format(waiting), 'nas fazendas e moinhos')}
+      ${row('Esperando carregador', format(waiting), 'nas fazendas, moinhos e padarias')}
       ${row('Depósito', `${Math.floor(storedUnits())} / ${storageCap()}`)}
     </dl></div>
     <div class="econ-block"><div class="food-label">POR CONSTRUÇÃO</div><dl class="econ-lines">
-      ${[...farms, ...mills].map(building => row(siteLabel(building), building.type === 'mill' ? `${per(millRate(building) * (1 + crewWork(building)))} de trigo` : per(farmOutput(building) * (1 + crewWork(building))),
-        `nível ${producerLevel(building) + 1} · ${crewOf(building)} ${crewOf(building) === 1 ? 'trabalhador' : 'trabalhadores'}${crewWork(building) ? ` · +${Math.round(crewWork(building) * 100)}%` : ''} · ${format(building.stock || 0)} esperando`)).join('') || '<p class="storage-items">Nenhuma fazenda ou moinho ainda.</p>'}
+      ${[...farms, ...mills, ...bakeries].map(building => row(siteLabel(building), building.type === 'mill' ? `${per(millRate(building) * (1 + crewWork(building)))} de trigo` : building.type === 'bakery' ? `${per(bakeRate(building) * (1 + crewWork(building)))} de ${foodName(bakeryRecipe(building.produce).id)}` : per(farmOutput(building) * (1 + crewWork(building))),
+        `nível ${producerLevel(building) + 1} · ${crewOf(building)} ${crewOf(building) === 1 ? 'trabalhador' : 'trabalhadores'}${crewWork(building) ? ` · +${Math.round(crewWork(building) * 100)}%` : ''} · ${format(building.stock || 0)} esperando`)).join('') || '<p class="storage-items">Nenhuma fazenda, moinho ou padaria ainda.</p>'}
     </dl></div>
     <details class="econ-block"><summary class="food-label">CUSTOS PARA CONSTRUIR</summary><dl class="econ-lines">
       ${BUILDINGS.map(building => row(building.name, `${building.cost} ouro · ${building.wood} madeira`)).join('')}
@@ -3009,17 +3205,19 @@ function foodPanelHTML() {
   const extra = storageCap() - MANOR_STORAGE;
   const storageBox = `<div class="storage-box"><div class="mood-head"><span>DEPÓSITO DE PROVISÕES</span><b>${Math.floor(used)} / ${storageCap()}</b><small>comida, armas e itens</small></div>
       <div class="mood-bar storage-bar"><i style="width:${Math.min(100, Math.round(used / storageCap() * 100))}%"></i></div>
+      <p class="storage-items">Dead Remains: ${REMAINS_GRADES.map(grade => `${grade.id} ${state.remains?.[grade.id] || 0}`).join(' · ')} · Ember: ${format(state.ember || 0)}</p>
       <p class="storage-items">Casarão: ${MANOR_STORAGE}${depots().length ? ` · ${depots().length} ${depots().length === 1 ? 'depósito' : 'depósitos'}: +${extra}` : ''} · armas e itens guardados: ${state.items?.length || 0}</p>
       ${depots().length ? '' : '<p class="storage-items">Precisa de mais espaço? Construa um Depósito de Provisões.</p>'}</div>`;
   return `${storageBox}<div class="panel-title"><h3>Alimentos e consumo</h3><span>${n} ${n === 1 ? 'boca' : 'bocas'} · ${foodDemand().toFixed(1).replace('.', ',')} por segundo</span></div>
     <div class="food-block"><div class="food-label">RAÇÃO</div>
       <div class="segmented ration">${RATIONS.map((ration, i) => `<button type="button" data-ration="${i}" class="${state.ration === i ? 'active' : ''}"><b>${ration.label}</b><small>${(eaters() * WORKER_UPKEEP * ration.mult).toFixed(1).replace('.', ',')}/s</small><em class="${ration.mood > 0 ? 'mood-up' : ration.mood < 0 ? 'mood-down' : ''}">${ration.mood > 0 ? '+' : ration.mood < 0 ? '−' : ''}${Math.abs(ration.mood)} felicidade</em></button>`).join('')}</div>
       <p class="storage-items">Cada camponês come ${WORKER_UPKEEP.toFixed(1).replace('.', ',')} de provisão por segundo na ração normal. Meia come metade; dobrada, o dobro; tripla, o triplo.</p>
+      <p class="storage-items">A provisão se mede em pão. ${[1, 2, 4].map(n => `${FOOD_TYPES.filter(food => !food.raw && food.feeds === n).map(food => food.name.toLowerCase()).join(', ')} alimentam ${n}×`).join('; ')}: quanto mais alimenta, menos sai do estoque.</p>
       <p class="ration-effect">Efeito na felicidade do povo: a ração <b>${RATIONS[state.ration].label.toLowerCase()}</b> ${RATIONS[state.ration].mood > 0 ? 'deixa o povo mais feliz' : RATIONS[state.ration].mood < 0 ? 'deixa o povo mais triste' : 'não muda a felicidade'} (${RATIONS[state.ration].mood > 0 ? '+' : RATIONS[state.ration].mood < 0 ? '−' : ''}${Math.abs(RATIONS[state.ration].mood)}). Quanto mais comida, mais feliz o povo, e mais rápido o estoque acaba. Se a comida servida não der para todos, a fome tira até 40.</p></div>
     <div class="food-label">CARDÁPIO</div>
     <div class="food-list">${FOOD_TYPES.map(food => { const on = !!state.diet[food.id]; const stock = state.food[food.id] || 0; return `<div class="food-row${on ? ' on' : ''}${stock <= 0 ? ' empty' : ''}">
-        <img src="public/art/${food.art}-v01.webp" alt=""><span class="food-name"><b>${food.name}</b><small>${food.note}</small></span>
-        <span class="food-stock"><b>${format(stock)}</b><small>${food.id === 'flour' ? (milling ? `até +${rateNumber(milling)}/s` : 'sem moinho') : prod[food.id] ? `+${rateNumber(prod[food.id])}/s${food.raw && milling ? ` · moinho −${rateNumber(milling)}/s` : ''}` : 'sem produção'}</small></span>
+        <img src="public/art/${food.art}-v01.webp" alt=""><span class="food-name"><b>${food.name}</b><small>${food.raw ? '' : `Alimenta ${food.feeds}×. `}${food.note}</small></span>
+        <span class="food-stock"><b>${format(stock)}</b><small>${food.id === 'flour' ? (milling ? `até +${rateNumber(milling)}/s` : 'sem moinho') : food.baked ? (bakingCapacity(food.id) ? `até +${rateNumber(bakingCapacity(food.id))}/s` : 'sem padaria assando') : prod[food.id] ? `+${rateNumber(prod[food.id])}/s${food.raw && milling ? ` · moinho −${rateNumber(milling)}/s` : ''}` : 'sem produção'}</small></span>
         ${food.raw ? '<button type="button" disabled>PRO MOINHO</button>' : `<button type="button" data-diet="${food.id}" class="${on ? 'on' : ''}">${on ? 'SERVINDO' : 'GUARDADO'}</button>`}</div>`; }).join('')}</div>
     <div class="mood-box"><div class="mood-head"><span>FELICIDADE</span><b>${Math.round(state.happiness)}</b><em>${happinessLabel(state.happiness)}</em><small>média da semana ${Math.round(moodWeekAverage())} · muda no dia ${nextMoodDay()}</small></div>
       <div class="mood-bar"><i style="width:${Math.round(state.happiness)}%"></i></div>
@@ -3028,7 +3226,7 @@ function foodPanelHTML() {
       <p>A felicidade muda uma vez por semana, à meia-noite do 7º dia: anda até ${MOOD_WEEKLY_STEP} pontos na direção da média da semana, que é 50 somado a estes efeitos:</p>
       <dl>
         <div><dt>Ração</dt><dd>Nenhuma −20 · Meia −8 · Normal 0 · Dobrada +5 · Tripla +10</dd></div>
-        <div><dt>Comida</dt><dd>Cada alimento servido soma: alho +1 · farinha +2 · bacon +2 · ovos +1 · leite +1</dd></div>
+        <div><dt>Comida</dt><dd>Cada alimento servido soma: ${FOOD_TYPES.filter(food => !food.raw).map(food => `${food.name.toLowerCase()} +${food.mood}`).join(' · ')}</dd></div>
         <div><dt>Imposto</dt><dd>0% +10 · 5% +5 · 10% 0 · 15% −5 · 20% −10</dd></div>
         <div><dt>Fome</dt><dd>Quando a comida servida não dá pra todos: até −20</dd></div>
       </dl>
@@ -3245,6 +3443,12 @@ function killActor(victim, killer) {
   } else if (victim.className === 'Peasant') {
     say(`${victim.name} foi ${isFemalePeasant(victim) ? 'morta' : 'morto'}${killer?.className === 'Monster' ? ' por uma caveira' : ' por ladrões'}. ${pick(['Os outros pediram aumento.', 'A colheita atrasou.', 'Ele tinha nome. Ninguém lembra qual.'])}`);
   } else {
+    // Herói que morre carregando restos larga tudo no chão; outro herói vai buscar.
+    if (victim.remains) {
+      state.remainsPiles.push({ id: `remains-${Date.now()}-${Math.floor(Math.random() * 1000)}`, grade: victim.remains, mapId: victim.mapId || 'city', mapSet: victim.mapSet || 1, x: victim.x, y: victim.y });
+      victim.remains = null;
+      renderLairs();
+    }
     say(pick(DEATH_MSG)(victim.name), `${victim.name} morreu lutando contra ladrões.`);
   }
   updateHud();
@@ -3425,6 +3629,181 @@ function spawnBandits() {
 }
 
 const LAIR_SPAWN_EVERY = 720;
+// ==========================================================================
+// Covis de criaturas têm vida. Heróis derrubam por recompensa ("Destruir o covil") e o covil
+// deixa um Dead Remains, de grade D a A. Só herói recolhe. Ao deixar no depósito, o herói cobra
+// do cofre 1 de ouro pelas grades D e C e 2 pelas grades B e A. O Laboratório de Ember refina em Ember.
+// ==========================================================================
+const CREATURE_DENS = ['wolf-den', 'goblin-den', 'troll-den'];
+const LAIR_HP = { 1: 300, 2: 700 }; // por nível do covil
+const lairMaxHp = lair => LAIR_HP[lair.level || 1] || LAIR_HP[1];
+const lairHp = lair => Math.max(0, lairMaxHp(lair) - (lair.damage || 0));
+const REMAINS_GRADES = [
+  { id: 'D', gold: 1, ember: 1 }, { id: 'C', gold: 1, ember: 2 }, { id: 'B', gold: 2, ember: 4 }, { id: 'A', gold: 2, ember: 7 },
+];
+// Chance de cada grade (D, C, B, A) pelo nível do covil.
+const REMAINS_ODDS = { 1: [0.6, 0.3, 0.1, 0], 2: [0.1, 0.3, 0.4, 0.2] };
+// ÍCONES DOS DEAD REMAINS: provisórios. Troque pelos caminhos das artes novas (um por grade).
+const REMAINS_ART = { D: 'icon-ring-bone-photo-v01.png', C: 'icon-ring-bone-photo-v01.png', B: 'icon-ring-bone-photo-v01.png', A: 'icon-ring-bone-photo-v01.png' };
+const remainsImage = grade => `public/art/${REMAINS_ART[grade]}`;
+const remainsGrade = id => REMAINS_GRADES.find(grade => grade.id === id) || REMAINS_GRADES[0];
+const emptyRemains = () => ({ D: 0, C: 0, B: 0, A: 0 });
+const remainsCount = () => REMAINS_GRADES.reduce((sum, grade) => sum + (state.remains?.[grade.id] || 0), 0);
+function rollRemains(level) {
+  const odds = REMAINS_ODDS[level] || REMAINS_ODDS[1];
+  let roll = Math.random();
+  for (let i = 0; i < odds.length; i++) { roll -= odds[i]; if (roll < 0) return REMAINS_GRADES[i].id; }
+  return REMAINS_GRADES[0].id;
+}
+// A ponta de baixo da estrada velha na cidade (nó 18) encosta na ponta de cima da estrada dos Wilds.
+// Devolve true enquanto o herói ainda está a caminho do outro mapa.
+function travelToMap(hero, mapId, mapSet = 1) {
+  const here = hero.mapId || 'city';
+  if (here === mapId) return false;
+  const gate = PATH_NODES[18];
+  if (here === 'city') {
+    if (Math.hypot(hero.x - gate.x, hero.y - gate.y) < 1.5) {
+      const exit = WILDS_ROAD_EXIT[mapSet === 2 ? 2 : 1];
+      hero.mapId = 'wilds'; hero.x = exit.x; hero.y = exit.y + 1; hero.route = []; hero.finalPoint = null;
+      return false;
+    }
+    routeActor(hero, 18);
+    hero.finalPoint = { x: gate.x, y: gate.y };
+    return true;
+  }
+  const exit = WILDS_ROAD_EXIT[mapSet === 2 ? 2 : 1];
+  if (distanceTo(hero, exit) < 1.5) {
+    hero.mapId = 'city'; hero.x = gate.x; hero.y = gate.y; hero.route = []; hero.finalPoint = null;
+    return false;
+  }
+  hero.route = [];
+  hero.finalPoint = { x: exit.x, y: exit.y };
+  return true;
+}
+function lairBounty(lairId) {
+  const lair = (state.lairs || []).find(item => item.id === lairId && item.active && CREATURE_DENS.includes(item.kind));
+  if (!lair || (state.bounties || []).some(bounty => bounty.lairId === lairId)) return;
+  const gate = PATH_NODES[18];
+  createBounty({ x: gate.x, y: gate.y, node: 18, lairId, label: `Destruir: ${lair.name}` });
+}
+// O herói desce a estrada, chega ao covil e bate até ele cair. As criaturas por perto defendem.
+function lairBountyStep(hero, bounty) {
+  const lair = (state.lairs || []).find(item => item.id === bounty.lairId && item.active);
+  if (!lair) return;
+  hero.task = bounty.label;
+  if (travelToMap(hero, lair.mapId || 'wilds', lair.mapSet || 1)) return;
+  const spot = { x: lair.x, y: Math.min(198, lair.y + 3) };
+  if (distanceTo(hero, spot) > 1.5) { hero.route = []; hero.finalPoint = spot; return; }
+  faceToward(hero, lair);
+  const stats = statsOf(hero);
+  const power = MAGIC_CLASSES.includes(classOf(hero)) ? stats.mag : stats.atk;
+  lair.damage = (lair.damage || 0) + Math.max(1, Math.round(power * (0.8 + Math.random() * 0.4)));
+  const before = hero.level || 1;
+  gainActorXp(hero, 5);
+  checkPrestige(hero, before);
+  hero.wait = ATTACK_COOLDOWN; hero.actionTime = 0.5; hero.actionClock = 0;
+  if (lairHp(lair) <= 0) destroyLair(lair, hero, bounty);
+  renderLairs();
+  if (state.tab === 'heroes' && state.ticks % 3 === 0) renderPanel();
+}
+function destroyLair(lair, hero, bounty) {
+  lair.active = false;
+  lair.destroyed = true;
+  lair.damage = 0;
+  const grade = rollRemains(lair.level || 1);
+  hero.bountyId = null;
+  state.bounties = state.bounties.filter(item => item !== bounty);
+  lootHero(hero, bounty.reward);
+  hero.remains = grade;
+  gainHeirXp(25);
+  say(`${hero.name} derrubou ${lair.name} e embolsou ${bounty.reward} de ouro. Sobrou um Dead Remains grade ${grade}; ele vai levar pro depósito.`, `${lair.name} caiu. Os bichos vão ter que morar em outro lugar.`);
+  renderLairs(); renderSites();
+  if (state.tab === 'heroes') renderPanel();
+}
+// Herói com restos na mão: volta pra cidade, deixa no depósito mais perto e cobra do cofre.
+function carryRemainsStep(hero) {
+  const grade = remainsGrade(hero.remains);
+  hero.task = `Levando um Dead Remains grade ${grade.id} pro depósito`;
+  if (travelToMap(hero, 'city')) return;
+  const store = nearestStorage(hero);
+  if (!isAt(hero, store)) { walkTo(hero, store); return; }
+  if (storedUnits() > storageCap() - 1) {
+    if (!state.remainsFullWarned) { state.remainsFullWarned = true; say(`O depósito está cheio. ${hero.name} está esperando na porta com o Dead Remains na mão.`); }
+    hero.task = 'Esperando espaço no depósito com um Dead Remains';
+    hero.wait = 5;
+    return;
+  }
+  state.remainsFullWarned = false;
+  state.remains[grade.id] = (state.remains[grade.id] || 0) + 1;
+  const pay = state.testMode ? grade.gold : Math.min(grade.gold, Math.max(0, Math.floor(state.gold)));
+  if (!state.testMode) state.gold -= pay;
+  lootHero(hero, pay);
+  hero.remains = null;
+  say(`${hero.name} deixou um Dead Remains grade ${grade.id} no depósito e cobrou ${pay} de ouro do cofre${pay < grade.gold ? ', o que tinha' : ''}.`);
+  updateHud();
+  if (['food', 'heroes'].includes(state.tab)) renderPanel();
+}
+// Restos no chão (de herói que morreu no caminho): um herói livre e inteiro vai buscar.
+function remainsPileStep(hero) {
+  const piles = state.remainsPiles || [];
+  let pile = piles.find(item => String(item.claimedBy) === String(hero.id));
+  if (!pile) {
+    if (hpOf(hero) < maxHpOf(hero) * 0.5) return false;
+    pile = piles.find(item => item.claimedBy == null || !state.heroes.some(other => other.alive && String(other.id) === String(item.claimedBy)));
+    if (!pile) return false;
+    pile.claimedBy = hero.id;
+  }
+  hero.task = `Indo buscar um Dead Remains grade ${pile.grade}`;
+  if (travelToMap(hero, pile.mapId || 'city', pile.mapSet || 1)) return true;
+  if (distanceTo(hero, pile) < 1.5) {
+    hero.remains = pile.grade;
+    state.remainsPiles = piles.filter(item => item !== pile);
+    renderLairs();
+    return true;
+  }
+  hero.route = [];
+  if ((pile.mapId || 'city') === 'city') routeActor(hero, nearestNode(pile));
+  hero.finalPoint = { x: pile.x, y: pile.y };
+  return true;
+}
+// Laboratório: o camponês busca um Dead Remains por viagem (o de grade mais alta) e o laboratório refina.
+// O Ember vai direto pro estoque, como pedra e metal.
+function refineRemains(dt) {
+  state.buildings.filter(building => building.type === 'emberLab' && isDone(building)).forEach(lab => {
+    if (!lab.input?.length) { lab.progress = 0; return; }
+    lab.progress = (lab.progress || 0) + labRate(lab) * (1 + crewWork(lab)) * dt;
+    while (lab.progress >= 1 && lab.input.length) {
+      lab.progress -= 1;
+      const grade = remainsGrade(lab.input.shift());
+      state.ember = (state.ember || 0) + grade.ember;
+    }
+  });
+}
+const bestRemains = () => [...REMAINS_GRADES].reverse().find(grade => (state.remains?.[grade.id] || 0) > 0)?.id || null;
+function labRoutine(actor, lab) {
+  const store = nearestStorage(lab);
+  const queued = () => (lab.input?.length || 0) + state.workers.filter(worker => worker.alive && worker.carrying?.toLab === lab.site).length;
+  if (isAt(actor, lab)) {
+    if (actor.carrying?.toLab) { lab.input = [...(lab.input || []), actor.carrying.remains]; actor.carrying = null; }
+    if (queued() < 2 && bestRemains()) { actor.task = 'Indo buscar Dead Remains no depósito'; walkTo(actor, store); return; }
+    actor.task = lab.input?.length ? `Refinando um Dead Remains grade ${lab.input[0]} em Ember` : 'No laboratório, esperando Dead Remains';
+    actor.wait = 3; actor.actionTime = lab.input?.length ? 3 : 0; actor.actionClock = 0;
+    return;
+  }
+  if (isAt(actor, store)) {
+    if (actor.carrying && !actor.carrying.toLab) deliverLoad(actor);
+    const grade = !actor.carrying && queued() < 2 && bestRemains();
+    if (grade) { state.remains[grade] -= 1; actor.carrying = { remains: grade, qty: 1, toLab: lab.site }; }
+  }
+  if (actor.carrying && !actor.carrying.toLab) {
+    actor.task = `Carregando ${format(actor.carrying.qty)} de ${foodName(actor.carrying.food)} para o depósito`;
+    walkTo(actor, store);
+    return;
+  }
+  actor.task = actor.carrying ? `Levando um Dead Remains grade ${actor.carrying.remains} pro laboratório` : 'Indo trabalhar no Laboratório de Ember';
+  actor.headingToWork = true;
+  walkTo(actor, lab);
+}
 // Chamado às armas: cada inimigo na cidade tem pelo menos um herói indo atrás dele.
 // Quem estava bebendo larga o copo; o herói mais perto e livre é o escolhido.
 function assignResponders() {
@@ -3495,11 +3874,17 @@ function hydrateState(data) {
   loaded.mapSet = data.mapSet === 2 ? 2 : 1;
   const defaultLairs = newGameState(!!data.testMode).lairs;
   loaded.lairs = defaultLairs.map(base => ({ ...base, mapSet: 1, ...(Array.isArray(data.lairs) ? data.lairs.find(lair => lair.id === base.id) : null) }));
-  ['goblin-den-l1', 'troll-den-l1'].forEach(id => { const lair = loaded.lairs.find(item => item.id === id); if (lair) lair.active = true; });
+  ['goblin-den-l1', 'troll-den-l1'].forEach(id => { const lair = loaded.lairs.find(item => item.id === id); if (lair && !lair.destroyed) lair.active = true; });
+  loaded.remains = { ...emptyRemains(), ...(data.remains || {}) };
+  if (!Array.isArray(loaded.remainsPiles)) loaded.remainsPiles = [];
   loaded.buildings.forEach(building => { building.builtAt = 0; });
   if (!data.food) loaded.food = { ...emptyFood(), wheat: data.grain || 0 };
   if (loaded.food.flour == null) loaded.food.flour = 0;
   if (loaded.diet && loaded.diet.flour == null) loaded.diet.flour = true;
+  ['bread', 'cheese', 'quiche'].forEach(id => {
+    if (loaded.food[id] == null) loaded.food[id] = 0;
+    if (loaded.diet && loaded.diet[id] == null) loaded.diet[id] = true;
+  });
   if (!Array.isArray(loaded.items)) loaded.items = [];
   if (!Array.isArray(loaded.bandits)) loaded.bandits = [];
   (loaded.lairs || []).filter(lair => lair.active && ['wolf-den', 'goblin-den', 'troll-den'].includes(lair.kind)).forEach(lair => {
@@ -3675,6 +4060,7 @@ function economySnapshot(source) {
   buildings.forEach(building => {
     if (building.type === 'farm') produced[farmType(building.produce).id] += farmOutput(building);
     if (building.type === 'mill') produced.flour += millRate(building);
+    if (building.type === 'bakery') produced[bakeryRecipe(building.produce).id] += bakeRate(building);
   });
   const ration = RATIONS[source.ration ?? 2] || RATIONS[2];
   const consumption = workers.length * WORKER_UPKEEP * ration.mult;
@@ -3689,7 +4075,8 @@ function economySnapshot(source) {
   const food = source.food || {};
   const stock = FOOD_TYPES.reduce((sum, item) => sum + (food[item.id] || 0), 0);
   const capacity = MANOR_STORAGE + buildings.filter(building => building.type === 'depot').reduce((sum, depot) => sum + STORAGE_LEVELS[depot.level || 0].cap, 0);
-  const edible = FOOD_TYPES.filter(item => !item.raw).reduce((sum, item) => sum + produced[item.id], 0);
+  // Em provisões (pão). A padaria não soma: o que ela assa alimenta o mesmo que os ingredientes que gasta.
+  const edible = FOOD_TYPES.filter(item => !item.raw && !item.baked).reduce((sum, item) => sum + produced[item.id] * item.feeds, 0);
   return { source, workers: workers.length, buildings: buildings.length, produced, edible, consumption, woodRate, workerTax, wages, tavernTax, taxEstimate: workerTax + tavernTax, stock, capacity };
 }
 
@@ -3745,8 +4132,8 @@ const HOWTO = [
     ${howFormula(`Avanço por segundo = 1 + Construção/100 + bônus de obra do equipamento`)}
     <h3>Melhorias</h3>
     ${howTable(['Melhoria', 'Ouro', 'Madeira', 'Efeito'], [
-      ['Fazenda ou moinho, nível 2', PRODUCER_LEVELS[1].gold, PRODUCER_LEVELS[1].wood, 'produz mais'],
-      ['Fazenda ou moinho, nível 3', PRODUCER_LEVELS[2].gold, PRODUCER_LEVELS[2].wood, 'produz mais'],
+      ['Fazenda, moinho, padaria ou laboratório, nível 2', PRODUCER_LEVELS[1].gold, PRODUCER_LEVELS[1].wood, 'produz mais'],
+      ['Fazenda, moinho, padaria ou laboratório, nível 3', PRODUCER_LEVELS[2].gold, PRODUCER_LEVELS[2].wood, 'produz mais'],
       ['Casebre Grande', HUT_UPGRADE.gold, HUT_UPGRADE.wood, '+3 moradores (5 no total)'],
       ...STORAGE_LEVELS.slice(1).map(level => [`Depósito para ${level.cap}`, level.gold, level.wood, `guarda ${level.cap}`]),
       ['Guilda, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, 'recruta mais um herói'],
@@ -3763,11 +4150,14 @@ const HOWTO = [
     ${howFormula(`Produção = valor da tabela × (1 + bônus da equipe)<br>Bônus da equipe = soma, de quem trabalha ali, de (bônus de trabalho do equipamento + habilidade do ofício/200)`)}
     <h3>Moinho</h3>
     <p>Trigo cru não alimenta ninguém. O moinho mói trigo em farinha, 1 para 1: o camponês busca trigo no depósito e leva a farinha de volta. Moagem por nível: ${MILL_RATE.map(value => `${hn(value)}/s`).join(', ')}, com o mesmo bônus da equipe.</p>
+    <h3>Padaria</h3>
+    <p>Você escolhe a fornada no painel da padaria. O camponês busca os ingredientes no depósito, um por viagem, e leva o que sai do forno de volta. Cada fornada gasta 1 de cada ingrediente e faz 1 do produto. Fornadas por nível: ${BAKE_RATE.map(value => `${hn(value)}/s`).join(', ')}, com o mesmo bônus da equipe.</p>
+    ${howTable(['Fornada', 'Ingredientes', 'Alimenta'], BAKERY_RECIPES.map(recipe => [recipe.name, recipe.needs.map(id => FOOD_TYPES.find(food => food.id === id).name).join(' + '), `${foodFeeds(recipe.id)}×`]))}
     <h3>Ração e consumo</h3>
-    ${howFormula(`Consumo por segundo = camponeses × ${hn(WORKER_UPKEEP)} × multiplicador da ração`)}
+    ${howFormula(`Consumo por segundo = camponeses × ${hn(WORKER_UPKEEP)} × multiplicador da ração<br>Estoque gasto de um alimento = parte dele no consumo ÷ quanto ele alimenta`)}
     ${howTable(['Ração', 'Multiplicador', 'Felicidade'], RATIONS.map(ration => [ration.label, `${hn(ration.mult)}×`, ration.mood > 0 ? `+${ration.mood}` : ration.mood]))}
     <p>A mesa divide a ração em partes iguais entre os alimentos marcados na aba <b>Provisões</b>. Cada alimento servido soma felicidade:</p>
-    ${howTable(['Alimento', 'Felicidade'], FOOD_TYPES.filter(food => !food.raw).map(food => [food.name, `+${food.mood}`]))}
+    ${howTable(['Alimento', 'Alimenta', 'Felicidade'], FOOD_TYPES.filter(food => !food.raw).map(food => [food.name, `${food.feeds}×`, `+${food.mood}`]))}
     <h3>Depósito</h3>
     <p>O casarão guarda ${MANOR_STORAGE}. Cada Depósito de Provisões soma ${STORAGE_LEVELS.map(level => level.cap).join(', ')} conforme o nível. Comida e itens contam; ouro e madeira não. Com tudo cheio, o excesso se perde.</p>` },
   { title: 'Felicidade', html: () => `
@@ -3859,7 +4249,16 @@ const HOWTO = [
     <p>Toda noite, às 22h, o cemitério solta uma caveira com nível igual ao dia. Ela sobe a estrada devagar (velocidade ${hn(SKELETON_SPEED)}) e aparece na aba Heróis com o tempo que falta. Na cidade, bate na construção mais perto até virar ruína, depois na próxima.</p>
     ${howFormula(`Dano da caveira na construção = 1,5 × Ataque, a cada ${hn(ATTACK_COOLDOWN * 1.5)} s`)}
     <h3>Covis dos Wilds</h3>
-    <p>Covis ativos de lobos, goblins e trolls soltam uma criatura a cada ${LAIR_SPAWN_EVERY / 60} horas de jogo. Elas descem pela estrada velha.</p>` },
+    <p>Covis ativos de lobos, goblins e trolls soltam uma criatura a cada ${LAIR_SPAWN_EVERY / 60} horas de jogo. Elas descem pela estrada velha.</p>
+    <h3>Destruir covis</h3>
+    <p>Na aba <b>Heróis</b>, cada covil tem um botão <b>Destruir</b>: é uma recompensa como as outras. O herói que aceita desce a estrada velha até os Wilds e bate no covil até ele cair. As criaturas por perto defendem.</p>
+    ${howTable(['Covil', 'Vida'], Object.entries(LAIR_HP).map(([level, hp]) => [`Nível ${level}`, hp]))}
+    ${howFormula(`Dano no covil por golpe = Ataque (Magia, para magos) × 0,8 a 1,2, a cada ${hn(ATTACK_COOLDOWN)} s`)}
+    <h3>Dead Remains</h3>
+    <p>O covil derrubado deixa um Dead Remains. Só heróis recolhem. O herói leva ao depósito (conta como 1 unidade) e cobra do cofre. Se ele morrer no caminho, os restos ficam no chão até outro herói buscar.</p>
+    ${howTable(['Grade', 'Ouro ao herói', 'Ember', 'Covil nível 1', 'Covil nível 2'], REMAINS_GRADES.map((grade, i) => [grade.id, grade.gold, grade.ember, `${Math.round(REMAINS_ODDS[1][i] * 100)}%`, `${Math.round(REMAINS_ODDS[2][i] * 100)}%`]))}
+    <h3>Laboratório de Ember</h3>
+    <p>Um camponês leva os Dead Remains do depósito ao laboratório, o de grade mais alta primeiro, e o laboratório refina em Ember. Refino por nível: ${LAB_RATE.map(value => `${hn(value)}/s`).join(', ')}, com o mesmo bônus da equipe.</p>` },
   { title: 'Recompensas', html: () => `
     <p>Na aba <b>Heróis</b> você escolhe o valor (mínimo 5) e onde: um ponto do mapa (vigiar ${BOUNTY_GUARD / 60} hora), a patrulha do segundo mapa (ida e volta), as ruínas do covil ou caçar uma caveira na estrada. O ouro sai do cofre na hora.</p>
     <h3>Quem aceita</h3>
@@ -3923,7 +4322,7 @@ const SCREENS = {
     const latest = latestSave();
     const source = game.slot ? state : latest?.record?.state || newGameState();
     const e = economySnapshot(source);
-    const foodRows = FOOD_TYPES.map(food => `<div><dt>${food.name}${food.raw ? ' · vai pro moinho' : food.id === 'flour' ? ' · do moinho' : ''}</dt><dd>+${economyRate(e.produced[food.id])} /s</dd></div>`).join('');
+    const foodRows = FOOD_TYPES.map(food => `<div><dt>${food.name}${food.raw ? ' · vai pro moinho' : food.id === 'flour' ? ' · do moinho' : food.baked ? ' · da padaria' : ''}</dt><dd>+${economyRate(e.produced[food.id])} /s</dd></div>`).join('');
     const demandRow = `<div><dt>Consumo dos camponeses · ${RATIONS[source.ration ?? 2]?.label || 'Normal'}</dt><dd>−${economyRate(e.consumption)} /s</dd></div>`;
     const costs = BUILDINGS.map(building => `<tr><th>${building.name}</th><td>${building.cost} ouro</td><td>${building.wood} madeira</td></tr>`).join('');
     return { cls: menuMode(), html: `<section class="menu-card economy-card wide">
@@ -4422,6 +4821,10 @@ function init() {
         say('Mercado: venda o que sobra, compre o que falta.');
       } else if (def.id === 'hut' || def.id === 'depot' || def.id === 'lumber') {
         say(def.id === 'lumber' ? `Cabana do Lenhador: ${lumberCrew(building).length} de 3 camponeses. Escale no painel.` : def.id === 'depot' ? `Depósito de Provisões: ${depotCap(building)} unidades. Dá pra ampliar no painel.` : building.big ? 'Casebre Grande: cinco moradores, nenhuma privacidade.' : 'Casebre Pequeno: dá pra ampliar no painel.');
+      } else if (def.id === 'emberLab') {
+        say(`Laboratório de Ember: ${remainsCount()} Dead Remains no depósito, ${format(state.ember || 0)} de Ember. Os heróis trazem os restos dos covis.`);
+      } else if (def.id === 'bakery') {
+        say(`Padaria, nível ${producerLevel(building) + 1}: assa ${bakeryRecipe(building.produce).name.toLowerCase()}. Troque a fornada ou melhore no painel.`);
       } else if (def.heroClass || def.id === 'farm' || def.id === 'mill') {
         if (def.id === 'mill') say(`Moinho, nível ${producerLevel(building) + 1}: mói ${rateNumber(millRate(building))} de trigo em farinha por segundo. Dá pra melhorar no painel.`);
         else say(def.id === 'farm' ? `Fazenda de ${farmType(building.produce).name}, nível ${producerLevel(building) + 1}: troque a produção ou melhore no painel.` : `${def.name}: atualize ou especialize no painel.`, def.id === 'farm' ? `A fazenda está produzindo ${farmType(building.produce).name.toLowerCase()}.` : `${def.name} está aberta. A localização afeta quem a procura.`);
