@@ -51,15 +51,30 @@ const Monarch = (() => {
   const mpRegen = (fighting = false) => (statTotal('WIS') * 0.10 + statTotal('INT') * 0.04) * (fighting ? 0.5 : 1);
   const isUnlocked = spell => level() >= spell.unlockLevel && !(spell.replacedBySpellId && level() >= byId[spell.replacedBySpellId].unlockLevel);
   const rankIndex = spell => { let index = -1; spell.ranks.forEach((rank, i) => { if (rank.level <= level()) index = i; }); return index; };
+  // Durações crescem a cada nível, na regra do Ember: valor do nível em que a magia abre × (1 + 16% × níveis acima dele).
+  // Vale para todo campo terminado em Seconds, menos recargas e intervalos.
+  const NOT_DURATION = new Set(['cooldownSeconds', 'tauntEverySeconds']);
+  const durationGrowth = spell => 1 + (typeof STAT_GROWTH === 'number' ? STAT_GROWTH : 0.16) * Math.max(0, level() - spell.unlockLevel);
+  function scaleDurations(values, spell) {
+    const growth = durationGrowth(spell);
+    const out = { ...values };
+    Object.keys(out).forEach(key => { if (key.endsWith('Seconds') && !NOT_DURATION.has(key) && typeof out[key] === 'number') out[key] = Math.round(out[key] * growth); });
+    return out;
+  }
   function stats(spell) {
     const cacheKey = `${spell.key}:${level()}`;
     if (rt.cache.has(cacheKey)) return rt.cache.get(cacheKey);
     const result = { ...spell.base };
     spell.ranks.slice(0, rankIndex(spell) + 1).forEach(rank => Object.assign(result, rank.changes));
-    rt.cache.set(cacheKey, result);
-    return result;
+    const scaled = scaleDurations(result, spell);
+    rt.cache.set(cacheKey, scaled);
+    return scaled;
   }
-  const effects = spell => spell.ranks[Math.max(0, rankIndex(spell))].effects;
+  const effects = spell => {
+    const cacheKey = `fx:${spell.key}:${level()}`;
+    if (!rt.cache.has(cacheKey)) rt.cache.set(cacheKey, scaleDurations(spell.ranks[Math.max(0, rankIndex(spell))].effects, spell));
+    return rt.cache.get(cacheKey);
+  };
   const unlockedSpells = () => SPELLS.filter(isUnlocked);
   const byLevelTable = table => { let value = 0; Object.entries(table).forEach(([lv, v]) => { if (Number(lv) <= level()) value = v; }); return value; };
 

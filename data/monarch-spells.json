@@ -231,7 +231,7 @@
         "cooldownSeconds": 14,
         "castRange": 0,
         "auraRadius": 8,
-        "durationSeconds": 8,
+        "durationSeconds": 60,
         "auraRadiusFollows": "aura-da-presenca"
       },
       "ranks": [
@@ -245,9 +245,7 @@
         },
         {
           "level": 9,
-          "changes": {
-            "durationSeconds": 10
-          },
+          "changes": {},
           "effects": {
             "slowPercent": 40
           },
@@ -264,15 +262,13 @@
         },
         {
           "level": 26,
-          "changes": {
-            "durationSeconds": 12
-          },
+          "changes": {},
           "effects": {
             "slowPercent": 60,
             "summonDamageTakenPercent": 15,
             "rootAfterStacks": 3,
-            "rootSeconds": 3,
-            "stackWindowSeconds": 20
+            "rootSeconds": 60,
+            "stackWindowSeconds": 60
           },
           "description": "Lentidão de 60% por 6 s. O inimigo atingido 3 vezes em 20 s fica enraizado por 1,5 s."
         }
@@ -318,7 +314,7 @@
             "damageBase": 50,
             "damageMagPercent": 80,
             "knockbackMeters": 5,
-            "stunOnCollisionSeconds": 1.5
+            "stunOnCollisionSeconds": 60
           },
           "description": "50 + 80% de mag de dano, repele 5 m. Quem bate em obstáculo fica atordoado 0,5 s."
         },
@@ -332,7 +328,7 @@
             "damageBase": 80,
             "damageMagPercent": 100,
             "knockbackMeters": 6,
-            "stunOnCollisionSeconds": 2
+            "stunOnCollisionSeconds": 60
           },
           "description": "80 + 100% de mag de dano, repele 6 m num raio de 6 m. Recarga de 10 s."
         },
@@ -343,7 +339,7 @@
             "damageBase": 120,
             "damageMagPercent": 120,
             "knockbackMeters": 6,
-            "stunOnCollisionSeconds": 2.5,
+            "stunOnCollisionSeconds": 60,
             "interruptsCasting": true
           },
           "description": "120 + 120% de mag de dano. O pulso também interrompe conjurações."
@@ -389,9 +385,7 @@
         },
         {
           "level": 11,
-          "changes": {
-            "durationSeconds": 60
-          },
+          "changes": {},
           "effects": {
             "summonCount": 1,
             "summonHpBase": 350,
@@ -439,9 +433,7 @@
         },
         {
           "level": 12,
-          "changes": {
-            "durationSeconds": 60
-          },
+          "changes": {},
           "effects": {
             "shieldBase": 100,
             "shieldPerLevel": 10,
@@ -496,7 +488,7 @@
         "cooldownSeconds": 18,
         "castRange": 15,
         "auraRadius": 0,
-        "durationSeconds": 8
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -510,9 +502,7 @@
         },
         {
           "level": 13,
-          "changes": {
-            "durationSeconds": 10
-          },
+          "changes": {},
           "effects": {
             "healAttackerPercent": 12,
             "maxMarkedTargets": 1
@@ -617,7 +607,7 @@
         "cooldownSeconds": 10,
         "castRange": 18,
         "auraRadius": 0,
-        "durationSeconds": 6
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -690,8 +680,7 @@
         {
           "level": 17,
           "changes": {
-            "auraRadius": 8,
-            "durationSeconds": 60
+            "auraRadius": 8
           },
           "effects": {
             "hpRegenPercentPerSecond": 2,
@@ -702,8 +691,7 @@
         {
           "level": 24,
           "changes": {
-            "auraRadius": 9,
-            "durationSeconds": 60
+            "auraRadius": 9
           },
           "effects": {
             "hpRegenPercentPerSecond": 3,
@@ -749,9 +737,7 @@
         },
         {
           "level": 18,
-          "changes": {
-            "durationSeconds": 60
-          },
+          "changes": {},
           "effects": {
             "moveSpeedPercent": 40,
             "firstHitDamagePercent": 25
@@ -849,25 +835,24 @@
         "cooldownSeconds": 30,
         "castRange": 16,
         "auraRadius": 5,
-        "durationSeconds": 8
+        "durationSeconds": 60
       },
       "ranks": [
         {
           "level": 13,
           "changes": {},
           "effects": {
-            "silenceSeconds": 8
+            "silenceSeconds": 60
           },
           "description": "Inimigos na área marcada não conjuram magias por 3 s."
         },
         {
           "level": 20,
           "changes": {
-            "auraRadius": 6,
-            "durationSeconds": 10
+            "auraRadius": 6
           },
           "effects": {
-            "silenceSeconds": 10,
+            "silenceSeconds": 60,
             "interruptsCasting": true
           },
           "description": "Silêncio de 4 s num raio de 6 m. Interrompe conjurações em andamento."
@@ -875,11 +860,10 @@
         {
           "level": 28,
           "changes": {
-            "auraRadius": 7,
-            "durationSeconds": 12
+            "auraRadius": 7
           },
           "effects": {
-            "silenceSeconds": 12,
+            "silenceSeconds": 60,
             "interruptsCasting": true,
             "silencedMagicDamageTakenPercent": 15
           },
@@ -917,9 +901,7 @@
         },
         {
           "level": 21,
-          "changes": {
-            "durationSeconds": 60
-          },
+          "changes": {},
           "effects": {
             "cleanseOnStart": true
           },
@@ -928,8 +910,7 @@
         {
           "level": 29,
           "changes": {
-            "auraRadius": 9,
-            "durationSeconds": 60
+            "auraRadius": 9
           },
           "effects": {
             "cleanseOnStart": true
@@ -971,23 +952,21 @@
             "summonHpPerLevel": 20,
             "summonDamageBase": 25,
             "summonDamageMagPercent": 60,
-            "tauntSeconds": 3,
+            "tauntSeconds": 60,
             "tauntEverySeconds": 10
           },
           "description": "Invoca 2 guardas de elite com 450 + 20 × nível de vida por 60 s. Eles provocam inimigos a até 6 m por 3 s a cada 10 s."
         },
         {
           "level": 22,
-          "changes": {
-            "durationSeconds": 60
-          },
+          "changes": {},
           "effects": {
             "summonCount": 2,
             "summonHpBase": 650,
             "summonHpPerLevel": 24,
             "summonDamageBase": 40,
             "summonDamageMagPercent": 70,
-            "tauntSeconds": 4,
+            "tauntSeconds": 60,
             "tauntEverySeconds": 10
           },
           "description": "Invoca 2 guardas com 650 + 24 × nível de vida por 60 s. Eles provocam inimigos por 4 s a cada 10 s."
@@ -1001,7 +980,7 @@
             "summonHpPerLevel": 28,
             "summonDamageBase": 55,
             "summonDamageMagPercent": 80,
-            "tauntSeconds": 4,
+            "tauntSeconds": 60,
             "tauntEverySeconds": 8,
             "damageReductionWhileTauntingPercent": 30
           },
@@ -1029,7 +1008,7 @@
         "cooldownSeconds": 25,
         "castRange": 16,
         "auraRadius": 6,
-        "durationSeconds": 6
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -1119,28 +1098,26 @@
         "cooldownSeconds": 28,
         "castRange": 16,
         "auraRadius": 5,
-        "durationSeconds": 10
+        "durationSeconds": 60
       },
       "ranks": [
         {
           "level": 18,
           "changes": {},
           "effects": {
-            "rootSeconds": 10,
+            "rootSeconds": 60,
             "maxTargets": 5
           },
           "description": "Prende até 5 inimigos na área ao solo por 2,5 s, sem nenhum movimento."
         },
         {
           "level": 27,
-          "changes": {
-            "durationSeconds": 12
-          },
+          "changes": {},
           "effects": {
-            "rootSeconds": 12,
+            "rootSeconds": 60,
             "maxTargets": 7,
-            "dotBase": 20,
-            "dotMagPercent": 40
+            "dotBase": 1,
+            "dotMagPercent": 2
           },
           "description": "Prende até 7 inimigos por 3 s, causando 20 + 40% de mag de dano por segundo."
         }
@@ -1165,25 +1142,24 @@
         "cooldownSeconds": 35,
         "castRange": 0,
         "auraRadius": 7,
-        "durationSeconds": 5
+        "durationSeconds": 60
       },
       "ranks": [
         {
           "level": 19,
           "changes": {},
           "effects": {
-            "stunSeconds": 5
+            "stunSeconds": 60
           },
           "description": "Grito de comando atordoa inimigos a até 7 m por 1,5 s."
         },
         {
           "level": 25,
           "changes": {
-            "auraRadius": 8,
-            "durationSeconds": 6
+            "auraRadius": 8
           },
           "effects": {
-            "stunSeconds": 6
+            "stunSeconds": 60
           },
           "description": "Atordoa por 2 s num raio de 8 m."
         }
@@ -1268,9 +1244,7 @@
         },
         {
           "level": 27,
-          "changes": {
-            "durationSeconds": 60
-          },
+          "changes": {},
           "effects": {
             "guaranteedCritNextAttack": true,
             "critDamageBonusPercent": 30
@@ -1313,8 +1287,7 @@
           "level": 28,
           "changes": {
             "cooldownSeconds": 100,
-            "auraRadius": 10,
-            "durationSeconds": 60
+            "auraRadius": 10
           },
           "effects": {
             "damageImmunitySeconds": 60
@@ -1364,7 +1337,7 @@
             "removesShields": true,
             "dispelMagicBuffs": 4,
             "damageFromRemovedShieldPercent": 100,
-            "blockShieldsSeconds": 5
+            "blockShieldsSeconds": 60
           },
           "description": "Remove 4 bônus mágicos, causa 100% do escudo destruído como dano e impede novos escudos por 5 s."
         }
@@ -1406,8 +1379,7 @@
         {
           "level": 30,
           "changes": {
-            "auraRadius": 7,
-            "durationSeconds": 60
+            "auraRadius": 7
           },
           "effects": {
             "reflectProjectiles": true,
@@ -1438,7 +1410,7 @@
         "cooldownSeconds": 120,
         "castRange": 20,
         "auraRadius": 0,
-        "durationSeconds": 6,
+        "durationSeconds": 60,
         "lineWidth": 8,
         "lineLength": 20
       },
@@ -1489,7 +1461,7 @@
         "cooldownSeconds": 90,
         "castRange": 14,
         "auraRadius": 0,
-        "durationSeconds": 10
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -1504,9 +1476,7 @@
         },
         {
           "level": 30,
-          "changes": {
-            "durationSeconds": 15
-          },
+          "changes": {},
           "effects": {
             "convertNonBoss": true,
             "maxTargetLevelAboveCaster": 4,
@@ -1640,10 +1610,10 @@
           "level": 29,
           "changes": {},
           "effects": {
-            "knockdownSeconds": 2,
-            "perEnemyCooldownSeconds": 8,
+            "knockdownSeconds": 60,
+            "perEnemyCooldownSeconds": 120,
             "bossSlowPercent": 30,
-            "bossSlowSeconds": 4
+            "bossSlowSeconds": 60
           },
           "description": "Inimigos que entram na aura são derrubados no chão na hora por 1 s (uma vez a cada 8 s por inimigo). Chefes ficam 30% mais lentos por 2 s."
         }

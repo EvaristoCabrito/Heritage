@@ -3845,6 +3845,7 @@ const HOWTO = [
     <p>O herdeiro não aparece no mapa. Abra o botão <b>✦ MAGIAS</b> no canto do mapa, escolha a magia e clique no alvo. Esc ou botão direito cancela.</p>
     ${howFormula(`Mana máxima = MP − reserva das auras ligadas<br>Recuperação = Sabedoria × 0,10 + Inteligência × 0,04 por segundo (metade em combate)`)}
     <p>Auras ao mesmo tempo: 1 no nível 2, 2 no nível 12 e 3 no nível 20. São 30 magias do Monarca (ordens, auras, editos, decretos e invocações) e 30 magias de campo, uma nova por nível.</p>
+    ${howFormula(`Duração de uma magia do Monarca = 60 s × (1 + ${hn(STAT_GROWTH)} × (nível do herdeiro − nível em que a magia abre))<br>Vale para todo efeito com tempo: ordens, escudos, zonas, lentidão, silêncio, enraizar, atordoar, provocar, invocações. Recargas não mudam.`)}
     ${howFormula(`Valor de uma magia de campo = base + por nível × (nível do herdeiro − nível da magia) + % da Magia do herdeiro<br>Dano de magia = valor² / (valor + metade da Defesa do alvo)`)}
     ${field.length ? howTable(['Nível', 'Magia de campo', 'MP', 'Recarga'], field.map(spell => [spell.unlockLevel, spell.name, spell.manaCost, `${spell.cooldownSeconds} s`])) : ''}`;
   } },
