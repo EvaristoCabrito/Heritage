@@ -128,10 +128,15 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .character.wolf { aspect-ratio: 543 / 360; }
 .character.wolf .character-sprite, .character.wolf[data-facing] .character-sprite { width: 100%; aspect-ratio: 543 / 360; background-size: 400% auto; background-position: var(--frame-x, 0%) 37.1%; }
 .character.wolf[data-sheet="action"] .character-sprite { background-position-y: 51.9%; }
-.character.troll { width: clamp(38px, 5.5vw, 62px); aspect-ratio: .78; }
-.character.troll .character-sprite { width: 100%; height: 100%; aspect-ratio: .78; background-size: 400% 100%; background-position: var(--frame-x, 0%) 50%; }
-.character.troll[data-vertical-walk="true"] { aspect-ratio: 2 / 3; }
-.character.troll[data-vertical-walk="true"] .character-sprite { aspect-ratio: 2 / 3; background-size: 400% 200%; }
+/* Troll: uma caixa só (quadro de lado 543x724) para andar, atacar e andar de frente/costas,
+   senão ele muda de tamanho quando troca de folha. A folha de frente/costas (quadros 362x543)
+   é ampliada 1,304x para ter a mesma altura do troll de lado, com os pés na mesma linha. */
+.character.troll { width: clamp(38px, 5.5vw, 62px); aspect-ratio: 543 / 724; }
+.character.troll .character-sprite, .character.troll[data-facing] .character-sprite { width: 100%; height: 100%; aspect-ratio: 543 / 724; background-size: 400% 100%; background-position: var(--frame-x, 0%) 0%; }
+.character.troll[data-vertical-walk="true"] .character-sprite { background-size: 347.7% 195.6%; background-position: calc(var(--frame-x, 0%) * 1.0528 - 2.64%) -1.81%; }
+.character.troll[data-vertical-walk="true"][data-facing="back"] .character-sprite { background-position-y: 100.5%; }
+/* No ataque o troll foi desenhado ~15% menor no quadro: a folha cresce 1,15x, centrada e com os pés na mesma linha. */
+.character.troll[data-sheet="action"] .character-sprite { width: 115%; height: 115%; margin: -17.9% 0 0 -7.5%; }
 .character::before { content: ''; position: absolute; left: 25%; bottom: 1%; width: 50%; height: 9%; border-radius: 50%; background: rgba(10,12,10,.42); filter: blur(3px); }
 .character-sprite { position: relative; display: block; width: 100%; aspect-ratio: 1; background-repeat: no-repeat; background-size: 400% 200%; background-position: var(--frame-x, 0%) 0%; transform: scaleX(var(--sprite-scale-x, 1)); }
 .character[data-facing="back"] .character-sprite { background-position-y: 100%; }
