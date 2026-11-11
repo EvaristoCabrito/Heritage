@@ -704,6 +704,12 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .sheet-portrait { flex: none; width: 150px; height: 150px; object-fit: cover; object-position: center 28%; border: 1px solid #a58d59; border-radius: 4px; background: #161714; }
 .card-sheet-btn { display: block; margin: 8px 0 0 auto; padding: 3px 8px; border: 1px solid rgba(190,150,95,.55); border-radius: 3px; color: #e2c294; background: #141414; font: 12px 'Pirata One', Georgia, serif; letter-spacing: .14em; cursor: pointer; }
 .card-sheet-btn:hover { border-color: #e2aa64; color: #f0d3a4; }
+.event-log-btn { flex: none; margin: 0; }
+.message-log { max-height: min(56vh, 520px); margin: 0; padding: 0 6px 0 0; overflow-y: auto; list-style: none; border-top: 1px solid var(--line); overscroll-behavior: contain; }
+.message-log li { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.message-log small { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.message-log span { color: #e4d7b7; font: 13px/1.45 'Newsreader', Georgia, serif; }
+.message-log em { color: var(--gold); font-style: normal; font-size: 11px; }
 .retinue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-bottom: 14px; }
 .retinue-card { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid rgba(193,176,135,.22); border-radius: 6px; color: #e6dcc4; background: rgba(15,17,14,.6); text-align: left; cursor: pointer; }
 .retinue-card img { width: 44px; height: 52px; object-fit: cover; object-position: center 28%; border: 1px solid #a58d59; border-radius: 3px; }

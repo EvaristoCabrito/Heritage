@@ -416,13 +416,23 @@ function initCamera() {
 }
 
 // Mensagens ficam na tela até o jogador clicar. Repetida vira contador; acima de TOAST_MAX, sai a mais antiga.
-const TOAST_MAX = 6;
+// Todas vão também para o log da partida (state.messageLog), que guarda as últimas MESSAGE_LOG_MAX.
+const TOAST_MAX = 3;
+const MESSAGE_LOG_MAX = 200;
+function logMessage(message) {
+  if (!Array.isArray(state.messageLog)) state.messageLog = [];
+  const last = state.messageLog[state.messageLog.length - 1];
+  if (last && last.text === message) { last.n = (last.n || 1) + 1; last.t = state.minutes || 0; return; }
+  state.messageLog.push({ t: state.minutes || 0, text: message });
+  if (state.messageLog.length > MESSAGE_LOG_MAX) state.messageLog.splice(0, state.messageLog.length - MESSAGE_LOG_MAX);
+}
 const TOAST_SECONDS = 15;   // cada aviso some sozinho depois disso
 function dismissToastLater(item) {
   clearTimeout(item.dismissTimer);
   item.dismissTimer = setTimeout(() => { item.remove(); updateToastClear(); }, TOAST_SECONDS * 1000);
 }
 function say(message, event = message) {
+  logMessage(message);
   const toast = $('#toast');
   const last = [...toast.querySelectorAll('.toast-msg')].pop();
   if (last && last.dataset.text === message) {
@@ -4116,6 +4126,16 @@ const SCREENS = {
       <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
     </section>` };
   },
+  log() {
+    const entries = (state.messageLog || []).slice().reverse();
+    const safe = text => String(text).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+    const when = raw => { const minutes = Math.floor(raw); return `Dia ${Math.floor(minutes / 1440) + 1} · ${pad2(Math.floor(minutes / 60) % 24)}:${pad2(minutes % 60)}`; };
+    return { cls: menuMode(), html: `<section class="menu-card wide">
+      <header class="menu-card-head"><span class="eyebrow">LOG</span><h2>Mensagens do domínio</h2><p>${entries.length ? 'Da mais nova para a mais antiga. Ninguém leu as outras também.' : 'Nada aconteceu ainda. Aproveite enquanto dura.'}</p></header>
+      ${entries.length ? `<ol class="message-log">${entries.map(entry => `<li><small>${when(entry.t)}</small><span>${safe(entry.text)}${entry.n > 1 ? ` <em>×${entry.n}</em>` : ''}</span></li>`).join('')}</ol>` : ''}
+      <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
+    </section>` };
+  },
   pause() {
     const day = Math.floor(state.minutes / 1440) + 1;
     const clock = `${pad2(Math.floor(state.minutes / 60) % 24)}:${pad2(state.minutes % 60)}`;
@@ -4125,6 +4145,7 @@ const SCREENS = {
         <button type="button" class="primary" data-action="resume">Voltar ao jogo</button>
         <button type="button" data-action="save">Salvar jogo</button>
         <button type="button" data-action="load">Carregar jogo</button>
+        <button type="button" data-action="log">Log de mensagens</button>
         <button type="button" data-action="options">Opções</button>
         <button type="button" data-action="save-quit">Voltar ao menu principal</button>
       </nav>
@@ -4230,6 +4251,7 @@ function initMenus() {
         $('.howto-body')?.scrollTo(0, 0);
         break;
       case 'economy': showScreen('economy'); break;
+      case 'log': showScreen('log'); break;
       case 'options': showScreen('options'); break;
       case 'debug': showScreen('debug'); break;
       case 'back': goBack(); break;
@@ -4307,6 +4329,7 @@ function initMenus() {
     renderPanel();
   });
   $('#sheet-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('sheet'); });
+  $('#log-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('log'); });
   // Clique fora de qualquer menu fecha o menu. No jogo, volta pro jogo; sem jogo aberto, volta pra tela de entrada.
   // A tela de entrada e o fim de cenário (que pede uma escolha) não fecham.
   $('#menu-layer').addEventListener('click', event => {
