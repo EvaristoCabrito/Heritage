@@ -1842,7 +1842,7 @@ const Monarch = (() => {
     });
     // Mira.
     const aim = rt.targeting;
-    if (aim && rt.hover) {
+    if (aim && !aim.field && rt.hover) {
       const h = rt.hover;
       if (aim.key === 'move') D.sigil('ground', h.x, h.y, 1.3, C.gold, 0.7, 4, t);
       else {
