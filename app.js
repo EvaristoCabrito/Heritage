@@ -3489,6 +3489,13 @@ function killActor(victim, killer) {
   if (victim.summon) { window.Monarch?.summonDied(victim); return; }
   victim.alive = false;
   victim.hp = 0;
+  // O cemitério do topo lembra onde, quando e por quem cada herói e camponês caiu.
+  if (!isBandit(victim) && victim.className !== 'Monster') {
+    victim.deathAt = state.minutes;
+    victim.deathMap = victim.mapId || 'city';
+    victim.deathMapSet = victim.mapSet || 1;
+    victim.deathBy = killer ? killer.name : null;
+  }
   if (isBandit(victim)) {
     let back = '';
     if (victim.loot?.gold) { if (!state.testMode) state.gold += victim.loot.gold; back = ` Recuperou ${victim.loot.gold} de ouro.`; }
@@ -4590,6 +4597,23 @@ const SCREENS = {
       <div class="equip-grid">${EQUIP_SLOTS.map(({ slot, label }) => { const item = ITEMS[(state.equipment || BASIC_EQUIPMENT())[slot]]; return `<div class="equip-slot" title="${item ? `${item.about}${Object.keys(item.bonus || {}).length ? ` (${monarchBonusText(item.bonus)})` : ''}` : 'Vazio'}">${item ? pixelIcon(item.icon, 28) : ''}<span><small>${label}${item?.tier ? ` · T${item.tier}` : ''}</small><b>${item ? item.name : 'Vazio'}</b></span></div>`; }).join('')}</div>
     </section>` };
   },
+  graveyard() {
+    const region = currentMap === 'wilds' ? 'Wilds' : 'City';
+    const here = actor => (actor.deathMap || actor.mapId || 'city') === currentMap && (actor.deathMapSet || actor.mapSet || 1) === currentMapSet;
+    const dead = [...state.heroes, ...state.workers].filter(actor => !actor.alive && !actor.summon && here(actor)).sort((a, b) => (b.deathAt ?? -1) - (a.deathAt ?? -1));
+    const heroes = dead.filter(actor => actor.className !== 'Peasant'), peasants = dead.filter(actor => actor.className === 'Peasant');
+    const row = actor => `<li class="grave-row"><img src="public/art/portraits/${actorPortrait(actor)}-portrait-v01.webp" alt="">
+        <span><b>${actor.name}</b><small>${actorLabel(actor)} · Nível ${actor.level || 1}</small></span>
+        <em>${actor.deathAt != null ? dateLabel(actor.deathAt) : 'Data esquecida'}${actor.deathBy ? `<br>por ${actor.deathBy}` : ''}</em></li>`;
+    const group = (label, list, empty) => `<div class="sheet-section-label">${label} · ${list.length}</div>${list.length ? `<ul class="grave-list">${list.map(row).join('')}</ul>` : `<p class="sheet-house grave-empty">${empty}</p>`}`;
+    return { cls: 'is-pause', html: `<section class="menu-card sheet graveyard">
+      <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar cemitério" title="Fechar cemitério">×</button></div>
+      <div class="sheet-top"><img class="grave-crest" src="public/art/mordavia-cemetery-l1-v01.png" alt="">
+        <div><span class="eyebrow">CEMITÉRIO · ${region.toUpperCase()}</span><h2>Os que ficaram em ${region}</h2><p class="heir-motto">${dead.length ? `${dead.length} ${dead.length === 1 ? 'nome' : 'nomes'}. Mais do que o padre consegue rezar de uma vez.` : 'Ninguém ainda. A terra está esperando com paciência.'}</p></div></div>
+      ${group('HERÓIS', heroes, 'Nenhum herói caiu aqui. Por enquanto.')}
+      ${group('CAMPONESES', peasants, 'Nenhum camponês enterrado aqui. Os outros acham suspeito.')}
+    </section>` };
+  },
   actor({ id }) {
     const actor = findActor(id);
     if (!actor) return { cls: 'is-pause', html: `<section class="menu-card"><header class="menu-card-head"><span class="eyebrow">FICHA</span><h2>Não está mais aqui</h2><p>Foi embora, morreu ou as duas coisas.</p></header><div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar ao jogo</button></div></section>` };
@@ -4708,7 +4732,7 @@ function renderMenu() {
   if (!current) return;
   const { cls, html } = SCREENS[current.name](current.params || {});
   const layer = $('#menu-layer');
-  layer.className = `menu-layer ${cls}${current.name === 'sheet' || current.name === 'actor' ? ' sheet-open' : ''}`;
+  layer.className = `menu-layer ${cls}${['sheet', 'actor', 'graveyard'].includes(current.name) ? ' sheet-open' : ''}`;
   layer.hidden = false;
   $('#menu-panel').innerHTML = html;
   fitMenu();
@@ -4882,6 +4906,7 @@ function initMenus() {
     renderPanel();
   });
   $('#sheet-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('sheet'); });
+  $('#graveyard-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('graveyard'); });
   $('#log-btn').addEventListener('click', () => { if (!game.slot) return; menu.stack = []; showScreen('log'); });
   // Clique fora de qualquer menu fecha o menu. No jogo, volta pro jogo; sem jogo aberto, volta pra tela de entrada.
   // A tela de entrada e o fim de cenário (que pede uma escolha) não fecham.
@@ -4901,7 +4926,7 @@ function initMenus() {
       if (top === 'title') return;
       event.preventDefault();
       if (top === 'scenarioEnd' || top === 'gameOver') return;
-      if (['pause', 'sheet', 'actor', 'retinueDone'].includes(top)) closeMenu(); else goBack();
+      if (['pause', 'sheet', 'actor', 'graveyard', 'retinueDone'].includes(top)) closeMenu(); else goBack();
     } else if (state.selectedBuild) {
       cancelPlacement();
     } else if (state.movingSite != null) {
