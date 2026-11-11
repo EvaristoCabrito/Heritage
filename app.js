@@ -33,7 +33,7 @@ const CARRY_LOAD = 5;
 const FARM_STOCK_CAP = 10;
 const MANOR_DOOR = { x: 42, y: 39 };
 // Fazendas e moinhos sobem até o nível 3. O moinho melhorado mói mais rápido, sem exagero.
-const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 90, wood: 6 }, { gold: 160, wood: 10 }];
+const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 180, wood: 12 }, { gold: 320, wood: 20 }];
 const MILL_RATE = [0.225, 0.3, 0.4]; // trigo moído em farinha por segundo, por nível
 // Padaria: o camponês busca os ingredientes no depósito, o forno transforma 1 de cada em 1 do produto
 // e ele leva a fornada de volta. O produto alimenta o mesmo que os ingredientes somados e ocupa menos espaço.
@@ -724,6 +724,7 @@ function updateHud() {
   $('#happiness').textContent = Math.round(state.happiness);
   $('#happiness-label').textContent = happinessLabel(state.happiness);
   $('#favor').textContent = Math.round(state.favor ?? 50);
+  renderDemandAlerts();
   $('#favor-label').textContent = `${favorLabel(state.favor ?? 50)}${state.demands?.length ? ` · ${state.demands.length} ${state.demands.length === 1 ? 'tributo' : 'tributos'}` : ''}`;
   $('#favor').closest('.stat').dataset.mood = (state.favor ?? 50) < 40 ? 'low' : (state.favor ?? 50) < 60 ? 'mid' : 'high';
   $('#happiness').closest('.stat').dataset.mood = state.happiness < 40 ? 'low' : state.happiness < 60 ? 'mid' : 'high';
@@ -1588,7 +1589,7 @@ function manorArrival() {
 }
 
 // Cada fazenda ou moinho traz um camponês, que sai da construção e trabalha nela.
-const HUT_UPGRADE = { gold: 90, wood: 6 };
+const HUT_UPGRADE = { gold: 180, wood: 12 };
 // Melhoria vira obra: o ouro e a madeira saem na hora, e o efeito só vale quando o camponês termina.
 function startUpgrade(building, upgrade, label) {
   building.pendingUpgrade = upgrade;
@@ -1654,7 +1655,7 @@ function hireWorker(home, female) {
 }
 
 // Nível 1 traz um morador da guilda; níveis 2 e 3 trazem heróis extras, alojados em taverna/hotel.
-const GUILD_UPGRADES = [{ gold: 120, wood: 8 }, { gold: 180, wood: 12 }];
+const GUILD_UPGRADES = [{ gold: 240, wood: 16 }, { gold: 360, wood: 24 }];
 const guildTier = guild => guild.tier ?? (guild.branch ? 2 : 0);
 function upgradeGuild(site, branch) {
   const guild = state.buildings.find(building => building.site === site);
@@ -2354,9 +2355,9 @@ function setProfession(id, profession) {
 const PEASANT_PRIORITY = ['tool', 'clothes', 'feet', 'hands', 'head'];
 const ARMORY_LEVELS = [
   { gold: 0, wood: 0, tierCap: 3 },
-  { gold: 120, wood: 8, tierCap: 5 },
-  { gold: 200, wood: 14, tierCap: 8 },
-  { gold: 360, wood: 24, tierCap: 10 },
+  { gold: 240, wood: 16, tierCap: 5 },
+  { gold: 400, wood: 28, tierCap: 8 },
+  { gold: 720, wood: 48, tierCap: 10 },
 ];
 const BONUS_LABELS = { atk: 'Ataque', def: 'Defesa', mag: 'Magia', hp: 'Vida', dex: 'Destreza', work: 'trabalho', carry: 'carga', speed: 'passo', build: 'obra' };
 const gearOf = actor => actor.gear || (actor.gear = {});
@@ -2624,7 +2625,7 @@ const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, eggs: 0, mil
 // Guardam comida, armas e itens; madeira e ouro ficam fora.
 const MANOR_STORAGE = 200;
 const STORAGE_LEVELS = [
-  { cap: 30, gold: 0, wood: 0 }, { cap: 45, gold: 80, wood: 6 }, { cap: 70, gold: 140, wood: 10 }, { cap: 100, gold: 220, wood: 16 },
+  { cap: 30, gold: 0, wood: 0 }, { cap: 45, gold: 160, wood: 12 }, { cap: 70, gold: 280, wood: 20 }, { cap: 100, gold: 440, wood: 32 },
 ];
 const depots = () => state.buildings.filter(building => building.type === 'depot' && isDone(building));
 const depotCap = depot => STORAGE_LEVELS[depot.level || 0].cap;
@@ -2941,9 +2942,9 @@ function newDemand() {
   const day = Math.floor(state.minutes / 1440);
   const qty = Math.round(DEMAND_BASE[res] * (1 + day * 0.15) * (baron ? 2 : 1));
   const demand = { id: `demand-${Date.now()}-${Math.floor(Math.random() * 1000)}`, noble: noble.id, res, qty, line: pick(noble.lines),
-    created: state.minutes, due: state.minutes + (baron ? 1080 : 1440), late: false };
+    created: state.minutes, due: state.minutes + (baron ? 3240 : 4320), late: false };
   state.demands.push(demand);
-  say(`${noble.name} exige ${qty} de ${resourceName(res)} em ${baron ? 18 : 24} horas. ${demand.line}`, `${noble.name} mandou um mensageiro. Veja na aba Economia.`);
+  say(`${noble.name} exige ${qty} de ${resourceName(res)} em ${baron ? 54 : 72} horas. ${demand.line}`, `${noble.name} mandou um mensageiro. Veja na aba Economia.`);
   if (state.tab === 'economy') renderPanel();
 }
 function deliverDemand(id) {
@@ -3011,6 +3012,17 @@ function processDemands() {
   });
   nobleRaid();
   updateHud();
+}
+// Aviso fixo no canto do mapa: cada tributo pendente, com o prazo. Clicar abre a aba Economia.
+function renderDemandAlerts() {
+  const host = $('#demand-alerts');
+  if (!host) return;
+  const html = (state.demands || []).map(demand => {
+    const noble = nobleOf(demand);
+    const hours = Math.max(0, Math.ceil(((demand.late ? demand.due + DEMAND_GRACE : demand.due) - state.minutes) / 60));
+    return `<button type="button" class="demand-alert${demand.late ? ' late' : ''}" data-demand-open title="Ver na aba Economia"><b>${noble.name}</b> quer ${demand.qty} de ${resourceName(demand.res)}<small>${demand.late ? `ATRASADO · vêm buscar em ${hours}h` : `${hours}h de prazo`}</small></button>`;
+  }).join('');
+  if (host.dataset.html !== html) { host.dataset.html = html; host.innerHTML = html; }
 }
 function demandsHTML() {
   const favor = Math.round(state.favor ?? 50);
@@ -4469,7 +4481,7 @@ const HOWTO = [
     <p>O primeiro tributo chega às 10h do dia 1; depois, um a cada 1 ou 2 dias, com no máximo 2 abertos. Em 15% das vezes quem pede é o Barão das Cinzas.</p>
     ${howFormula(`Quantidade = base × (1 + 0,15 × dia) × 2 se for o Barão, arredondado`)}
     ${howTable(['Recurso', 'Base'], Object.entries(DEMAND_BASE).map(([res, base]) => [resourceName(res).replace(/^./, c => c.toUpperCase()), base]))}
-    <p>Prazo: 24 horas (Barão, 18). Entregue na aba <b>Economia</b>.</p>
+    <p>Prazo: 72 horas (Barão, 54). Entregue na aba <b>Economia</b>.</p>
     <h3>Favor</h3>
     ${howTable(['Situação', 'Nobre', 'Barão'], [['Entregar no prazo', '+8', '+15'], ['Entregar atrasado', '+2', '+2'], ['Atrasar', '−5 na hora e −1 por hora', '−5 na hora e −1 por hora'], [`${DEMAND_GRACE / 60} horas depois do prazo`, '−10, leva o recurso e tira 30% da vida de 1 construção', '−20, leva o recurso e tira 60% da vida de 2 construções']])}
     <p>Com Favor abaixo de ${FAVOR_ATTACK}, uma vez por dia algum nobre ataca e tira de 25% a 50% da vida de 1 ou 2 construções.</p>
@@ -4953,6 +4965,12 @@ function initMenus() {
   }));
   $('#favor').closest('.stat').addEventListener('click', () => {
     if (!game.slot) return;
+    state.tab = 'economy';
+    $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
+    renderPanel();
+  });
+  $('#demand-alerts').addEventListener('click', event => {
+    if (!event.target.closest('[data-demand-open]') || !game.slot) return;
     state.tab = 'economy';
     $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
     renderPanel();
@@ -5501,6 +5519,8 @@ function init() {
   });
   $$('.tab').forEach(tab => tab.addEventListener('click', () => {
     state.tab = tab.dataset.tab;
+    // Construir sempre abre a lista completa, mesmo com uma construção selecionada.
+    if (state.tab === 'build' && state.selectedSite != null) { if (state.movingSite != null) cancelMove(); state.selectedSite = null; renderSites(); }
     $$('.tab').forEach(other => { const active = other === tab; other.classList.toggle('active', active); other.setAttribute('aria-selected', String(active)); });
     renderPanel();
   }));
