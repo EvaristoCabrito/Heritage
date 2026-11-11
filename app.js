@@ -106,7 +106,11 @@ function damageBuilding(building, amount) {
 const guildHousing = () => state.buildings.filter(building => BUILDINGS.some(item => item.id === building.type && item.heroClass) && isDone(building)).length;
 const lodgingCapacity = () => state.buildings.filter(building => isDone(building) && building.type === 'hotel').length * 4
   + state.buildings.filter(building => isDone(building) && building.type === 'tavern').length;
-const heroCapacity = () => 1 + guildHousing() + lodgingCapacity();
+// O casarão abriga dois heróis. Começa com um; a cada dia, se houver cama, chega outro de uma das seis classes base.
+const MANOR_HERO_SLOTS = 2;
+const BASE_HERO_CLASSES = ['Warrior', 'Archer', 'Lancer', 'Black Mage', 'Conjurer', 'Healer'];
+const manorHeroes = () => state.heroes.filter(hero => hero.alive && hero.home === 'manor').length;
+const heroCapacity = () => MANOR_HERO_SLOTS + guildHousing() + lodgingCapacity();
 const freeLodging = () => {
   return state.buildings.find(building => isDone(building)
     && ((building.type === 'hotel' && state.heroes.filter(hero => hero.alive && hero.homeSite === building.site).length < 4)
@@ -1356,6 +1360,18 @@ function recruit(className, origin, prestige = null, guildResident = false) {
   return hero;
 }
 
+function manorArrival() {
+  if (manorHeroes() >= MANOR_HERO_SLOTS) return null;
+  const className = pick(BASE_HERO_CLASSES);
+  const hero = { id: Date.now() + Math.random(), name: heroName(), className, prestige: null, trait: pick(Object.keys(TRAITS)), level: 1, xp: 0, x: MANOR_DOOR.x, y: MANOR_DOOR.y, alive: true, home: 'manor', guildSite: null, recruitedFromSite: null, homeSite: null, purse: HERO_START_PURSE, gear: STARTER_WEAPON[className] ? { weapon: STARTER_WEAPON[className] } : {} };
+  state.heroes.push(hero);
+  gainHeirXp(10);
+  renderHeroes();
+  updateHud();
+  say(`${hero.name}, ${className}, bateu na porta do casarão de madrugada. Tinha cama vaga, e ninguém teve coragem de recusar.`);
+  return hero;
+}
+
 // Cada fazenda ou moinho traz um camponês, que sai da construção e trabalha nela.
 const HUT_UPGRADE = { gold: 90, wood: 6 };
 // Melhoria vira obra: o ouro e a madeira saem na hora, e o efeito só vale quando o camponês termina.
@@ -1717,7 +1733,7 @@ function tick() {
   if (state.minutes % 60 < state.speed) { shopAtArmory(); processDemands(); processBounties(); }
   state.minutes += state.speed;
   if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) {
-    gainHeirXp(40); collectTaxes();
+    gainHeirXp(40); collectTaxes(); manorArrival();
     if (Math.floor(state.minutes / 1440) % DAYS_PER_WEEK === 0) applyWeeklyMood();
     if (Math.floor(state.minutes / 1440) % DAYS_PER_YEAR === 0) newYear();
   }
@@ -1727,7 +1743,7 @@ function tick() {
   const hasHotel = state.buildings.some(building => building.type === 'hotel' && isDone(building));
   if ((hasTavern && state.minutes % 180 < state.speed) || (hasHotel && state.minutes % 150 < state.speed)) {
     const guildClasses = BUILDINGS.filter(building => building.heroClass && state.buildings.some(built => built.type === building.id && isDone(built))).map(building => building.heroClass);
-    const arrivals = hasHotel && guildClasses.length ? guildClasses : ['Warrior','Archer','Lancer','Black Mage','Conjurer','Healer'];
+    const arrivals = hasHotel && guildClasses.length ? guildClasses : BASE_HERO_CLASSES;
     const className = arrivals[Math.floor(Math.random() * arrivals.length)];
     const origin = state.buildings.find(building => building.type === (hasHotel ? 'hotel' : 'tavern') && isDone(building));
     const arrived = recruit(className, origin);
