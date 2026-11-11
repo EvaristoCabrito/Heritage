@@ -3393,6 +3393,9 @@ function animateWalk(actor, moved, delta, reducedMotion) {
 }
 
 function animateAttack(actor, delta, reducedMotion) {
+  // O ataque do troll só existe de lado: em combate ele fica de lado entre um golpe e outro,
+  // senão alterna com a folha de frente/costas a cada golpe.
+  if (actor.kind === 'troll') actor.walkDirection = 'side';
   if ((actor.attackAnim || 0) > 0) {
     actor.attackAnim -= delta;
     actor.action = 'action';
