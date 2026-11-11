@@ -123,8 +123,10 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .site.selected .site-ring { outline: 2px solid #f4da9a; outline-offset: 3px; }
 .character { position: absolute; display: block; width: clamp(30px, 5vw, 52px); aspect-ratio: 1; padding: 0; border: 0; background: transparent; transform: translate(-50%,-96%); cursor: pointer; pointer-events: auto; filter: drop-shadow(0 3px 2px rgba(8,10,8,.8)); }
 .character.worker { width: clamp(27px, 4.4vw, 46px); }
-.character.wolf { width: clamp(44px, 6vw, 68px); aspect-ratio: 1.65; }
-.character.wolf .character-sprite { width: 100%; aspect-ratio: 1.65; background-size: 400% 100%; background-position: var(--frame-x, 0%) 50%; }
+/* Cada quadro do lobo é 543x724 com o bicho numa faixa no meio: recorta essa faixa em vez de esticar o quadro. */
+.character.wolf { width: clamp(44px, 6vw, 68px); aspect-ratio: 1.35; }
+.character.wolf[data-facing] .character-sprite { width: 100%; aspect-ratio: 1.35; background-size: 400% 180%; background-position: var(--frame-x, 0%) 32%; }
+.character.wolf[data-facing][data-sheet="action"] .character-sprite { background-position-y: 48%; }
 .character.troll { width: clamp(38px, 5.5vw, 62px); aspect-ratio: .78; }
 .character.troll .character-sprite { width: 100%; height: 100%; aspect-ratio: .78; background-size: 400% 100%; background-position: var(--frame-x, 0%) 50%; }
 .character.troll[data-vertical-walk="true"] { aspect-ratio: 2 / 3; }
