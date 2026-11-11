@@ -9,7 +9,7 @@ const BUILDINGS = [
   { id: 'lumber', name: 'Cabana do Lenhador', glyph: 'L', cost: 80, wood: 2, detail: 'Coloque de 1 a 3 camponeses para cortar lenha: 0,05, 0,15 ou 0,25 de madeira por segundo.', gold: 0, grain: 0, people: 0 },
   { id: 'quarry', name: 'Pedreira', glyph: 'P', cost: 95, wood: 6, detail: 'Até 10 camponeses quebrando rocha: 0,05 de pedra por camponês por segundo. Você escolhe quem vai.', gold: 0, grain: 0, people: 0 },
   { id: 'mine', name: 'Campo de Mineração', glyph: 'M', cost: 120, wood: 8, detail: 'Até 10 camponeses extraem lotes variados de minério conforme o ranking do depósito.', gold: 0, grain: 0, people: 0 },
-  { id: 'blacksmith', name: 'Blacksmith', glyph: 'F', cost: 260, wood: 18, detail: 'Refina Iron, Steel, Silver e Gold. Melhora até o nível 2.', gold: 0, grain: 0, people: 0 },
+  { id: 'blacksmith', name: 'Blacksmith', glyph: 'F', cost: 260, wood: 18, detail: 'Refina minérios; no nível 2 transforma Iron em Steel.', gold: 0, grain: 0, people: 0 },
   { id: 'market', name: 'Mercado', glyph: 'M', cost: 100, wood: 6, detail: 'Venda o que sobra e compre o que falta. Os mercadores cobram o dobro pra vender e pagam a metade pra comprar.', gold: 0, grain: 0, people: 0 },
   { id: 'tavern', name: 'Taverna', glyph: 'T', cost: 145, wood: 9, detail: 'Uma cama para um herói. Também recebe visitantes e serve bebida, que rende imposto.', gold: 1.15, grain: 0, people: 0 },
   { id: 'hotel', name: 'Hotel de Estrada', glyph: 'H', cost: 170, wood: 11, detail: 'Mais 4 camas para heróis. Os lençóis são trocados uma vez por viúva.', gold: 0.85, grain: 0, people: 0 },
@@ -128,7 +128,16 @@ const PORTRAIT_ART = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', '
 const PRESTIGE_ART = { Paladin: 'paladin', 'Heavy Knight': 'heavy-knight', Ranger: 'ranger', Assassin: 'assassin', Sentinel: 'sentinel', Templar: 'templar', Elementalist: 'elementalist', Warlock: 'warlock', Sorcerer: 'sorcerer', Necromancer: 'necromancer', Bishop: 'bishop', Cleric: 'cleric' };
 const actorArt = actor => PRESTIGE_ART[actor.prestige] || actor.spriteId || (actor.kind === 'skeleton' ? 'skeleton-v02' : actor.kind === 'zombie' ? 'zombie-v01' : actor.kind === 'wolf' ? 'mordavian-wolf-v01' : actor.kind === 'goblin' ? 'mordavian-goblin-v01' : actor.kind === 'troll' ? 'mordavian-troll-v01' : null) || CLASS_ART[actor.className];
 const actorPortrait = actor => PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || 'male-peasant';
-const actorSheet = actor => actor.action === 'build' ? 'build' : actor.action === 'idle' ? 'idle' : actor.action === 'work' && actor.className === 'Peasant' ? (actor.spriteId === 'female-peasant' ? 'action' : 'work') : actor.action === 'action' && !actor.prestige ? 'action' : 'walk';
+const actorSheet = actor => {
+  if (actor.action === 'build') return 'build';
+  if (actor.action === 'idle') return 'idle';
+  if (actor.className === 'Peasant' && actor.action === 'work') return 'work';
+  // Camponeses usam as ferramentas de trabalho também para se defender: o homem
+  // usa a folha de enxada fornecida pelo jogador; a mulher mantém sua folha original.
+  if (actor.className === 'Peasant' && actor.action === 'action' && actor.attackAnim > 0) return 'work';
+  if (actor.action === 'action' && !actor.prestige) return 'action';
+  return 'walk';
+};
 // Nomes, manias e falas vindos do Herança de Cinzas original.
 const FIRST_NAMES = ['Vasile','Mirela','Bogdan','Ileana','Radu','Doina','Grigore','Anca','Toma','Zoia','Petru','Lenuța','Costel','Viorica','Mircea','Sanda','Dorin','Floarea','Ion','Rodica'];
 const EPITHETS = ['Três Dedos','Sem Sorte','do Brejo','da Vala','Meio Surdo','Olho Torto','de Ninguém','Dente Mole','do Poço'];
@@ -473,7 +482,7 @@ function openManorInventory() {
 }
 
 function inventorySection(title, rows) {
-  return `<section class="inventory-section"><h3>${title}</h3>${rows.length ? `<div class="inventory-rows">${rows.map(([name, amount, source]) => `<div class="inventory-row${amount > 0 ? '' : ' empty'}"><b>${name}</b><strong>${format(amount)}</strong><small>${source}</small></div>`).join('')}</div>` : '<p class="inventory-empty">Nada guardado.</p>'}</section>`;
+  return `<section class="inventory-section"><h3>${title}</h3>${rows.length ? `<div class="inventory-rows">${rows.map(([name, amount, source, shown]) => `<div class="inventory-row${amount > 0 ? '' : ' empty'}"><b>${name}</b><strong>${shown ?? format(amount)}</strong><small>${source}</small></div>`).join('')}</div>` : '<p class="inventory-empty">Nada guardado.</p>'}</section>`;
 }
 function renderManorInventory() {
   const keepFocus = document.activeElement?.id === 'inventory-close';
@@ -485,12 +494,14 @@ function renderManorInventory() {
   const workRows = state.buildings.filter(isDone).flatMap(building => {
     const name = buildingName(building);
     const crew = state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site).length;
-    if (building.type === 'farm') return [[`${foodName(farmFoodId(building))} · ${name}`, building.stock || 0, `Colhido na Fazenda · esperando transporte · ${crew} camponês${crew === 1 ? '' : 'es'}`]];
-    if (building.type === 'mill') return [['Trigo · Moinho', building.input || 0, `Aguardando moagem · ${crew} camponês${crew === 1 ? '' : 'es'} no Moinho`], ['Farinha · Moinho', building.stock || 0, `Moída · aguardando transporte · capacidade ${rateNumber(millRate(building) * (1 + crewWork(building)))}/s`]];
+    if (building.type === 'farm') return [[`${foodName(farmFoodId(building))} · ${name}`, building.stock || 0, `Colhido · esperando transporte · ${crew} trabalhador${crew === 1 ? '' : 'es'} · produção ${rateNumber(farmOutput(building) * (1 + crewWork(building)))}/s`]];
+    if (building.type === 'mill') return [['Trigo · Moinho', building.input || 0, `Aguardando moagem · ${crew} trabalhador${crew === 1 ? '' : 'es'} no Moinho · capacidade ${rateNumber(millRate(building) * (1 + crewWork(building)))}/s`], ['Farinha · Moinho', building.stock || 0, `Moída · aguardando transporte · capacidade ${rateNumber(millRate(building) * (1 + crewWork(building)))}/s`]];
     if (building.type === 'bakery') return [[`Insumos · ${name}`, Object.values(building.pantry || {}).reduce((sum, amount) => sum + amount, 0), 'Ingredientes aguardando preparo'], [`${foodName(building.stockFood || building.produce || 'bread')} · ${name}`, building.stock || 0, 'Pronto · aguardando transporte']];
     if (building.type === 'butcher') return [[`Insumos · ${name}`, Object.values(building.pantry || {}).reduce((sum, amount) => sum + amount, 0), 'Ingredientes aguardando preparo'], [`${foodName(building.stockFood || building.produce || 'bacon')} · ${name}`, building.stock || 0, 'Pronto · aguardando transporte']];
+    if (building.type === 'mine') { const rate = pitRate(building) * expectedMineYield(building); return [[`Extração · ${name}`, rate, `Ranking ${metalDepositRank(building)} · ${crew} minerador${crew === 1 ? '' : 'es'} · média por segundo`, `${fineRate(rate)}/s`]]; }
+    if (building.type === 'blacksmith') { const recipe = blacksmithRecipe(building), rate = blacksmithRate(building) * (1 + crewWork(building)); const inputs = Object.entries(recipe.needs).map(([id, qty]) => `${METAL_NAMES[id]} ${format(state.metals[id] || 0)}/${qty}`).join(' · '); return [[`Produção · ${name}`, rate, `${recipe.name} · ${inputs}`, `${fineRate(rate)}/s`]]; }
     return [];
-  });
+  }).concat(state.workers.filter(worker => worker.alive && worker.carrying?.food).map(worker => [`Em transporte · ${foodName(worker.carrying.food)}`, worker.carrying.qty, `${worker.name} levando ao depósito`]));
   const rows = [
     inventorySection('Moedas e materiais', [['Ouro', state.gold || 0, 'Cofre'], ['Madeira', state.timber || 0, 'Lenhadores'], ['Pedra', state.stone || 0, 'Pedreira'], ['Ember', state.ember || 0, 'Laboratório de Ember']]),
     inventorySection('Metais', metalRows),
@@ -504,7 +515,7 @@ function renderManorInventory() {
 }
 function closeManorInventory() {
   $('#inventory-layer').hidden = true;
-  $('#manor-inventory-trigger').focus();
+  $('#inventory-open-btn').focus();
 }
 
 function moveCamera(dx, dy) {
@@ -704,9 +715,9 @@ const lumberCrew = camp => state.workers.filter(worker => worker.alive && worker
 const PIT_CREW_MAX = 10;
 const PIT_GOODS = { quarry: { good: 'stone', name: 'pedra', rate: 0.05 }, mine: { good: 'metal', name: 'lotes de minério', rate: 0.025 } };
 const METAL_DEPOSIT_RANKS = [
-  { id: 'I', name: 'Pobre', chance: { ironOre: 90, silverOre: 8, goldOre: 2 }, qty: { ironOre: [1, 2], silverOre: [1, 1], goldOre: [1, 1] } },
-  { id: 'II', name: 'Comum', chance: { ironOre: 100, silverOre: 15, goldOre: 5 }, qty: { ironOre: [1, 3], silverOre: [1, 1], goldOre: [1, 1] } },
-  { id: 'III', name: 'Bom', chance: { ironOre: 100, silverOre: 25, goldOre: 10 }, qty: { ironOre: [2, 4], silverOre: [1, 2], goldOre: [1, 1] } },
+  { id: 'I', name: 'Pobre', chance: { ironOre: 75, silverOre: 8, goldOre: 2 }, qty: { ironOre: [1, 2], silverOre: [1, 1], goldOre: [1, 1] } },
+  { id: 'II', name: 'Comum', chance: { ironOre: 85, silverOre: 15, goldOre: 5 }, qty: { ironOre: [1, 3], silverOre: [1, 1], goldOre: [1, 1] } },
+  { id: 'III', name: 'Bom', chance: { ironOre: 95, silverOre: 25, goldOre: 10 }, qty: { ironOre: [2, 4], silverOre: [1, 2], goldOre: [1, 1] } },
   { id: 'IV', name: 'Rico', chance: { ironOre: 100, silverOre: 40, goldOre: 20 }, qty: { ironOre: [3, 5], silverOre: [1, 2], goldOre: [1, 2] } },
   { id: 'V', name: 'Excepcional', chance: { ironOre: 100, silverOre: 65, goldOre: 35 }, qty: { ironOre: [4, 7], silverOre: [1, 3], goldOre: [1, 2] } },
 ];
@@ -1264,8 +1275,8 @@ function renderHeroes() {
       // e os quatro quadros mantêm a passada alternada sem espelhar metade do ciclo.
       const backWalk = art === 'peasant' && sheet === 'walk' && token.dataset.facing === 'back';
       const verticalTrollWalk = actor.kind === 'troll' && sheet === 'walk' && ['up', 'down'].includes(actor.walkDirection);
-      const extension = actor.className === 'Wildlife' || (art === 'peasant' && ['build', 'work'].includes(sheet)) || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp';
-      const spriteFile = backWalk ? 'peasant-walk-back-v02.png' : verticalTrollWalk ? 'mordavian-troll-v01-walk-vertical-v01.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : actor.className === 'Wildlife' && sheet === 'idle' ? `${art}-idle-v02.png` : actor.className === 'Wildlife' && art === 'elk' && sheet === 'walk' ? 'elk-walk-v02.png' : `${art}-${sheet}-v01.${extension}`;
+      const extension = actor.className === 'Wildlife' || (['peasant', 'female-peasant'].includes(art) && ['build', 'work'].includes(sheet)) || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp';
+      const spriteFile = backWalk ? 'peasant-walk-back-v02.png' : verticalTrollWalk ? 'mordavian-troll-v01-walk-vertical-v01.png' : art === 'female-peasant' && sheet === 'work' ? 'female-peasant-work-v02.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : actor.className === 'Wildlife' && sheet === 'idle' ? `${art}-idle-v02.png` : actor.className === 'Wildlife' && art === 'elk' && sheet === 'walk' ? 'elk-walk-v02.png' : `${art}-${sheet}-v01.${extension}`;
       if (token.dataset.spriteFile !== spriteFile) {
         $('.character-sprite', token).style.backgroundImage = `url('public/art/${spriteFile}')`;
         token.dataset.spriteFile = spriteFile;
@@ -4071,14 +4082,7 @@ function foodPanelHTML() {
   const parts = { ration: 0, food: 0, tax: 0, hunger: 0, empathy: 0, ...(state.moodParts || {}) };
   const signed = n => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n)}`;
   const n = eaters();
-  const used = storedUnits();
-  const extra = storageCap() - MANOR_STORAGE;
-  const storageBox = `<div class="storage-box"><div class="mood-head"><span>DEPÓSITO DE PROVISÕES</span><b>${Math.floor(used)} / ${storageCap()}</b><small>comida, armas e itens</small></div>
-      <div class="mood-bar storage-bar"><i style="width:${Math.min(100, Math.round(used / storageCap() * 100))}%"></i></div>
-      <p class="storage-items">Dead Remains: ${REMAINS_GRADES.map(grade => `${grade.id} ${state.remains?.[grade.id] || 0}`).join(' · ')} · Ember: ${format(state.ember || 0)}</p>
-      <p class="storage-items">Casarão: ${MANOR_STORAGE}${depots().length ? ` · ${depots().length} ${depots().length === 1 ? 'depósito' : 'depósitos'}: +${extra}` : ''} · armas e itens guardados: ${state.items?.length || 0}</p>
-      ${depots().length ? '' : '<p class="storage-items">Precisa de mais espaço? Construa um Depósito de Provisões.</p>'}</div>`;
-  return `${storageBox}<div class="panel-title"><h3>Alimentos e consumo</h3><span>${n} ${n === 1 ? 'boca' : 'bocas'} · ${foodDemand().toFixed(1).replace('.', ',')} por segundo</span></div>
+  return `<div class="panel-title"><h3>Alimentos e consumo</h3><span>${n} ${n === 1 ? 'boca' : 'bocas'} · ${foodDemand().toFixed(1).replace('.', ',')} por segundo</span></div>
     <div class="food-block"><div class="food-label">RAÇÃO</div>
       <div class="segmented ration">${RATIONS.map((ration, i) => `<button type="button" data-ration="${i}" class="${state.ration === i ? 'active' : ''}"><b>${ration.label}</b><small>${(eaters() * WORKER_UPKEEP * ration.mult).toFixed(1).replace('.', ',')}/s</small><em class="${ration.mood > 0 ? 'mood-up' : ration.mood < 0 ? 'mood-down' : ''}">${ration.mood > 0 ? '+' : ration.mood < 0 ? '−' : ''}${Math.abs(ration.mood)} felicidade</em></button>`).join('')}</div>
       <p class="storage-items">Cada camponês come ${WORKER_UPKEEP.toFixed(1).replace('.', ',')} de provisão por segundo na ração normal. Meia come metade; dobrada, o dobro; tripla, o triplo.</p>
