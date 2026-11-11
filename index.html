@@ -12,6 +12,7 @@
     <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
     <link rel="preload" as="font" href="public/fonts/PirataOne.ttf" type="font/ttf" crossorigin>
     <link rel="stylesheet" href="app.css?v=344">
+    <script defer src="data/scenarios/01-floresta.js"></script>
     <script defer src="app.js?v=344"></script>
     <script defer src="data/monarch-spells.js?v=344"></script>
     <script defer src="spell-fx.js?v=344"></script>
@@ -60,7 +61,9 @@
             </div>
             <div class="lair-layer" id="lair-layer" aria-label="Covis e cemiterios"></div>
             <img class="tree-foreground manor-trees" src="public/art/mordavia-forest-layer.png" alt="" draggable="false">
+            <div id="poi-layer" class="poi-layer" aria-label="Covis e locais do cenário"></div>
             <div id="hero-layer" class="hero-layer" aria-label="Personagens do domínio"></div>
+            <div id="flag-layer" class="flag-layer" aria-label="Bandeiras de recompensa"></div>
           </div>
           <div class="map-vignette"></div>
           <div class="map-tools">
@@ -78,8 +81,8 @@
 
         <aside class="side-panel">
           <section class="objective-card">
-            <div class="objective-head"><span class="eyebrow">OBJETIVO</span><b>Acumule 600 moedas</b></div>
-            <div class="objective-progress"><div class="progress-track"><i id="objective-bar"></i></div><span class="progress-value"><span id="objective-gold">240</span> / 600</span></div>
+            <div class="objective-head"><span class="eyebrow">OBJETIVO <span id="objective-step">1 de 3</span></span><b id="objective-title">Acumule 600 moedas</b></div>
+            <div class="objective-progress"><div class="progress-track"><i id="objective-bar"></i></div><span class="progress-value" id="objective-text">240 / 600</span></div>
             <div class="objective-actions">
               <div class="tax-control" role="group" aria-label="Imposto"><small>IMPOSTO</small><button type="button" id="tax-down" aria-label="Baixar imposto">−</button><b id="tax-pct">10%</b><button type="button" id="tax-up" aria-label="Subir imposto">+</button><span id="tax-preview"></span></div>
               <button type="button" class="economy-open-btn" id="economy-open-btn">VER ECONOMIA</button>
@@ -96,6 +99,8 @@
             </div>
             <div class="panel-view" id="panel-view"></div>
           </section>
+
+          <section class="editor-card" id="editor-card" hidden></section>
 
           <section class="event-card" aria-live="polite">
             <p id="event-line">A herança foi aceita. Os credores já estão a caminho.</p>

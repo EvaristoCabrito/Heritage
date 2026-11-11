@@ -247,7 +247,7 @@ function newGameState(testMode = false, heir = null) {
     gold: 240, grain: 58, timber: 30, stone: 0, metal: 0, ember: 0, remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [],
     food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, eggs: true, milk: true, bread: true, cheese: true, quiche: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
-    tab: 'build', won: false,
+    tab: 'build', won: false, goalStep: 0, goalKills: 0,
     bandits: [], nextRaidAt: 720,
     testMode, heir, heirLevel: 1, heirXp: 0, equipment: BASIC_EQUIPMENT(), stash: null, playSeconds: 0,
     buildings: [],
@@ -751,18 +751,47 @@ function updateHud() {
   $('#worker-cap').textContent = workerCap;
   $('#tax-pct').textContent = `${state.taxPercent}%`;
   $('#tax-preview').textContent = `≈ ${format(dailyTaxEstimate())} de imposto · −${format(dailyWages())} de salários por dia`;
-  $('#objective-gold').textContent = state.testMode ? '∞' : format(state.gold);
-  const pct = Math.min(100, state.gold / 6);
-  $('#objective-bar').style.width = `${pct}%`;
+  updateGoal();
   const hh = Math.floor(state.minutes / 60) % 24;
   const mm = state.minutes % 60;
   $('#clock').textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   $('#date').textContent = `${dayPeriod()} · ${dateLabel()}`;
-  if (!state.testMode && state.gold >= 600 && !state.won) {
+  if (!state.testMode && (state.goalStep || 0) >= SCENARIO_GOALS.length && !state.won) {
     state.won = true;
     say('Cenário conquistado: o domínio agora paga as próprias dívidas.', 'Os credores receberam a notícia. Infelizmente, também receberam o endereço.');
     if (!state.retinue && game.slot) { menu.stack = []; showScreen('scenarioEnd', { servants: [], protectors: [] }); }
   }
+}
+
+// Objetivos do Cenário 01, um depois do outro. O cenário termina quando o último é cumprido.
+const SCENARIO_GOALS = [
+  { title: 'Acumule 600 moedas',
+    progress: () => ({ have: state.gold, need: 600, text: `${state.testMode ? '∞' : format(state.gold)} / 600` }),
+    done: ['Dívidas quitadas. Os credores foram embora decepcionados.', 'Agora os mortos do vale querem a parte deles. Abata 4 caveiras ou ladrões.'] },
+  { title: 'Noites de Ossos: abata 4 caveiras ou ladrões',
+    progress: () => ({ have: state.goalKills || 0, need: 4, text: `${Math.min(4, state.goalKills || 0)} / 4 abatidos` }),
+    done: ['Os mortos do Vale do Luto aprenderam a ficar deitados. Pelo menos estes.', 'Último desafio: 10 camponeses e uma Taverna de pé. Gente feliz não pega forcado.'] },
+  { title: 'Pão, Cerveja e Gente: 10 camponeses e uma Taverna',
+    progress: () => {
+      const people = state.workers.filter(worker => worker.alive).length;
+      const tavern = state.buildings.some(building => building.type === 'tavern' && isDone(building));
+      return { have: Math.min(10, people) + (tavern ? 1 : 0), need: 11, text: `${Math.min(10, people)} / 10 · ${tavern ? 'taverna aberta' : 'sem taverna'}` };
+    },
+    done: ['A Taverna lotou e ninguém foi enforcado esta semana. Recorde no Vale do Luto.', 'O vale funciona. Mal, mas funciona.'] },
+];
+function updateGoal() {
+  const step = Math.min(state.goalStep || 0, SCENARIO_GOALS.length - 1);
+  const goal = SCENARIO_GOALS[step];
+  const { have, need, text } = goal.progress();
+  $('#objective-title').textContent = goal.title;
+  $('#objective-step').textContent = `${step + 1} de ${SCENARIO_GOALS.length}`;
+  $('#objective-text').textContent = text;
+  $('#objective-bar').style.width = `${Math.max(0, Math.min(100, have / need * 100))}%`;
+  if (state.testMode || (state.goalStep || 0) >= SCENARIO_GOALS.length || have < need) return;
+  state.goalStep = (state.goalStep || 0) + 1;
+  if (state.goalStep === 1) state.goalKills = 0;
+  say(...goal.done);
+  if (state.goalStep < SCENARIO_GOALS.length) updateGoal();
 }
 
 const BRANCH_NAMES = { Bishop: 'Templo Bishop', Cleric: 'Treino Cleric', Elementalist: 'Torre dos Elementalistas', Warlock: 'Torre dos Arcanistas' };
@@ -834,14 +863,27 @@ function renderSites() {
         ? ((building.progress || 0) < BUILD_TIME / 2 ? 'early' : 'mid')
         : null;
       site.classList.toggle('just-built', Date.now() - building.builtAt < 1400);
+      // Upgrade: a animação continua de onde parou mesmo que o mapa seja redesenhado no meio dela.
+      const upgradeAge = Date.now() - (building.upgradedAt || 0);
+      const upgrading = !building.underConstruction && upgradeAge < UPGRADE_FX_MS;
+      site.classList.toggle('just-upgraded', upgrading);
+      site.style.setProperty('--up-delay', `${upgrading ? -upgradeAge : 0}ms`);
       site.dataset.art = art;
       site.dataset.type = building.type;
       const artAspect = options.buildingArtStyle === 'dark' || constructionStage ? BUILDING_ART_ASPECTS[art] || 1 : art === 'manor' ? 1.5 : 1;
-      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};background-image:url('${buildingImage(siteArt(building), constructionStage, building)}')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${building.damage > 0 ? `${label} · ${building.ruined ? 'em ruínas' : 'vida'} ${buildingHp(building)}/${buildingMaxHp(building)}` : label}</small>`}`;
+      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};background-image:url('${buildingImage(siteArt(building), constructionStage, building)}')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${upgrading ? `<span class="upgrade-burst" aria-hidden="true">${'<i></i>'.repeat(8)}<b>${building.upgradeText || 'Melhorado'}</b></span>` : ''}${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${building.damage > 0 ? `${label} · ${building.ruined ? 'em ruínas' : 'vida'} ${buildingHp(building)}/${buildingMaxHp(building)}` : label}</small>`}`;
       site.setAttribute('aria-label', `${label}. Toque para ver opções.`);
     }
   });
   renderLairs();
+}
+
+// Animação de upgrade: a construção pula, brilha, solta brasas e mostra o que ganhou.
+const UPGRADE_FX_MS = 1800;
+function markUpgrade(building, text) {
+  building.upgradedAt = Date.now();
+  building.upgradeText = text;
+  setTimeout(renderSites, UPGRADE_FX_MS + 60);
 }
 
 // Se a construção cabe neste ponto: dentro do mapa, fora das áreas bloqueadas e longe das outras.
@@ -992,7 +1034,7 @@ function heroCard(hero) {
   const nextInfo = hero.prestige ? `Caminho de prestígio: ${hero.prestige}` : hero.level >= 15 ? 'A guilda disponível mais próxima define a especialização.' : `${15 - hero.level} ${15 - hero.level === 1 ? 'nível' : 'níveis'} até o prestígio`;
   const guildType = GUILD_FOR[hero.className];
   return `<article class="hero-card">
-    <img class="hero-portrait" src="public/art/portraits/${actorPortrait(hero)}-portrait-v01.webp" alt="Retrato de ${hero.name}">
+    <img class="hero-portrait" data-actor-sheet="${hero.id}" title="Ver ficha" src="public/art/portraits/${actorPortrait(hero)}-portrait-v01.webp" alt="Retrato de ${hero.name}">
     <div class="hero-details"><b>${hero.name}</b><small>${hero.className}${hero.prestige ? ` · ${hero.prestige}` : ''}</small>${hero.trait ? `<small class="hero-trait"><b>${hero.trait}.</b> ${TRAITS[hero.trait] || ''}</small>` : ''}<small>${nextInfo}</small><small>Bolsa: ${format(purseOf(hero))} de ouro</small></div>
     <div class="hero-xp">NÍV. ${hero.level}<i style="--xp:${hero.level >= HEIR_MAX_LEVEL ? 100 : Math.round((hero.xp || 0) / xpToNext(hero.level) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${hero.id}">FICHA</button></div>
   </article>`;
@@ -1000,7 +1042,7 @@ function heroCard(hero) {
 
 function workerCard(worker) {
   return `<article class="hero-card worker-card">
-    <img class="hero-portrait" src="public/art/portraits/${actorPortrait(worker)}-portrait-v01.webp" alt="Retrato de ${worker.name}">
+    <img class="hero-portrait" data-actor-sheet="${worker.id}" title="Ver ficha" src="public/art/portraits/${actorPortrait(worker)}-portrait-v01.webp" alt="Retrato de ${worker.name}">
     <div class="hero-details"><b>${worker.name}</b><small>${actorLabel(worker)}</small><small>${homeOf(worker) ? 'Mora no casebre.' : 'Mora no casarão, como as dívidas.'} ${workplaceOf(worker) ? `Trabalha ${workPlaceName(workplaceOf(worker))}.` : 'Sem fazenda pra trabalhar.'}</small><small class="worker-task">Agora: ${peasantActivity(worker)}.</small><label class="prof-select"><span>Profissão</span><select data-profession="${worker.id}"><option value="">Nenhuma</option>${Object.entries(PROFESSIONS).map(([id, prof]) => `<option value="${id}"${worker.profession === id ? ' selected' : ''}>${isFemalePeasant(worker) ? prof.fem : prof.name}</option>`).join('')}</select></label><small>Bolsa: ${format(purseOf(worker))} de ouro</small></div>
     <div class="hero-xp">NÍV. ${worker.level || 1}<i style="--xp:${(worker.level || 1) >= HEIR_MAX_LEVEL ? 100 : Math.round((worker.xp || 0) / xpToNext(worker.level || 1) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${worker.id}">FICHA</button></div>
   </article>`;
@@ -1358,7 +1400,8 @@ function placeBuilding(x, y) {
   const building = { site, mapSet: currentMapSet, type: item.id, produce: item.id === 'farm' ? state.selectedFarmType : item.id === 'bakery' ? 'bread' : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
   state.buildings.push(building);
   state.selectedBuild = null;
-  state.selectedSite = site;
+  // A obra nova não fica selecionada: a janela dela só abre quando o jogador clica na construção.
+  state.selectedSite = null;
   assignBuilders();
   renderSites(); renderPanel(); updateHud();
   const builder = building.builderId != null ? findActor(building.builderId) : null;
@@ -1473,6 +1516,7 @@ function completeBuilding(building) {
     building.builderId = null;
     if (worker) { worker.buildSite = null; worker.route = []; worker.finalPoint = null; worker.wait = 0; }
     finishUpgrade(building, upgrade);
+    markUpgrade(building, upgrade.kind === 'hut' ? 'Casebre Grande' : `Nível ${buildingLevel(building) + 1}`);
     assignBuilders();
     renderSites(); renderPanel(); renderHeroes(); updateHud();
     return;
@@ -1487,6 +1531,7 @@ function completeBuilding(building) {
     building.builderId = null;
     if (worker) { worker.buildSite = null; worker.route = []; worker.finalPoint = null; worker.wait = 0; }
     gainHeirXp(25);
+    markUpgrade(building, `Nível ${level}`);
     assignBuilders();
     renderSites(); renderPanel(); updateHud();
     setTimeout(() => $(`.site[data-site="${building.site}"]`)?.classList.remove('just-built'), 1400);
@@ -3185,7 +3230,8 @@ function bountyPanelHTML() {
     ${rows ? `<div class="bounty-list">${rows}</div>` : ''}</section>`;
 }
 function renderBountyFlags() {
-  const layer = $('#site-layer');
+  // Camada própria, por cima de tudo no mapa: construções, árvores, covis e personagens.
+  const layer = $('#flag-layer');
   const ids = new Set((state.bounties || []).filter(bounty => !bounty.target && !bounty.lairId).map(bounty => bounty.id));
   $$('.bounty-flag', layer).filter(flag => !ids.has(flag.dataset.bounty)).forEach(flag => flag.remove());
   (state.bounties || []).filter(bounty => !bounty.target && !bounty.lairId).forEach(bounty => {
@@ -3489,6 +3535,7 @@ function killActor(victim, killer) {
   if (victim.summon) { window.Monarch?.summonDied(victim); return; }
   victim.alive = false;
   victim.hp = 0;
+  if (state.goalStep === 1 && ['Bandit', 'Monster'].includes(victim.className)) state.goalKills = (state.goalKills || 0) + 1;
   // O cemitério do topo lembra onde, quando e por quem cada herói e camponês caiu.
   if (!isBandit(victim) && victim.className !== 'Monster') {
     victim.deathAt = state.minutes;
@@ -3950,7 +3997,7 @@ function hydrateState(data) {
   ['goblin-den-l1', 'troll-den-l1'].forEach(id => { const lair = loaded.lairs.find(item => item.id === id); if (lair && !lair.destroyed) lair.active = true; });
   loaded.remains = { ...emptyRemains(), ...(data.remains || {}) };
   if (!Array.isArray(loaded.remainsPiles)) loaded.remainsPiles = [];
-  loaded.buildings.forEach(building => { building.builtAt = 0; });
+  loaded.buildings.forEach(building => { building.builtAt = 0; building.upgradedAt = 0; });
   if (!data.food) loaded.food = { ...emptyFood(), wheat: data.grain || 0 };
   if (loaded.food.flour == null) loaded.food.flour = 0;
   if (loaded.diet && loaded.diet.flour == null) loaded.diet.flour = true;
@@ -3976,6 +4023,8 @@ function hydrateState(data) {
   if (loaded.nextDemandAt == null) loaded.nextDemandAt = loaded.minutes + 600;
   loaded.taxPercent = Math.min(TAX_MAX, loaded.taxPercent);
   if (loaded.tavernTab == null) loaded.tavernTab = 0;
+  // Saves de antes dos objetivos em sequência: quem já tinha vencido fica com todos cumpridos.
+  if (data.goalStep == null) loaded.goalStep = loaded.won ? SCENARIO_GOALS.length : 0;
   loaded.nextBuildingId = Math.max(loaded.nextBuildingId || 1, ...loaded.buildings.map(building => building.site + 1));
   if (loaded.tab === 'contracts') loaded.tab = 'build';
   loaded.workers.forEach(worker => {
@@ -4071,6 +4120,7 @@ function startGame(newState, slot) {
   homeCamera();
   window.Monarch?.reset();
   renderSites(); renderHeroes(); renderPanel(); updateHud();
+  worldScenario = loadScenario(state.scenario || 1); renderPlaces();
   $('#event-line').textContent = state.ticks ? 'De volta ao Vale do Luto.' : 'A herança foi aceita. Os credores já estão a caminho.';
   writeSave(slot);
   game.running = true;
@@ -4462,6 +4512,7 @@ const SCREENS = {
         <button type="button" data-action="nobles">Nobres</button>
         <button type="button" data-action="options">Opções</button>
         <button type="button" data-action="debug">Debug</button>
+        <button type="button" data-action="editor">Editor de mapas</button>
       </nav>
       <p class="title-save">${latest ? `Slot ${latest.slot} · ${slotSummary(latest.record)}` : 'Nenhum jogo salvo ainda.'}</p>
       ${debug.testMode ? '<footer class="title-footer"><span class="tag-test">MODO TESTE LIGADO</span></footer>' : ''}
@@ -4830,6 +4881,7 @@ function initMenus() {
       case 'log': showScreen('log'); break;
       case 'options': showScreen('options'); break;
       case 'debug': showScreen('debug'); break;
+      case 'editor': openEditor(); break;
       case 'back': goBack(); break;
       case 'resume': closeMenu(); break;
       case 'load-slot':
@@ -4920,7 +4972,7 @@ function initMenus() {
     else { menu.stack = []; showScreen('title'); }
   });
   document.addEventListener('keydown', event => {
-    if (event.key !== 'Escape') return;
+    if (event.key !== 'Escape' || editor.active) return;
     if (!$('#menu-layer').hidden) {
       const top = menu.stack[menu.stack.length - 1]?.name;
       if (top === 'title') return;
@@ -4945,6 +4997,442 @@ function initMenus() {
   window.addEventListener('pagehide', () => { if (game.slot && options.autosave) writeSave(game.slot); });
   showScreen('title');
   setMusic('title');
+}
+
+// ==========================================================================
+// Cenários e editor de mapas. Cada cenário guarda covis e locais de interesse no mesmo sistema
+// de coordenadas do jogo: x em % da largura do mapa, y de 0 a 200 (como PATH_NODES).
+// Save no modelo do editor do Ember Ashes: cada Salvar grava uma versão nova com número (v001, v002...),
+// que vira a ativa no jogo; as versões ficam listadas para Carregar, Ativar ou Apagar (dois cliques).
+// Tudo vai para este navegador e, com a pasta do jogo ligada, para data/scenarios/<arquivo>.js, que o
+// index.html carrega. Vale o registro mais recente dos dois. O rascunho (o que ainda não foi salvo)
+// fica guardado no navegador, como o rascunho aberto do editor do Ember.
+// ==========================================================================
+const SCENARIOS = [{ id: 1, name: 'Floresta', file: '01-floresta' }];
+const PLACE_GROUPS = [{ id: 'lair', name: 'Covis' }, { id: 'poi', name: 'Locais' }];
+const PLACE_TYPES = [
+  { id: 'wolfDen', group: 'lair', name: 'Covil de lobos', icon: '<circle cx="6.5" cy="9.5" r="1.8"/><circle cx="10.5" cy="6" r="1.8"/><circle cx="15" cy="6.5" r="1.8"/><circle cx="18" cy="10.5" r="1.7"/><path d="M8 17.5c0-3.2 2.3-5.6 4.6-5.6s4.2 2.4 4.2 4.8c0 2-1.6 3-3.3 2.4-1.2-.4-1.9-.4-3 .1-1.6.6-2.5-.2-2.5-1.7z"/>' },
+  { id: 'spiderNest', group: 'lair', name: 'Ninho de aranhas', icon: '<path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/><path d="M12 7.2l3.4 1.4 1.4 3.4-1.4 3.4-3.4 1.4-3.4-1.4L7.2 12l1.4-3.4z"/>' },
+  { id: 'goblinDen', group: 'lair', name: 'Toca de goblins', icon: '<path d="M3 20c0-8 4-13 9-13s9 5 9 13"/><path d="M8 20c0-4 1.8-7 4-7s4 3 4 7M2 20h20"/>' },
+  { id: 'trollDen', group: 'lair', name: 'Covil de troll', icon: '<path d="M5 19.5l7.5-7.5"/><path d="M11.5 13c-1.2-3 .8-7.2 4-8.2s4.6 1.8 3.4 4.2-4.4 4-7.4 4z"/>' },
+  { id: 'graveyard', group: 'lair', name: 'Cemitério', icon: '<path d="M7 20V10a5 5 0 0 1 10 0v10"/><path d="M4 20h16M12 8.5v6.5M9.5 11h5"/>' },
+  { id: 'crypt', group: 'lair', name: 'Cripta', icon: '<path d="M5 20V9l7-5 7 5v11"/><path d="M9.5 20v-6a2.5 2.5 0 0 1 5 0v6M3 20h18"/>' },
+  { id: 'banditCamp', group: 'lair', name: 'Acampamento de ladrões', icon: '<path d="M3 19L12 5l9 14z"/><path d="M9 19l3-5.5 3 5.5"/>' },
+  { id: 'ruins', group: 'poi', name: 'Ruínas', icon: '<path d="M3 20h18M5.5 20V9H9v11M15 20v-6.5h3.5V20M4.5 9h5.5M14 13.5h5.5M9 9l1.5-2.5"/>' },
+  { id: 'shrine', group: 'poi', name: 'Santuário', icon: '<path d="M6 20v-9l6-6 6 6v9M4 20h16"/><path d="M12 10v6M10 12h4"/>' },
+  { id: 'well', group: 'poi', name: 'Poço', icon: '<path d="M4 8.5l8-4.5 8 4.5M7 8.5V14M17 8.5V14M12 8.5V11"/><path d="M5 14h14v6H5z"/>' },
+  { id: 'mine', group: 'poi', name: 'Mina', icon: '<path d="M4.5 9.5c4.2-4.4 10.8-4.4 15 0"/><path d="M12 6.4L7 20"/><path d="M14 20a4 4 0 0 1 6 0"/>' },
+  { id: 'watchtower', group: 'poi', name: 'Torre de vigia', icon: '<path d="M8 20l1.5-11h5L16 20M7 9h10M8 9V5h8v4M10 5V3.5M14 5V3.5M5 20h14"/>' },
+  { id: 'bridge', group: 'poi', name: 'Ponte', icon: '<path d="M2 11h20M4 11v6M20 11v6M7 17a5 5 0 0 1 10 0"/>' },
+  { id: 'quarry', group: 'poi', name: 'Pedreira', icon: '<path d="M3 19l4-6 3 3 4-7 7 10z"/>' },
+  { id: 'gallows', group: 'poi', name: 'Forca', icon: '<path d="M6 20V4h9M6 8l4-4M15 4v4M3 20h8"/><circle cx="15" cy="10" r="2"/>' },
+  { id: 'crossroads', group: 'poi', name: 'Encruzilhada', icon: '<path d="M12 21V3M12 6h7l2 2-2 2h-7M12 12H5l-2 2 2 2h7"/>' },
+];
+const placeType = id => PLACE_TYPES.find(type => type.id === id);
+const scenarioDef = id => SCENARIOS.find(item => item.id === id) || SCENARIOS[0];
+const scenarioKey = id => `mordavia.scenario.${pad2(id)}`;
+const scenarioDraftKey = id => `mordavia.scenario.${pad2(id)}.draft`;
+const scenarioTitle = id => `Cenário ${pad2(id)} · ${scenarioDef(id).name}`;
+const scenarioFilePath = id => `data/scenarios/${scenarioDef(id).file}.js`;
+const versionLabel = serial => `v${String(serial).padStart(3, '0')}`;
+const editor = { active: false, scenario: 1, record: null, places: [], base: null, tool: null, group: 'lair', selected: null, drag: null, preview: false, armedDelete: null, status: '' };
+let worldScenario = null;
+
+// Troca única: os covis de lobos vão para onde estavam os trolls, e os trolls descem para onde
+// estavam os lobos. Cada covil de lobos troca de lugar com o covil de troll mais perto dele.
+// Vale para todas as versões salvas e para o rascunho do editor, e roda uma vez só por navegador.
+(function swapWolfAndTrollDens() {
+  const doneKey = 'mordavia.fix.swapWolfTroll.v1';
+  try { if (localStorage.getItem(doneKey)) return; } catch { return; }
+  const swapIn = places => {
+    if (!Array.isArray(places)) return;
+    const trolls = places.filter(place => place?.type === 'trollDen');
+    places.filter(place => place?.type === 'wolfDen').forEach(wolf => {
+      if (!trolls.length) return;
+      const near = trolls.reduce((best, troll) => Math.hypot(troll.x - wolf.x, (troll.y - wolf.y) / 2) < Math.hypot(best.x - wolf.x, (best.y - wolf.y) / 2) ? troll : best);
+      trolls.splice(trolls.indexOf(near), 1);
+      [wolf.x, wolf.y, near.x, near.y] = [near.x, near.y, wolf.x, wolf.y];
+    });
+  };
+  const fix = (key, apply) => {
+    try {
+      const data = JSON.parse(localStorage.getItem(key));
+      if (!data) return;
+      apply(data);
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch {}
+  };
+  SCENARIOS.forEach(def => {
+    fix(scenarioKey(def.id), data => { swapIn(data.places); (data.versions || []).forEach(version => swapIn(version?.places)); });
+    fix(scenarioDraftKey(def.id), data => swapIn(data.places));
+  });
+  try { localStorage.setItem(doneKey, '1'); } catch {}
+})();
+
+const cleanPlaces = list => (Array.isArray(list) ? list : []).filter(place => placeType(place?.type) && Number.isFinite(+place.x) && Number.isFinite(+place.y))
+  .map(place => ({ id: String(place.id), type: place.type, x: +place.x, y: +place.y }));
+// O registro de um cenário: {id, name, updatedAt, active, versions: [{serial, savedAt, places}]}.
+// Aceita o formato antigo ({savedAt, places}) como a versão 1.
+function normalizeRecord(data) {
+  if (!data || typeof data !== 'object') return null;
+  if (Array.isArray(data.versions)) {
+    const versions = data.versions.filter(item => Number.isInteger(item?.serial) && item.serial > 0)
+      .map(item => ({ serial: item.serial, savedAt: item.savedAt || 0, places: cleanPlaces(item.places) })).sort((a, b) => a.serial - b.serial);
+    return { updatedAt: data.updatedAt || 0, active: versions.some(item => item.serial === data.active) ? data.active : versions.at(-1)?.serial ?? null, versions };
+  }
+  if (Array.isArray(data.places) && (data.places.length || data.savedAt))
+    return { updatedAt: data.savedAt || 0, active: 1, versions: [{ serial: 1, savedAt: data.savedAt || 0, places: cleanPlaces(data.places) }] };
+  return null;
+}
+function loadScenarioRecord(id) {
+  const def = scenarioDef(id);
+  let local = null;
+  try { local = normalizeRecord(JSON.parse(localStorage.getItem(scenarioKey(def.id)))); } catch {}
+  const fromFile = normalizeRecord(window.MORDAVIA_SCENARIOS?.[def.id]);
+  const best = [local, fromFile].filter(Boolean).sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  return { id: def.id, name: def.name, updatedAt: best?.updatedAt || 0, active: best?.active ?? null, versions: best?.versions || [] };
+}
+const activeVersion = record => record.versions.find(item => item.serial === record.active) || record.versions.at(-1) || null;
+// O que o jogo mostra: a versão ativa do cenário.
+function loadScenario(id) {
+  const record = loadScenarioRecord(id);
+  return { id: record.id, name: record.name, serial: activeVersion(record)?.serial ?? null, places: activeVersion(record)?.places || [] };
+}
+function scenarioFileText(record) {
+  const json = JSON.stringify({ id: record.id, name: record.name, updatedAt: record.updatedAt, active: record.active, versions: record.versions }, null, 2);
+  return `// ${scenarioTitle(record.id)}. Gravado pelo editor de mapas do jogo: cada Salvar é uma versão; "active" é a que o jogo usa.\n// x em % da largura do mapa, y de 0 a 200.\n(window.MORDAVIA_SCENARIOS = window.MORDAVIA_SCENARIOS || {})[${record.id}] = ${json};\n`;
+}
+
+// Covis e locais no mapa. No jogo (e no preview do editor) só aparecem; editando, viram botões que dá pra arrastar.
+function placeMarkerHTML(place, editable) {
+  const type = placeType(place.type);
+  const tag = editable ? 'button' : 'div';
+  return `<${tag} ${editable ? 'type="button" ' : ''}class="poi ${type.group}${editable && editor.selected === place.id ? ' selected' : ''}" data-place="${place.id}" style="--x:${place.x}%;--y:${place.y / WORLD_Y_UNITS * 100}%;z-index:${Math.round(place.y * 10)}" title="${type.name}"><span class="poi-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${type.icon}</svg></span><small>${type.name}</small></${tag}>`;
+}
+function renderPlaces() {
+  const editing = editor.active && !editor.preview;
+  const places = editor.active ? editor.places : worldScenario?.places || [];
+  const layer = $('#poi-layer');
+  layer.classList.toggle('editing', editing);
+  layer.innerHTML = places.map(place => placeMarkerHTML(place, editing)).join('');
+  // A sombra do objeto escolhido segue o mouse antes do clique: o preview de onde ele vai ficar.
+  if (editing && editor.tool) layer.insertAdjacentHTML('beforeend', placeMarkerHTML({ id: 'ghost', type: editor.tool, x: -50, y: -50 }, false).replace('class="poi ', 'class="poi ghost '));
+}
+
+// A pasta do jogo fica lembrada no navegador (IndexedDB) depois da primeira vez.
+const FOLDER_DB = 'mordavia-editor';
+function folderStore(mode, value) {
+  return new Promise(resolve => {
+    try {
+      const open = indexedDB.open(FOLDER_DB, 1);
+      open.onupgradeneeded = () => open.result.createObjectStore('handles');
+      open.onerror = () => resolve(null);
+      open.onsuccess = () => {
+        try {
+          const tx = open.result.transaction('handles', mode);
+          const request = mode === 'readwrite' ? tx.objectStore('handles').put(value, 'gameFolder') : tx.objectStore('handles').get('gameFolder');
+          request.onsuccess = () => resolve(mode === 'readwrite' ? true : request.result || null);
+          request.onerror = () => resolve(null);
+        } catch { resolve(null); }
+      };
+    } catch { resolve(null); }
+  });
+}
+async function gameFolder(ask) {
+  let folder = await folderStore('readonly');
+  if (folder) {
+    let permission = await folder.queryPermission({ mode: 'readwrite' });
+    if (permission !== 'granted' && ask) permission = await folder.requestPermission({ mode: 'readwrite' });
+    if (permission === 'granted') return folder;
+  }
+  if (!ask) return null;
+  folder = await window.showDirectoryPicker({ id: 'wasteland-farming', mode: 'readwrite' });
+  try { await folder.getFileHandle('index.html'); await folder.getFileHandle('app.js'); } catch { throw new Error('wrong-folder'); }
+  await folderStore('readwrite', folder);
+  return folder;
+}
+// Como o Ember: grava, lê de volta e confere. Se não bater, avisa que não salvou o arquivo.
+async function writeScenarioFile(record, ask) {
+  if (!window.showDirectoryPicker) return 'unsupported';
+  const folder = await gameFolder(ask);
+  if (!folder) return 'unlinked';
+  const text = scenarioFileText(record);
+  const dir = await (await folder.getDirectoryHandle('data', { create: true })).getDirectoryHandle('scenarios', { create: true });
+  const handle = await dir.getFileHandle(`${scenarioDef(record.id).file}.js`, { create: true });
+  const writable = await handle.createWritable();
+  await writable.write(text);
+  await writable.close();
+  if (await (await handle.getFile()).text() !== text) throw new Error('mismatch');
+  return 'ok';
+}
+function downloadScenarioFile(record) {
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([scenarioFileText(record)], { type: 'text/javascript' }));
+  link.download = `${scenarioDef(record.id).file}.js`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+function setEditorStatus(text) {
+  editor.status = text;
+  if (editor.active && $('#editor-status')) $('#editor-status').textContent = text;
+}
+// Grava o registro (versões e qual está ativa) no navegador e no arquivo. ask = true só em cliques
+// (Salvar, Ativar, Apagar): pode abrir a escolha da pasta do jogo na primeira vez.
+let editorWrite = Promise.resolve();
+function persistRecord(done, ask = true) {
+  const record = editor.record;
+  record.updatedAt = Date.now();
+  const stored = { id: record.id, name: record.name, updatedAt: record.updatedAt, active: record.active, versions: record.versions };
+  try { localStorage.setItem(scenarioKey(record.id), JSON.stringify(stored)); } catch {}
+  (window.MORDAVIA_SCENARIOS = window.MORDAVIA_SCENARIOS || {})[record.id] = JSON.parse(JSON.stringify(stored));
+  const run = () => writeScenarioFile(stored, ask);
+  // O seletor de pasta só abre direto do clique; por isso a gravação pedida por clique não espera a fila.
+  editorWrite = (ask ? run() : editorWrite.then(run)).then(result => {
+    if (result === 'ok') return setEditorStatus(`${done} Gravado neste navegador e em ${scenarioFilePath(record.id)}.`);
+    if (result === 'unsupported') {
+      if (ask) downloadScenarioFile(stored);
+      return setEditorStatus(`${done} Este navegador não grava na pasta do jogo: baixei o ${scenarioDef(record.id).file}.js; ponha em data/scenarios.`);
+    }
+    setEditorStatus(`${done} Gravado só neste navegador: escolha a pasta do jogo para gravar o arquivo.`);
+  }).catch(error => {
+    setEditorStatus(error?.message === 'wrong-folder' ? `${done} Gravado só neste navegador: essa não é a pasta do jogo (a do JOGAR.bat).`
+      : error?.name === 'AbortError' ? `${done} Gravado só neste navegador: a pasta do jogo não foi escolhida.`
+      : `${done} NÃO GRAVOU o arquivo ${scenarioFilePath(record.id)}; ficou só neste navegador.`);
+  });
+  return editorWrite;
+}
+
+// O rascunho: as mudanças ainda não salvas. Fica no navegador a cada mudança, para não perder nada.
+const placesKey = places => JSON.stringify(places.map(({ type, x, y }) => [type, x, y]));
+const draftDirty = () => placesKey(editor.places) !== placesKey(activeVersionOf(editor.base)?.places || []);
+const activeVersionOf = serial => editor.record.versions.find(item => item.serial === serial) || null;
+function keepDraft() {
+  try {
+    if (draftDirty()) localStorage.setItem(scenarioDraftKey(editor.scenario), JSON.stringify({ base: editor.base, places: editor.places }));
+    else localStorage.removeItem(scenarioDraftKey(editor.scenario));
+  } catch {}
+}
+function editorChanged() {
+  keepDraft();
+  renderEditor();
+}
+
+function saveVersion() {
+  const record = editor.record;
+  const serial = Math.max(0, ...record.versions.map(item => item.serial)) + 1;
+  record.versions.push({ serial, savedAt: Date.now(), places: editor.places.map(place => ({ ...place })) });
+  record.active = serial;
+  editor.base = serial;
+  editor.armedDelete = null;
+  keepDraft();
+  renderEditor();
+  persistRecord(`Salvo: ${versionLabel(serial)}, ativa no jogo.`);
+}
+function loadVersion(serial) {
+  const version = activeVersionOf(serial);
+  if (!version) return;
+  editor.places = version.places.map(place => ({ ...place }));
+  editor.base = serial;
+  editor.selected = null;
+  editor.armedDelete = null;
+  keepDraft();
+  renderEditor();
+  setEditorStatus(`Aberta a ${versionLabel(serial)}.`);
+}
+function activateVersion(serial) {
+  editor.record.active = serial;
+  editor.armedDelete = null;
+  renderEditor();
+  persistRecord(`${versionLabel(serial)} agora é a ativa no jogo.`);
+}
+function deleteVersion(serial) {
+  if (editor.armedDelete !== serial) {
+    editor.armedDelete = serial;
+    renderEditor();
+    return setEditorStatus(`Clique de novo em Confirmar para apagar a ${versionLabel(serial)}. Isso não tem volta.`);
+  }
+  const record = editor.record;
+  record.versions = record.versions.filter(item => item.serial !== serial);
+  if (record.active === serial) record.active = record.versions.at(-1)?.serial ?? null;
+  if (editor.base === serial) editor.base = null;
+  editor.armedDelete = null;
+  keepDraft();
+  renderEditor();
+  persistRecord(`${versionLabel(serial)} apagada.${record.active ? ` Ativa no jogo: ${versionLabel(record.active)}.` : ''}`);
+}
+
+const savedAtText = time => time ? new Date(time).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+function versionsHTML() {
+  const versions = [...editor.record.versions].reverse();
+  if (!versions.length) return `<p class="editor-hint">Nenhuma versão ainda. Salvar grava a ${versionLabel(1)} em ${scenarioFilePath(editor.scenario)}.</p>`;
+  return `<ol class="editor-versions">${versions.map(item => {
+    const active = item.serial === editor.record.active;
+    return `<li class="${active ? 'active' : ''}${item.serial === editor.base ? ' open' : ''}"><b>${versionLabel(item.serial)}</b><span>${savedAtText(item.savedAt)} · ${item.places.length} ${item.places.length === 1 ? 'local' : 'locais'}${active ? ' · ativa no jogo' : ''}${item.serial === editor.base ? ' · aberta' : ''}</span>
+      <div><button type="button" data-version-load="${item.serial}">Carregar</button><button type="button" data-version-activate="${item.serial}"${active ? ' disabled' : ''}>Ativar</button><button type="button" class="danger" data-version-delete="${item.serial}">${editor.armedDelete === item.serial ? 'Confirmar' : 'Apagar'}</button></div></li>`;
+  }).join('')}</ol>`;
+}
+function editorPanelHTML() {
+  const tools = PLACE_TYPES.filter(type => type.group === editor.group).map(type => `<button type="button" class="editor-tool is-${type.group}${editor.tool === type.id ? ' active' : ''}" data-tool="${type.id}" aria-pressed="${editor.tool === type.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${type.icon}</svg><span>${type.name}</span></button>`).join('');
+  const groups = PLACE_GROUPS.map(group => `<button type="button" class="editor-group${editor.group === group.id ? ' active' : ''}" data-group="${group.id}">${group.name} <i>${PLACE_TYPES.filter(type => type.group === group.id).length}</i></button>`).join('');
+  const place = editor.places.find(item => item.id === editor.selected);
+  const count = editor.places.length;
+  const dirty = draftDirty();
+  return `<header class="editor-head"><span class="eyebrow">EDITOR DE MAPAS</span>
+      <select id="editor-scenario" aria-label="Cenário">${SCENARIOS.map(item => `<option value="${item.id}"${item.id === editor.scenario ? ' selected' : ''}>${scenarioTitle(item.id)}</option>`).join('')}</select></header>
+    <div class="editor-groups" role="tablist">${groups}</div>
+    <div class="editor-tools">${tools}</div>
+    <div class="editor-selected">${place ? `<span><b>${placeType(place.type).name}</b> · x ${place.x.toFixed(1)} · y ${place.y.toFixed(1)}</span><button type="button" class="editor-remove" data-remove="${place.id}">Remover</button>` : `<span>${count ? `${count} ${count === 1 ? 'local' : 'locais'} no mapa` : 'Nada no mapa ainda'}${editor.base ? ` · da ${versionLabel(editor.base)}` : ''}${dirty ? ' · <em>mudanças não salvas</em>' : ''}</span>`}</div>
+    <p class="editor-hint">Escolha um objeto e clique no mapa. Arraste para mover. Botão direito ou Delete remove. Esc solta o objeto.</p>
+    <div class="editor-actions"><button type="button" class="editor-save" id="editor-save">Salvar</button><button type="button" class="editor-preview${editor.preview ? ' active' : ''}" id="editor-preview" aria-pressed="${editor.preview}">Preview</button><button type="button" class="editor-exit" id="editor-exit">Sair</button></div>
+    <p class="editor-status" id="editor-status">${editor.status}</p>
+    <div class="food-label">VERSÕES</div>${versionsHTML()}`;
+}
+function renderEditor() {
+  $('#editor-card').innerHTML = editorPanelHTML();
+  document.body.classList.toggle('map-preview', editor.preview);
+  $('#map-scene').classList.toggle('placing', !!editor.tool && !editor.preview);
+  renderPlaces();
+}
+function openEditor() {
+  menu.stack = [];
+  $('#menu-layer').hidden = true;
+  game.running = false;
+  editor.active = true;
+  editor.record = loadScenarioRecord(editor.scenario);
+  editor.base = activeVersion(editor.record)?.serial ?? null;
+  editor.places = (activeVersion(editor.record)?.places || []).map(place => ({ ...place }));
+  let draft = null;
+  try { draft = JSON.parse(localStorage.getItem(scenarioDraftKey(editor.scenario))); } catch {}
+  if (draft && Array.isArray(draft.places)) { editor.places = cleanPlaces(draft.places); editor.base = activeVersionOf(draft.base) ? draft.base : null; }
+  editor.tool = null;
+  editor.selected = null;
+  editor.preview = false;
+  editor.armedDelete = null;
+  editor.status = draftDirty() ? 'Rascunho reaberto: as mudanças ainda não foram salvas.' : editor.base ? `Aberta a ${versionLabel(editor.base)}, ativa no jogo.` : 'Nada salvo ainda.';
+  document.body.classList.add('map-editing');
+  $('#editor-card').hidden = false;
+  sizeWorld(); renderCamera();
+  renderEditor();
+}
+function closeEditor() {
+  editor.active = false;
+  editor.drag = null;
+  editor.preview = false;
+  document.body.classList.remove('map-editing', 'map-preview');
+  $('#editor-card').hidden = true;
+  $('#map-scene').classList.remove('placing');
+  worldScenario = loadScenario(state.scenario || 1);
+  renderPlaces();
+  sizeWorld(); renderCamera();
+  toTitle();
+}
+function selectPlace(id) {
+  editor.selected = id;
+  renderEditor();
+}
+const editorCoord = (value, max) => Math.round(Math.max(2, Math.min(max - 2, value)) * 10) / 10;
+function addPlace(x, y) {
+  const place = { id: `p${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`, type: editor.tool, x: editorCoord(x, 100), y: editorCoord(y, WORLD_Y_UNITS) };
+  editor.places.push(place);
+  editor.selected = place.id;
+  editorChanged();
+}
+function removePlace(id) {
+  editor.places = editor.places.filter(place => place.id !== id);
+  if (editor.selected === id) editor.selected = null;
+  editorChanged();
+}
+
+function initEditor() {
+  const scene = $('#map-scene');
+  const layer = $('#poi-layer');
+  $('#editor-card').addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if (!button || button.disabled) return;
+    const data = button.dataset;
+    if (data.tool) { editor.tool = editor.tool === data.tool ? null : data.tool; editor.preview = false; renderEditor(); }
+    else if (data.group) { editor.group = data.group; renderEditor(); }
+    else if (data.remove) removePlace(data.remove);
+    else if (data.versionLoad) loadVersion(Number(data.versionLoad));
+    else if (data.versionActivate) activateVersion(Number(data.versionActivate));
+    else if (data.versionDelete) deleteVersion(Number(data.versionDelete));
+    else if (button.id === 'editor-save') saveVersion();
+    else if (button.id === 'editor-preview') { editor.preview = !editor.preview; editor.tool = null; editor.selected = null; renderEditor(); }
+    else if (button.id === 'editor-exit') closeEditor();
+  });
+  $('#editor-card').addEventListener('change', event => {
+    if (event.target.id !== 'editor-scenario') return;
+    editor.scenario = Number(event.target.value);
+    openEditor();
+  });
+  scene.addEventListener('click', event => {
+    if (!editor.active || editor.preview || camera.dragMoved || event.target.closest('.poi:not(.ghost), .map-tools')) return;
+    if (editor.tool) { const { x, y } = worldPoint(event); addPlace(x, y); }
+    else if (editor.selected) selectPlace(null);
+  });
+  scene.addEventListener('pointermove', event => {
+    const ghost = editor.active && !editor.preview && editor.tool ? $('.poi.ghost', layer) : null;
+    if (!ghost) return;
+    const { x, y } = worldPoint(event);
+    ghost.style.setProperty('--x', `${editorCoord(x, 100)}%`);
+    ghost.style.setProperty('--y', `${editorCoord(y, WORLD_Y_UNITS) / WORLD_Y_UNITS * 100}%`);
+    ghost.style.zIndex = '2000';
+  });
+  scene.addEventListener('pointerleave', () => { const ghost = $('.poi.ghost', layer); if (ghost) ghost.style.setProperty('--x', '-50%'); });
+  scene.addEventListener('contextmenu', event => {
+    if (!editor.active) return;
+    event.preventDefault();
+    if (editor.preview) return;
+    const marker = event.target.closest('.poi:not(.ghost)');
+    if (marker) removePlace(marker.dataset.place);
+    else if (editor.tool) { editor.tool = null; renderEditor(); }
+  });
+  layer.addEventListener('pointerdown', event => {
+    const marker = event.target.closest('.poi:not(.ghost)');
+    if (!editor.active || editor.preview || !marker || event.button !== 0) return;
+    editor.drag = { id: marker.dataset.place, pointerId: event.pointerId, x: event.clientX, y: event.clientY, moved: false, marker };
+    try { marker.setPointerCapture(event.pointerId); } catch {}
+    editor.selected = marker.dataset.place;
+    $('#editor-card').innerHTML = editorPanelHTML();
+    $$('.poi', layer).forEach(item => item.classList.toggle('selected', item === marker));
+  });
+  layer.addEventListener('pointermove', event => {
+    const drag = editor.drag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 4) return;
+    drag.moved = true;
+    const place = editor.places.find(item => item.id === drag.id);
+    if (!place) return;
+    const { x, y } = worldPoint(event);
+    place.x = editorCoord(x, 100);
+    place.y = editorCoord(y, WORLD_Y_UNITS);
+    drag.marker.style.setProperty('--x', `${place.x}%`);
+    drag.marker.style.setProperty('--y', `${place.y / WORLD_Y_UNITS * 100}%`);
+    drag.marker.style.zIndex = String(Math.round(place.y * 10));
+  });
+  // Ao soltar, só o painel é redesenhado: o marcador fica no lugar e o clique que vem depois cai nele.
+  const endDrag = event => {
+    const drag = editor.drag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    editor.drag = null;
+    if (drag.moved) { keepDraft(); $('#editor-card').innerHTML = editorPanelHTML(); }
+  };
+  layer.addEventListener('pointerup', endDrag);
+  layer.addEventListener('pointercancel', endDrag);
+  document.addEventListener('keydown', event => {
+    if (!editor.active || event.target.closest?.('select, input')) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (editor.preview) { editor.preview = false; renderEditor(); }
+      else if (editor.tool) { editor.tool = null; renderEditor(); }
+      else if (editor.selected) selectPlace(null);
+    } else if ((event.key === 'Delete' || event.key === 'Backspace') && editor.selected && !editor.preview) { event.preventDefault(); removePlace(editor.selected); }
+  });
+  worldScenario = loadScenario(state.scenario || 1);
+  renderPlaces();
 }
 
 function init() {
@@ -5030,6 +5518,7 @@ function init() {
   $('#tax-down').addEventListener('click', () => setTax(-5));
   $('#tax-up').addEventListener('click', () => setTax(5));
   renderSites(); renderHeroes(); renderPanel(); updateHud();
+  initEditor();
   setInterval(tick, 1000);
   requestAnimationFrame(animateActors);
   initMenus();

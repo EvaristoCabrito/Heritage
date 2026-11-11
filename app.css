@@ -118,6 +118,31 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .site.built.selected .building-art { filter: drop-shadow(0 0 7px #e1c488) drop-shadow(2px 7px 4px rgba(9,11,8,.7)); }
 .site.just-built .building-art { animation: building-appear .9s ease-out both; }
 @keyframes building-appear { from { opacity: .15; transform: translateY(18px) scale(.72); } 70% { opacity: 1; } to { opacity: 1; transform: translateY(0) scale(1); } }
+/* Upgrade: a construção pula com brilho de brasa, sobem fagulhas e o nível novo flutua por cima. */
+.site.just-upgraded .building-art { transform-origin: 50% 100%; animation: building-upgrade 1.8s ease-out both; animation-delay: var(--up-delay, 0ms); }
+@keyframes building-upgrade {
+  0% { transform: scale(1); filter: drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
+  14% { transform: translateY(-9px) scale(1.07, 1.1); filter: brightness(1.45) drop-shadow(0 0 14px #f0a24a) drop-shadow(2px 7px 4px rgba(9,11,8,.6)); }
+  30% { transform: translateY(0) scale(1.06, .93); }
+  46% { transform: scale(.98, 1.03); filter: brightness(1.2) drop-shadow(0 0 10px #e08a3a) drop-shadow(2px 7px 4px rgba(9,11,8,.66)); }
+  62% { transform: scale(1); }
+  100% { transform: scale(1); filter: drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
+}
+.upgrade-burst { position: absolute; z-index: 2; left: 50%; top: 0; bottom: 18%; width: 0; pointer-events: none; }
+.upgrade-burst::before { content: ''; position: absolute; left: -60px; bottom: -26px; width: 120px; height: 52px; border-radius: 50%; border: 2px solid rgba(240,170,90,.85); box-shadow: 0 0 18px rgba(240,140,60,.6), inset 0 0 12px rgba(240,140,60,.4); animation: upgrade-ring 1.1s ease-out both; animation-delay: var(--up-delay, 0ms); }
+@keyframes upgrade-ring { from { opacity: .95; transform: scale(.3); } to { opacity: 0; transform: scale(1.5); } }
+.upgrade-burst i { position: absolute; left: 0; bottom: 0; width: 5px; height: 5px; border-radius: 50%; background: #ffd08a; box-shadow: 0 0 6px 2px rgba(242,140,52,.85); opacity: 0; animation: upgrade-ember 1.5s ease-out both; animation-delay: var(--up-delay, 0ms); }
+.upgrade-burst i:nth-child(1) { --dx: -46px; --dy: -70px; }
+.upgrade-burst i:nth-child(2) { --dx: -24px; --dy: -96px; width: 4px; height: 4px; }
+.upgrade-burst i:nth-child(3) { --dx: -6px; --dy: -82px; }
+.upgrade-burst i:nth-child(4) { --dx: 14px; --dy: -104px; width: 3px; height: 3px; }
+.upgrade-burst i:nth-child(5) { --dx: 32px; --dy: -76px; }
+.upgrade-burst i:nth-child(6) { --dx: 50px; --dy: -60px; width: 4px; height: 4px; }
+.upgrade-burst i:nth-child(7) { --dx: -36px; --dy: -50px; width: 3px; height: 3px; }
+.upgrade-burst i:nth-child(8) { --dx: 24px; --dy: -120px; }
+@keyframes upgrade-ember { 0% { opacity: 0; transform: translate(0,0) scale(.6); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.3); } }
+.upgrade-burst b { position: absolute; left: 0; top: -14px; transform: translateX(-50%); white-space: nowrap; padding: 2px 8px; border: 1px solid rgba(240,180,100,.8); border-radius: 3px; background: rgba(20,14,10,.88); color: #ffd79a; font: 13px 'Pirata One', Georgia, serif; letter-spacing: .08em; text-shadow: 0 0 8px rgba(240,140,60,.8); animation: upgrade-label 1.8s ease-out both; animation-delay: var(--up-delay, 0ms); }
+@keyframes upgrade-label { 0% { opacity: 0; transform: translate(-50%, 10px) scale(.8); } 15% { opacity: 1; transform: translate(-50%, -6px) scale(1.08); } 25% { transform: translate(-50%, -8px) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -46px); } }
 .site[data-art^="farm-"] .building-art::after, .site[data-art="tavern"] .building-art::after { content: ''; position: absolute; left: 68%; top: 10%; width: 11%; height: 27%; border-radius: 50%; background: radial-gradient(ellipse at bottom, rgba(190,190,180,.35), transparent 69%); animation: chimney-smoke 4.6s ease-out infinite; pointer-events: none; }
 .site[data-art="tavern"] .building-art::after { left: 79%; top: 4%; }
 @keyframes chimney-smoke { 0% { opacity: 0; transform: translate(0,8px) scale(.6); } 25% { opacity: .65; } 100% { opacity: 0; transform: translate(9px,-22px) scale(1.8); } }
@@ -239,7 +264,8 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .empty-state { min-height: 220px; display: grid; place-items: center; padding: 20px; color: #9d998a; text-align: center; font-size: 11px; line-height: 1.6; }
 .hero-list { display: flex; flex-direction: column; gap: 7px; }
 .hero-card { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 9px; padding: 10px; border: 1px solid rgba(193,176,135,.17); border-radius: 5px; background: rgba(46,49,40,.46); }
-.hero-portrait { display: block; width: 52px; height: 62px; object-fit: cover; object-position: center 28%; border: 1px solid #a58d59; border-radius: 3px; background: #161714; }
+.hero-portrait { display: block; width: 52px; height: 62px; object-fit: cover; object-position: center 28%; border: 1px solid #a58d59; border-radius: 3px; background: #161714; cursor: pointer; }
+.hero-portrait:hover { border-color: #e2aa64; }
 .worker-heading { margin-top: 18px; }
 .hero-details { display: flex; flex-direction: column; gap: 3px; }
 .hero-details b { color: #e6ddca; font: 12px 'Newsreader',Georgia,serif; }
@@ -339,7 +365,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 }
 @media (prefers-reduced-motion: reduce) {
   .site { transition: none; }
-  .map-atmosphere span, .mill-sails, .site.just-built .building-art, .site.pending .site-ring, .site[data-art^="farm-"] .building-art::after, .site[data-art="tavern"] .building-art::after, .site[data-art="tavern"] .building-art::before, .site[data-art="armory"] .building-art::before, .character.attacking::after, .den-pulse { animation: none; }
+  .map-atmosphere span, .mill-sails, .site.just-built .building-art, .site.just-upgraded .building-art, .upgrade-burst::before, .upgrade-burst i, .upgrade-burst b, .site.pending .site-ring, .site[data-art^="farm-"] .building-art::after, .site[data-art="tavern"] .building-art::after, .site[data-art="tavern"] .building-art::before, .site[data-art="armory"] .building-art::before, .character.attacking::after, .den-pulse { animation: none; }
 }
 
 /* ==========================================================================
@@ -1135,6 +1161,8 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .bounty-row small { color: #9d9583; font-size: 10px; }
 .bounty-row em { color: #e7cf98; font-style: normal; font-size: 13px; }
 .bounty-cancel { width: 24px; height: 24px; border: 1px solid rgba(214,96,64,.5); border-radius: 3px; color: #e8866a; background: transparent; cursor: pointer; }
+/* As bandeiras de recompensa ficam na camada mais alta do mapa. */
+.flag-layer { position: absolute; z-index: 9; inset: 0; pointer-events: none; }
 .bounty-flag { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
 .bounty-flag i { width: 3px; height: 28px; background: #3a2a18; position: relative; }
 .bounty-flag i::after { content: ''; position: absolute; left: 3px; top: 0; width: 18px; height: 12px; background: #c9a35a; clip-path: polygon(0 0, 100% 50%, 0 100%); }
@@ -1199,7 +1227,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
   .spell-btn .spell-glyph { font-size: 15px; line-height: 28px; }
   .monarch-res .res { min-width: 70px; }
 }
-#map-world[data-map="wilds"] #site-layer, #map-world[data-map="wilds"] .map-atmosphere { display: none; }
+#map-world[data-map="wilds"] #site-layer, #map-world[data-map="wilds"] #poi-layer, #map-world[data-map="wilds"] .map-atmosphere { display: none; }
 #map-world[data-map-set="2"] .map-atmosphere { display: none; }
 
 /* Cursores do Ember: a seta em tudo e a manopla enquanto o mapa é arrastado. */
@@ -1304,3 +1332,62 @@ input[type="number"], input[type="text"], textarea {
 .grave-row em { flex: none; color: #a9a08b; font-size: 11px; font-style: normal; line-height: 1.4; text-align: right; }
 .grave-empty { padding: 4px 2px; }
 @media (max-width: 760px) { .graveyard-btn { width: 32px; } .grave-crest { width: 64px; height: 48px; } }
+
+/* Covis e locais do cenário (editor de mapas). Acima das árvores, abaixo dos personagens. */
+.poi-layer { position: absolute; z-index: 6; inset: 0; pointer-events: none; }
+.poi { position: absolute; left: var(--x); top: var(--y); display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0; border: 0; background: transparent; color: #e4d7b7; transform: translate(-50%, -14px); pointer-events: none; text-shadow: 0 1px 4px #000; font: inherit; }
+.poi-icon { width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid rgba(214,184,117,.75); border-radius: 50%; color: var(--gold); background: rgba(20,22,18,.84); box-shadow: 0 0 0 4px rgba(214,184,117,.1), 0 3px 10px rgba(0,0,0,.6); }
+.poi-icon svg, .editor-tool svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.poi.lair .poi-icon { border-color: #c4785a; color: #e7a487; background: rgba(46,20,14,.86); box-shadow: 0 0 0 4px rgba(170,77,50,.16), 0 3px 10px rgba(0,0,0,.6); }
+.poi small { padding: 2px 5px; border: 1px solid rgba(204,180,127,.35); border-radius: 3px; background: rgba(16,18,15,.84); font-size: 7px; letter-spacing: .13em; white-space: nowrap; }
+.poi-layer.editing .poi { pointer-events: auto; cursor: grab; touch-action: none; }
+.poi-layer.editing .poi:active { cursor: grabbing; }
+.poi.selected .poi-icon { outline: 2px solid #f4da9a; outline-offset: 2px; }
+.poi.selected small { border-color: #f4da9a; color: #f4da9a; }
+.poi-layer.editing .poi.ghost { opacity: .6; pointer-events: none; }
+
+/* Editor de mapas: o mapa ocupa a tela e o painel lateral vira a paleta. */
+body.map-editing .hud, body.map-editing .objective-card, body.map-editing .command-card, body.map-editing .event-card,
+body.map-editing #site-layer, body.map-editing #hero-layer, body.map-editing .map-footer { display: none; }
+.editor-card { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 12px 13px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+.editor-card[hidden] { display: none; }
+.editor-card > * { flex-shrink: 0; }
+.editor-head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.editor-head select { width: 100%; height: 30px; padding: 0 8px; border: 1px solid rgba(206,186,137,.35); border-radius: 4px; color: #f0e6d0; background: rgba(17,19,16,.7); font: 15px 'Newsreader', Georgia, serif; }
+.editor-groups { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+.editor-group { height: 28px; border: 0; border-bottom: 2px solid transparent; color: var(--muted); background: transparent; font: 700 10px 'Figtree', sans-serif; letter-spacing: .16em; text-transform: uppercase; cursor: pointer; }
+.editor-group i { font-style: normal; color: var(--dim); }
+.editor-group.active { border-bottom-color: var(--gold); color: #e0cfaa; }
+.editor-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px; }
+.editor-tool { display: flex; align-items: center; gap: 6px; min-width: 0; height: 30px; padding: 0 8px; border: 1px solid rgba(206,186,137,.28); border-radius: 4px; color: #e5d7b5; background: rgba(17,19,16,.55); font: 600 11px 'Figtree', sans-serif; text-align: left; cursor: pointer; }
+.editor-tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.editor-tool svg { flex: none; color: var(--gold); }
+.editor-tool.is-lair svg { color: #e7a487; }
+.editor-tool:hover { border-color: var(--gold); }
+.editor-tool.active { border-color: var(--gold); color: #211f18; background: var(--gold); }
+.editor-tool.active svg { color: #211f18; }
+.editor-selected { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; color: var(--muted); font-size: 11px; }
+.editor-selected b { color: #f0e6d0; font-weight: 600; }
+.editor-remove { height: 24px; padding: 0 9px; border: 1px solid rgba(195,133,91,.55); border-radius: 3px; color: #e7b48d; background: transparent; font: 600 11px 'Figtree', sans-serif; cursor: pointer; }
+.editor-remove:hover { background: rgba(120,70,40,.35); }
+.editor-hint { margin: 8px 0 10px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.editor-actions { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; }
+.editor-save { height: 30px; border: 1px solid rgba(255,200,130,.55); border-radius: 3px; color: #f2e4d0; background: linear-gradient(180deg, #d9621c 0%, #9c2f10 55%, #561708 100%); font: 15px 'Pirata One', Georgia, serif; letter-spacing: .1em; cursor: pointer; }
+.editor-save:hover { background: linear-gradient(180deg, #e66d22 0%, #ae3612 55%, #611a09 100%); }
+.editor-exit { height: 30px; padding: 0 14px; border: 1px solid rgba(206,186,137,.35); border-radius: 3px; color: #e5d7b5; background: transparent; font: 600 11px 'Figtree', sans-serif; letter-spacing: .08em; cursor: pointer; }
+.editor-exit:hover { border-color: var(--gold); }
+.editor-preview { height: 30px; padding: 0 12px; border: 1px solid rgba(206,186,137,.35); border-radius: 3px; color: #e5d7b5; background: transparent; font: 600 11px 'Figtree', sans-serif; letter-spacing: .08em; cursor: pointer; }
+.editor-preview:hover { border-color: var(--gold); }
+.editor-preview.active { border-color: var(--gold); color: #211f18; background: var(--gold); }
+.editor-selected em { color: #f0c98a; font-style: normal; }
+.editor-versions { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.editor-versions li { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 2px 8px; padding: 6px 8px; border: 1px solid rgba(206,186,137,.18); border-radius: 4px; background: rgba(17,19,16,.45); font-size: 10px; color: var(--muted); }
+.editor-versions li.active { border-color: rgba(214,184,117,.6); }
+.editor-versions li b { color: #f0e6d0; font: 13px 'Newsreader', Georgia, serif; }
+.editor-versions li.active b { color: var(--gold); }
+.editor-versions li div { grid-column: 1 / -1; display: flex; gap: 5px; }
+.editor-versions li button { height: 22px; padding: 0 8px; border: 1px solid rgba(206,186,137,.3); border-radius: 3px; color: #e5d7b5; background: transparent; font: 600 10px 'Figtree', sans-serif; cursor: pointer; }
+.editor-versions li button:hover:not([disabled]) { border-color: var(--gold); }
+.editor-versions li button[disabled] { opacity: .4; cursor: default; }
+.editor-versions li button.danger { border-color: rgba(195,133,91,.55); color: #e7b48d; }
+.editor-status { min-height: 14px; margin: 7px 0 12px; color: var(--muted); font-size: 10px; line-height: 1.4; }
