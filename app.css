@@ -1374,7 +1374,7 @@ input[type="number"], input[type="text"], textarea {
 
 /* Cemitério do topo: heróis e camponeses perdidos na região aberta. */
 .graveyard-btn { display: grid; place-items: center; width: 40px; padding: 0; overflow: hidden; }
-.graveyard-btn img { width: 100%; height: 100%; object-fit: cover; object-position: center 42%; transform: scale(1.35); filter: saturate(.85) brightness(1.1); }
+.graveyard-btn img { width: 100%; height: 100%; object-fit: cover; object-position: center; filter: saturate(.85) brightness(1.1); }
 .graveyard-btn:hover img { filter: brightness(1.35); }
 .grave-crest { flex: none; width: 96px; height: 72px; object-fit: cover; border: 1px solid rgba(206,184,135,.4); border-radius: 4px; background: #171612; }
 .grave-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
