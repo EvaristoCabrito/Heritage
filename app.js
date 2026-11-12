@@ -339,7 +339,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.13';
+const GAME_VERSION = 'Version 0.13.15';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -3460,9 +3460,9 @@ function monarchShopHTML(tierCap) {
   const rows = EQUIP_SLOTS.map(({ slot, label }) => {
     const current = ITEMS[equipped[slot]];
     const kind = slot.startsWith('ring') ? 'ring' : slot;
-    const options = Object.entries(ITEMS).filter(([, item]) => item.slot === kind && item.tier > (current?.tier || 0) && item.tier <= tierCap).sort((a, b) => a[1].tier - b[1].tier);
-    const affordable = options.filter(([, item]) => item.price <= state.gold);
-    const pick = (affordable[affordable.length - 1] || options[0] || [])[0];
+    const options = Object.entries(ITEMS).filter(([, item]) => item.slot === kind && item.tier === (current?.tier || 0) + 1 && item.tier <= tierCap).sort((a, b) => a[1].tier - b[1].tier);
+    // Pré-seleciona sempre o próximo tier para a progressão não saltar níveis.
+    const pick = (options[0] || [])[0];
     return `<div class="monarch-shop-row"><span class="monarch-shop-slot">${current ? pixelIcon(current.icon, 24) : ''}<span><small>${label}</small><b>${current ? `${current.name} · T${current.tier}` : 'Vazio'}</b></span></span>
       ${options.length ? `<select data-monarch-pick="${slot}" aria-label="Escolher ${label.toLowerCase()}">${options.map(([id, item]) => `<option value="${id}"${id === pick ? ' selected' : ''}>T${item.tier} · ${item.price} ouro · ${item.name} · ${monarchBonusText(item.bonus)}</option>`).join('')}</select>
       <button type="button" class="monarch-buy" data-monarch-buy="${slot}">Comprar</button>` : `<em>${(current?.tier || 0) >= 10 ? 'Melhor que isso não existe' : 'Nada melhor neste nível'}</em>`}</div>`;
@@ -3474,7 +3474,7 @@ function buyMonarchItem(slot, id) {
   const item = ITEMS[id];
   const current = ITEMS[monarchEquipment()[slot]];
   const kind = slot.startsWith('ring') ? 'ring' : slot;
-  if (!item || item.slot !== kind || item.tier <= (current?.tier || 0)) return;
+  if (!item || item.slot !== kind || item.tier !== (current?.tier || 0) + 1) { say('O equipamento só avança para o próximo tier.'); return; }
   if (item.tier > armoryTier()) { say('O Arsenal ainda não vende isso. Melhore o Arsenal.'); return; }
   if (state.gold < item.price) { say(`Falta ouro. ${item.name} custa ${item.price}.`); return; }
   state.gold -= item.price;
@@ -3494,6 +3494,10 @@ const HERO_SLOTS = [
   { slot: 'hands', label: 'Mãos' }, { slot: 'feet', label: 'Pés' }, { slot: 'cloak', label: 'Capa' }, { slot: 'amulet', label: 'Amuleto' },
   { slot: 'ring1', label: 'Anel I' }, { slot: 'ring2', label: 'Anel II' },
 ];
+// Usa as classes de arte que existem no catálogo de equipamento.
+const HERO_WEAPON_ART_CLASS = {
+  Warrior: 'warrior', Archer: 'hunter', 'Black Mage': 'mage', Conjurer: 'mage', Healer: 'priest',
+};
 const PEASANT_SLOTS = [
   { slot: 'tool', label: 'Ferramenta' }, { slot: 'clothes', label: 'Roupa' }, { slot: 'hands', label: 'Mãos' }, { slot: 'feet', label: 'Pés' }, { slot: 'head', label: 'Cabeça' },
 ];
@@ -3600,6 +3604,15 @@ function weaponDesign(patternId, materialId) {
 const craftedWeapon = id => (state.craftedWeapons || []).find(item => item.id === id) || null;
 const gearItem = id => GEAR[id] || craftedWeapon(id);
 const STARTER_WEAPON = { Warrior: 'rustySword', Archer: 'shortBow', Lancer: 'ashSpear', 'Black Mage': 'crookedStaff', Conjurer: 'scorchedTome', Healer: 'woodenMace' };
+function gearIconHTML(item, actorClass, label = '') {
+  const artClass = HERO_WEAPON_ART_CLASS[actorClass];
+  const tier = Number(item?.tier);
+  if (item?.slot === 'weapon' && !item.crafted && artClass && tier >= 1 && tier <= 10) {
+    const path = `public/art/equipment/icon-${artClass}-t${String(tier).padStart(2, '0')}-mainHand-photo-v01.png`;
+    return `<span class="gear-icon weapon-icon"><img src="${path}" alt="" aria-hidden="true" decoding="async"></span>`;
+  }
+  return `<span class="gear-icon" aria-hidden="true">${label[0] || '·'}</span>`;
+}
 // Cada herói compra na ordem que acha mais importante. A mania muda a ordem.
 const SLOT_PRIORITY = {
   default: ['weapon', 'body', 'head', 'offhand', 'feet', 'hands', 'cloak', 'amulet', 'ring1', 'ring2'],
@@ -3920,14 +3933,14 @@ function armoryBoxHTML(armory) {
     <section class="inspector-section"><h4>Loja do monarca · até tier ${tierCap}</h4>${monarchShopHTML(tierCap)}</section>
     <details class="inspector-section"><summary>À venda para heróis e camponeses · ${forSale.length} itens</summary>
     <p class="storage-items">Heróis e camponeses compram sozinhos, com o próprio ouro. O ouro vai pro cofre.</p>
-    <ul class="shop-list">${forSale.map(item => `<li><span><b>${item.name}</b><small>${item.peasant ? (item.prof ? item.prof.map(id => PROFESSIONS[id].name).join(', ') : 'Qualquer camponês') : item.classes ? item.classes.join(', ') : 'Qualquer herói'} · ${bonusText(item.bonus)}</small></span><em>${item.price}</em></li>`).join('')}</ul></details>`;
+    <ul class="shop-list">${forSale.map(item => `<li>${gearIconHTML(item, item.classes?.find(className => HERO_WEAPON_ART_CLASS[className]), item.name)}<span><b>${item.name}</b><small>${item.peasant ? (item.prof ? item.prof.map(id => PROFESSIONS[id].name).join(', ') : 'Qualquer camponês') : item.classes ? item.classes.join(', ') : 'Qualquer herói'} · ${bonusText(item.bonus)}</small></span><em>${item.price}</em></li>`).join('')}</ul></details>`;
 }
 function gearHTML(actor) {
   if (actor.className === 'Bandit' || actor.className === 'Monster') return '';
   return `<div class="sheet-section-label">EQUIPAMENTO</div><div class="equip-grid">${slotsFor(actor).map(({ slot, label }) => {
     const item = gearItem(gearOf(actor)[slot]);
     const condition = item?.crafted ? `<em>Estrutura ${formatMass(item.structuralCondition)}/${formatMass(item.structuralMax)}${item.sharp ? ` · gume ${formatMass(item.edgeCondition)}/${formatMass(item.edgeMax)}` : ''}</em>` : '';
-    return `<div class="equip-slot${item ? '' : ' empty'}"><span class="gear-icon" aria-hidden="true">${label[0]}</span><span><small>${label}</small><b>${item ? item.name : 'Vazio'}</b><em>${item ? `${bonusText(item.bonus)}. ${item.about}` : ''}</em>${condition}</span></div>`;
+    return `<div class="equip-slot${item ? '' : ' empty'}">${gearIconHTML(item, actor.className, label)}<span><small>${label}</small><b>${item ? item.name : 'Vazio'}</b><em>${item ? `${bonusText(item.bonus)}. ${item.about}` : ''}</em>${condition}</span></div>`;
   }).join('')}</div>${actor.className !== 'Peasant' ? craftedWeaponOptionsHTML(actor) : ''}`;
 }
 function craftedWeaponOptionsHTML(actor) {
