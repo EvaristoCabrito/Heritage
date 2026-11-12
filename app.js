@@ -289,7 +289,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.2';
+const GAME_VERSION = 'Version 0.13.5';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -1612,7 +1612,6 @@ function placementProblem(x, y, ignoreSite = null) {
   const type = moving?.type || state.selectedBuild;
   if (type === 'mine' && currentMap !== 'wilds') return 'Minas s\u00f3 podem ser constru\u00eddas em Wilds.';
   if (type === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city' && building.site !== ignoreSite)) return 'City permite apenas uma pedreira.';
-  if (type && !['mine', 'quarry', 'lumber'].includes(type) && currentMap !== 'city') return 'Esta constru\u00e7\u00e3o s\u00f3 pode ser erguida em City.';
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
   if (type === 'mine') {
     const deposits = extractionPlaces(type);
@@ -1900,7 +1899,7 @@ const BUILD_CATEGORIES = [
 ];
 const buildCardHTML = item => {
   const cityQuarryExists = item.id === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city');
-  const blocked = (item.id === 'mine' && currentMap !== 'wilds') || (!['mine', 'quarry', 'lumber'].includes(item.id) && currentMap !== 'city') || cityQuarryExists;
+  const blocked = (item.id === 'mine' && currentMap !== 'wilds') || cityQuarryExists;
   const reason = cityQuarryExists ? 'A única pedreira de City já foi construída.' : blocked ? item.id === 'mine' ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.id === 'quarry' && currentMap === 'city' ? 'Pedreira inicial de baixa reserva · City permite uma; Wilds não tem limite.' : item.detail;
   return `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira" title="${reason}" ${blocked ? 'disabled aria-disabled="true"' : ''}>
         <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${reason}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`;
@@ -2789,13 +2788,13 @@ function reportActorMovementError(error) {
   actorMovementErrorReported = true;
   console.error('Falha isolada no ciclo de movimento dos personagens:', error);
   const line = $('#event-line');
-  if (line) line.textContent = 'Um personagem teve um erro de movimento; os demais continuam. Recarregue a partida para tentar recuperar o caminho.';
+  if (line) line.textContent = 'Um personagem teve um erro de movimento; os camponeses seguem por uma rota de recuperação.';
 }
 function animateActors(now) {
+  if (!game.running) { lastActorFrame = now; return; }
   const delta = Math.min(0.05, lastActorFrame ? (now - lastActorFrame) / 1000 : 0) * state.speed;
   lastActorFrame = now;
-  if (!game.running) { requestAnimationFrame(animateActors); return; }
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
   [...state.heroes, ...state.workers].filter(actor => actor.alive).forEach(actor => {
     try {
     if (actor.className !== 'Peasant' && window.Monarch?.chargeStep(actor, delta, reducedMotion)) return;
@@ -2857,9 +2856,17 @@ function animateActors(now) {
     actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
     } catch (error) {
       actor.route = [];
-      actor.finalPoint = null;
       actor.wait = 0;
       actor.goal = null;
+      if (actor.className === 'Peasant') {
+        // Keep a failed peasant AI from freezing the visible villager in place.
+        // Walk to the next connected road node; normal job logic resumes there.
+        const node = PATH_NODES[nearestNode(actor)];
+        const next = node?.links?.[0];
+        actor.finalPoint = next == null ? null : { x: PATH_NODES[next].x, y: PATH_NODES[next].y };
+      } else {
+        actor.finalPoint = null;
+      }
       reportActorMovementError(error);
     }
   });
@@ -2878,7 +2885,6 @@ function animateActors(now) {
   });
   try { window.Monarch?.step(delta, reducedMotion); } catch (error) { reportActorMovementError(error); }
   try { renderHeroes(); } catch (error) { reportActorMovementError(error); }
-  requestAnimationFrame(animateActors);
 }
 
 function tick() {
@@ -7143,7 +7149,7 @@ function init() {
   renderSites(); renderHeroes(); renderPanel(); updateHud();
   initEditor();
   setInterval(tick, 1000);
-  requestAnimationFrame(animateActors);
+  setInterval(() => animateActors(performance.now()), 50);
   initMenus();
 }
 
