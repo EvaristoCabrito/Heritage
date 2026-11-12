@@ -470,11 +470,18 @@ function switchMap(name) {
   button.setAttribute('aria-label', button.title);
   camera.x = 0.5;
   camera.y = 0;
+  state.selectedSite = null;
+  state.demolishArmed = null;
+  selectedLairId = null;
   sizeWorld();
   renderCamera();
   renderLairs();
   renderHeroes();
+  renderPlaces();
+  renderFishingSpots();
   renderSites();
+  renderPanel();
+  updateHud();
   updateManorInventoryTrigger();
 }
 
