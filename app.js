@@ -22,7 +22,7 @@ const BUILDINGS = [
   { id: 'armory', name: 'Arsenal do Domínio', glyph: 'E', cost: 165, wood: 9, detail: 'Heróis e camponeses compram equipamento aqui com o próprio ouro. O ouro vem pro cofre.', gold: 0.15, grain: 0, people: 0 },
 ];
 BUILDINGS.find(building => building.id === 'lumber').detail += ' Pode ser construida em City ou Wilds.';
-BUILDINGS.find(building => building.id === 'quarry').detail += ' Uma pedreira inicial de baixa reserva em City; em Wilds, pedreiras livres nos depósitos marcados.';
+BUILDINGS.find(building => building.id === 'quarry').detail += ' O prédio é o local de extração. City permite uma pedreira de baixa reserva; Wilds não tem limite.';
 BUILDINGS.find(building => building.id === 'mine').detail += ' Apenas em Wilds, no deposito de metais marcado.';
 const FARM_TYPES = [
   // grain: produção por segundo nos níveis 1, 2 e 3 da fazenda.
@@ -832,7 +832,7 @@ function ensureStoneDeposit(place, mapSet = currentMapSet) {
 }
 function stoneDepositForPit(pit) {
   if (!pit?.resourcePlaceId) return null;
-  const place = extractionPlaces('quarry', pit.mapId || 'wilds', pit.mapSet || 2).find(item => String(item.id) === String(pit.resourcePlaceId)) || { id: pit.resourcePlaceId, x: pit.x, y: pit.y };
+  const place = { id: pit.resourcePlaceId, x: pit.x, y: pit.y, initialUnits: pit.quarryInitialUnits ?? ((pit.mapId || 'wilds') === 'city' ? 2400 : 20000) };
   return ensureStoneDeposit(place, pit.mapSet || currentMapSet);
 }
 function selectedQuarryFace(pit) {
@@ -1570,12 +1570,10 @@ function renderLairs() {
 }
 
 function extractionPlaces(type, mapId = currentMap, mapSet = currentMapSet) {
+  if (type === 'quarry') return [];
   const marked = (worldScenario?.places || []).filter(place => place.type === type)
     .map(place => ({ ...place, mapId: place.mapId || 'wilds' }))
     .filter(place => place.mapId === mapId);
-  if (type === 'quarry' && mapId === 'city') {
-    return [marked.find(place => place.mapId === 'city') || { id: `city-${mapSet}-starter-stone-quarry`, type: 'quarry', mapId: 'city', x: 68, y: 14, initialUnits: 2400 }];
-  }
   if (marked.length) return marked.map(place => type === 'mine' ? { ...place, rank: METAL_DEPOSIT_RANKS.some(rank => rank.id === place.rank) ? place.rank : 'II' } : place);
   // Esses pontos ja estao pintados no mapa dos Wilds; servem mesmo sem marcador do editor.
   const defaults = {
@@ -1605,11 +1603,11 @@ function placementProblem(x, y, ignoreSite = null) {
   if (type === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city' && building.site !== ignoreSite)) return 'City permite apenas uma pedreira.';
   if (type && !['mine', 'quarry', 'lumber'].includes(type) && currentMap !== 'city') return 'Esta constru\u00e7\u00e3o s\u00f3 pode ser erguida em City.';
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
-  if (type === 'mine' || type === 'quarry') {
+  if (type === 'mine') {
     const deposits = extractionPlaces(type);
-    if (!deposits.length) return type === 'mine' ? 'Este mapa n\u00e3o tem um dep\u00f3sito de metal marcado.' : 'Este mapa n\u00e3o tem um dep\u00f3sito de pedra marcado.';
+    if (!deposits.length) return 'Este mapa n\u00e3o tem um dep\u00f3sito de metal marcado.';
     const deposit = deposits.find(place => Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5);
-    if (!deposit) return type === 'mine' ? 'Construa junto ao dep\u00f3sito de metais marcado no mapa.' : 'Construa junto ao dep\u00f3sito de pedra marcado no mapa.';
+    if (!deposit) return 'Construa junto ao dep\u00f3sito de metais marcado no mapa.';
   }
   const crowded = state.buildings.some(building => building.site !== ignoreSite && (building.mapId || 'city') === currentMap && (building.mapSet || 1) === currentMapSet && Math.hypot(building.x - x, (building.y - y) * Y_TO_X_SCALE) < BUILD_SPACING);
   if (crowded) return 'Encostado demais em outra construção.';
@@ -1890,8 +1888,9 @@ const BUILD_CATEGORIES = [
   { id: 'guilds', name: 'Guildas', types: ['warrior', 'archer', 'lancer', 'conjurer', 'healer', 'armory', 'tavern', 'hotel'] },
 ];
 const buildCardHTML = item => {
-  const blocked = (['mine', 'quarry'].includes(item.id) && currentMap !== 'wilds') || (!['mine', 'quarry', 'lumber'].includes(item.id) && currentMap !== 'city');
-  const reason = blocked ? ['mine', 'quarry'].includes(item.id) ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.detail;
+  const cityQuarryExists = item.id === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city');
+  const blocked = (item.id === 'mine' && currentMap !== 'wilds') || (!['mine', 'quarry', 'lumber'].includes(item.id) && currentMap !== 'city') || cityQuarryExists;
+  const reason = cityQuarryExists ? 'A única pedreira de City já foi construída.' : blocked ? item.id === 'mine' ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.id === 'quarry' && currentMap === 'city' ? 'Pedreira inicial de baixa reserva · City permite uma; Wilds não tem limite.' : item.detail;
   return `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira" title="${reason}" ${blocked ? 'disabled aria-disabled="true"' : ''}>
         <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${reason}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`;
 };
@@ -2234,15 +2233,16 @@ function placeBuilding(x, y) {
   state.gold -= item.cost;
   state.timber -= item.wood;
   const site = state.nextBuildingId++;
-  const resourcePlace = ['mine', 'quarry'].includes(item.id) ? extractionPlaces(item.id).find(place => Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5) : null;
-  const building = { site, mapId: currentMap, mapSet: currentMapSet, resourcePlaceId: resourcePlace?.id || null, depositRank: item.id === 'mine' ? (resourcePlace?.rank || (currentMapSet === 2 ? 'IV' : 'II')) : null, type: item.id, produce: ['bakery', 'blacksmith'].includes(item.id) ? (item.id === 'bakery' ? 'bread' : 'iron') : item.id === 'farm' ? state.selectedFarmType : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
+  const resourcePlace = item.id === 'mine' ? extractionPlaces(item.id).find(place => Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5) : null;
+  const quarryInitialUnits = currentMap === 'city' ? 2400 : 20000;
+  const building = { site, mapId: currentMap, mapSet: currentMapSet, resourcePlaceId: item.id === 'quarry' ? `quarry-${currentMapSet}-${site}` : resourcePlace?.id || null, quarryInitialUnits: item.id === 'quarry' ? quarryInitialUnits : undefined, depositRank: item.id === 'mine' ? (resourcePlace?.rank || (currentMapSet === 2 ? 'IV' : 'II')) : null, type: item.id, produce: ['bakery', 'blacksmith'].includes(item.id) ? (item.id === 'bakery' ? 'bread' : 'iron') : item.id === 'farm' ? state.selectedFarmType : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
   if (item.id === 'mine' && resourcePlace) {
     const deposit = ensureMineralDeposit(resourcePlace, currentMapSet);
     const starterIron = deposit.seams.find(seam => seam.mineral === 'iron' && seam.access === 'shallow');
     building.selectedSeamId = starterIron?.id || deposit.seams[0]?.id || null;
     building.stockGrams = 0;
-  } else if (item.id === 'quarry' && resourcePlace) {
-    const deposit = ensureStoneDeposit(resourcePlace, currentMapSet);
+  } else if (item.id === 'quarry') {
+    const deposit = stoneDepositForPit(building);
     building.quarryFaceId = deposit.faces[0]?.id || null;
     building.quarryOrder = 'rubble';
     quarryInventory(building);
@@ -6685,13 +6685,10 @@ function placeMarkerHTML(place, editable) {
 function renderPlaces() {
   const editing = editor.active && !editor.preview;
   let places = editor.active ? editor.places : worldScenario?.places || [];
-  places = places.filter(place => place.type !== 'quarry' || (place.mapId || 'wilds') === currentMap);
-  if (currentMap === 'city' && !places.some(place => place.type === 'quarry' && place.mapId === 'city')) {
-    places = [...places, { id: `city-${currentMapSet}-starter-stone-quarry`, type: 'quarry', mapId: 'city', x: 68, y: 14 }];
-  }
+  places = places.filter(place => place.type !== 'quarry');
   const layer = $('#poi-layer');
   layer.classList.toggle('editing', editing);
-  layer.innerHTML = places.map(place => placeMarkerHTML(place, editing && !(place.type === 'quarry' && place.id === `city-${currentMapSet}-starter-stone-quarry`))).join('');
+  layer.innerHTML = places.map(place => placeMarkerHTML(place, editing)).join('');
   // A sombra do objeto escolhido segue o mouse antes do clique: o preview de onde ele vai ficar.
   if (editing && editor.tool) layer.insertAdjacentHTML('beforeend', placeMarkerHTML({ id: 'ghost', type: editor.tool, x: -50, y: -50 }, false).replace('class="poi ', 'class="poi ghost '));
 }
