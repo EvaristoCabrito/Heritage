@@ -111,7 +111,8 @@ const BLACKSMITH_RECIPES = [
   { id: 'charcoal', name: 'Queimar carvão vegetal', needs: { timber: 10 }, makes: { charcoal: 2 }, fuel: 0, work: 60, minLevel: 1 },
 ];
 const METAL_STOCK = ['ironOre', 'copperOre', 'arsenicalCopperOre', 'tinOre', 'nativeCopper', 'meteoriteFragments', 'silverOre', 'goldOre', 'iron', 'steel', 'crucibleSteel', 'castIron', 'copper', 'arsenicalCopper', 'tin', 'bronze', 'meteoriteIron', 'silver', 'gold'];
-const METAL_NAMES = { ironOre: 'Rocha hematítica (kg)', copperOre: 'Rocha malaquítica (kg)', arsenicalCopperOre: 'Minério regional de cobre arsenical (kg)', tinOre: 'Cassiterita (kg)', nativeCopper: 'Cobre nativo preparado (kg)', meteoriteFragments: 'Fragmentos de meteorito (kg)', silverOre: 'Galena argentífera (kg)', goldOre: 'Quartzo aurífero (kg)', iron: 'Ferro trabalhado (kg)', steel: 'Aço para corte (kg)', crucibleSteel: 'Aço de cadinho (kg)', castIron: 'Ferro fundido (kg)', copper: 'Cobre (kg)', arsenicalCopper: 'Cobre arsenical (kg)', tin: 'Estanho (kg)', bronze: 'Bronze (kg)', meteoriteIron: 'Ferro meteórico (kg)', silver: 'Prata (kg)', gold: 'Ouro (kg)', charcoal: 'Carvão vegetal (kg)', timber: 'Madeira' };
+const ORE_STOCK = new Set(['ironOre', 'copperOre', 'arsenicalCopperOre', 'tinOre', 'nativeCopper', 'meteoriteFragments', 'silverOre', 'goldOre']);
+const METAL_NAMES = { ironOre: 'Rocha hematítica (kg)', copperOre: 'Rocha malaquítica (kg)', arsenicalCopperOre: 'Minério regional de cobre arsenical (kg)', tinOre: 'Cassiterita (kg)', nativeCopper: 'Fragmentos de cobre nativo (kg)', meteoriteFragments: 'Fragmentos de meteorito (kg)', silverOre: 'Galena argentífera (kg)', goldOre: 'Quartzo aurífero (kg)', iron: 'Ferro trabalhado (kg)', steel: 'Aço para corte (kg)', crucibleSteel: 'Aço de cadinho (kg)', castIron: 'Ferro fundido (kg)', copper: 'Cobre (kg)', arsenicalCopper: 'Cobre arsenical (kg)', tin: 'Estanho (kg)', bronze: 'Bronze (kg)', meteoriteIron: 'Ferro meteórico (kg)', silver: 'Prata (kg)', gold: 'Ouro (kg)', charcoal: 'Carvão vegetal (kg)', timber: 'Madeira' };
 const metalStockTotal = () => METAL_STOCK.reduce((sum, id) => sum + (state.metals?.[id] || 0), 0);
 const metalStorageUnits = () => metalStockTotal() / 100;
 const blacksmithRate = building => BLACKSMITH_RATE[producerLevel(building)];
@@ -298,7 +299,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.8';
+const GAME_VERSION = 'Version 0.13.9';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -336,7 +337,7 @@ const WORKER_START_PURSE = 5;
 const HERO_START_PURSE = 15;
 function newGameState(heir = null) {
   return {
-    gold: 240, grain: 58, timber: 30, stone: 0, marble: 0, stoneDeposits: {}, quarryMaterials: { wallingKg: 0, lintels: [], dimensionBlocks: [], aggregateKg: 0, settsKg: 0, roofingSlateKg: 0, roofingSlatesKg: 0, millstones: [], quicklimeKg: 0, limePuttyKg: 0, mortarKg: 0, plasterKg: 0 }, metal: 0, charcoal: 0, metals: Object.fromEntries(METAL_STOCK.map(id => [id, 0])), craftedWeapons: [], oreGrades: {}, mineralDeposits: {}, residues: {}, extractionTools: [
+  gold: 240, grain: 58, timber: 30, stone: 0, marble: 0, stoneDeposits: {}, quarryMaterials: { wallingKg: 0, lintels: [], dimensionBlocks: [], aggregateKg: 0, settsKg: 0, roofingSlateKg: 0, roofingSlatesKg: 0, millstones: [], quicklimeKg: 0, limePuttyKg: 0, mortarKg: 0, plasterKg: 0 }, metal: 0, charcoal: 0, metals: Object.fromEntries(METAL_STOCK.map(id => [id, 0])), craftedWeapons: [], oreLots: [], oreGrades: {}, mineralDeposits: {}, residues: {}, extractionTools: [
       { id: 'starter-iron-pick-1', type: 'mine', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-iron-pick-2', type: 'mine', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-1', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
@@ -546,7 +547,11 @@ function renderManorInventory() {
   const used = storedUnits();
   const items = (state.items || []).map(id => { const item = craftedWeapon(id); return [item?.name || String(id), 1, item ? `Forjada · ${WEAPON_MATERIAL_LABELS[item.materialId]} · estrutura ${formatMass(item.structuralCondition)}/${formatMass(item.structuralMax)}${item.sharp ? ` · gume ${formatMass(item.edgeCondition)}/${formatMass(item.edgeMax)}` : ''}` : 'Arma ou item']; });
   const foodRows = FOOD_TYPES.map(food => [food.name, state.food?.[food.id] || 0, food.raw ? 'Matéria-prima' : food.baked || food.meat ? 'Produzido no domínio' : 'Provisão']);
-  const metalRows = METAL_STOCK.map(id => [METAL_NAMES[id], state.metals?.[id] || 0, id.endsWith('Ore') ? 'Rocha bruta entregue do posto' : 'Metal manufaturado', formatMetalAmount(id, state.metals?.[id] || 0)]);
+  const metalRows = METAL_STOCK.map(id => {
+    const lots = (state.oreLots || []).filter(lot => lot.id === id && lot.quantityKg > 1e-6);
+    const source = ORE_STOCK.has(id) ? (lots.length ? lots.map(lot => `${oreName(lot.mineral)} · ${formatMass(lot.quantityKg)} kg · ${lot.gradePpm} ppm · veio ${lot.seamId || 'local'}`).join(' / ') : 'Rocha ou achado entregue do posto') : 'Metal manufaturado';
+    return [METAL_NAMES[id], state.metals?.[id] || 0, source, formatMetalAmount(id, state.metals?.[id] || 0)];
+  });
   const remainsRows = REMAINS_GRADES.map(grade => [`Dead Remains ${grade.id}`, state.remains?.[grade.id] || 0, 'Guardado · matéria-prima do Laboratório de Ember']);
   const workRows = state.buildings.filter(isDone).flatMap(building => {
     const name = buildingName(building);
@@ -832,13 +837,13 @@ function makeMineralDeposit(place, mapSet) {
     const spec = MINERAL_SEAMS.tin, reserveKg = 600000;
     seams.push({ id: `${key}:authored:tin`, mineral: 'tin', rock: spec.rock, occurrence: 'ore-lot', access: 'shallow', x: place.x, y: place.y, initialGrams: reserveKg * 1000, remainingGrams: reserveKg * 1000, gradePpm: spec.assayPpm, authored: true });
   }
-  if (authored) {
+  if (authored && String(place.id) === String(tinSourceId)) {
     const authoredRegional = [
-      ['arsenicalCopper', 300000, 35000], ['nativeCopper', 40000, 1000000], ['meteorite', 4000, 1000000],
+      ['arsenicalCopper', 300000, 35000, -1, 0], ['nativeCopper', 40000, 1000000, 1, 0], ['meteorite', 4, 1000000, 0, 1],
     ];
-    authoredRegional.forEach(([mineral, reserveKg, gradePpm]) => {
+    authoredRegional.forEach(([mineral, reserveKg, gradePpm, dx, dy]) => {
       const spec = MINERAL_SEAMS[mineral];
-      seams.push({ id: `${key}:authored:${mineral}`, mineral, rock: spec.rock, occurrence: spec.find ? 'metallic-find' : 'ore-lot', access: 'shallow', x: place.x, y: place.y, initialGrams: reserveKg * 1000, remainingGrams: reserveKg * 1000, gradePpm, authored: true });
+      seams.push({ id: `${key}:authored:${mineral}`, mineral, rock: spec.rock, occurrence: spec.find ? 'metallic-find' : 'ore-lot', access: 'shallow', x: place.x + dx, y: place.y + dy, initialGrams: reserveKg * 1000, remainingGrams: reserveKg * 1000, gradePpm, authored: true });
     });
   }
   return { id: key, mapSet, markerId: String(place.id), x: place.x, y: place.y, seams };
@@ -1150,6 +1155,18 @@ function addMetalStock(id, amount) {
   state.metals[id] = (state.metals[id] || 0) + added;
   if (added < amount && !state.storageWarned) { state.storageWarned = true; say('O depósito está cheio. A carga ficou aguardando em vez de se perder.'); }
   return added;
+}
+function consumeOreLots(id, amount) {
+  const lots = state.oreLots || (state.oreLots = []);
+  let remaining = amount, gradeTotal = 0, consumed = 0;
+  for (let i = 0; i < lots.length && remaining > 1e-9; i++) {
+    const lot = lots[i];
+    if (lot.id !== id || lot.quantityKg <= 0) continue;
+    const take = Math.min(remaining, lot.quantityKg);
+    gradeTotal += take * lot.gradePpm; consumed += take; remaining -= take; lot.quantityKg -= take;
+  }
+  for (let i = lots.length - 1; i >= 0; i--) if (lots[i].quantityKg <= 1e-9) lots.splice(i, 1);
+  return consumed > 1e-9 ? gradeTotal / consumed : null;
 }
 function advanceMines(dt) {
   state.buildings.filter(building => building.type === 'quarry' && isDone(building)).forEach(pit => {
@@ -2054,6 +2071,7 @@ function buildingInfoHTML(building, actions = '') {
     const recipe = blacksmithRecipe(building);
     lines.push(['Produz', `${rateNumber(blacksmithRate(building))} ${recipe.name} por segundo`]);
     lines.push(['Receita', `${Object.entries(recipe.needs).map(([id, qty]) => `${qty} ${METAL_NAMES[id]}`).join(' + ')} → ${Object.entries(recipe.makes).map(([id, qty]) => `${qty} ${METAL_NAMES[id]}`).join(' + ')}`]);
+    if (building.weaponStatus) lines.push(['Forja e reparos', building.weaponStatus]);
     lines.push(['Metais guardados', METAL_STOCK.map(id => `${formatMetalAmount(id, state.metals[id] || 0)} ${METAL_NAMES[id]}`).join(' · ')]);
     if (crewWork(building)) lines.push(['Ofício', `+${Math.round(crewWork(building) * 100)}% de produção`]);
     lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
@@ -3381,7 +3399,7 @@ const WEAPON_PATTERNS = [
 ];
 const WEAPON_MATERIAL_LABELS = { copper: 'Cobre', arsenicalCopper: 'Cobre arsenical', bronze: 'Bronze', iron: 'Ferro trabalhado', castIron: 'Ferro fundido', steel: 'Aço', steelEdge: 'Ferro trabalhado com gume de aço', crucibleSteel: 'Aço de cadinho', meteoriteIron: 'Ferro meteórico' };
 const weaponPattern = id => WEAPON_PATTERNS.find(item => item.id === id) || WEAPON_PATTERNS[0];
-const weaponMinLevel = material => ['steel', 'castIron', 'crucibleSteel', 'meteoriteIron'].includes(material) ? 2 : 1;
+const weaponMinLevel = material => ['steel', 'steelEdge', 'castIron', 'crucibleSteel', 'meteoriteIron'].includes(material) ? 2 : 1;
 function weaponDesign(patternId, materialId) {
   const pattern = weaponPattern(patternId), materials = pattern.designs[materialId];
   if (!materials) return null;
@@ -3997,7 +4015,7 @@ function processMetalworks(dt) {
       building.weaponStatus = `Forjando ${design.name} · ${Math.floor(job.elapsed)}/${job.required} min`;
       if (job.elapsed < job.required || storedUnits() + 1 > storageCap() + 1e-6) return;
       const base = GEAR[design.pattern.base], bodyProfile = METAL_WEAPON_PROFILE[design.body], edgeProfile = METAL_WEAPON_PROFILE[design.edge || design.body];
-      const weapon = { id: `forged-${building.site}-${state.ticks}`, name: design.name, crafted: true, slot: 'weapon', tier: 1, price: 0, classes: design.pattern.classes, bonus: { ...base.bonus }, about: `Forjada de ${WEAPON_MATERIAL_LABELS[design.materialId]}. Condição depende da estrutura e do gume.`,
+      const weapon = { id: `forged-${building.site}-${state.ticks}`, name: design.name, crafted: true, slot: 'weapon', tier: 1, price: 0, classes: design.pattern.classes, bonus: { ...base.bonus }, about: `Corpo: ${METAL_NAMES[design.body]}${design.pattern.sharp ? ` · gume/ponta: ${METAL_NAMES[design.edge]}` : ''}. Forjada de ${WEAPON_MATERIAL_LABELS[design.materialId]}.`,
         patternId: design.pattern.id, materialId: design.materialId, bodyMaterial: design.body, edgeMaterial: design.edge || design.body, sharp: design.pattern.sharp,
         structuralMultiplier: bodyProfile.structural, wearMultiplier: edgeProfile.wear, structuralMax: 100 * bodyProfile.structural, structuralCondition: 100 * bodyProfile.structural,
         edgeMax: 100, edgeCondition: design.pattern.sharp ? 100 : 0, location: 'inventory' };
@@ -4043,13 +4061,20 @@ function processMetalworks(dt) {
       const inputSpace = amounts.reduce((sum, [id, qty]) => sum + qty * scale / (id === 'timber' ? 1 : 100), 0) + recipe.fuel * scale / 100;
       const outputSpace = Object.entries(recipe.makes).reduce((sum, [id, qty]) => sum + qty * scale / (id === 'charcoal' ? 100 : 100), 0);
       if (storedUnits() - inputSpace + outputSpace > storageCap() + 1e-6) { building.metalStatus = 'Depósito cheio'; return; }
-      amounts.forEach(([id, qty]) => { if (id === 'timber') state.timber -= qty * scale; else state.metals[id] -= qty * scale; });
+      const consumedAssays = {};
+      amounts.forEach(([id, qty]) => {
+        if (id === 'timber') state.timber -= qty * scale;
+        else {
+          state.metals[id] -= qty * scale;
+          if (ORE_STOCK.has(id)) consumedAssays[id] = consumeOreLots(id, qty * scale);
+        }
+      });
       state.charcoal = (state.charcoal || 0) - recipe.fuel * scale;
       const output = Object.fromEntries(Object.entries(recipe.makes).map(([id, qty]) => [id, qty * scale]));
       if (recipe.assay) {
         const oreId = Object.keys(recipe.needs)[0];
         const rawKg = recipe.needs[oreId] * scale;
-        const assayPpm = state.oreGrades[oreId] || recipe.assay;
+        const assayPpm = consumedAssays[oreId] || state.oreGrades[oreId] || recipe.assay;
         output[Object.keys(recipe.makes)[0]] = rawKg * assayPpm / 1000000 * recipe.recovery;
       }
       job = building.metalJob = { id: `metal-job-${building.site}-${state.ticks}`, recipeId: recipe.id, elapsed: 0, required: recipe.work * scale, output, scale, residue: recipe.residue ? recipe.needs[Object.keys(recipe.needs)[0]] * scale : 0 };
@@ -4268,7 +4293,7 @@ function pitRoutine(actor, pit) {
   if (loadGrams > 0) {
     pit.stockGrams -= loadGrams;
     tool.durability = Math.max(0, tool.durability - loadGrams / 20000);
-    actor.carrying = { ore: MINERAL_SEAMS[seam.mineral]?.id || 'ironOre', mineral: seam.mineral, occurrence: seam.occurrence || 'ore-lot', qtyGrams: loadGrams, assayPpm: seam.gradePpm, fromPit: pit.site };
+    actor.carrying = { ore: MINERAL_SEAMS[seam.mineral]?.id || 'ironOre', mineral: seam.mineral, seamId: seam.id, occurrence: seam.occurrence || 'ore-lot', qtyGrams: loadGrams, assayPpm: seam.gradePpm, fromPit: pit.site };
     actor.task = `Levando ${(loadGrams / 1000).toFixed(1)} kg de ${oreName(seam.mineral)}`;
     gainTrade(actor, pit.type); travelToMap(actor, 'city', pit.mapSet || 2); return;
   }
@@ -4308,6 +4333,7 @@ function deliverLoad(actor) {
     state.oreGrades ||= {};
     if (acceptedKg > 0 && !MINERAL_SEAMS[load.mineral]?.find) state.oreGrades[load.ore] = ((state.oreGrades[load.ore] || load.assayPpm || MINERAL_SEAMS[load.mineral].assayPpm) * oldKg + (load.assayPpm || MINERAL_SEAMS[load.mineral].assayPpm) * acceptedKg) / (oldKg + acceptedKg);
     state.metals[load.ore] = (state.metals[load.ore] || 0) + acceptedKg;
+    if (acceptedKg > 0) { state.oreLots ||= []; state.oreLots.push({ id: load.ore, mineral: load.mineral, seamId: load.seamId || null, sourcePit: load.fromPit, occurrence: load.occurrence || 'ore-lot', quantityKg: acceptedKg, gradePpm: load.assayPpm || MINERAL_SEAMS[load.mineral].assayPpm }); }
     if (acceptedKg < amountKg - 1e-6) {
       const pit = state.buildings.find(building => building.site === load.fromPit && building.type === 'mine');
       if (pit) pit.stockGrams = (pit.stockGrams || 0) + Math.round((amountKg - acceptedKg) * 1000);
@@ -4425,7 +4451,7 @@ function weaponOrderBoxHTML(building) {
   return `<section class="inspector-section" aria-label="Ordens de armas"><h4>Forjar arma</h4>
     <label class="pit-hint">Padrão <select data-weapon-pattern="${building.site}">${WEAPON_PATTERNS.map(item => `<option value="${item.id}"${item.id === pattern.id ? ' selected' : ''}>${item.name}</option>`).join('')}</select></label>
     <label class="pit-hint">Material e construção <select data-weapon-material="${building.site}">${materials.map(id => `<option value="${id}"${id === materialId ? ' selected' : ''}>${WEAPON_MATERIAL_LABELS[id]}</option>`).join('')}</select></label>
-    <p class="pit-hint">${design.name} · custo ${Object.entries(design.needs).map(([id, qty]) => `${qty} ${id === 'timber' ? 'madeira' : METAL_NAMES[id]}`).join(' + ')} · Blacksmith nível ${weaponMinLevel(materialId)}${locked ? ' · bloqueado' : ''}<br>Estrutura ${Math.round(bodyProfile.structural * 100)} · desgaste ${pattern.sharp ? `gume/ponta ×${edgeProfile.wear}` : 'estrutural'} · ataque ${bonusText(base.bonus)}${missing.length ? `<br><b>Falta: ${missing.map(([id, qty]) => `${formatMass(Math.max(0, qty - (id === 'timber' ? state.timber : state.metals[id] || 0)))} ${id === 'timber' ? 'madeira' : METAL_NAMES[id]}`).join(' · ')}</b>` : ''}</p>
+    <p class="pit-hint">${design.name} · corpo: ${METAL_NAMES[design.body]}${pattern.sharp ? ` · gume/ponta: ${METAL_NAMES[design.edge]}` : ''} · custo ${Object.entries(design.needs).map(([id, qty]) => `${qty} ${id === 'timber' ? 'madeira' : METAL_NAMES[id]}`).join(' + ')} · Blacksmith nível ${weaponMinLevel(materialId)}${locked ? ' · bloqueado' : ''}<br>Estrutura ${Math.round(bodyProfile.structural * 100)} · desgaste ${pattern.sharp ? `gume/ponta ×${edgeProfile.wear}` : 'estrutural'} · ataque ${bonusText(base.bonus)}${missing.length ? `<br><b>Falta: ${missing.map(([id, qty]) => `${formatMass(Math.max(0, qty - (id === 'timber' ? state.timber : state.metals[id] || 0)))} ${id === 'timber' ? 'madeira' : METAL_NAMES[id]}`).join(' · ')}</b>` : ''}</p>
     <p class="pit-hint">Fila: ${work}</p>
     ${occupied ? `<button type="button" class="hut-upgrade" data-cancel-weapon-order="${building.site}">Cancelar ordem · devolver insumos</button>` : `<button type="button" class="hut-upgrade" data-place-weapon-order="${building.site}" ${missing.length || locked ? 'disabled' : ''}>Encomendar ${design.name}</button>`}
     <h4>Reparos do arsenal</h4>${weaponRows}</section>`;
@@ -6089,7 +6115,10 @@ const HOWTO = [
     <p>O minério chega à City como rocha bruta. Carvão vegetal: 10 kg de madeira → 2 kg de carvão em 60 minutos de trabalho.</p>
     <h3>Blacksmith · receitas de referência</h3>
     ${howTable(['Operação', 'Entrada', 'Saída de metal', 'Carvão', 'Trabalho'], BLACKSMITH_RECIPES.map(recipe => [recipe.name, `${Object.entries(recipe.needs).map(([id, qty]) => `${formatMass(qty)} ${METAL_NAMES[id] || id}`).join(' + ')}`, `${Object.entries(recipe.makes).map(([id, qty]) => `${formatMetalAmount(id, qty)}`).join(' + ')}`, `${formatMass(recipe.fuel)} kg`, `${recipe.work} min`]))}
-    <p>As receitas consomem a rocha disponível em lotes proporcionais e usam o teor do veio. O material e a saída de cada ordem ficam gravados no save.</p>` },
+    <p>Cassiterita já tem um veio garantido no primeiro posto das Wilds. O cobre nativo e os fragmentos de meteorito passam por preparação; o cobre arsenical vem de um veio regional próprio. Cada carga mantém a origem e o teor, e ferramentas só alteram ritmo e desgaste.</p>
+    <h3>Armas e manutenção</h3>
+    <p>No inspetor do Blacksmith na City, escolha o padrão e depois o metal ou construção. A prévia mostra custo, estoque que falta, bônus do padrão, durabilidade estrutural e desgaste do gume. A ordem reserva metal e madeira, entra na fila após a receita em andamento e entrega a peça ao inventário do casarão. Abra a ficha de um herói para equipar uma arma forjada compatível. O Blacksmith repara separadamente estrutura e gume: cada reparo usa 0,25 kg do material daquela parte; cancelar devolve os insumos reservados.</p>
+    <p>Bronze: 4 kg de cobre + 1 kg de estanho → 5 kg. Aço de cadinho: 4 kg de ferro trabalhado + 1 kg de carvão → 3 kg. Machados de corpo de ferro com gume de aço guardam os dois materiais e permitem reparar cada parte com o estoque correspondente.</p>` },
   { title: 'Tempo', html: () => `
     <h3>Relógio</h3>
     <p>Na velocidade <b>1×</b>, cada segundo real é um minuto de jogo. Em <b>2×</b> e <b>3×</b> tudo anda duas ou três vezes mais rápido: produção, obras, fome, viagens. Todo valor "por segundo" deste manual é na velocidade 1×.</p>
