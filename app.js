@@ -314,8 +314,9 @@ if (!['dark', 'color'].includes(options.buildingArtStyle)) options.buildingArtSt
 const debug = readStore(DEBUG_KEY, { startingStock: 'standard' });
 if (!['standard', 'full'].includes(debug.startingStock)) debug.startingStock = debug.testMode ? 'full' : 'standard';
 delete debug.testMode;
-// Estoque de teste: só quantidade, concedida ao entrar numa partida. O resto do jogo não sabe que ele existe.
-const TEST_STOCK = { gold: 1e9, timber: 1e9 };
+// Estoque de teste: só quantidade. Reposto ao entrar na partida e a cada segundo; os custos são cobrados normalmente,
+// o saldo só não acaba. Pedra fica em 40 kg (o maior gasto é 20) porque ocupa o depósito. O resto do jogo não sabe que ele existe.
+const TEST_STOCK = { gold: 1e9, timber: 1e9, stone: 40 };
 function grantStartingStock(target) {
   if (debug.startingStock !== 'full') return;
   Object.entries(TEST_STOCK).forEach(([id, qty]) => { target[id] = Math.max(target[id] || 0, qty); });
@@ -2911,6 +2912,7 @@ function animateActors(now) {
 
 function tick() {
   if (!game.running) return;
+  grantStartingStock(state);
   state.ticks++;
   state.playSeconds = (state.playSeconds || 0) + 1;
   if (options.autosave && state.playSeconds % (options.autosave * 60) === 0) writeSave(game.slot);
@@ -6349,7 +6351,7 @@ const SCREENS = {
     return { cls: menuMode(), html: `<section class="menu-card">
       <header class="menu-card-head"><span class="eyebrow">AJUSTES DE INÍCIO</span><h2>Estoque e saves</h2><p>A quantidade inicial não altera as regras da partida.</p></header>
       <div class="option-list">
-        <div class="option-row"><div><b>Estoque inicial</b><small>Alto concede 1 bilhão de ouro e de madeira em qualquer partida, inclusive na que já está aberta. Os custos e consumos continuam normais.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
+        <div class="option-row"><div><b>Estoque inicial</b><small>Alto mantém ouro e madeira em 1 bilhão e a pedra em 40 kg, repostos a cada segundo, em qualquer partida. Os custos são cobrados normalmente; o saldo só não acaba.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
         <div class="option-row"><div><b>Apagar todos os saves</b><small>Remove os ${SAVE_SLOTS} slots deste navegador.</small></div><button type="button" class="danger small" data-action="wipe" ${used ? '' : 'disabled'}>Apagar</button></div>
       </div>
       <dl class="debug-info"><div><dt>Versão</dt><dd>${GAME_VERSION}</dd></div><div><dt>Slots usados</dt><dd>${used} / ${SAVE_SLOTS}</dd></div><div><dt>Jogo aberto</dt><dd>${game.slot ? `Slot ${game.slot}` : 'Nenhum'}</dd></div></dl>
