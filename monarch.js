@@ -42,10 +42,11 @@ const Monarch = (() => {
 
   // ----- Nível, ranks e números de cada magia -----
   const level = () => Math.max(1, Math.min(DATA.maxLevel, state.heirLevel || 1));
-  const heirStat = key => { const stat = HEIR_STATS.find(item => item.key === key); return stat ? stat.base + stat.per * (level() - 1) : 0; };
-  const mag = () => heirStat('MAG');
-  // Atributo do nível mais o do equipamento.
+  const heirStat = key => { const stat = HEIR_STATS.find(item => item.key === key); return stat ? stat.base + (state.heirAttributes?.[key] || 0) * stat.pointsValue : 0; };
+  // Atributo distribuído mais os bônus do equipamento.
   const statTotal = key => heirStat(key) + (typeof monarchBonus === 'function' ? monarchBonus(key) : 0);
+  const mag = () => statTotal('MAG');
+  const auraPotency = () => 1 + statTotal('CHA') * 0.005;
   // Recuperação de MP por segundo reduzida pela metade; em combate, metade da taxa fora de combate.
   // Nível 1 (WIS 7, INT 9) ~0,53 MP/s; nível 30 (WIS 65, INT 67) ~4,6 MP/s.
   const mpRegen = (fighting = false) => (statTotal('WIS') * 0.10 + statTotal('INT') * 0.04) * 0.5 * (fighting ? 0.5 : 1);
@@ -72,7 +73,16 @@ const Monarch = (() => {
   }
   const effects = spell => {
     const cacheKey = `fx:${spell.key}:${level()}`;
-    if (!rt.cache.has(cacheKey)) rt.cache.set(cacheKey, scaleDurations(spell.ranks[Math.max(0, rankIndex(spell))].effects, spell));
+    if (!rt.cache.has(cacheKey)) {
+      const result = scaleDurations(spell.ranks[Math.max(0, rankIndex(spell))].effects, spell);
+      if (spell.activation === 'alternavel') {
+        const potency = auraPotency();
+        Object.keys(result).forEach(key => {
+          if (typeof result[key] === 'number' && (key.includes('Percent') || key.endsWith('Bonus'))) result[key] *= potency;
+        });
+      }
+      rt.cache.set(cacheKey, result);
+    }
     return rt.cache.get(cacheKey);
   };
   const unlockedSpells = () => SPELLS.filter(isUnlocked);
@@ -89,7 +99,8 @@ const Monarch = (() => {
   }
   const auraOn = key => !!state.monarch?.auras.includes(key) && isUnlocked(byKey[key]);
   const auraMult = () => (rt.majesty > 0 ? 2 : 1);
-  const maxMp = () => heirStat('MP');
+  // Sugestão aplicada: MP recebe metade da soma de INT e WIS, além do atributo MP.
+  const maxMp = () => statTotal('MP') + (statTotal('INT') + statTotal('WIS')) / 2;
   const reservedMp = () => (state.monarch?.auras || []).reduce((sum, key) => sum + (stats(byKey[key]).manaReservePercent || 0) / 100 * maxMp(), 0);
   const mpCap = () => Math.max(0, maxMp() - reservedMp());
   const mpBarPercent = (current, cap) => {
@@ -441,7 +452,7 @@ const Monarch = (() => {
     },
     'decreto-de-ferro'(spell, st, e) {
       const m = ms();
-      const value = Math.round(e.shieldBase + e.shieldPerLevel * level() + e.shieldMagPercent / 100 * mag());
+      const value = Math.round(e.shieldBase + e.shieldPerLevel * level());
       near(rt.allies, m.x, m.y, st.auraRadius).forEach(ally => {
         addFx(ally, 'shield', st.durationSeconds, { v: value, max: value, knock: e.breakKnockbackMeters || 0, heal: e.expireHealPercent || 0 });
         FX.flash(ally.x, ally.y - BODY, 2.6, C.steel, 0.4);
@@ -636,18 +647,18 @@ const Monarch = (() => {
     'fonte-da-vida': '❦', inferno: '♨', 'zero-absoluto': '❄', 'furia-dos-ceus': '⛈', eclipse: '◐', cataclismo: '☄', milagre: '✝',
   };
   const fieldUnlocked = spell => level() >= spell.unlockLevel;
-  const grow = (v, spell) => (v ? v.base + v.perLevel * Math.max(0, level() - spell.unlockLevel) + v.magPercent / 100 * mag() : 0);
+  const grow = (v, spell, usesMag = false) => (v ? v.base + v.perLevel * Math.max(0, level() - spell.unlockLevel) + (usesMag ? v.magPercent / 100 * mag() : 0) : 0);
   const r1 = v => Math.round(v * 10) / 10;
   function fieldNums(spell) {
     const n = {
-      dano: Math.round(grow(spell.damage, spell)), cura: Math.round(grow(spell.heal, spell)), raio: spell.radius || 0, duracao: spell.durationSeconds || 0,
+      dano: Math.round(grow(spell.damage, spell, true)), cura: Math.round(grow(spell.heal, spell)), raio: spell.radius || 0, duracao: spell.durationSeconds || 0,
       intervalo: spell.tickSeconds || 0, porTique: spell.hitsPerTick || 0, misseis: spell.missiles || 0, saltos: spell.jumps || 0, perda: spell.falloffPercent || 0,
       atordoa: spell.stunSeconds || 0, congela: spell.freezeSeconds || 0, empurra: spell.knockback || 0, dreno: spell.drainHealPercent || 0, atraso: spell.delaySeconds || 0,
       raios: spell.strikes || 0, raioImpacto: spell.impactRadius || 0, chanceCongelar: spell.freezeChancePercent || 0, vidaVolta: spell.reviveHpPercent || 0,
       curaPct: spell.healPercent || 0, execucao: spell.execute?.belowHpPercent || 0,
     };
-    if (spell.dot) { n.dotDps = grow(spell.dot.dps, spell); n.dotDuracao = spell.dot.durationSeconds; n.dotTotal = Math.round(n.dotDps * n.dotDuracao); }
-    if (spell.cloud) { n.cloudDps = grow(spell.cloud, spell); n.dps = r1(n.cloudDps); }
+    if (spell.dot) { n.dotDps = grow(spell.dot.dps, spell, true); n.dotDuracao = spell.dot.durationSeconds; n.dotTotal = Math.round(n.dotDps * n.dotDuracao); }
+    if (spell.cloud) { n.cloudDps = grow(spell.cloud, spell, true); n.dps = r1(n.cloudDps); }
     if (spell.hot) { n.hotHps = grow(spell.hot.hps, spell); n.hps = r1(n.hotHps); n.hotDuracao = spell.hot.durationSeconds; }
     if (spell.slow) { n.lentidao = spell.slow.percent; n.lentidaoDuracao = spell.slow.durationSeconds; }
     if (spell.weaken) { n.fraqueza = spell.weaken.damageDealtPercent; n.vulneravel = spell.weaken.damageTakenPercent; n.armadura = spell.weaken.armorPercent; n.fraquezaDuracao = spell.weaken.durationSeconds; }
@@ -2213,6 +2224,14 @@ const Monarch = (() => {
       button.classList.toggle('poor', !m.auras.includes(k) && m.mp < st.manaCost);
     });
   }
+  function attributesChanged() {
+    rt.cache.clear();
+    const m = ms();
+    m.mp = Math.min(mpCap(), Math.max(0, Number(m.mp) || 0));
+    renderPanel(false);
+    renderBar(false);
+    renderHotbar(false);
+  }
   function refreshCursor() {
     document.getElementById('map-scene')?.classList.toggle('monarch-aiming', !!rt.targeting);
     renderBar(false);
@@ -2258,7 +2277,7 @@ const Monarch = (() => {
   init();
   return {
     statMods, moveMul, attackRate, tauntTarget, allyTargets, blocksAttack, strikeBoost, adjustDamage, afterStrike, summonDied, enemyStep, chargeStep,
-    step, reset, sheetHTML, press, fieldPress, summons: () => rt.summons, isConverted: actor => !!actor?.mfx?.convert,
+    step, reset, sheetHTML, press, fieldPress, attributesChanged, summons: () => rt.summons, isConverted: actor => !!actor?.mfx?.convert,
     debug: { rt, stats, effects, byKey, fieldByKey, fieldNums, fieldText, fieldCast: (key, target) => fieldCast(fieldByKey[key], target), cast: key => cast(byKey[key], { x: ms().x, y: ms().y + 6, enemy: rt.enemies[0] }) },
   };
 })();
