@@ -181,6 +181,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .character::before { content: ''; position: absolute; left: 25%; bottom: 1%; width: 50%; height: 9%; border-radius: 50%; background: rgba(10,12,10,.42); filter: blur(3px); }
 .character-sprite { position: relative; display: block; width: 100%; aspect-ratio: 1; background-repeat: no-repeat; background-size: 400% 200%; background-position: var(--frame-x, 0%) 0%; transform: scaleX(var(--sprite-scale-x, 1)); }
 .character[data-facing="back"] .character-sprite { background-position-y: 100%; }
+.character[data-sheet="fight"][data-side="left"] .character-sprite { background-position-y: 100%; }
 .character[data-back-walk="true"] .character-sprite { width: 75%; aspect-ratio: 3 / 4; margin-inline: auto; background-size: 400% 100%; background-position-y: 0%; }
 .character-name { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); max-width: 90px; padding: 2px 4px; border: 1px solid rgba(220,196,147,.45); border-radius: 3px; color: #f1e7d2; background: rgba(17,20,16,.88); font-size: 8px; white-space: nowrap; opacity: 0; pointer-events: none; }
 .character.selected .character-name, .character:focus-visible .character-name { opacity: 1; }
