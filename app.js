@@ -2026,9 +2026,11 @@ function renderPanel() {
     host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
       ${bountyPanelHTML()}
       <div class="hero-list">${state.heroes.filter(h => h.alive).map(heroCard).join('') || '<div class="empty-state">Nenhum herói. Ninguém foi corajoso, ou burro, o bastante.<br>Construa uma taverna ou guilda.</div>'}</div>
-      <div class="panel-title worker-heading"><h3>Trabalhadores</h3><span>${state.workers.filter(worker => worker.alive).length} no domínio</span></div>
-      <div class="hero-list">${state.workers.filter(worker => worker.alive).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Até eles desistiram.<br>Construa um casebre.</div>'}</div>
       <p class="build-note">Você não manda nos heróis. Eles fazem o que querem.</p>`;
+  } else if (state.tab === 'workers') {
+    host.innerHTML = `<div class="panel-title"><h3>Ofícios dos camponeses</h3><span>${state.workers.filter(worker => worker.alive).length} no domínio</span></div>
+      <p class="build-note">Para iniciar a pesca, escolha <b>Pescador</b> no campo Ofício de um camponês. Ele vai sozinho para o riacho das Wilds, pesca Trutas e leva a carga ao depósito.</p>
+      <div class="hero-list">${state.workers.filter(worker => worker.alive).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Construa um casebre para receber trabalhadores.</div>'}</div>`;
   } else if (state.tab === 'food') {
     host.innerHTML = foodPanelHTML();
   } else if (state.tab === 'economy') {
@@ -2672,7 +2674,7 @@ function hireWorker(home, female) {
   state.workers.push(worker);
   renderHeroes();
   updateHud();
-  if (state.tab === 'heroes') renderPanel();
+  if (state.tab === 'heroes' || state.tab === 'workers') renderPanel();
   return worker;
 }
 
@@ -5276,7 +5278,8 @@ function killActor(victim, killer) {
       state.wildMeatPiles.push({ id: `wild-meat-dropped-${state.minutes}-${Math.floor(Math.random() * 9999)}`, food: victim.carrying.food, qty: victim.carrying.qty, mapId: victim.mapId || 'city', mapSet: victim.mapSet || 1, x: victim.x, y: victim.y });
       victim.carrying = null; renderLairs();
     }
-    say(`${victim.name} foi ${isFemalePeasant(victim) ? 'morta' : 'morto'}${killer?.className === 'Monster' ? ' por uma caveira' : ' por ladrões'}. ${pick(['Os outros pediram aumento.', 'A colheita atrasou.', 'Ele tinha nome. Ninguém lembra qual.'])}`);
+    const killerName = killer?.name || 'uma causa desconhecida';
+    say(`${victim.name} foi ${isFemalePeasant(victim) ? 'morta' : 'morto'} por ${killerName}. ${pick(['Os outros pediram aumento.', 'A colheita atrasou.', 'Ele tinha nome. Ninguém lembra qual.'])}`);
   } else {
     // Herói que morre carregando restos larga tudo no chão; outro herói vai buscar.
     if (victim.remains) {
@@ -5284,7 +5287,8 @@ function killActor(victim, killer) {
       victim.remains = null;
       renderLairs();
     }
-    say(pick(DEATH_MSG)(victim.name), `${victim.name} morreu lutando contra ladrões.`);
+    const killerName = killer?.name || 'uma causa desconhecida';
+    say(`${pick(DEATH_MSG)(victim.name)} Atacante: ${killerName}.`, `${victim.name} morreu pelas mãos de ${killerName}.`);
   }
   updateHud();
   if (state.tab === 'heroes') renderPanel();
@@ -5600,7 +5604,7 @@ function lairBountyStep(hero, bounty) {
   hero.wait = ATTACK_COOLDOWN; hero.actionTime = 0.5; hero.actionClock = 0;
   if (lairHp(lair) <= 0) destroyLair(lair, hero, bounty);
   renderLairs();
-  if (state.tab === 'heroes' && state.ticks % 3 === 0) renderPanel();
+  if ((state.tab === 'heroes' || state.tab === 'workers') && state.ticks % 3 === 0) renderPanel();
 }
 function destroyLair(lair, hero, bounty) {
   lair.active = false;
