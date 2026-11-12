@@ -46,9 +46,9 @@ const Monarch = (() => {
   const mag = () => heirStat('MAG');
   // Atributo do nível mais o do equipamento.
   const statTotal = key => heirStat(key) + (typeof monarchBonus === 'function' ? monarchBonus(key) : 0);
-  // Recuperação de MP por segundo: Sabedoria é a principal, Inteligência ajuda. Em combate, metade.
-  // Nível 1 (WIS 7, INT 9) ~1,1 MP/s; nível 30 (WIS 65, INT 67) ~9,2 MP/s.
-  const mpRegen = (fighting = false) => (statTotal('WIS') * 0.10 + statTotal('INT') * 0.04) * (fighting ? 0.5 : 1);
+  // Recuperação de MP por segundo reduzida pela metade; em combate, metade da taxa fora de combate.
+  // Nível 1 (WIS 7, INT 9) ~0,53 MP/s; nível 30 (WIS 65, INT 67) ~4,6 MP/s.
+  const mpRegen = (fighting = false) => (statTotal('WIS') * 0.10 + statTotal('INT') * 0.04) * 0.5 * (fighting ? 0.5 : 1);
   const isUnlocked = spell => level() >= spell.unlockLevel && !(spell.replacedBySpellId && level() >= byId[spell.replacedBySpellId].unlockLevel);
   const rankIndex = spell => { let index = -1; spell.ranks.forEach((rank, i) => { if (rank.level <= level()) index = i; }); return index; };
   // Durações crescem a cada nível, na regra do Ember: valor do nível em que a magia abre × (1 + 16% × níveis acima dele).
@@ -92,6 +92,10 @@ const Monarch = (() => {
   const maxMp = () => heirStat('MP');
   const reservedMp = () => (state.monarch?.auras || []).reduce((sum, key) => sum + (stats(byKey[key]).manaReservePercent || 0) / 100 * maxMp(), 0);
   const mpCap = () => Math.max(0, maxMp() - reservedMp());
+  const mpBarPercent = (current, cap) => {
+    const shownCap = Math.floor(cap), shownCurrent = Math.floor(current);
+    return shownCap > 0 ? Math.max(0, Math.min(100, shownCurrent / shownCap * 100)) : 0;
+  };
   const auraSlots = () => byLevelTable(DATA.auraSlotsByLevel);
   const slotsUsed = () => ms().auras.filter(key => !byKey[key].auraSlotShared).length;
   function radiusOf(spell) {
@@ -1396,8 +1400,8 @@ const Monarch = (() => {
       panel.querySelector('.spell-panel-next').textContent = next.length ? `Nível ${lv + 1}: ${next.map(spell => spell.name).join(' e ')}` : 'Todas as magias aprendidas.';
     }
     const m = ms();
-    const cap = mpCap(), max = maxMp();
-    panel.querySelector('.spell-panel-mp i').style.width = `${Math.round(m.mp / Math.max(1, cap) * 100)}%`;
+    const cap = mpCap();
+    panel.querySelector('.spell-panel-mp i').style.width = `${Math.round(mpBarPercent(m.mp, cap))}%`;
     panel.querySelector('.spell-panel-mp span').textContent = `MP ${Math.floor(m.mp)} / ${Math.floor(cap)}`;
     body.querySelectorAll('.spell-cast').forEach(button => {
       const k = button.dataset.spell;
@@ -1543,12 +1547,13 @@ const Monarch = (() => {
   function renderHotbar(force) {
     if (!hotbar) return;
     const scene = hotbar.parentElement;
-    if (!active()) { hotbar.hidden = true; scene?.classList.remove('has-hotbar'); return; }
+    const toggle = scene?.querySelector('.hotbar-toggle');
+    if (!active()) { hotbar.hidden = true; if (toggle) toggle.hidden = true; scene?.classList.remove('has-hotbar'); return; }
     hotbar.hidden = false;
+    if (toggle) toggle.hidden = false;
     hotbar.classList.toggle('is-collapsed', hotbarCollapsed);
     scene?.classList.toggle('has-hotbar', !hotbarCollapsed);
     scene?.classList.toggle('hotbar-collapsed', hotbarCollapsed);
-    const toggle = hotbar.querySelector('.hotbar-toggle');
     if (toggle) {
       toggle.textContent = hotbarCollapsed ? '‹' : '⌄';
       toggle.title = hotbarCollapsed ? 'Mostrar barra de magias' : 'Recolher barra de magias';
@@ -1615,7 +1620,19 @@ const Monarch = (() => {
   function buildHotbar() {
     hotbar = document.getElementById('spell-hotbar');
     if (!hotbar) return;
-    hotbar.innerHTML = `<button type="button" class="hotbar-toggle" aria-controls="spell-hotbar" aria-expanded="true"></button>${Array.from({ length: HOTBAR_SIZE }, (_, i) => `<button type="button" class="hotbar-slot empty" data-slot="${i}" aria-disabled="true"><span class="spell-glyph"></span><i class="spell-cd"></i><b class="hotbar-key">F${i + 1}</b></button>`).join('')}`;
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'hotbar-toggle';
+    toggle.setAttribute('aria-controls', 'spell-hotbar');
+    toggle.addEventListener('pointerdown', event => event.stopPropagation());
+    toggle.addEventListener('click', event => {
+      event.stopPropagation();
+      hotbarCollapsed = !hotbarCollapsed;
+      try { localStorage.setItem(HOTBAR_COLLAPSED_KEY, hotbarCollapsed ? '1' : '0'); } catch {}
+      renderHotbar(false);
+    });
+    hotbar.parentElement.append(toggle);
+    hotbar.innerHTML = Array.from({ length: HOTBAR_SIZE }, (_, i) => `<button type="button" class="hotbar-slot empty" data-slot="${i}" aria-disabled="true"><span class="spell-glyph"></span><i class="spell-cd"></i><b class="hotbar-key">F${i + 1}</b></button>`).join('');
     const stop = event => event.stopPropagation();
     hotbar.addEventListener('wheel', stop, { passive: true });
     hotbar.addEventListener('pointerdown', event => {
@@ -2178,7 +2195,7 @@ const Monarch = (() => {
       bar.querySelectorAll('.spell-btn[data-spell]').forEach(button => { const spell = byKey[button.dataset.spell]; if (spell) button.title = spellTitle(spell); });
     }
     const cap = mpCap(), max = maxMp();
-    bar.querySelector('.res-mp i').style.width = `${Math.round(m.mp / Math.max(1, cap) * 100)}%`;
+    bar.querySelector('.res-mp i').style.width = `${Math.round(mpBarPercent(m.mp, cap))}%`;
     bar.querySelector('.res-mp em').style.width = `${Math.round(reservedMp() / Math.max(1, max) * 100)}%`;
     bar.querySelector('.res-mp span').textContent = `MP ${Math.floor(m.mp)}/${Math.floor(cap)}`;
     bar.querySelector('.aura-slots').textContent = auraSlots() ? `Auras ${slotsUsed()}/${auraSlots()}` : '';

@@ -192,7 +192,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .character.attacking::after { content: ''; position: absolute; right: 0; top: 34%; width: 15px; height: 15px; border-radius: 50%; background: radial-gradient(circle, rgba(255,193,118,.8), transparent 70%); animation: battle-flash .8s ease-in-out infinite alternate; pointer-events: none; }
 @keyframes battle-flash { from { opacity: .15; transform: scale(.5); } to { opacity: 1; transform: scale(1.2); } }
 .hero-face { width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid #d7c28f; border-radius: 50%; background: linear-gradient(135deg,#65705a,#282b23); color: #f0e4cb; font: 9px 'Newsreader',Georgia,serif; }
-.toast { position: absolute; z-index: 7; left: 50%; bottom: 38px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(560px, calc(100% - 32px)); font-size: 11px; pointer-events: none; }
+.toast { position: absolute; z-index: 7; left: 50%; top: 12px; bottom: auto; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(560px, calc(100% - 72px)); max-height: min(40vh, 300px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: #5b5240 transparent; font-size: 11px; pointer-events: none; }
 .toast-msg { display: flex; align-items: baseline; gap: 8px; max-width: 100%; padding: 9px 13px; border: 1px solid rgba(226,201,151,.55); border-radius: 4px; color: #f4ead4; background: rgba(26,28,23,.95); box-shadow: 0 8px 20px #111; font: inherit; text-align: center; cursor: pointer; pointer-events: auto; animation: toast-in .2s ease-out; }
 .toast-msg:hover { border-color: #e7cf98; }
 .toast-msg em { color: #e7cf98; font-style: normal; }
@@ -424,7 +424,7 @@ body { overflow: hidden; }
 .map-tools .camera-wilds, .map-tools .zoom-control { position: static; }
 .map-tools .camera-wilds { min-width: 36px; height: 36px; }
 .map-tools .zoom-btn { width: 30px; height: 30px; font-size: 13px; }
-.toast { bottom: 48px; font-size: 13px; }
+.toast { top: 12px; bottom: auto; font-size: 13px; }
 
 /* Painel lateral */
 .side-panel { min-height: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -1350,10 +1350,9 @@ input[type="number"], input[type="text"], textarea {
 /* Barra rápida de magias: 12 espaços nas teclas F1 a F12, embaixo do mapa */
 .spell-hotbar { position: absolute; z-index: 7; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; max-width: calc(100% - 24px); padding: 5px 6px; border: 1px solid rgba(214,184,117,.4); border-radius: 8px; background: linear-gradient(180deg, rgba(28,25,18,.92), rgba(11,11,9,.94)); box-shadow: 0 6px 18px rgba(0,0,0,.55); touch-action: none; user-select: none; }
 .spell-hotbar[hidden] { display: none; }
-.hotbar-toggle { flex: none; width: 22px; height: 34px; padding: 0; border: 1px solid rgba(206,186,137,.24); border-radius: 4px; color: #bdb39d; background: rgba(10,10,8,.55); font: 15px/1 'Figtree', sans-serif; cursor: pointer; }
+.hotbar-toggle { position: absolute; z-index: 8; left: 12px; bottom: 10px; width: 30px; height: 34px; padding: 0; border: 1px solid rgba(206,186,137,.35); border-radius: 4px; color: #bdb39d; background: rgba(10,10,8,.82); font: 15px/1 'Figtree', sans-serif; cursor: pointer; }
 .hotbar-toggle:hover, .hotbar-toggle:focus-visible { border-color: rgba(214,184,117,.7); color: #f3dca2; outline: none; }
-.spell-hotbar.is-collapsed { padding: 4px; border-color: rgba(214,184,117,.25); background: rgba(11,11,9,.72); box-shadow: 0 3px 10px rgba(0,0,0,.38); }
-.spell-hotbar.is-collapsed .hotbar-slot { display: none; }
+.spell-hotbar.is-collapsed { display: none; }
 .hotbar-slot { --accent: #e9d08f; --cd: 0; position: relative; flex: 0 1 auto; width: 40px; min-width: 0; height: 40px; padding: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 6px; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--accent) 26%, #1b1a15), #121210 75%); color: var(--accent); cursor: pointer; }
 .hotbar-slot[data-slot="4"], .hotbar-slot[data-slot="8"] { margin-left: 6px; }
 .hotbar-slot .spell-glyph { position: relative; z-index: 1; display: block; font-size: 19px; line-height: 38px; text-align: center; text-shadow: 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent); }
@@ -1368,15 +1367,13 @@ input[type="number"], input[type="text"], textarea {
 .hotbar-slot.targeting { border-color: #9df0b3; box-shadow: 0 0 0 2px rgba(157,240,179,.6); }
 .spell-hotbar.dragging .hotbar-slot { cursor: copy; }
 .hotbar-slot.drop-over { border-style: solid; border-color: #f1c66a; box-shadow: 0 0 0 2px rgba(241,198,106,.55); }
-.map-scene.has-hotbar:not(.hotbar-collapsed) .toast { bottom: 66px; }
 .spell-drag-ghost { --accent: #e9d08f; position: fixed; z-index: 100; display: grid; place-items: center; width: 36px; height: 36px; margin: -18px 0 0 -18px; border: 1px solid var(--accent); border-radius: 6px; color: var(--accent); background: rgba(18,18,14,.92); font-size: 19px; text-shadow: 0 0 6px var(--accent); box-shadow: 0 4px 14px rgba(0,0,0,.6); pointer-events: none; user-select: none; }
 .spell-cast:not([disabled]) { touch-action: pan-y; }
 @media (max-width: 760px) {
   .hotbar-slot { height: 32px; }
   .hotbar-slot .spell-glyph { font-size: 15px; line-height: 30px; }
   .hotbar-slot[data-slot="4"], .hotbar-slot[data-slot="8"] { margin-left: 3px; }
-  .hotbar-toggle { width: 20px; height: 28px; }
-  .map-scene.has-hotbar:not(.hotbar-collapsed) .toast { bottom: 54px; }
+  .hotbar-toggle { left: 8px; width: 28px; height: 30px; }
 }
 
 /* Cemitério do topo: heróis e camponeses perdidos na região aberta. */

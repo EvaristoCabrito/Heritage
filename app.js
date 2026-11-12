@@ -218,7 +218,7 @@ const lodgingCapacity = () => state.buildings.filter(building => isDone(building
 // O casarão abriga dois heróis. Começa com um; a cada dia, se houver cama, chega outro de uma das seis classes base.
 const MANOR_HERO_SLOTS = 2;
 const BASE_HERO_CLASSES = ['Warrior', 'Archer', 'Lancer', 'Black Mage', 'Conjurer', 'Healer'];
-const manorHeroes = () => state.heroes.filter(hero => hero.alive && hero.home === 'manor').length;
+const manorHeroes = () => state.heroes.filter(hero => hero.alive && (hero.home === 'manor' || (hero.home == null && hero.homeSite == null && hero.guildSite == null && hero.recruitedFromSite == null))).length;
 const heroCapacity = () => MANOR_HERO_SLOTS + guildHousing() + lodgingCapacity();
 const freeLodging = () => {
   return state.buildings.find(building => isDone(building)
@@ -339,7 +339,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.16';
+const GAME_VERSION = 'Version 0.13.18';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -384,7 +384,7 @@ function newGameState(heir = null) {
       { id: 'starter-quarry-pick-2', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
     ], remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
     food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
-    speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
+    speed: 1, minutes: 380, ticks: 0, manorArrivalDay: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false, goalStep: 0, goalKills: 0,
     bandits: [], wildMeatPiles: [], wildlifeSpawnDay: Math.floor(380 / 1440), nextRaidAt: 720,
     heir, heirLevel: 1, heirXp: 0, equipment: BASIC_EQUIPMENT(), playSeconds: 0,
@@ -1299,6 +1299,7 @@ function togglePitWorker(site, workerId) {
     if (lumberCrew(pit).length >= workerLimitForPit(pit)) { say(`${name} já tem ${workerLimitForPit(pit)} trabalhadores neste nível.`); return; }
     worker.workplace = pit;
     worker.jobSite = null;
+    interruptTavernVisit(worker);
     say(pit.type === 'quarry' ? `${worker.name} foi quebrar pedra. Disse que as costas aguentam. Não aguentam.` : `${worker.name} foi cavar metal. Volta mais sujo e mais pobre.`);
   }
   worker.route = []; worker.finalPoint = null; worker.wait = 0; worker.workTrip = false;
@@ -1347,7 +1348,7 @@ function setLumberCrew(site, change) {
     if (crew.length >= 3) { say('A cabana já tem três lenhadores. Um quarto só ia atrapalhar.'); return; }
     const worker = freeWorkers()[0];
     if (!worker) { say('Nenhum camponês livre. Construa um casebre ou tire alguém de outra cabana.'); return; }
-    worker.workplace = camp; worker.route = []; worker.finalPoint = null; worker.wait = 0; worker.workTrip = false;
+    worker.workplace = camp; interruptTavernVisit(worker); worker.route = []; worker.finalPoint = null; worker.wait = 0; worker.workTrip = false;
     say(`${worker.name} foi cortar lenha. Pediu um machado melhor. Não ganhou.`);
   } else {
     const worker = crew[crew.length - 1];
@@ -1413,21 +1414,73 @@ function tavernSpot(actor, tavern) {
 function goDrink(actor, tavern) {
   const spot = tavernSpot(actor, tavern);
   if (Math.hypot(actor.x - spot.x, actor.y - spot.y) < 1.2) { actor.wait = 2; return; }
-  routeActor(actor, nearestNode(spot));
-  actor.finalPoint = { x: spot.x, y: spot.y };
+  if (actor.className === 'Peasant' && (actor.mapId || 'city') === 'city') routeToPoint(actor, { x: spot.x, y: spot.y - 1.2 });
+  else { routeActor(actor, nearestNode(spot)); actor.finalPoint = { x: spot.x, y: spot.y }; }
 }
 function isDrinking(actor) {
   const tavern = openTavern();
   return !!tavern && actor.drinkUntil > state.minutes && actor.tavernSpot?.site === tavern.site
     && Math.hypot(actor.x - actor.tavernSpot.x, actor.y - actor.tavernSpot.y) < 1.5;
 }
+const alcoholismOf = actor => Math.max(0, Math.min(100, Number(actor?.skills?.alcoholism) || 0));
+function interruptTavernVisit(actor) {
+  if (!actor) return;
+  actor.drinkUntil = 0;
+  actor.tavernTripSite = null;
+  actor.tavernBreakMinutes = 0;
+  actor.nextTavernAt = state.minutes + 720 + Math.floor(Math.random() * 360);
+  actor.route = []; actor.goal = null; actor.finalPoint = null; actor.wait = 0;
+}
+function tavernPause(actor) {
+  if (actor.buildSite != null || actor.carrying) return false;
+  const tavern = openTavern();
+  if (!tavern) {
+    actor.drinkUntil = 0;
+    actor.tavernTripSite = null;
+    return false;
+  }
+  if (actor.drinkUntil > state.minutes || actor.tavernTripSite === tavern.site) {
+    actor.task = actor.drinkUntil > state.minutes ? 'Bebendo na taverna' : 'Indo fazer uma pausa na taverna';
+    if ((actor.mapId || 'city') !== 'city') { travelToMap(actor, 'city', actor.mapSet || 1); return true; }
+    const spot = tavernSpot(actor, tavern);
+    if (Math.hypot(actor.x - spot.x, actor.y - spot.y) >= 1.2) { goDrink(actor, tavern); return true; }
+    if (actor.drinkUntil <= state.minutes) {
+      const level = alcoholismOf(actor);
+      const breakMinutes = actor.tavernBreakMinutes || (8 + Math.round(level * 0.52));
+      const interval = Math.max(360, 1080 + Math.floor(Math.random() * 360) - Math.round(level * 3.2));
+      actor.drinkUntil = state.minutes + breakMinutes;
+      actor.nextTavernAt = state.minutes + interval;
+      actor.tavernTripSite = null;
+      actor.tavernBreakMinutes = 0;
+      actor.task = 'Bebendo na taverna';
+      actor.wait = 1;
+    }
+    return true;
+  }
+  if (!Number.isFinite(actor.nextTavernAt)) actor.nextTavernAt = state.minutes + 600 + Math.floor(Math.random() * 480);
+  if (state.minutes < actor.nextTavernAt) return false;
+  if (purseOf(actor) < 0.2) { actor.nextTavernAt = state.minutes + 180; return false; }
+  actor.tavernTripSite = tavern.site;
+  actor.tavernBreakMinutes = 8 + Math.round(alcoholismOf(actor) * 0.52);
+  actor.task = 'Indo fazer uma pausa na taverna';
+  if ((actor.mapId || 'city') !== 'city') { travelToMap(actor, 'city', actor.mapSet || 1); return true; }
+  goDrink(actor, tavern);
+  return true;
+}
 // Uma vez por segundo de jogo (speed minutos): anota o consumo de quem está bebendo.
 function accrueTavern(minutesPassed) {
-  // Cada um paga da própria bolsa; quem está sem dinheiro bebe fiado e a taverna não ganha nada.
-  [...state.heroes, ...state.workers].filter(actor => actor.alive && isDrinking(actor)).forEach(actor => {
-    const paid = Math.min(purseOf(actor), tavernRate(actor) * minutesPassed / 60);
-    actor.purse = purseOf(actor) - paid;
-    state.tavernTab = (state.tavernTab || 0) + paid;
+  [...state.heroes, ...state.workers].filter(actor => actor.alive).forEach(actor => {
+    actor.skills ||= {};
+    const level = alcoholismOf(actor);
+    if (isDrinking(actor)) {
+      const paid = Math.min(purseOf(actor), tavernRate(actor) * minutesPassed / 60);
+      actor.purse = purseOf(actor) - paid;
+      state.tavernTab = (state.tavernTab || 0) + paid;
+      actor.skills.alcoholism = Math.min(100, level + minutesPassed * 0.6 * (1 - level / 130));
+    } else {
+      const working = actor.className !== 'Peasant' || !!(actor.workplace || actor.jobSite || actor.buildSite != null || actor.profession);
+      actor.skills.alcoholism = Math.max(0, level - minutesPassed * (working ? 0.0025 : 0.0006));
+    }
   });
 }
 function collectTaxes() {
@@ -1946,7 +1999,7 @@ function heroCard(hero) {
   const guildType = GUILD_FOR[hero.className];
   return `<article class="hero-card">
     <img class="hero-portrait" data-actor-sheet="${hero.id}" title="Ver ficha" src="public/art/portraits/${actorPortrait(hero)}-portrait-v01.webp" alt="Retrato de ${hero.name}">
-    <div class="hero-details"><b>${hero.name}</b><small>${hero.className}${hero.prestige ? ` · ${hero.prestige}` : ''}</small>${hero.trait ? `<small class="hero-trait"><b>${hero.trait}.</b> ${TRAITS[hero.trait] || ''}</small>` : ''}<small>${nextInfo}</small><small>Bolsa: ${format(purseOf(hero))} de ouro</small></div>
+    <div class="hero-details"><b>${hero.name}</b><small>${hero.className}${hero.prestige ? ` · ${hero.prestige}` : ''}</small>${hero.trait ? `<small class="hero-trait"><b>${hero.trait}.</b> ${TRAITS[hero.trait] || ''}</small>` : ''}<small>${nextInfo}</small><small>Alcoolismo · penalidade ${Math.floor(alcoholismOf(hero))}/100</small><small>Bolsa: ${format(purseOf(hero))} de ouro</small></div>
     <div class="hero-xp">NÍV. ${hero.level}<i style="--xp:${hero.level >= HEIR_MAX_LEVEL ? 100 : Math.round((hero.xp || 0) / xpToNext(hero.level) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${hero.id}">FICHA</button></div>
   </article>`;
 }
@@ -2561,7 +2614,7 @@ function assignBuilders() {
     const rank = candidate => candidate.profession === 'builder' ? 0 : !candidate.profession ? 1 : 2;
     const worker = state.workers.filter(candidate => candidate.alive && !busy.has(String(candidate.id))).sort((a, b) => rank(a) - rank(b))[0];
     building.builderId = worker ? worker.id : null;
-    if (worker) { worker.buildSite = building.site; worker.route = []; worker.finalPoint = null; worker.wait = 0; }
+    if (worker) { interruptTavernVisit(worker); worker.buildSite = building.site; worker.route = []; worker.finalPoint = null; worker.wait = 0; }
   });
 }
 
@@ -2723,6 +2776,9 @@ function recruit(className, origin, prestige = null, guildResident = false) {
 }
 
 function manorArrival() {
+  const day = Math.floor(state.minutes / 1440);
+  if (day < 1 || state.manorArrivalDay === day) return null;
+  state.manorArrivalDay = day;
   if (manorHeroes() >= MANOR_HERO_SLOTS) return null;
   const className = pick(BASE_HERO_CLASSES);
   const hero = { id: Date.now() + Math.random(), name: heroName(), className, prestige: null, trait: pick(Object.keys(TRAITS)), level: 1, xp: 0, x: MANOR_DOOR.x, y: MANOR_DOOR.y, alive: true, home: 'manor', guildSite: null, recruitedFromSite: null, homeSite: null, purse: HERO_START_PURSE, gear: STARTER_WEAPON[className] ? { weapon: STARTER_WEAPON[className] } : {} };
@@ -2887,6 +2943,54 @@ function shortestPath(start, finish) {
   return path;
 }
 
+// Menor rota caminhável até um ponto: mede os metros das trilhas e compara todas as entradas possíveis.
+function roadPathsFrom(actor) {
+  const count = PATH_NODES.length;
+  const distances = PATH_NODES.map(node => Math.hypot(node.x - actor.x, node.y - actor.y));
+  const previous = Array(count).fill(null), visited = new Set();
+  while (visited.size < count) {
+    let current = -1;
+    for (let i = 0; i < count; i++) if (!visited.has(i) && (current < 0 || distances[i] < distances[current])) current = i;
+    if (current < 0 || !Number.isFinite(distances[current])) break;
+    visited.add(current);
+    PATH_NODES[current].links.forEach(next => {
+      const edge = Math.hypot(PATH_NODES[next].x - PATH_NODES[current].x, PATH_NODES[next].y - PATH_NODES[current].y);
+      if (distances[current] + edge < distances[next]) { distances[next] = distances[current] + edge; previous[next] = current; }
+    });
+  }
+  return { distances, previous };
+}
+function pathFromTree(tree, finish) {
+  const path = [];
+  for (let node = finish; node !== null; node = tree.previous[node]) path.unshift(node);
+  return path;
+}
+function roadDistanceTo(actor, point) {
+  const tree = roadPathsFrom(actor);
+  return Math.min(...PATH_NODES.map((node, i) => tree.distances[i] + Math.hypot(node.x - point.x, node.y - point.y)));
+}
+function taskDistance(actor, place) {
+  const fromMap = actor.mapId || 'city', fromSet = actor.mapSet || 1;
+  const toMap = buildingMapId(place), toSet = place.mapSet || fromSet;
+  const point = { x: place.x, y: Math.min(198, place.y + 1.2) };
+  if (fromMap === toMap && fromSet === toSet) return roadDistanceTo(actor, point);
+  const gate = PATH_NODES[18], exit = WILDS_ROAD_EXIT[toSet === 2 ? 2 : 1];
+  if (fromMap === 'city') return roadDistanceTo(actor, gate) + 8 + Math.hypot(exit.x - point.x, exit.y - point.y);
+  return Math.hypot(actor.x - exit.x, actor.y - exit.y) + 8 + roadDistanceTo(gate, point);
+}
+function routeToPoint(actor, point) {
+  const tree = roadPathsFrom(actor);
+  let finish = 0, best = Infinity;
+  PATH_NODES.forEach((node, i) => {
+    const cost = tree.distances[i] + Math.hypot(node.x - point.x, node.y - point.y);
+    if (cost < best) { best = cost; finish = i; }
+  });
+  actor.route = pathFromTree(tree, finish);
+  actor.goal = finish;
+  actor.finalPoint = { x: point.x, y: Math.min(198, point.y + 1.2) };
+  return best;
+}
+
 function routeActor(actor, finish) {
   const path = shortestPath(nearestNode(actor), finish);
   if (path.length && Math.hypot(PATH_NODES[path[0]].x - actor.x, PATH_NODES[path[0]].y - actor.y) < 0.5) path.shift();
@@ -2922,13 +3026,13 @@ function workplaceOf(actor) {
   // Com profissão, só os lugares dela; se não houver nenhum, faz o que estiver disponível.
   const own = all.filter(building => PROFESSIONS[actor?.profession]?.types.includes(building.type));
   const places = own.length ? own : all;
-  // Cada camponês fica fixo num lugar; quem não tem vai para o que tem menos gente (empate: o mais perto de casa).
+  // Posto manual continua fixo. Generalistas sem posto escolhem o trabalho caminhável mais próximo;
+  // uma pequena penalidade por equipe evita concentrar todos no mesmo prédio quando há opções perto.
   const current = actor && places.find(place => place.site === actor.jobSite);
   if (current) return current;
-  const from = homeOf(actor) || actor || { x: 42, y: 39 };
   const crew = site => state.workers.filter(worker => worker.alive && worker !== actor && !worker.workplace && worker.jobSite === site).length;
-  const dist = place => Math.hypot(place.x - from.x, place.y - from.y);
-  const best = places.reduce((best, place) => crew(place.site) < crew(best.site) || (crew(place.site) === crew(best.site) && dist(place) < dist(best)) ? place : best);
+  const cost = place => taskDistance(actor || { x: 42, y: 39 }, place) + crew(place.site) * 5;
+  const best = places.reduce((best, place) => cost(place) < cost(best) ? place : best);
   if (actor) actor.jobSite = best.site;
   return best;
 }
@@ -2965,6 +3069,7 @@ function idleSpot(actor) {
 
 function nextActorGoal(actor) {
   if (actor.className === 'Peasant') {
+    if (tavernPause(actor)) return;
     if (actor.profession === 'fisher') { fishingRoutine(actor, workplaceOf(actor)); return; }
     if (actor.profession === 'hunter') { hunterRoutine(actor); return; }
     if (actor.buildSite != null) {
@@ -2979,21 +3084,11 @@ function nextActorGoal(actor) {
         actor.headingToWork = false;
         actor.task = `${site.underConstruction ? 'Construindo' : 'Consertando'} ${buildingName(site)}`;
         if (Math.hypot(actor.x - spot.x, actor.y - spot.y) < 1.2) { actor.wait = 1.5; actor.actionTime = 1.5; actor.actionClock = 0; return; }
-        if (buildingMapId(site) === 'wilds') actor.route = [];
-        else routeActor(actor, nearestNode(spot));
-        actor.finalPoint = spot;
+        if (buildingMapId(site) === 'wilds') { actor.route = []; actor.finalPoint = spot; }
+        else routeToPoint(actor, spot);
         return;
       }
       actor.buildSite = null;
-    }
-    const tavern = openTavern();
-    const minuteOfDay = state.minutes % 1440;
-    if (tavern && minuteOfDay >= 1080 && minuteOfDay < 1320) {
-      actor.drinkUntil = state.minutes - minuteOfDay + 1320;
-      actor.headingToWork = false;
-      actor.task = 'Bebendo na taverna';
-      goDrink(actor, tavern);
-      return;
     }
     const job = workplaceOf(actor);
     if (job && job.type === 'bakery' && isDone(job)) { bakeRoutine(actor, job); return; }
@@ -3006,8 +3101,7 @@ function nextActorGoal(actor) {
     if (!workplace && !job && !actor.workTrip) {
       const spot = idleSpot(actor);
       actor.task = 'À toa, sem fazenda pra trabalhar';
-      routeActor(actor, spot.node);
-      actor.finalPoint = spot.point;
+      routeToPoint(actor, spot.point);
       actor.headingToWork = false;
       actor.workTrip = true;
       return;
@@ -3020,10 +3114,9 @@ function nextActorGoal(actor) {
       actor.task = actor.workTrip ? 'Voltando para casa' : `Indo trabalhar ${workPlaceName(workplace)}`;
       return;
     }
-    if (target && buildingMapId(target) === 'wilds') actor.route = [];
-    else routeActor(actor, actor.workTrip ? (home ? nearestNode(home) : 0) : workerDestination(actor));
-    // Da trilha até a porta da construção, em linha reta.
-    actor.finalPoint = target ? { x: target.x, y: Math.min(198, target.y + 1.2) } : null;
+    if (target && buildingMapId(target) === 'wilds') { actor.route = []; actor.finalPoint = { x: target.x, y: Math.min(198, target.y + 1.2) }; }
+    else if (target) routeToPoint(actor, target);
+    else actor.finalPoint = null;
     actor.headingToWork = !!workplace;
     actor.workTrip = !actor.workTrip;
     return;
@@ -3038,13 +3131,7 @@ function nextActorGoal(actor) {
     if (liveWildlife && ((actor.mapId || 'city') !== 'wilds' || actor.mapSet !== 2)) { actor.task = 'Caçando nas Wilds'; travelToMap(actor, 'wilds', 2); return; }
   }
   if ((actor.mapId || 'city') !== 'city') { actor.task = 'Voltando dos Wilds'; travelToMap(actor, 'city', actor.mapSet || 1); return; }
-  const tavern = openTavern();
-  if (tavern && actor.drinkUntil > state.minutes) { goDrink(actor, tavern); return; }
-  if (tavern && Math.random() < (actor.trait === 'Bêbado' ? 0.6 : 0.2)) {
-    actor.drinkUntil = state.minutes + 60 + Math.floor(Math.random() * 120);
-    goDrink(actor, tavern);
-    return;
-  }
+  if (tavernPause(actor)) return;
   const offer = considerBounties(actor);
   if (offer) { bountyStep(actor, offer); return; }
   const patrol = PATROLS[actor.className] || PATROLS.other;
@@ -3187,6 +3274,8 @@ function tick() {
     if (Math.floor(state.minutes / 1440) % DAYS_PER_WEEK === 0) applyWeeklyMood();
     if (Math.floor(state.minutes / 1440) % DAYS_PER_YEAR === 0) newYear();
   }
+  // Recupera o segundo morador também em saves que já passaram da virada do dia sem registrá-lo.
+  manorArrival();
   // Heróis ganham experiência só em combate (golpes e curas). Aqui chegam os bandos e todos se recuperam.
   combatTick(state.speed);
   const hasTavern = state.buildings.some(building => building.type === 'tavern' && isDone(building));
@@ -3608,6 +3697,7 @@ const PROFESSIONS = {
 const SKILLS = [
   { id: 'farming', name: 'Lavoura' }, { id: 'milling', name: 'Moagem' }, { id: 'woodcutting', name: 'Lenha' }, { id: 'mining', name: 'Mineração' },
   { id: 'building', name: 'Construção' }, { id: 'hauling', name: 'Carga' }, { id: 'cooking', name: 'Culinária' }, { id: 'fishing', name: 'Pesca' }, { id: 'hunting', name: 'Caça' },
+  { id: 'alcoholism', name: 'Alcoolismo · penalidade' },
 ];
 const SKILL_OF_TYPE = { farm: 'farming', mill: 'milling', bakery: 'cooking', butcher: 'cooking', lumber: 'woodcutting', quarry: 'mining', mine: 'mining' };
 const skillOf = (actor, id) => actor?.skills?.[id] || 0;
@@ -3778,6 +3868,7 @@ function setProfession(id, profession) {
   const worker = findActor(id);
   if (!worker || worker.className !== 'Peasant') return;
   worker.profession = PROFESSIONS[profession] ? profession : null;
+  interruptTavernVisit(worker);
   worker.jobSite = null;
   if (worker.workplace?.type === 'lumber' && worker.profession !== 'woodcutter') worker.workplace = null;
   if (isPit(worker.workplace) && worker.profession && worker.profession !== 'miner') worker.workplace = null;
@@ -3792,6 +3883,7 @@ function assignFisherToSpot(workerId, spotId) {
   worker.profession = 'fisher';
   worker.jobSite = spot.site;
   worker.workplace = null;
+  interruptTavernVisit(worker);
   worker.workTrip = false;
   worker.route = [];
   worker.goal = null;
@@ -4561,8 +4653,8 @@ function deliverLoad(actor) {
 const foodName = id => (FOOD_TYPES.find(food => food.id === id)?.name || id).toLowerCase();
 const workPlaceName = building => building.type === 'fishing' ? `em ${building.name}` : building.type === 'hunting' ? 'nas Wilds, caçando e recolhendo carne' : building.type === 'mill' ? 'no moinho' : building.type === 'emberLab' ? 'no Laboratório de Ember' : building.type === 'lumber' ? 'na Cabana do Lenhador' : building.type === 'quarry' ? 'na Pedreira' : building.type === 'mine' ? 'no Campo de Mineração' : `no ${buildingName(building)}`;
 function walkTo(actor, point) {
-  routeActor(actor, nearestNode(point));
-  actor.finalPoint = { x: point.x, y: Math.min(198, point.y + 1.2) };
+  if (actor.className === 'Peasant' && (actor.mapId || 'city') === 'city') routeToPoint(actor, point);
+  else { routeActor(actor, nearestNode(point)); actor.finalPoint = { x: point.x, y: Math.min(198, point.y + 1.2) }; }
 }
 const isAt = (actor, point) => Math.hypot(actor.x - point.x, actor.y - Math.min(198, point.y + 1.2)) < 1.5;
 const actorAtPost = (actor, building) =>
@@ -5899,10 +5991,9 @@ function assignResponders() {
     const pick = (free.filter(hero => !hero.bountyId).length ? free.filter(hero => !hero.bountyId) : free)
       .sort((a, b) => distanceTo(a, enemy) - distanceTo(b, enemy))[0];
     if (!pick) return;
-    const wasDrinking = pick.drinkUntil > state.minutes;
+    const wasDrinking = pick.drinkUntil > state.minutes || pick.tavernTripSite != null;
     pick.respondTo = enemy.id;
-    pick.drinkUntil = 0;
-    pick.route = []; pick.finalPoint = null; pick.wait = 0;
+    interruptTavernVisit(pick);
     if (wasDrinking) say(`${pick.name} largou o copo na taverna e saiu atrás de ${enemy.name}.`);
   });
 }
@@ -6409,7 +6500,7 @@ const HOWTO = [
     ${howFormula(`Imposto de cada camponês = menor valor entre a bolsa dele e 2 × (imposto/10%)<br>Taverna = conta acumulada × (imposto/10%)`)}
     <p>O imposto vai de 0% a ${TAX_MAX}%, de 5 em 5. Depois do imposto, cada trabalhador recebe <b>${WORKER_WAGE} de ouro</b> de salário, tirado do cofre. Se o cofre não der, alguém fica sem.</p>
     <h3>Taverna</h3>
-    <p>Quem bebe paga da própria bolsa, por hora de jogo: <b>1</b> por camponês, <b>2</b> por herói e <b>3</b> por herói de prestígio. Sem dinheiro, bebe fiado e a taverna não ganha. Camponeses bebem das 18h às 22h; heróis param entre uma ronda e outra (20% das vezes, o Bêbado 60%), por 1 a 3 horas.</p>
+    <p>Camponeses e heróis fazem pausas curtas e espaçadas para beber e pagam da própria bolsa: <b>1</b> por hora de camponês, <b>2</b> por herói e <b>3</b> por herói de prestígio. Beber aumenta <b>Alcoolismo</b>, uma habilidade penalidade que alonga e aproxima as pausas. Trabalhar sem beber reduz essa habilidade. A pausa pode ser interrompida ao atribuir a pessoa a uma obra ou posto.</p>
     <h3>Bolsas</h3>
     <p>Cada personagem tem a própria bolsa. Camponeses chegam com ${WORKER_START_PURSE} e heróis com ${HERO_START_PURSE}. Heróis enchem a bolsa com loot e recompensas.</p>
     <h3>Mercado</h3>
@@ -6533,7 +6624,7 @@ const HOWTO = [
     ${howTable(['Atributo', 'Nível 1', 'Por nível'], HEIR_STATS.map(stat => [`${stat.name} (${stat.key})`, stat.base, `+${stat.per}`]))}
     <h3>Magia</h3>
     <p>O herdeiro não aparece no mapa. Abra o botão <b>✦ MAGIAS</b> no canto do mapa, escolha a magia e clique no alvo. Esc ou botão direito cancela.</p>
-    ${howFormula(`Mana máxima = MP − reserva das auras ligadas<br>Recuperação = Sabedoria × 0,10 + Inteligência × 0,04 por segundo (metade em combate)`)}
+    ${howFormula(`Mana máxima = MP − reserva das auras ligadas<br>Recuperação = (Sabedoria × 0,10 + Inteligência × 0,04) × 0,5 por segundo (metade em combate)`)}
     <p>Auras ao mesmo tempo: 1 no nível 2, 2 no nível 12 e 3 no nível 20. São 30 magias do Monarca (ordens, auras, editos, decretos e invocações) e 30 magias de campo, uma nova por nível.</p>
     ${howFormula(`Duração de uma magia do Monarca = 60 s × (1 + ${hn(STAT_GROWTH)} × (nível do herdeiro − nível em que a magia abre))<br>Vale para todo efeito com tempo: ordens, escudos, zonas, lentidão, silêncio, enraizar, atordoar, provocar, invocações. Recargas não mudam.`)}
     ${howFormula(`Valor de uma magia de campo = base + por nível × (nível do herdeiro − nível da magia) + % da Magia do herdeiro<br>Dano de magia = valor² / (valor + metade da Defesa do alvo)`)}
@@ -6717,7 +6808,7 @@ const SCREENS = {
       <p class="sheet-house">Vida agora: ${Math.ceil(hpOf(actor))} de ${maxHpOf(actor)}</p>
       ${attributesHTML(attributesAt(tableFor(actor), level), actor)}
       ${actor.trait ? `<p class="sheet-about"><b>${actor.trait}.</b> ${TRAITS[actor.trait] || ''}</p>` : ''}
-      ${actor.className === 'Peasant' ? `<dl class="info-lines sheet-work"><div><dt>Ofício</dt><dd>${professionName(actor)}</dd></div><div><dt>Trabalha</dt><dd>${workplaceOf(actor) ? siteLabel(workplaceOf(actor)) : 'Em lugar nenhum'}</dd></div><div><dt>Mora</dt><dd>${homeOf(actor) ? siteLabel(homeOf(actor)) : 'Casarão'}</dd></div><div><dt>Agora</dt><dd>${peasantActivity(actor)}</dd></div>${actor.carrying ? `<div><dt>Carregando</dt><dd>${format(actor.carrying.qty)} de ${foodName(actor.carrying.food)}</dd></div>` : ''}<div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro · salário ${WORKER_WAGE} por dia</dd></div></dl>` : `<dl class="info-lines sheet-work"><div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro, ganho no loot</dd></div></dl>`}
+      ${actor.className === 'Peasant' ? `<dl class="info-lines sheet-work"><div><dt>Ofício</dt><dd>${professionName(actor)}</dd></div><div><dt>Trabalha</dt><dd>${workplaceOf(actor) ? siteLabel(workplaceOf(actor)) : 'Em lugar nenhum'}</dd></div><div><dt>Mora</dt><dd>${homeOf(actor) ? siteLabel(homeOf(actor)) : 'Casarão'}</dd></div><div><dt>Agora</dt><dd>${peasantActivity(actor)}</dd></div>${actor.carrying ? `<div><dt>Carregando</dt><dd>${format(actor.carrying.qty)} de ${foodName(actor.carrying.food)}</dd></div>` : ''}<div><dt>Alcoolismo · penalidade</dt><dd>${Math.floor(alcoholismOf(actor))}/100</dd></div><div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro · salário ${WORKER_WAGE} por dia</dd></div></dl>` : `<dl class="info-lines sheet-work"><div><dt>Alcoolismo · penalidade</dt><dd>${Math.floor(alcoholismOf(actor))}/100</dd></div><div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro, ganho no loot</dd></div></dl>`}
       ${actor.className === 'Peasant' ? `${tradesHTML(actor)}<div class="sheet-section-label">HABILIDADES</div><dl class="skill-grid">${SKILLS.map(skill => { const value = skillOf(actor, skill.id); return `<div><dt>${skill.name}</dt><dd><i style="width:${value}%"></i></dd><small>${Math.floor(value)}</small></div>`; }).join('')}</dl>` : ''}
       ${gearHTML(actor)}
       <p class="sheet-house">${actorOrigin(actor)}</p>
