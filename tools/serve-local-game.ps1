@@ -7,19 +7,33 @@ $ErrorActionPreference = 'Stop'
 $rootPath = [System.IO.Path]::GetFullPath($Root).TrimEnd('\') + '\'
 $prefix = "http://127.0.0.1:$Port/"
 
-# If this game's local server is already running, keep using it.
-$probe = New-Object System.Net.Sockets.TcpClient
-try {
-  $probe.Connect('127.0.0.1', $Port)
-  $probe.Close()
-  exit 0
-} catch {
-  $probe.Close()
-}
-
 $listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add($prefix)
-$listener.Start()
+$selectedPort = $Port
+while ($selectedPort -lt ($Port + 20)) {
+  $prefix = "http://127.0.0.1:$selectedPort/"
+  $probe = New-Object System.Net.Sockets.TcpClient
+  try {
+    $probe.Connect('127.0.0.1', $selectedPort)
+    $probe.Close()
+    try {
+      $existingRoot = (Invoke-WebRequest -UseBasicParsing -Uri "${prefix}__root" -TimeoutSec 1).Content.Trim()
+      if ($existingRoot -eq $rootPath.TrimEnd('\')) { exit 0 }
+    } catch {}
+    $selectedPort++
+    continue
+  } catch {
+    $probe.Close()
+  }
+  try {
+    $listener.Prefixes.Clear()
+    $listener.Prefixes.Add($prefix)
+    $listener.Start()
+    break
+  } catch {
+    $selectedPort++
+  }
+}
+if (-not $listener.IsListening) { exit 1 }
 
 $mime = @{
   '.html' = 'text/html; charset=utf-8'
@@ -71,7 +85,11 @@ while ($listener.IsListening) {
     $response.Headers['X-Content-Type-Options'] = 'nosniff'
 
     $path = [System.Uri]::UnescapeDataString($context.Request.Url.AbsolutePath)
-    if ($path -eq '/__version') {
+    if ($path -eq '/__root') {
+      $bytes = [System.Text.Encoding]::UTF8.GetBytes($rootPath.TrimEnd('\'))
+      $response.ContentType = 'text/plain; charset=utf-8'
+      $response.StatusCode = 200
+    } elseif ($path -eq '/__version') {
       $bytes = [System.Text.Encoding]::UTF8.GetBytes((Get-GameVersion))
       $response.ContentType = 'text/plain; charset=utf-8'
       $response.StatusCode = 200
