@@ -261,7 +261,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .farm-type img { display: block; width: 44px; height: 44px; object-fit: contain; }
 .farm-type span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .farm-type b { color: #ebdec1; font-size: 10px; }
-.farm-type small { color: #b2aa96; font-size: 8px; white-space: nowrap; }
+.farm-type small { color: #b2aa96; font-size: 8px; line-height: 1.25; overflow-wrap: break-word; }
 .build-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
 .build-card { min-height: 84px; position: relative; display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 7px; padding: 8px; border: 1px solid rgba(193,176,135,.16); border-radius: 5px; background: linear-gradient(135deg,rgba(61,61,49,.37),rgba(27,30,25,.58)); text-align: left; cursor: pointer; transition: border-color .15s,background .15s,transform .15s; }
 .build-card:hover { transform: translateY(-1px); border-color: rgba(218,191,129,.56); background: rgba(90,78,52,.25); }
