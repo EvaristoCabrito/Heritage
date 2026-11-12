@@ -4,7 +4,7 @@ Spin-off de *Ember Ashes* no Kingdom of Mordavia: fazenda com humor negro e cont
 
 ## Abrir
 
-Abra `index.html` em um navegador moderno ou execute `JOGAR.bat` no Windows. Não precisa instalar dependências nem iniciar um servidor. A interface se adapta a telas de celular e aceita toque.
+Execute `JOGAR.bat` no Windows para abrir o jogo em `http://127.0.0.1:8765/`. O lançador inicia um servidor local sem dependências; quando os arquivos do jogo mudam, a partida salva e recarrega automaticamente. Abrir `index.html` diretamente como `file://` não oferece esse recarregamento. A interface se adapta a telas de celular e aceita toque.
 
 ## Telas
 
@@ -13,9 +13,9 @@ Abra `index.html` em um navegador moderno ou execute `JOGAR.bat` no Windows. Nã
 - **Novo jogo:** escolha um dos 3 slots; a introdução do cenário termina em "Aceitar a herança".
 - **Pausa** (`Esc` ou MENU): voltar, salvar no slot, carregar, opções, debug e sair pro título (com "Salvar e sair").
 - **Opções:** salvar sozinho, zoom ao começar e nomes dos personagens.
-- **Debug:** modo teste e apagar todos os saves.
+- **Ajustes de início:** estoque inicial padrão ou alto para partidas novas e opção de apagar todos os saves.
 
-Ouro e madeira infinitos existem só no **modo teste**, ligado pela tela de Debug. Os saves feitos assim aparecem marcados como MODO TESTE.
+O estoque alto é concedido uma vez ao criar uma partida nova. Custos, pagamentos e consumos continuam usando as regras normais; os saves não têm uma marca de modo.
 
 ## Identidade
 
