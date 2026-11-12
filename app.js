@@ -339,7 +339,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.13';
+const GAME_VERSION = 'Version 0.13.14';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -3427,8 +3427,8 @@ function monarchShopHTML(tierCap) {
     const current = ITEMS[equipped[slot]];
     const kind = slot.startsWith('ring') ? 'ring' : slot;
     const options = Object.entries(ITEMS).filter(([, item]) => item.slot === kind && item.tier > (current?.tier || 0) && item.tier <= tierCap).sort((a, b) => a[1].tier - b[1].tier);
-    const affordable = options.filter(([, item]) => item.price <= state.gold);
-    const pick = (affordable[affordable.length - 1] || options[0] || [])[0];
+    // Pré-seleciona sempre o próximo tier para a progressão não saltar níveis.
+    const pick = (options[0] || [])[0];
     return `<div class="monarch-shop-row"><span class="monarch-shop-slot">${current ? pixelIcon(current.icon, 24) : ''}<span><small>${label}</small><b>${current ? `${current.name} · T${current.tier}` : 'Vazio'}</b></span></span>
       ${options.length ? `<select data-monarch-pick="${slot}" aria-label="Escolher ${label.toLowerCase()}">${options.map(([id, item]) => `<option value="${id}"${id === pick ? ' selected' : ''}>T${item.tier} · ${item.price} ouro · ${item.name} · ${monarchBonusText(item.bonus)}</option>`).join('')}</select>
       <button type="button" class="monarch-buy" data-monarch-buy="${slot}">Comprar</button>` : `<em>${(current?.tier || 0) >= 10 ? 'Melhor que isso não existe' : 'Nada melhor neste nível'}</em>`}</div>`;
