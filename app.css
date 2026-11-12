@@ -50,9 +50,6 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .world-clock { margin-left: auto; display: grid; grid-template-columns: 8px auto; align-items: center; column-gap: 6px; font: 16px 'Newsreader', Georgia, serif; font-variant-numeric: tabular-nums; }
 .world-clock small { grid-column: 2; color: var(--muted); font: 8px 'Figtree', sans-serif; letter-spacing: .13em; }
 .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #a5b38c; box-shadow: 0 0 9px #92a77f; }
-.speed-control { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); background: rgba(15,17,14,.65); border-radius: 5px; }
-.speed-btn { width: 28px; height: 25px; border: 0; border-radius: 3px; color: var(--muted); background: transparent; font: 10px 'Newsreader', Georgia, serif; cursor: pointer; }
-.speed-btn.active { color: #211f18; background: var(--gold); box-shadow: 0 0 12px rgba(214,184,117,.2); }
 .map-scene { isolation: isolate; position: relative; width: 100%; max-width: 100%; margin: 0 auto; overflow: hidden; aspect-ratio: 1199 / 1312; min-height: 0; border: 1px solid rgba(202,184,141,.26); border-radius: 8px; background: #24291f; box-shadow: 0 18px 45px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.04); cursor: grab; touch-action: none; }
 .map-scene.dragging { cursor: grabbing; }
 .map-scene:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
@@ -339,8 +336,6 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
   .map-toolbar > div:first-child { align-items: flex-start; flex-direction: column; gap: 1px; }
   .map-toolbar > div:first-child strong { font-size: 14px; }
   .world-clock { font-size: 14px; }
-  .speed-control { gap: 1px; padding: 2px; }
-  .speed-btn { width: 25px; height: 23px; }
   .map-scene { aspect-ratio: 1199 / 1312; border-radius: 5px; }
   .camera-wilds { top: 8px; right: 8px; }
   .zoom-control { top: 44px; right: 8px; }
@@ -397,8 +392,9 @@ body { overflow: hidden; }
 .hud-brand .sigil { width: 36px; height: 36px; font-size: 18px; }
 .hud-brand h1 { margin: 0; font: 18px/1.1 'Newsreader', Georgia, serif; white-space: nowrap; }
 .hud-brand .eyebrow { margin-top: 3px; font-size: 9px; letter-spacing: .14em; white-space: nowrap; }
-.hud-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); overflow: hidden; }
+.hud-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); overflow: hidden; }
 .hud-stats .stat { min-width: 0; justify-content: center; gap: 2px; padding: 5px 5px; overflow: hidden; background: transparent; border-left: 1px solid rgba(206,186,137,.14); }
+.hud-stats .resource-stat small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hud-stats .stat:first-child { border-left: 0; }
 .hud-stats .stat small { font-size: 9px; letter-spacing: .1em; }
 .hud-stats .stat strong { font-size: 17px; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -412,7 +408,6 @@ body { overflow: hidden; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .hud-time { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; }
 .hud-time .world-clock { margin: 0; font-size: 20px; }
-.hud-time .speed-btn { width: 34px; height: 30px; font: 12px 'Figtree', sans-serif; }
 
 /* Palco: mapa + painel */
 .stage { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) clamp(340px, 26vw, 420px); gap: 8px; }
@@ -510,7 +505,6 @@ body { overflow: hidden; }
   .hud-icon { flex-basis: 18px; width: 18px; height: 18px; }
   .hud-time { gap: 6px; padding: 0 6px 0 8px; }
   .hud-time .world-clock { font-size: 15px; }
-  .hud-time .speed-btn { width: 28px; height: 26px; font-size: 10px; }
   .hud-time .music-toggle { width: 28px; height: 26px; }
 }
 
