@@ -6481,7 +6481,7 @@ const HOWTO = [
     <h3>O objetivo</h3>
     <p>Junte <b>600 moedas</b> no cofre. Quando o cofre chega lá, o cenário termina e você escolhe quem segue com o herdeiro: <b>2 servos</b> (camponeses) e <b>3 protetores</b> (heróis). No modo teste o objetivo não conta.</p>
     <h3>O que você recebe</h3>
-    <p>240 de ouro, 30 de madeira, 40 de farinha e 18 de alho. O casarão vem com um casal de camponeses e um Warrior Valente. O casarão guarda ${MANOR_STORAGE} unidades de comida e itens.</p>
+    <p>240 de ouro, 200 de madeira, 200 de pedra, 40 de farinha e 18 de alho. O casarão vem com um casal de camponeses e um Warrior Valente. O casarão guarda ${MANOR_STORAGE} unidades de comida e itens.</p>
     <h3>Você não manda em ninguém</h3>
     <p>Camponeses trabalham sozinhos onde houver trabalho. Heróis decidem tudo: quando lutar, beber, comprar e aceitar recompensas. Você só constrói, ajusta imposto e ração, oferece recompensas e lança magias.</p>
     <h3>Construir</h3>
