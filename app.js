@@ -312,6 +312,12 @@ if (!['dark', 'color'].includes(options.buildingArtStyle)) options.buildingArtSt
 const debug = readStore(DEBUG_KEY, { startingStock: 'standard' });
 if (!['standard', 'full'].includes(debug.startingStock)) debug.startingStock = debug.testMode ? 'full' : 'standard';
 delete debug.testMode;
+// Estoque de teste: só quantidade, concedida ao entrar numa partida. O resto do jogo não sabe que ele existe.
+const TEST_STOCK = { gold: 1e9, timber: 1e9 };
+function grantStartingStock(target) {
+  if (debug.startingStock !== 'full') return;
+  Object.entries(TEST_STOCK).forEach(([id, qty]) => { target[id] = Math.max(target[id] || 0, qty); });
+}
 
 // Começo de um jogo novo. Regra: sem construção, sem ninguém. O casarão traz um camponês e um Warrior;
 // outros heróis saem de guildas, taverna ou hotel; cada fazenda ou moinho traz mais um camponês.
@@ -363,6 +369,9 @@ const game = { running: false, slot: null, lastSaved: 0 };
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const format = n => Math.floor(n).toLocaleString('pt-BR');
+// No topo da tela cabem poucos dígitos: de um milhão para cima o número aparece curto ("1 bi").
+const COMPACT_NUMBER = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 });
+const formatHud = n => n >= 1e6 ? COMPACT_NUMBER.format(Math.floor(n)) : format(n);
 const formatMass = n => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 4 });
 const formatMetalAmount = (id, kg) => ['copper', 'silver', 'gold'].includes(id) && Math.abs(kg) < 1 ? `${formatMass(kg * 1000)} g` : `${formatMass(kg)} kg`;
 
@@ -1333,7 +1342,7 @@ function collectTaxes() {
 
 function updateHud() {
   const r = rates();
-  $('#gold').textContent = format(state.gold);
+  $('#gold').textContent = formatHud(state.gold);
   state.grain = totalFood();
   $('#grain').textContent = format(state.grain);
   $('#storage-cap').textContent = storageCap();
@@ -1345,7 +1354,7 @@ function updateHud() {
   $('#favor-label').textContent = `${favorLabel(state.favor ?? 50)}${state.demands?.length ? ` · ${state.demands.length} ${state.demands.length === 1 ? 'tributo' : 'tributos'}` : ''}`;
   $('#favor').closest('.stat').dataset.mood = (state.favor ?? 50) < 40 ? 'low' : (state.favor ?? 50) < 60 ? 'mid' : 'high';
   $('#happiness').closest('.stat').dataset.mood = state.happiness < 40 ? 'low' : state.happiness < 60 ? 'mid' : 'high';
-  $('#timber').textContent = format(state.timber);
+  $('#timber').textContent = formatHud(state.timber);
   const goldNet = dailyTaxEstimate() - dailyWages();
   $('#gold-rate').textContent = `${goldNet < 0 ? '−' : '+'}${format(Math.abs(goldNet))}/dia`;
   $('#grain-rate').textContent = `${r.grain < 0 ? '−' : '+'}${Math.abs(r.grain).toFixed(1).replace('.', ',')}/s`;
@@ -5601,6 +5610,7 @@ function saveCard(slot, record) {
 // Aplica o jogo escolhido na tela e começa a rodar.
 function startGame(newState, slot) {
   selectedLairId = null;
+  grantStartingStock(newState);
   state = newState;
   state.speed = [1, 2, 3].includes(Number(state.speed)) ? Number(state.speed) : 1;
   ensureFarmWorkers();
@@ -5652,7 +5662,6 @@ function startGame(newState, slot) {
 
 function newGame(slot, heir) {
   const fresh = newGameState(heir);
-  if (debug.startingStock === 'full') { fresh.gold = 1e9; fresh.timber = 1e9; }
   startGame(fresh, slot);
   say('A herança é sua. Os credores já foram avisados.');
 }
@@ -5667,6 +5676,7 @@ function loadGame(slot) {
 function setStartingStock(on) {
   debug.startingStock = on ? 'full' : 'standard';
   writeStore(DEBUG_KEY, debug);
+  if (game.slot) { grantStartingStock(state); updateHud(); }
 }
 
 function applyOptions() {
@@ -6283,7 +6293,7 @@ const SCREENS = {
     return { cls: menuMode(), html: `<section class="menu-card">
       <header class="menu-card-head"><span class="eyebrow">AJUSTES DE INÍCIO</span><h2>Estoque e saves</h2><p>A quantidade inicial não altera as regras da partida.</p></header>
       <div class="option-list">
-        <div class="option-row"><div><b>Estoque inicial</b><small>Escolhe a quantidade de ouro e madeira concedida ao começar uma partida nova. Os custos e consumos continuam normais.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
+        <div class="option-row"><div><b>Estoque inicial</b><small>Alto concede 1 bilhão de ouro e de madeira em qualquer partida, inclusive na que já está aberta. Os custos e consumos continuam normais.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
         <div class="option-row"><div><b>Apagar todos os saves</b><small>Remove os ${SAVE_SLOTS} slots deste navegador.</small></div><button type="button" class="danger small" data-action="wipe" ${used ? '' : 'disabled'}>Apagar</button></div>
       </div>
       <dl class="debug-info"><div><dt>Versão</dt><dd>${GAME_VERSION}</dd></div><div><dt>Slots usados</dt><dd>${used} / ${SAVE_SLOTS}</dd></div><div><dt>Jogo aberto</dt><dd>${game.slot ? `Slot ${game.slot}` : 'Nenhum'}</dd></div></dl>

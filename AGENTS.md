@@ -13,10 +13,15 @@ Todos os agentes que alterarem este jogo devem ler e seguir estas regras antes d
 - Não introduza arte pictórica, cartoon, estilizada, cel-shaded ou ilustrativa e colorida.
 - Nunca apague, sobrescreva ou descarte assets ou conteúdo de jogo criado. Preserve originais no jogo/editor e crie versões separadas com novos nomes e identificadores. Use cada tipo de decoração criado nos mapas solicitados.
 
+## Saves: não gaste tempo com isso
+- Nunca perca tempo com saves. Não existe jogo salvo e não vai existir.
+- Não escreva, corrija, migre nem teste salvamento, carregamento, compatibilidade ou formato de save, e não use partida salva para verificar mudanças: teste sempre em partida nova.
+- Não levante save como risco, pendência ou pergunta. Se uma mudança quebrar um save antigo, isso não importa.
+
 ## Modos do jogo
 - A aplicação ativa é servida por `index.html` na raiz e usa `app.js` na raiz. Não crie uma implementação paralela em rascunhos ou cópias.
-- Há um único sistema de jogo. O modo de teste só pode conceder um estoque inicial maior de recursos ao criar uma partida nova.
-- Depois da concessão inicial, o modo de teste não pode alterar movimento, regras, ordem de execução, validações, custos, produção, consumo, desbloqueios, objetivos, salvamento ou qualquer outro sistema.
+- Há um único sistema de jogo. O modo de teste só pode conceder um estoque maior de recursos ao entrar numa partida.
+- Depois dessa concessão, o modo de teste não pode alterar movimento, regras, ordem de execução, validações, custos, produção, consumo, desbloqueios, objetivos, salvamento ou qualquer outro sistema.
 - Toda compra, construção, pagamento e consumo deve usar os mesmos métodos e débitos no estoque em qualquer partida.
 - Não crie caminhos, versões, cenas, prefabs, classes, tabelas ou mecânicas paralelas para o modo de teste. Não use condicionais de modo de teste durante a simulação.
 - Não grave uma marca de modo de teste no estado ou formato do save. O estoque concedido é apenas quantidade normal de recurso.
