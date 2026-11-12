@@ -4075,7 +4075,12 @@ function pitRoutine(actor, pit) {
     if (!isAt(actor, pit)) { actor.task = 'Indo à bancada da pedreira'; walkTo(actor, pit); return; }
     const tool = assignExtractionTool(actor, pit);
     if (!tool) { pit.workStatus = 'Sem ferramenta disponível'; actor.task = 'Falta ferramenta de pedreira'; actor.wait = 3; return; }
-    const qty = Math.min(pit.level ? 40 : 20, pit.stockStone || 0);
+    // Só sai com a carga cheia; leva o que sobrou apenas quando a bancada parou de render pedra.
+    const fullLoad = pit.level ? 40 : 20;
+    const face = selectedQuarryFace(pit);
+    const stalled = (pit.quarryOrder || 'rubble') !== 'rubble' || !face || face.looseMassKg <= 0 || (stoneDepositForPit(pit)?.remainingUnits || 0) <= 0;
+    const qty = Math.min(fullLoad, pit.stockStone || 0);
+    if (qty > 0 && !stalled && qty < fullLoad - 1e-6) { pit.workStatus = 'Juntando carga na bancada'; actor.task = `Juntando pedra: ${formatMass(qty)} de ${fullLoad} kg`; actor.wait = 2; actor.actionTime = 2; actor.actionClock = 0; return; }
     if (qty > 0) { pit.stockStone -= qty; tool.durability = Math.max(0, tool.durability - qty / 20); actor.carrying = { stoneQty: qty, fromPit: pit.site }; actor.task = `Levando ${formatMass(qty)} pedra`; travelToMap(actor, 'city', pit.mapSet || 2); return; }
     pit.workStatus = 'Aguardando carga no posto'; actor.task = 'Aguardando pedra na bancada'; actor.wait = 2; return;
   }
