@@ -289,7 +289,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.6';
+const GAME_VERSION = 'Version 0.13.7';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -369,9 +369,21 @@ const game = { running: false, slot: null, lastSaved: 0 };
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const format = n => Math.floor(n).toLocaleString('pt-BR');
-// No topo da tela cabem poucos dígitos: de um milhão para cima o número aparece curto ("1 bi").
-const COMPACT_NUMBER = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 });
-const formatHud = n => n >= 1e6 ? COMPACT_NUMBER.format(Math.floor(n)) : format(n);
+const formatHudAmount = value => {
+  const amount = Number(value) || 0, absolute = Math.abs(amount), sign = amount < 0 ? '−' : '';
+  if (absolute >= 999_500_000) return `${sign}${(absolute / 1_000_000_000).toFixed(1).replace('.', ',')}B`;
+  if (absolute >= 10_000_000) return `${sign}${Math.floor(absolute / 1_000_000)}M`;
+  if (absolute >= 1_000_000) return `${sign}${(absolute / 1_000_000).toFixed(1).replace('.', ',')}M`;
+  if (absolute >= 10_000) return `${sign}${Math.floor(absolute / 1_000)}k`;
+  if (absolute >= 1_000) return `${sign}${(absolute / 1_000).toFixed(1).replace('.', ',')}k`;
+  return format(amount);
+};
+const setHudAmount = (selector, value) => {
+  const element = $(selector), exact = format(value);
+  element.textContent = formatHudAmount(value);
+  element.title = exact;
+  element.setAttribute('aria-label', exact);
+};
 const formatMass = n => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 4 });
 const formatMetalAmount = (id, kg) => ['copper', 'silver', 'gold'].includes(id) && Math.abs(kg) < 1 ? `${formatMass(kg * 1000)} g` : `${formatMass(kg)} kg`;
 
@@ -548,7 +560,7 @@ function renderManorInventory() {
 }
 function closeManorInventory() {
   $('#inventory-layer').hidden = true;
-  $('#inventory-open-btn').focus();
+  $('#manor-inventory-trigger').focus();
 }
 
 function moveCamera(dx, dy) {
@@ -1349,9 +1361,9 @@ function collectTaxes() {
 
 function updateHud() {
   const r = rates();
-  $('#gold').textContent = formatHud(state.gold);
+  setHudAmount('#gold', state.gold);
   state.grain = totalFood();
-  $('#grain').textContent = format(state.grain);
+  setHudAmount('#grain', state.grain);
   $('#storage-cap').textContent = storageCap();
   $('#grain').closest('.stat').classList.toggle('full', storedUnits() >= storageCap() - 1);
   $('#happiness').textContent = Math.round(state.happiness);
@@ -1361,18 +1373,18 @@ function updateHud() {
   $('#favor-label').textContent = `${favorLabel(state.favor ?? 50)}${state.demands?.length ? ` · ${state.demands.length} ${state.demands.length === 1 ? 'tributo' : 'tributos'}` : ''}`;
   $('#favor').closest('.stat').dataset.mood = (state.favor ?? 50) < 40 ? 'low' : (state.favor ?? 50) < 60 ? 'mid' : 'high';
   $('#happiness').closest('.stat').dataset.mood = state.happiness < 40 ? 'low' : state.happiness < 60 ? 'mid' : 'high';
-  $('#timber').textContent = formatHud(state.timber);
+  setHudAmount('#timber', state.timber);
   const goldNet = dailyTaxEstimate() - dailyWages();
   $('#gold-rate').textContent = `${goldNet < 0 ? '−' : '+'}${format(Math.abs(goldNet))}/dia`;
   $('#grain-rate').textContent = `${r.grain < 0 ? '−' : '+'}${Math.abs(r.grain).toFixed(1).replace('.', ',')}/s`;
   $('#grain-rate').classList.toggle('negative', r.grain < 0);
   $('#timber-rate').textContent = `+${rateNumber(r.timber)}/s`;
-  $('#stone').textContent = format(state.stone || 0);
+  setHudAmount('#stone', state.stone || 0);
   $('#stone-rate').textContent = `+${fineRate(r.stone)}/s`;
   state.metal = metalStockTotal(); // mantém o campo antigo para saves e integrações
-  $('#metal').textContent = format(state.metal || 0);
+  setHudAmount('#metal', state.metal || 0);
   $('#metal-rate').textContent = `+${fineRate(r.metal)}/s`;
-  if ($('#ember')) { $('#ember').textContent = format(state.ember || 0); $('#ember-rate').textContent = `${remainsCount()} ${remainsCount() === 1 ? 'resto' : 'restos'}`; }
+  if ($('#ember')) { setHudAmount('#ember', state.ember || 0); $('#ember-rate').textContent = `${remainsCount()} ${remainsCount() === 1 ? 'resto' : 'restos'}`; }
   // Personagens: quantos existem e quantos o domínio comporta.
   const heroes = state.heroes.filter(hero => hero.alive).length;
   const heroCap = heroCapacity();
@@ -7051,7 +7063,6 @@ function init() {
   initCamera();
   const scene = $('#map-scene');
   $('#inventory-layer').addEventListener('click', event => { if (event.target.closest('[data-inventory-close]')) closeManorInventory(); });
-  $('#inventory-open-btn').addEventListener('click', openManorInventory);
   $('#manor-inventory-trigger').addEventListener('click', event => {
     event.preventDefault();
     event.stopPropagation();
