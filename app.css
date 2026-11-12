@@ -1126,8 +1126,11 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .move-site-btn:hover, .move-site-btn:focus-visible { color: #f1e7d2; border-color: rgba(220,196,147,.6); outline: none; }
 .site.moving { opacity: .35; }
 
-/* Equipamento: ícone provisório até chegar o desenho de cada item. */
+/* Ícones fotográficos do equipamento de heróis. */
 .gear-icon { flex: 0 0 auto; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid rgba(214,184,117,.45); border-radius: 4px; color: #e7cf98; background: rgba(46,38,24,.7); font: 20px 'Pirata One', Georgia, serif; }
+.gear-icon.weapon-icon { padding: 2px; overflow: hidden; }
+.gear-icon.weapon-icon img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.shop-list .gear-icon { width: 34px; height: 34px; flex: 0 0 34px; }
 .equip-slot.empty .gear-icon { opacity: .4; }
 .equip-slot.empty b { color: #8f8a7a; }
 .attr-bonus { display: block; color: #9fcf7f; font-size: 10px; }
