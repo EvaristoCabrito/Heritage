@@ -384,7 +384,7 @@ function newGameState(heir = null) {
       { id: 'starter-quarry-pick-1', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-2', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
     ], remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
-    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
+    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: false, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false, goalStep: 0, goalKills: 0,
     bandits: [], wildMeatPiles: [], wildlifeSpawnDay: Math.floor(380 / 1440), nextRaidAt: 720,
@@ -4346,7 +4346,9 @@ function butcherRoutine(actor, butcher) {
       butcher.pantry[actor.carrying.food] = (butcher.pantry[actor.carrying.food] || 0) + actor.carrying.qty;
       actor.carrying = null;
     }
-    if ((butcher.stock || 0) >= 0.5) {
+    // Mesma regra da padaria: carga cheia, ou o que tiver quando a carne acabou.
+    const fullLoad = Math.min(carryLoad(actor), FARM_STOCK_CAP);
+    if ((butcher.stock || 0) >= fullLoad - 1e-6 || ((butcher.stock || 0) > 1e-6 && !butcherCanProcess(butcher))) {
       const qty = Math.min(carryLoad(actor), butcher.stock);
       butcher.stock -= qty;
       actor.carrying = { food: butcher.stockFood || recipe.id, qty };
@@ -4442,7 +4444,9 @@ function bakeRoutine(actor, bakery) {
       bakery.pantry[actor.carrying.food] = (bakery.pantry[actor.carrying.food] || 0) + actor.carrying.qty;
       actor.carrying = null;
     }
-    if ((bakery.stock || 0) >= 1) {
+    // Sai com a fornada só quando junta a carga cheia, ou quando a farinha acabou (e aí traz mais na volta).
+    const fullLoad = Math.min(carryLoad(actor), FARM_STOCK_CAP);
+    if ((bakery.stock || 0) >= fullLoad - 1e-6 || ((bakery.stock || 0) > 0 && !bakeryCanBake(bakery))) {
       const qty = Math.min(carryLoad(actor), bakery.stock);
       bakery.stock -= qty;
       actor.carrying = { food: bakery.stockFood || recipe.id, qty };
