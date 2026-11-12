@@ -41,6 +41,8 @@ const farmFoodId = building => farmType(building.produce).foodId || farmType(bui
 const farmSecondaryRate = building => farmType(building.produce).secondary ? farmOutput(building) * FARM_ANIMAL_RATE : 0;
 const FISHING_RATE = 0.035; // peixe por segundo por pescador
 const FISHING_SPOTS = [
+  { site: 'wilds-stream-west-map01', type: 'fishing', name: 'Riacho das Wilds · trecho oeste', mapId: 'wilds', mapSet: 1, x: 17, y: 68, stock: 0 },
+  { site: 'wilds-stream-east-map01', type: 'fishing', name: 'Riacho das Wilds · trecho leste', mapId: 'wilds', mapSet: 1, x: 75, y: 54, stock: 0 },
   { site: 'wilds-stream-north', type: 'fishing', name: 'Riacho das Wilds · trecho norte', mapId: 'wilds', mapSet: 2, x: 25, y: 42, stock: 0 },
   { site: 'wilds-stream-south', type: 'fishing', name: 'Riacho das Wilds · trecho sul', mapId: 'wilds', mapSet: 2, x: 68, y: 67, stock: 0 },
 ];
@@ -337,7 +339,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.12';
+const GAME_VERSION = 'Version 0.13.13';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -413,6 +415,7 @@ function newGameState(heir = null) {
 
 let state = newGameState();
 let selectedLairId = null;
+let selectedFishingSpotId = null;
 const game = { running: false, slot: null, lastSaved: 0 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -551,6 +554,7 @@ function switchMap(name) {
   state.selectedSite = null;
   state.demolishArmed = null;
   selectedLairId = null;
+  selectedFishingSpotId = null;
   sizeWorld();
   renderCamera();
   renderLairs();
@@ -1738,16 +1742,54 @@ function protectedWildsDeposits(mapSet = currentMapSet) {
   ];
 }
 
+// Faixas de água visíveis nos mapas Wilds. Coordenadas em unidades do mapa (x%, y 0–200).
+// O corredor impede qualquer prédio de cobrir riachos, piscinas e cachoeiras.
+const WILDS_WATERWAYS = {
+  1: [
+    [[0, 75], [17, 68], [29, 64], [40, 59], [52, 53], [64, 50], [75, 54], [88, 60], [100, 57]],
+    [[0, 91], [9, 87], [18, 84]],
+  ],
+  2: [
+    [[0, 39], [12, 38], [25, 42], [37, 49], [51, 58], [68, 67], [83, 71], [100, 65]],
+    [[52, 13], [48, 22], [43, 30], [39, 38]],
+  ],
+};
+
+function nearWildsWater(x, y, mapSet = currentMapSet) {
+  const py = y * Y_TO_X_SCALE;
+  return (WILDS_WATERWAYS[mapSet] || []).some(path => path.some((point, index) => {
+    if (index === path.length - 1) return false;
+    const [ax, ayRaw] = point, [bx, byRaw] = path[index + 1];
+    const ay = ayRaw * Y_TO_X_SCALE, by = byRaw * Y_TO_X_SCALE;
+    const dx = bx - ax, dy = by - ay;
+    const lengthSq = dx * dx + dy * dy;
+    const t = lengthSq ? Math.max(0, Math.min(1, ((x - ax) * dx + (py - ay) * dy) / lengthSq)) : 0;
+    return Math.hypot(x - (ax + t * dx), py - (ay + t * dy)) <= 2.7;
+  }));
+}
+
 function renderFishingSpots() {
   const layer = $('#fishing-layer');
   if (!layer) return;
-  FISHING_SPOTS.forEach(spot => {
+  FISHING_SPOTS.forEach((spot, index) => {
     let marker = $(`.fishing-spot[data-spot="${spot.site}"]`, layer);
-    if (!marker) { marker = document.createElement('div'); marker.className = 'fishing-spot'; marker.dataset.spot = spot.site; marker.innerHTML = '<i aria-hidden="true"></i><small>Pesca</small>'; layer.append(marker); }
+    if (!marker) {
+      marker = document.createElement('button');
+      marker.type = 'button';
+      marker.className = 'fishing-spot';
+      marker.dataset.spot = spot.site;
+      marker.innerHTML = '<span class="fishing-jump" aria-hidden="true"></span><i aria-hidden="true"></i><small>Pesca · atribuir camponês</small>';
+      marker.addEventListener('click', () => selectFishingSpot(spot.site));
+      layer.append(marker);
+    }
     marker.style.left = `${spot.x}%`;
     marker.style.top = `${spot.y / WORLD_Y_UNITS * 100}%`;
+    marker.style.setProperty('--jump-delay', `${(index % 2) * -1.35}s`);
     marker.hidden = currentMap !== spot.mapId || currentMapSet !== spot.mapSet;
-    marker.setAttribute('aria-label', `${spot.name}. ${format(fishingStock(spot))} de peixe disponível`);
+    marker.classList.toggle('selected', selectedFishingSpotId === spot.site);
+    const assigned = state.workers.filter(worker => worker.alive && worker.profession === 'fisher' && worker.jobSite === spot.site).length;
+    marker.setAttribute('aria-label', `${spot.name}. ${format(fishingStock(spot))} de peixe disponível. ${assigned} camponeses atribuídos. Clique para escolher um camponês.`);
+    marker.title = `${spot.name} · ${assigned} camponeses · clique para atribuir`;
   });
 }
 
@@ -1757,12 +1799,46 @@ function snapPlacement(type, x, y) {
   const deposit = extractionPlaces('mine')[0];
   return deposit ? { x: deposit.x, y: deposit.y } : { x, y };
 }
+
+function selectFishingSpot(site) {
+  if (!FISHING_SPOTS.some(spot => spot.site === site)) return;
+  selectedFishingSpotId = site;
+  state.selectedSite = null;
+  selectedLairId = null;
+  state.selectedBuild = null;
+  renderLairs();
+  renderSites();
+  renderFishingSpots();
+  renderPanel();
+}
+
+function fishingSpotInfoHTML(spot) {
+  const assigned = state.workers.filter(worker => worker.alive && worker.profession === 'fisher' && worker.jobSite === spot.site);
+  const workers = state.workers.filter(worker => worker.alive).map(worker => {
+    const alreadyHere = assigned.includes(worker);
+    const awayOnOtherMap = worker.mapId === 'wilds' && (worker.mapSet || 1) !== spot.mapSet;
+    const unavailable = worker.buildSite != null || !!worker.carrying || awayOnOtherMap;
+    const detail = worker.buildSite != null ? 'terminando uma obra' : worker.carrying ? 'terminando uma entrega' : awayOnOtherMap ? 'está em outra área das Wilds' : peasantActivity(worker);
+    const action = alreadyHere ? 'Atribuído aqui' : worker.profession === 'fisher' ? 'Transferir para cá' : 'Atribuir a este ponto';
+    return `<button type="button" class="pit-worker" data-fishing-assign="${worker.id}" data-fishing-spot="${spot.site}" ${alreadyHere || unavailable ? 'disabled' : ''}><b>${worker.name}</b><small>${detail} · ${action}</small></button>`;
+  }).join('');
+  return `<section class="inspector" aria-label="${spot.name}">
+    <button type="button" class="inspector-back" data-inspector-close aria-label="Fechar ponto de pesca" title="Fechar">×</button>
+    <header class="inspector-id"><span class="fishing-inspector-mark" aria-hidden="true">≈</span><div><h3>${spot.name}</h3><small>Ponto fixo de pesca · Wilds</small></div></header>
+    <dl class="inspector-stats"><div><dt>Peixe no ponto</dt><dd>${format(fishingStock(spot))} Trutas</dd></div><div><dt>Produção base</dt><dd>${hn(FISHING_RATE)} Truta/s por pescador</dd></div><div><dt>Pescadores aqui</dt><dd>${assigned.length}</dd></div></dl>
+    <section class="inspector-section"><h4>Atribuir camponês</h4><p class="pit-hint">Clique em um nome. O camponês irá até este ponto, pescará e levará a carga ao depósito.</p><div class="pit-crew">${workers || '<div class="empty-state">Nenhum camponês disponível.</div>'}</div></section>
+    ${assigned.length ? `<section class="inspector-section"><h4>Retirar do ponto</h4><div class="pit-crew">${assigned.map(worker => `<button type="button" class="pit-worker" data-fishing-remove="${worker.id}" ${worker.carrying?.food === 'fish' ? 'disabled title="Espere a entrega das Trutas"' : ''}><b>${worker.name}</b><small>${worker.carrying?.food === 'fish' ? 'Terminando entrega das Trutas' : 'Remover deste ponto'}</small></button>`).join('')}</div></section>` : ''}
+  </section>`;
+}
+
 function placementProblem(x, y, ignoreSite = null) {
   const moving = state.movingSite != null ? state.buildings.find(building => building.site === state.movingSite) : null;
   const type = moving?.type || state.selectedBuild;
   if (type === 'mine' && currentMap !== 'wilds') return 'Minas s\u00f3 podem ser constru\u00eddas em Wilds.';
+  if (type === 'mine' && state.buildings.some(building => building.type === 'mine' && (building.mapId || 'city') === 'wilds' && (building.mapSet || 1) === currentMapSet && building.site !== ignoreSite)) return 'Este ponto das Wilds permite uma única Mina.';
   if (type === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city' && building.site !== ignoreSite)) return 'City permite apenas uma pedreira.';
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
+  if (currentMap === 'wilds' && nearWildsWater(x, y, currentMapSet)) return 'Não é possível construir sobre a água do riacho.';
   if (currentMap === 'wilds' && paintedProblem(x, y)) return paintedProblem(x, y);
   if (currentMap === 'wilds' && !WILDS_PAINTED[currentMapSet]) {
     const blockedDeposit = protectedWildsDeposits(currentMapSet).find(({ building, place }) => building !== type
@@ -1906,7 +1982,7 @@ function heroCard(hero) {
 function workerCard(worker) {
   return `<article class="hero-card worker-card">
     <img class="hero-portrait" data-actor-sheet="${worker.id}" title="Ver ficha" src="public/art/portraits/${actorPortrait(worker)}-portrait-v01.webp" alt="Retrato de ${worker.name}">
-    <div class="hero-details"><b>${worker.name}</b><small>${actorLabel(worker)}</small><small>${homeOf(worker) ? 'Mora no casebre.' : 'Mora no casarão, como as dívidas.'} ${workplaceOf(worker) ? `Trabalha ${workPlaceName(workplaceOf(worker))}.` : 'Sem fazenda pra trabalhar.'}</small><small class="worker-task">Agora: ${peasantActivity(worker)}.</small><label class="prof-select"><span>Ofício</span><select data-profession="${worker.id}"><option value="">Nenhum</option>${Object.entries(PROFESSIONS).map(([id, prof]) => `<option value="${id}"${worker.profession === id ? ' selected' : ''}>${isFemalePeasant(worker) ? prof.fem : prof.name}</option>`).join('')}</select></label><small>Bolsa: ${format(purseOf(worker))} de ouro</small></div>
+    <div class="hero-details"><b>${worker.name}</b><small>${actorLabel(worker)}</small><small>${homeOf(worker) ? 'Mora no casebre.' : 'Mora no casarão, como as dívidas.'} ${workplaceOf(worker) ? `Trabalha ${workPlaceName(workplaceOf(worker))}.` : 'Sem fazenda pra trabalhar.'}</small><small class="worker-task">Agora: ${peasantActivity(worker)}.</small><label class="prof-select"><span>Ofício</span><select data-profession="${worker.id}"><option value="">Nenhum</option>${worker.profession === 'fisher' ? '<option value="fisher" selected disabled>Pescador · atribuído no mapa</option>' : ''}${Object.entries(PROFESSIONS).filter(([id]) => id !== 'fisher').map(([id, prof]) => `<option value="${id}"${worker.profession === id ? ' selected' : ''}>${isFemalePeasant(worker) ? prof.fem : prof.name}</option>`).join('')}</select></label><small>Bolsa: ${format(purseOf(worker))} de ouro</small></div>
     <div class="hero-xp">NÍV. ${worker.level || 1}<i style="--xp:${(worker.level || 1) >= HEIR_MAX_LEVEL ? 100 : Math.round((worker.xp || 0) / xpToNext(worker.level || 1) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${worker.id}">FICHA</button></div>
   </article>`;
 }
@@ -1949,6 +2025,11 @@ function inspectorHTML() {
     const selectedLair = selectedLairId == null ? null : (state.lairs || []).find(lair => lair.id === selectedLairId && lair.active);
     if (selectedLair) return lairInfoHTML(selectedLair);
     if (selectedLairId != null) selectedLairId = null;
+    if (selectedFishingSpotId != null) {
+      const spot = FISHING_SPOTS.find(item => item.site === selectedFishingSpotId);
+      if (spot && currentMap === spot.mapId && currentMapSet === spot.mapSet) return fishingSpotInfoHTML(spot);
+      selectedFishingSpotId = null;
+    }
     const selectedFarm = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'farm' && isDone(building));
     const selectedBuilding = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite);
     const selectedArmory = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && building.type === 'armory' && isDone(building));
@@ -2032,7 +2113,9 @@ function bindPanel(host) {
   }));
   $$('[data-pit-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradePit(Number(button.dataset.pitUpgrade))));
   $$('[data-lumber]', host).forEach(button => button.addEventListener('click', () => setLumberCrew(Number(button.dataset.lumber), Number(button.dataset.change))));
-  $$('[data-inspector-close]', host).forEach(button => button.addEventListener('click', () => { if (state.movingSite != null) cancelMove(); state.selectedSite = null; selectedLairId = null; renderLairs(); renderSites(); renderPanel(); }));
+  $$('[data-fishing-assign]', host).forEach(button => button.addEventListener('click', () => assignFisherToSpot(button.dataset.fishingAssign, button.dataset.fishingSpot)));
+  $$('[data-fishing-remove]', host).forEach(button => button.addEventListener('click', () => removeFisherFromSpot(button.dataset.fishingRemove)));
+  $$('[data-inspector-close]', host).forEach(button => button.addEventListener('click', () => { if (state.movingSite != null) cancelMove(); state.selectedSite = null; selectedLairId = null; selectedFishingSpotId = null; renderLairs(); renderSites(); renderFishingSpots(); renderPanel(); }));
   $$('[data-move-site]', host).forEach(button => button.addEventListener('click', () => (state.movingSite === Number(button.dataset.moveSite) ? cancelMove() : startMove(Number(button.dataset.moveSite)))));
   $$('[data-open-market]', host).forEach(button => button.addEventListener('click', () => { state.tab = 'market'; $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); }); renderPanel(); }));
   $$('[data-bounty-amount]', host).forEach(button => button.addEventListener('click', () => { state.bountyAmount = Number(button.dataset.bountyAmount); renderPanel(); }));
@@ -2105,7 +2188,7 @@ function renderPanel() {
       <p class="build-note">Você não manda nos heróis. Eles fazem o que querem.</p>`;
   } else if (state.tab === 'workers') {
     host.innerHTML = `<div class="panel-title"><h3>Ofícios dos camponeses</h3><span>${state.workers.filter(worker => worker.alive).length} no domínio</span></div>
-      <p class="build-note">Para iniciar a pesca, escolha <b>Pescador</b> no campo Ofício de um camponês. Ele vai sozinho para o riacho das Wilds, pesca Trutas e leva a carga ao depósito.</p>
+      <p class="build-note">Para pescar, abra Wilds, clique em um marcador <b>Pesca</b> no riacho e atribua um camponês naquele ponto.</p>
       <div class="hero-list">${state.workers.filter(worker => worker.alive).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Construa um casebre para receber trabalhadores.</div>'}</div>`;
   } else if (state.tab === 'food') {
     host.innerHTML = foodPanelHTML();
@@ -3721,6 +3804,40 @@ function setProfession(id, profession) {
   renderPanel();
   say(worker.profession ? `${worker.name} agora é ${professionName(worker).toLowerCase()}. Ninguém perguntou se queria.` : `${worker.name} ficou sem ofício. Vai fazer o que aparecer.`);
 }
+function assignFisherToSpot(workerId, spotId) {
+  const worker = findActor(workerId), spot = FISHING_SPOTS.find(item => item.site === spotId);
+  if (!worker || worker.className !== 'Peasant' || !worker.alive || !spot || worker.buildSite != null || worker.carrying) return;
+  worker.profession = 'fisher';
+  worker.jobSite = spot.site;
+  worker.workplace = null;
+  worker.workTrip = false;
+  worker.route = [];
+  worker.goal = null;
+  worker.finalPoint = null;
+  worker.wait = 0;
+  worker.actionTime = 0;
+  worker.actionClock = 0;
+  say(`${worker.name} foi atribuído ao ${spot.name}. Está indo pescar.`);
+  renderHeroes();
+  renderFishingSpots();
+  renderPanel();
+}
+function removeFisherFromSpot(workerId) {
+  const worker = findActor(workerId);
+  if (!worker || worker.className !== 'Peasant' || worker.profession !== 'fisher' || worker.carrying?.food === 'fish') return;
+  worker.profession = null;
+  worker.jobSite = null;
+  worker.workplace = null;
+  worker.workTrip = false;
+  worker.route = [];
+  worker.goal = null;
+  worker.finalPoint = null;
+  worker.wait = 0;
+  say(`${worker.name} foi retirado do ponto de pesca.`);
+  renderHeroes();
+  renderFishingSpots();
+  renderPanel();
+}
 const PEASANT_PRIORITY = ['tool', 'clothes', 'feet', 'hands', 'head'];
 const ARMORY_LEVELS = [
   { gold: 0, wood: 0, tierCap: 3 },
@@ -4242,23 +4359,24 @@ function butcherRoutine(actor, butcher) {
   actor.headingToWork = true; walkTo(actor, butcher);
 }
 function fishingRoutine(actor, spot) {
+  const mapSet = spot.mapSet || 2;
   if (actor.carrying?.food === 'fish' && !actor.carrying.toButcher) {
     if ((actor.mapId || 'city') === 'wilds') {
-      actor.task = 'Voltando com peixe do riacho'; travelToMap(actor, 'city', 2); return;
+      actor.task = 'Voltando com peixe do riacho'; travelToMap(actor, 'city', mapSet); return;
     }
     const store = nearestStorage({ x: 42, y: 39 });
     if (isAt(actor, store)) { deliverLoad(actor); actor.task = 'Entregou o peixe'; }
     else { actor.task = 'Levando o peixe ao depósito'; walkTo(actor, store); return; }
   }
-  if ((actor.mapId || 'city') !== 'wilds') { actor.task = 'Indo pescar no riacho das Wilds'; travelToMap(actor, 'wilds', 2); return; }
-  actor.mapSet = 2;
+  if ((actor.mapId || 'city') !== 'wilds') { actor.task = 'Indo pescar no riacho das Wilds'; travelToMap(actor, 'wilds', mapSet); return; }
+  actor.mapSet = mapSet;
   const point = { x: spot.x, y: spot.y };
   if (!isAt(actor, point)) { actor.task = `Indo a ${spot.name}`; walkTo(actor, point); return; }
   if (fishingStock(spot) >= 1) {
     const qty = Math.min(carryLoad(actor), fishingStock(spot));
     state.fishingStock[spot.site] = fishingStock(spot) - qty; actor.carrying = { food: 'fish', qty };
     gainSkill(actor, 'fishing', 0.3); actor.task = `Pescou ${format(qty)} de peixe`;
-    travelToMap(actor, 'city', 2); return;
+    travelToMap(actor, 'city', mapSet); return;
   }
   state.fishingStock[spot.site] = Math.min(FARM_STOCK_CAP, fishingStock(spot) + FISHING_RATE * (1 + skillOf(actor, 'fishing') / 100) * state.speed * 3);
   gainSkill(actor, 'fishing', 0.2); actor.task = 'Pescando no riacho das Wilds';
@@ -6284,7 +6402,7 @@ const HOWTO = [
     <p>O Galinheiro continua produzindo ovos e também frango; a fazenda de leite continua produzindo leite e também carne de vaca. Cada carne animal sai a ${hn(FARM_ANIMAL_RATE)}× a taxa normal da fazenda. A fazenda de Suínos entrega matéria-prima ao açougue. O camponês busca insumos e entrega a produção no depósito. Nível 2: ${hn(BUTCHER_RATE[1])} unidades por segundo, com valores padrão editáveis.</p>
     ${howTable(['Produto', 'Ingredientes', 'Alimenta'], BUTCHER_RECIPES.map(recipe => [recipe.name, recipe.needs.map(id => FOOD_TYPES.find(food => food.id === id).name).join(' + '), `${recipe.feeds}×`]))}
     <h3>Pesca</h3>
-    <p>A profissão Pescador trabalha em pontos fixos no riacho do mapa 2 das Wilds. O pescador acumula peixe, leva a carga até o depósito e melhora com a habilidade Pesca. Taxa base: ${hn(FISHING_RATE)} por segundo; cada ponto guarda até ${FARM_STOCK_CAP}.</p>
+    <p>Nas Wilds, clique em um ponto de pesca marcado e escolha um camponês. Ele vai ao ponto, acumula Trutas, leva a carga ao depósito e melhora com a habilidade Pesca. Taxa base: ${hn(FISHING_RATE)} por segundo; cada ponto guarda até ${FARM_STOCK_CAP}.</p>
     <h3>Caça nas Wilds</h3>
     <p>Javalis e alces aparecem em quantidade variável a cada dia (às vezes nenhum). Camponeses com a profissão Caçador e arqueiros podem abatê-los; a carne crua cai no local e os camponeses recolhem e levam ao depósito. Os animais alternam caminhada e um ciclo próprio de espera quando param entre destinos.</p>
     <h3>Ração e consumo</h3>
