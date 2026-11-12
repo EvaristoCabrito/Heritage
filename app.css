@@ -89,9 +89,15 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .lair-layer { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
 .lair-marker { position: absolute; display: grid; justify-items: center; gap: 3px; width: clamp(70px, 11vw, 126px); padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; pointer-events: auto; transform: translate(-50%,-72%); filter: drop-shadow(2px 5px 4px rgba(0,0,0,.75)); }
 .fishing-layer { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
-.fishing-spot { position: absolute; display: grid; justify-items: center; gap: 2px; transform: translate(-50%,-50%); color: #d8e5d6; text-shadow: 0 1px 4px #101510; }
+.fishing-spot { position: absolute; display: grid; justify-items: center; gap: 2px; padding: 20px 6px 0; border: 0; background: transparent; color: #d8e5d6; font: inherit; cursor: pointer; pointer-events: auto; transform: translate(-50%,-50%); text-shadow: 0 1px 4px #101510; }
 .fishing-spot[hidden] { display: none; }
-.fishing-spot i { width: 18px; height: 18px; border: 2px solid rgba(205,226,206,.8); border-radius: 50%; background: rgba(70,113,105,.48); box-shadow: 0 0 0 4px rgba(95,144,131,.18), 0 0 14px rgba(179,219,202,.65); }
+.fishing-spot:focus-visible { outline: 2px solid #f4da9a; outline-offset: 3px; }
+.fishing-spot i { position: relative; z-index: 1; width: 18px; height: 18px; border: 2px solid rgba(205,226,206,.8); border-radius: 50%; background: rgba(70,113,105,.48); box-shadow: 0 0 0 4px rgba(95,144,131,.18), 0 0 14px rgba(179,219,202,.65); }
+.fishing-spot.selected i, .fishing-spot:hover i { border-color: #f4da9a; box-shadow: 0 0 0 5px rgba(244,218,154,.22), 0 0 18px rgba(244,218,154,.9); }
+.fishing-jump { position: absolute; z-index: 0; top: 28px; left: 50%; width: 82px; height: 43px; background-image: url('public/art/fishing-trout-sprites-v01.png'); background-position: 0 0; background-repeat: no-repeat; background-size: 200% 200%; pointer-events: none; animation: trout-frames .72s steps(1,end) infinite, trout-jump 3.2s ease-in-out infinite; animation-delay: 0s, var(--jump-delay, 0s); }
+@keyframes trout-frames { 0%,100% { background-position: 0 0; } 25% { background-position: 100% 0; } 50% { background-position: 0 100%; } 75% { background-position: 100% 100%; } }
+@keyframes trout-jump { 0%,100% { opacity: 0; transform: translate(-50%,-50%) translateY(4px) rotate(12deg); } 12% { opacity: 1; } 40% { opacity: 1; transform: translate(-50%,-50%) translateY(-31px) rotate(-18deg); } 63% { opacity: 1; transform: translate(-50%,-50%) translateY(-23px) rotate(10deg); } 86% { opacity: 0; transform: translate(-50%,-50%) translateY(4px) rotate(16deg); } }
+@media (prefers-reduced-motion: reduce) { .fishing-jump { animation-duration: 5s; } }
 .fishing-spot small { padding: 2px 4px; border: 1px solid rgba(190,212,187,.35); border-radius: 3px; background: rgba(13,18,14,.75); font-size: 7px; letter-spacing: .08em; }
 .lair-marker[hidden] { display: none; }
 .lair-marker:hover { filter: brightness(1.14) drop-shadow(2px 5px 4px rgba(0,0,0,.75)); }
