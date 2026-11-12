@@ -1144,6 +1144,8 @@ function advanceQuarryCart(pit, dt) {
   pit.workStatus = `Bloco carregado uma única vez · ${piece.massKg} kg · em trânsito para a City`;
 }
 const isPit = building => !!PIT_GOODS[building?.type];
+// Mapa onde a construção fica. Sem registro (saves antigos, casarão), é City.
+const buildingMapId = building => building?.mapId || 'city';
 const pitRate = pit => pit.type === 'mine'
   ? lumberCrew(pit).reduce((sum, actor) => { const tool = (state.extractionTools || []).find(item => item.id === actor.extractionToolId && item.durability > 0); return sum + (tool ? (tool.edge === 'steel' ? 20 / 960 : 20 / 1200) * (1 + gearBonus(actor, 'work') + tradeWorkBonus(actor, 'mine') / 2) : 0); }, 0)
   : pit.type === 'quarry' ? PIT_GOODS.quarry.rate * lumberCrew(pit).filter(actor => assignExtractionTool(actor, pit)).length * (1 + crewWork(pit)) : 0;
