@@ -482,6 +482,7 @@ body { overflow: hidden; }
 .site.built { width: 15%; }
 .site.built[data-art="mill-body"] { width: 8.5%; }
 .site.built .building-art, .site.built[data-art="mill-body"] .building-art { width: 100%; }
+.site.built[data-type="archer"] .building-art { width: 75%; }
 
 /* Telas estreitas: tudo empilhado e a página rola. */
 @media (max-width: 900px) {
