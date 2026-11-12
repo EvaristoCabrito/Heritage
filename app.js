@@ -289,7 +289,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.5';
+const GAME_VERSION = 'Version 0.13.6';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -6211,7 +6211,7 @@ const SCREENS = {
     const group = (label, list, empty) => `<div class="sheet-section-label">${label} · ${list.length}</div>${list.length ? `<ul class="grave-list">${list.map(row).join('')}</ul>` : `<p class="sheet-house grave-empty">${empty}</p>`}`;
     return { cls: 'is-pause', html: `<section class="menu-card sheet graveyard">
       <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar cemitério" title="Fechar cemitério">×</button></div>
-      <div class="sheet-top"><img class="grave-crest" src="public/art/mordavia-cemetery-l1-v01.png" alt="">
+      <div class="sheet-top"><img class="grave-crest" src="public/art/icon-heroes-cemetery-photo-v01.png" alt="Lápide memorial com espadas cruzadas">
         <div><span class="eyebrow">CEMITÉRIO · ${region.toUpperCase()}</span><h2>Os que ficaram em ${region}</h2><p class="heir-motto">${dead.length ? `${dead.length} ${dead.length === 1 ? 'nome' : 'nomes'}. Mais do que o padre consegue rezar de uma vez.` : 'Ninguém ainda. A terra está esperando com paciência.'}</p></div></div>
       ${group('HERÓIS', heroes, 'Nenhum herói caiu aqui. Por enquanto.')}
       ${group('CAMPONESES', peasants, 'Nenhum camponês enterrado aqui. Os outros acham suspeito.')}
