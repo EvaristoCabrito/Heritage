@@ -470,6 +470,14 @@ function focusRegion(name) {
 
 function switchMap(name) {
   currentMap = name === 'wilds' ? 'wilds' : 'city';
+  // A disponibilidade das construções depende da região. Sempre mostre o catálogo
+  // ao trocar de mapa para que Wilds não pareça sem opções quando outra aba estava aberta.
+  state.tab = 'build';
+  $$('.tab').forEach(tab => {
+    const active = tab.dataset.tab === state.tab;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+  });
   const wilds = currentMap === 'wilds';
   $('#map-world').dataset.map = currentMap;
   $('#map-world').dataset.mapSet = String(currentMapSet);
