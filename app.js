@@ -4274,9 +4274,9 @@ function applyWeeklyMood() {
   if (state.tab === 'food') renderPanel();
 }
 const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, pork: 0, chicken: 0, beef: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, fish: 0 });
-// O casarão guarda 200 unidades. Cada Depósito de Provisões construído soma 30, e amplia para 45, 70 e 100.
+// O casarão guarda 500 unidades. Cada Depósito de Provisões construído soma 30, e amplia para 45, 70 e 100.
 // Guardam comida, armas e itens; madeira e ouro ficam fora.
-const MANOR_STORAGE = 200;
+const MANOR_STORAGE = 500;
 const STORAGE_LEVELS = [
   { cap: 30, gold: 0, wood: 0 }, { cap: 45, gold: 160, wood: 12 }, { cap: 70, gold: 280, wood: 20 }, { cap: 100, gold: 440, wood: 32 },
 ];
