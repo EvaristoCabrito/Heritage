@@ -7359,6 +7359,10 @@ function initMenus() {
     }
   });
   $('#menu-btn').addEventListener('click', openPause);
+  const closeObjectives = () => { $('#objective-layer').hidden = true; $('#objective-open-btn').focus(); };
+  $('#objective-open-btn').addEventListener('click', () => { renderObjectiveJournal(); $('#objective-layer').hidden = false; $('#objective-close').focus(); });
+  $('#objective-close').addEventListener('click', closeObjectives);
+  $('#objective-layer').addEventListener('click', event => { if (event.target.closest('[data-objective-close]')) closeObjectives(); });
   $('#economy-open-btn').addEventListener('click', () => {
     state.tab = 'economy';
     $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
@@ -7397,6 +7401,7 @@ function initMenus() {
     else { menu.stack = []; showScreen('title'); }
   });
   document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !$('#objective-layer').hidden) { event.preventDefault(); closeObjectives(); return; }
     if (event.key === 'Escape' && !$('#inventory-layer').hidden) { event.preventDefault(); closeManorInventory(); return; }
     if (event.key !== 'Escape' || editor.active) return;
     if (!$('#menu-layer').hidden) {
