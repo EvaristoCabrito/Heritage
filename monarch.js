@@ -140,7 +140,7 @@ const Monarch = (() => {
     const m = ms();
     Object.assign(rt.self, { name: heirName(), x: m.x, y: m.y });
     killActor(enemy, rt.self);
-    if (rt.self.purse) { if (!state.testMode) state.gold += rt.self.purse; rt.self.purse = 0; updateHud(); }
+    if (rt.self.purse) { state.gold += rt.self.purse; rt.self.purse = 0; updateHud(); }
     gainHeirXp(4);
   }
   function onEnemyKilled(enemy) {
