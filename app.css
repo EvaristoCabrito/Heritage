@@ -1069,7 +1069,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .inspector-back { align-self: flex-start; padding: 2px 0; border: 0; color: var(--muted); background: none; font: 11px 'Figtree', sans-serif; letter-spacing: .04em; cursor: pointer; }
 .inspector-back:hover, .inspector-back:focus-visible { color: var(--gold); outline: none; }
 /* Pedreira e Campo de Mineração: ainda sem arte própria, usam a do Lenhador com outra cor. */
-.site[data-type="quarry"] .building-art, .build-card[data-build="quarry"] .build-preview img { filter: grayscale(.85) brightness(.95) drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
+.site[data-type="quarry"] .building-art, .build-card[data-build="quarry"] .build-preview img { filter: drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
 .site[data-type="mine"] .building-art, .build-card[data-build="mine"] .build-preview img { filter: sepia(.6) hue-rotate(-20deg) saturate(1.4) brightness(.8) drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
 /* Equipe da Pedreira e do Campo de Mineração: clique no nome para colocar ou tirar. */
 .pit-hint { color: var(--muted); font-size: 10px; }
@@ -1148,7 +1148,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .skill-grid small { color: #ece2cb; font-size: 12px; text-align: right; }
 
 /* Construção em ruínas: escura até ser consertada. */
-.site.ruined .building-art { filter: grayscale(.85) brightness(.5); }
+.site.ruined .building-art { filter: brightness(.82) drop-shadow(2px 7px 4px rgba(9,11,8,.72)); }
 
 /* Aba Economia. */
 .econ-block { margin-bottom: 14px; padding: 10px 12px; border: 1px solid rgba(206,186,137,.2); border-radius: 6px; background: rgba(10,12,9,.45); }
