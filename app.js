@@ -2772,12 +2772,21 @@ function nextActorGoal(actor) {
 }
 
 let lastActorFrame = 0;
+let actorMovementErrorReported = false;
+function reportActorMovementError(error) {
+  if (actorMovementErrorReported) return;
+  actorMovementErrorReported = true;
+  console.error('Falha isolada no ciclo de movimento dos personagens:', error);
+  const line = $('#event-line');
+  if (line) line.textContent = 'Um personagem teve um erro de movimento; os demais continuam. Recarregue a partida para tentar recuperar o caminho.';
+}
 function animateActors(now) {
   const delta = Math.min(0.05, lastActorFrame ? (now - lastActorFrame) / 1000 : 0) * state.speed;
   lastActorFrame = now;
   if (!game.running) { requestAnimationFrame(animateActors); return; }
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   [...state.heroes, ...state.workers].filter(actor => actor.alive).forEach(actor => {
+    try {
     if (actor.className !== 'Peasant' && window.Monarch?.chargeStep(actor, delta, reducedMotion)) return;
     if (actor.className === 'Peasant' ? (peasantHuntStep(actor, delta, reducedMotion) || peasantDefenseStep(actor, delta, reducedMotion)) : heroCombatStep(actor, delta, reducedMotion)) return;
     const construction = actor.className === 'Peasant' && actor.buildSite != null
@@ -2835,15 +2844,29 @@ function animateActors(now) {
     actor.action = 'walk';
     actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
     actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
+    } catch (error) {
+      actor.route = [];
+      actor.finalPoint = null;
+      actor.wait = 0;
+      actor.goal = null;
+      reportActorMovementError(error);
+    }
   });
   (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => {
     // Atordoado, derrubado, empurrado ou convertido pelo Monarca: quem decide o passo é ele.
-    if (!isWildlife(bandit) && window.Monarch?.enemyStep(bandit, delta, reducedMotion)) return;
-    if (isWildlife(bandit)) { wildlifeStep(bandit, delta, reducedMotion); return; }
-    (bandit.className === 'Monster' ? monsterStep : banditStep)(bandit, delta, reducedMotion);
+    try {
+      if (!isWildlife(bandit) && window.Monarch?.enemyStep(bandit, delta, reducedMotion)) return;
+      if (isWildlife(bandit)) { wildlifeStep(bandit, delta, reducedMotion); return; }
+      (bandit.className === 'Monster' ? monsterStep : banditStep)(bandit, delta, reducedMotion);
+    } catch (error) {
+      bandit.route = [];
+      bandit.finalPoint = null;
+      bandit.wait = 0;
+      reportActorMovementError(error);
+    }
   });
-  window.Monarch?.step(delta, reducedMotion);
-  renderHeroes();
+  try { window.Monarch?.step(delta, reducedMotion); } catch (error) { reportActorMovementError(error); }
+  try { renderHeroes(); } catch (error) { reportActorMovementError(error); }
   requestAnimationFrame(animateActors);
 }
 
