@@ -20,7 +20,7 @@ Todos os agentes que alterarem este jogo devem ler e seguir estas regras antes d
 
 ## Modos do jogo
 - A aplicação ativa é servida por `index.html` na raiz e usa `app.js` na raiz. Não crie uma implementação paralela em rascunhos ou cópias.
-- Há um único sistema de jogo. O modo de teste só pode manter um estoque maior de recursos, reposto ao entrar na partida e a cada segundo, por um único ponto de concessão (`grantStartingStock`).
+- Há um único sistema de jogo. O modo de teste só pode conceder um estoque maior de recursos ao iniciar uma partida nova, por um único ponto de concessão (`grantStartingStock`).
 - Depois dessa concessão, o modo de teste não pode alterar movimento, regras, ordem de execução, validações, custos, produção, consumo, desbloqueios, objetivos, salvamento ou qualquer outro sistema.
 - Toda compra, construção, pagamento e consumo deve usar os mesmos métodos e débitos no estoque em qualquer partida.
 - Não crie caminhos, versões, cenas, prefabs, classes, tabelas ou mecânicas paralelas para o modo de teste. Não use condicionais de modo de teste durante a simulação.

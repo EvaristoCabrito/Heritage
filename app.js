@@ -299,7 +299,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.10';
+const GAME_VERSION = 'Version 0.13.11';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -322,8 +322,7 @@ if (!['dark', 'color'].includes(options.buildingArtStyle)) options.buildingArtSt
 const debug = readStore(DEBUG_KEY, { startingStock: 'standard' });
 if (!['standard', 'full'].includes(debug.startingStock)) debug.startingStock = debug.testMode ? 'full' : 'standard';
 delete debug.testMode;
-// Estoque de teste: só quantidade. Reposto ao entrar na partida e a cada segundo; os custos são cobrados normalmente,
-// o saldo só não acaba. Pedra fica em 40 kg (o maior gasto é 20) porque ocupa o depósito. O resto do jogo não sabe que ele existe.
+// Estoque de teste: só quantidade inicial. Os custos e consumos continuam normais.
 const TEST_STOCK = { gold: 1e9, timber: 1e9, stone: 40 };
 function grantStartingStock(target) {
   if (debug.startingStock !== 'full') return;
@@ -1664,6 +1663,16 @@ function extractionPlaces(type, mapId = currentMap, mapSet = currentMapSet) {
   return mapId === 'wilds' && defaults[type] ? [{ ...defaults[type], type, mapId: 'wilds' }] : [];
 }
 
+function protectedWildsDeposits(mapSet = currentMapSet) {
+  const quarry = (worldScenario?.places || []).find(place => place.type === 'quarry' && (place.mapId || 'wilds') === 'wilds')
+    || { id: `map-${mapSet}-stone-quarry`, x: 22, y: 18 };
+  const gold = extractionPlaces('mine', 'wilds', mapSet)[0] || { id: `map-${mapSet}-metal-mine`, x: 72, y: 61 };
+  return [
+    { building: 'quarry', place: quarry, name: 'pedra' },
+    { building: 'mine', place: gold, name: 'ouro' },
+  ];
+}
+
 function renderFishingSpots() {
   const layer = $('#fishing-layer');
   if (!layer) return;
@@ -1683,6 +1692,11 @@ function placementProblem(x, y, ignoreSite = null) {
   if (type === 'mine' && currentMap !== 'wilds') return 'Minas s\u00f3 podem ser constru\u00eddas em Wilds.';
   if (type === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city' && building.site !== ignoreSite)) return 'City permite apenas uma pedreira.';
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
+  if (currentMap === 'wilds') {
+    const blockedDeposit = protectedWildsDeposits(currentMapSet).find(({ building, place }) => building !== type
+      && Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5);
+    if (blockedDeposit) return `Depósito de ${blockedDeposit.name} reservado para ${blockedDeposit.building === 'quarry' ? 'a Pedreira' : 'o Campo de Mineração'}.`;
+  }
   if (type === 'mine') {
     const deposits = extractionPlaces(type);
     if (!deposits.length) return 'Este mapa n\u00e3o tem um dep\u00f3sito de metal marcado.';
@@ -3018,7 +3032,6 @@ function animateActors(now) {
 
 function tick() {
   if (!game.running) return;
-  grantStartingStock(state);
   state.ticks++;
   state.playSeconds = (state.playSeconds || 0) + 1;
   if (options.autosave && state.playSeconds % (options.autosave * 60) === 0) writeSave(game.slot);
@@ -5899,7 +5912,6 @@ function saveCard(slot, record) {
 // Aplica o jogo escolhido na tela e começa a rodar.
 function startGame(newState, slot) {
   selectedLairId = null;
-  grantStartingStock(newState);
   state = newState;
   state.speed = [1, 2, 3].includes(Number(state.speed)) ? Number(state.speed) : 1;
   ensureFarmWorkers();
@@ -5951,6 +5963,7 @@ function startGame(newState, slot) {
 
 function newGame(slot, heir) {
   const fresh = newGameState(heir);
+  grantStartingStock(fresh);
   startGame(fresh, slot);
   say('A herança é sua. Os credores já foram avisados.');
 }
@@ -5965,7 +5978,6 @@ function loadGame(slot) {
 function setStartingStock(on) {
   debug.startingStock = on ? 'full' : 'standard';
   writeStore(DEBUG_KEY, debug);
-  if (game.slot) { grantStartingStock(state); updateHud(); }
 }
 
 function applyOptions() {
@@ -6586,7 +6598,7 @@ const SCREENS = {
     return { cls: menuMode(), html: `<section class="menu-card">
       <header class="menu-card-head"><span class="eyebrow">AJUSTES DE INÍCIO</span><h2>Estoque e saves</h2><p>A quantidade inicial não altera as regras da partida.</p></header>
       <div class="option-list">
-        <div class="option-row"><div><b>Estoque inicial</b><small>Alto mantém ouro e madeira em 1 bilhão e a pedra em 40 kg, repostos a cada segundo, em qualquer partida. Os custos são cobrados normalmente; o saldo só não acaba.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
+        <div class="option-row"><div><b>Estoque inicial</b><small>Alto concede ouro, madeira e pedra extras ao iniciar uma partida nova. Custos, consumo e todas as regras continuam iguais.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
         <div class="option-row"><div><b>Apagar todos os saves</b><small>Remove os ${SAVE_SLOTS} slots deste navegador.</small></div><button type="button" class="danger small" data-action="wipe" ${used ? '' : 'disabled'}>Apagar</button></div>
       </div>
       <dl class="debug-info"><div><dt>Versão</dt><dd>${GAME_VERSION}</dd></div><div><dt>Slots usados</dt><dd>${used} / ${SAVE_SLOTS}</dd></div><div><dt>Jogo aberto</dt><dd>${game.slot ? `Slot ${game.slot}` : 'Nenhum'}</dd></div></dl>
