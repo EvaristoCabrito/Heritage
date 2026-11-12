@@ -1277,7 +1277,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
   .spell-btn .spell-glyph { font-size: 15px; line-height: 28px; }
   .monarch-res .res { min-width: 70px; }
 }
-#map-world[data-map="wilds"] #site-layer, #map-world[data-map="wilds"] #poi-layer, #map-world[data-map="wilds"] .map-atmosphere { display: none; }
+#map-world[data-map="wilds"] #poi-layer, #map-world[data-map="wilds"] .map-atmosphere { display: none; }
 #map-world[data-map-set="2"] .map-atmosphere { display: none; }
 
 /* Cursores do Ember: a seta em tudo e a manopla enquanto o mapa é arrastado. */
