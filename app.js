@@ -58,6 +58,14 @@ const HUNT_MEAT_DROP = { boar: [2, 4], elk: [3, 5] }; // mínimo e máximo de ca
 // A colheita fica na fazenda (até FARM_STOCK_CAP) até um camponês carregar CARRY_LOAD por viagem para o depósito.
 const CARRY_LOAD = 5;
 const FARM_STOCK_CAP = 10;
+// Indústrias (moinho, padaria e açougue) acumulam 30 produtos no nível 1, 50 no nível 2 e 70 no nível 3.
+const INDUSTRY_STOCK_CAP = [30, 50, 70];
+const industryCap = building => INDUSTRY_STOCK_CAP[Math.min(building?.level || 0, INDUSTRY_STOCK_CAP.length - 1)];
+// Comida é leve: qualquer alimento (trigo, farinha, pão, carne, peixe) vai 10 por viagem; a habilidade de carga sobe isso
+// até 30 no nível máximo (100), e o equipamento de carga soma, sem passar de 30. Pedra, minério e metal seguem carryLoad.
+const FOOD_LOAD = 10;
+const FOOD_LOAD_MAX = 30;
+const foodLoad = actor => Math.min(FOOD_LOAD_MAX, FOOD_LOAD + Math.floor(skillOf(actor, 'hauling') / 100 * (FOOD_LOAD_MAX - FOOD_LOAD)) + gearBonus(actor, 'carry'));
 const MANOR_DOOR = { x: 42, y: 39 };
 // Fazendas e moinhos sobem até o nível 3. O moinho melhorado mói mais rápido, sem exagero.
 const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 180, wood: 12 }, { gold: 320, wood: 20 }];
@@ -362,8 +370,9 @@ if (!['dark', 'color'].includes(options.buildingArtStyle)) options.buildingArtSt
 const debug = readStore(DEBUG_KEY, { startingStock: 'standard' });
 if (!['standard', 'full'].includes(debug.startingStock)) debug.startingStock = debug.testMode ? 'full' : 'standard';
 delete debug.testMode;
-// Estoque de teste: só quantidade inicial. Os custos e consumos continuam normais.
-const TEST_STOCK = { gold: 1e9, timber: 1e9, stone: 1e9 };
+// Estoque de teste: só quantidade. Reposto ao entrar na partida e a cada segundo (pedido do dono: "maxed out e sem gastar").
+// Os custos são cobrados normalmente; o saldo só não acaba. Pedra fica em 40 kg porque ocupa o depósito.
+const TEST_STOCK = { gold: 1e9, timber: 1e9, stone: 40 };
 function grantStartingStock(target) {
   if (debug.startingStock !== 'full') return;
   Object.entries(TEST_STOCK).forEach(([id, qty]) => { target[id] = Math.max(target[id] || 0, qty); });
@@ -383,7 +392,7 @@ function newGameState(heir = null) {
       { id: 'starter-quarry-pick-1', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-2', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
     ], remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
-    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: true, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
+    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: false, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, manorArrivalDay: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false, goalStep: 0, goalKills: 0,
     bandits: [], wildMeatPiles: [], wildlifeSpawnDay: Math.floor(380 / 1440), nextRaidAt: 720,
@@ -743,7 +752,7 @@ function updateToastClear() {
   }
 }
 
-const WORKER_UPKEEP = 0.3; // provisões por segundo, por trabalhador
+const WORKER_UPKEEP = 0.075; // provisões por segundo, por trabalhador (4x mais devagar que os 0,3 antigos)
 // Mercado: sempre aberto. Sem a construção, só a troca simples de trigo, alho e madeira, 25% pior:
 // vende por 75% do preço e compra por 125%.
 // Preços fixos em ouro por unidade. Comprar custa o dobro de vender.
@@ -1757,11 +1766,36 @@ function extractionPlaces(type, mapId = currentMap, mapSet = currentMapSet) {
   // Esses pontos ja estao pintados no mapa dos Wilds; servem mesmo sem marcador do editor.
   const defaults = {
     quarry: { id: `map-${mapSet}-stone-quarry`, x: 22, y: 18 },
-    mine: { id: `map-${mapSet}-metal-mine`, x: mapSet === 1 ? 84 : 72, y: mapSet === 1 ? 88 : 61, rank: mapSet === 2 ? 'IV' : 'II' },
+    // Mapa 1: lugar fixo do Campo de Mineração, no chão logo à frente da mina de ouro desenhada (nunca em cima dela nem do riacho).
+    mine: { id: `map-${mapSet}-metal-mine`, ...(mapSet === 1 ? { x: 76, y: 112 } : { x: 72, y: 61 }), rank: mapSet === 2 ? 'IV' : 'II' },
   };
   return mapId === 'wilds' && defaults[type] ? [{ ...defaults[type], type, mapId: 'wilds' }] : [];
 }
 
+// Áreas desenhadas na arte de Wilds (mapa 1) onde nada pode ser construído: a pedreira, a mina de ouro e o riacho.
+// x em % da largura, y de 0 a 200, medidos sobre mordavia-wilds-map.webp.
+const WILDS_PAINTED = {
+  1: {
+    areas: [
+      { name: 'a pedreira desenhada no mapa', x1: 4, x2: 48, y1: 8, y2: 46 },
+      { name: 'a mina de ouro desenhada no mapa', x1: 64, x2: 90, y1: 62, y2: 95 },
+    ],
+    river: [[4, 70], [13, 68], [24, 65], [34, 61], [42, 59], [53, 59], [62, 56], [75, 54], [83, 52], [89, 51], [98, 49]],
+  },
+};
+function paintedProblem(x, y, mapSet = currentMapSet) {
+  const painted = WILDS_PAINTED[mapSet];
+  if (!painted) return null;
+  const area = painted.areas.find(item => x >= item.x1 && x <= item.x2 && y >= item.y1 && y <= item.y2);
+  if (area) return `Não dá para construir em cima d${area.name.slice(0, 1) === 'a' ? '' : 'e '}${area.name}.`;
+  const near = painted.river.slice(1).some(([bx, by], i) => {
+    const [ax, ay] = painted.river[i];
+    const dx = bx - ax, dy = (by - ay) * Y_TO_X_SCALE, px = x - ax, py = (y - ay) * Y_TO_X_SCALE;
+    const t = Math.max(0, Math.min(1, (px * dx + py * dy) / (dx * dx + dy * dy)));
+    return Math.hypot(px - t * dx, py - t * dy) < 5;
+  });
+  return near ? 'Não dá para construir em cima do riacho.' : null;
+}
 function protectedWildsDeposits(mapSet = currentMapSet) {
   const quarry = (worldScenario?.places || []).find(place => place.type === 'quarry' && (place.mapId || 'wilds') === 'wilds')
     || { id: `map-${mapSet}-stone-quarry`, x: 22, y: 18 };
@@ -1823,6 +1857,13 @@ function renderFishingSpots() {
   });
 }
 
+// O Campo de Mineração tem um lugar fixo por mapa: onde quer que se clique em Wilds, ele vai para o depósito.
+function snapPlacement(type, x, y) {
+  if (type !== 'mine' || currentMap !== 'wilds') return { x, y };
+  const deposit = extractionPlaces('mine')[0];
+  return deposit ? { x: deposit.x, y: deposit.y } : { x, y };
+}
+
 function selectFishingSpot(site) {
   if (!FISHING_SPOTS.some(spot => spot.site === site)) return;
   selectedFishingSpotId = site;
@@ -1861,11 +1902,9 @@ function placementProblem(x, y, ignoreSite = null) {
   if (type === 'mine' && state.buildings.some(building => building.type === 'mine' && (building.mapId || 'city') === 'wilds' && (building.mapSet || 1) === currentMapSet && building.site !== ignoreSite)) return 'Este ponto das Wilds permite uma única Mina.';
   if (type === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city' && building.site !== ignoreSite)) return 'City permite apenas uma pedreira.';
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
-  if (currentMap === 'wilds') {
-    if (nearWildsWater(x, y, currentMapSet)) return 'Não é possível construir sobre a água do riacho.';
-    if (currentMapSet === 1 && x >= 6 && x <= 48 && y >= 5 && y <= 44) {
-      return 'A área da pedreira já desenhada no mapa deve ficar livre; construa ao redor dela.';
-    }
+  if (currentMap === 'wilds' && nearWildsWater(x, y, currentMapSet)) return 'Não é possível construir sobre a água do riacho.';
+  if (currentMap === 'wilds' && paintedProblem(x, y)) return paintedProblem(x, y);
+  if (currentMap === 'wilds' && !WILDS_PAINTED[currentMapSet]) {
     const blockedDeposit = protectedWildsDeposits(currentMapSet).find(({ building, place }) => building !== type
       && Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5);
     if (blockedDeposit) return `Depósito de ${blockedDeposit.name} reservado para ${blockedDeposit.building === 'quarry' ? 'a Pedreira' : 'o Campo de Mineração'}.`;
@@ -1908,7 +1947,7 @@ function showPlacementPreview(event) {
   const item = BUILDINGS.find(building => building.id === state.selectedBuild);
   const moving = state.movingSite != null ? state.buildings.find(building => building.site === state.movingSite) : null;
   if ((!item && !moving) || event.target.closest('.map-tools, .menu-btn')) { preview.hidden = true; return; }
-  const { x, y } = worldPoint(event);
+  const { x, y } = snapPlacement(moving?.type || item?.id, ...Object.values(worldPoint(event)));
   const art = moving ? siteArt(moving) : item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id];
   preview.hidden = false;
   preview.style.setProperty('--x', `${x}%`);
@@ -2438,6 +2477,7 @@ function cancelMove() {
 function moveBuilding(x, y) {
   const building = state.buildings.find(item => item.site === state.movingSite);
   if (!building) { state.movingSite = null; return; }
+  ({ x, y } = snapPlacement(building.type, x, y));
   const problem = placementProblem(x, y, building.site);
   if (problem) { say(problem); return; }
   building.x = Math.round(x * 10) / 10;
@@ -2566,6 +2606,7 @@ const buildingName = building => building.type === 'manor' ? 'o Casarão' : buil
 function placeBuilding(x, y) {
   const item = BUILDINGS.find(building => building.id === state.selectedBuild);
   if (!item) return;
+  ({ x, y } = snapPlacement(item.id, x, y));
   const problem = placementProblem(x, y);
   if (problem) { say(problem); return; }
   if (state.gold < item.cost || state.timber < item.wood || state.stone < buildingStoneCost(item)) {
@@ -3252,6 +3293,7 @@ function animateActors(now) {
 
 function tick() {
   if (!game.running) return;
+  grantStartingStock(state);
   state.ticks++;
   state.playSeconds = (state.playSeconds || 0) + 1;
   if (options.autosave && state.playSeconds % (options.autosave * 60) === 0) writeSave(game.slot);
@@ -4261,7 +4303,7 @@ const millCapacity = () => state.buildings.filter(building => building.type === 
 // Cada moinho mói o trigo que os camponeses trouxeram; a farinha espera no moinho até alguém levar ao depósito.
 function grindWheat(dt) {
   state.buildings.filter(building => building.type === 'mill' && isDone(building)).forEach(mill => {
-    const qty = Math.min(millRate(mill) * (1 + crewWork(mill)) * dt, mill.input || 0, Math.max(0, FARM_STOCK_CAP - (mill.stock || 0)));
+    const qty = Math.min(millRate(mill) * (1 + crewWork(mill)) * dt, mill.input || 0, Math.max(0, industryCap(mill) - (mill.stock || 0)));
     if (qty <= 0) return;
     mill.input -= qty;
     mill.stock = (mill.stock || 0) + qty;
@@ -4273,14 +4315,14 @@ const bakingCapacity = id => state.buildings.filter(building => building.type ==
 function bakeryCanBake(bakery) {
   const recipe = bakeryActiveRecipe(bakery);
   if ((bakery.stock || 0) > 1e-6 && bakery.stockFood && bakery.stockFood !== recipe.id) return false;
-  return recipe.needs.every(id => (bakery.pantry?.[id] || 0) > 1e-6) && (bakery.stock || 0) < FARM_STOCK_CAP;
+  return recipe.needs.every(id => (bakery.pantry?.[id] || 0) > 1e-6) && (bakery.stock || 0) < industryCap(bakery);
 }
 function bakeFood(dt) {
   state.buildings.filter(building => building.type === 'bakery' && isDone(building)).forEach(bakery => {
     if (!bakeryCanBake(bakery)) return;
     const recipe = bakeryActiveRecipe(bakery);
     const pantry = bakery.pantry;
-    const qty = Math.min(bakeRate(bakery) * (1 + crewWork(bakery)) * dt, ...recipe.needs.map(id => pantry[id]), FARM_STOCK_CAP - (bakery.stock || 0));
+    const qty = Math.min(bakeRate(bakery) * (1 + crewWork(bakery)) * dt, ...recipe.needs.map(id => pantry[id]), industryCap(bakery) - (bakery.stock || 0));
     if (qty <= 0) return;
     recipe.needs.forEach(id => { pantry[id] -= qty; });
     bakery.stockFood = recipe.id;
@@ -4290,13 +4332,13 @@ function bakeFood(dt) {
 function butcherCanProcess(butcher) {
   const recipe = butcherActiveRecipe(butcher);
   if ((butcher.stock || 0) > 1e-6 && butcher.stockFood && butcher.stockFood !== recipe.id) return false;
-  return recipe.needs.every(id => (butcher.pantry?.[id] || 0) >= 1e-6) && (butcher.stock || 0) < FARM_STOCK_CAP;
+  return recipe.needs.every(id => (butcher.pantry?.[id] || 0) >= 1e-6) && (butcher.stock || 0) < industryCap(butcher);
 }
 function processButcher(dt) {
   state.buildings.filter(building => building.type === 'butcher' && isDone(building)).forEach(butcher => {
     if (!butcherCanProcess(butcher)) return;
     const recipe = butcherActiveRecipe(butcher), pantry = butcher.pantry || {};
-    const qty = Math.min(butcherRate(butcher) * (1 + crewWork(butcher)) * dt, ...recipe.needs.map(id => pantry[id]), FARM_STOCK_CAP - (butcher.stock || 0));
+    const qty = Math.min(butcherRate(butcher) * (1 + crewWork(butcher)) * dt, ...recipe.needs.map(id => pantry[id]), industryCap(butcher) - (butcher.stock || 0));
     if (qty <= 0) return;
     recipe.needs.forEach(id => { pantry[id] -= qty; });
     butcher.stockFood = recipe.id;
@@ -4396,7 +4438,7 @@ function butcherMissing(butcher) {
     const load = worker.alive && worker.carrying?.toButcher === butcher.site ? worker.carrying : null;
     if (load) pantry[load.food] = (pantry[load.food] || 0) + load.qty;
   });
-  return butcherActiveRecipe(butcher).needs.filter(id => (pantry[id] || 0) < CARRY_LOAD && (state.food[id] || 0) >= 0.5)
+  return butcherActiveRecipe(butcher).needs.filter(id => (pantry[id] || 0) < FOOD_LOAD && (state.food[id] || 0) >= 0.5)
     .sort((a, b) => (pantry[a] || 0) - (pantry[b] || 0))[0] || null;
 }
 function butcherRoutine(actor, butcher) {
@@ -4407,14 +4449,17 @@ function butcherRoutine(actor, butcher) {
       butcher.pantry[actor.carrying.food] = (butcher.pantry[actor.carrying.food] || 0) + actor.carrying.qty;
       actor.carrying = null;
     }
-    if ((butcher.stock || 0) >= 0.5) {
-      const qty = Math.min(carryLoad(actor), butcher.stock);
+    // Mesma regra da padaria: processa até a carne acabar; sai com a carga cheia, ou com o que tiver quando a carne acabou.
+    const fullLoad = foodLoad(actor);
+    const canProcess = butcherCanProcess(butcher);
+    if ((butcher.stock || 0) >= fullLoad - 1e-6 || ((butcher.stock || 0) > 1e-6 && !canProcess)) {
+      const qty = Math.min(foodLoad(actor), butcher.stock);
       butcher.stock -= qty;
       actor.carrying = { food: butcher.stockFood || recipe.id, qty };
       actor.task = `Levando ${foodName(actor.carrying.food)} ao depósito`;
       walkTo(actor, store); return;
     }
-    const need = butcherMissing(butcher);
+    const need = !canProcess && butcherMissing(butcher);
     if (need) { actor.task = `Buscando ${foodName(need)} para o açougue`; walkTo(actor, store); return; }
     actor.task = butcherCanProcess(butcher) ? `Processando ${recipe.name} no açougue` : `No açougue, esperando ${recipe.needs.map(foodName).join(' e ')}`;
     if (butcherCanProcess(butcher)) gainSkill(actor, 'cooking', 0.3);
@@ -4424,7 +4469,7 @@ function butcherRoutine(actor, butcher) {
     if (actor.carrying && !actor.carrying.toButcher) deliverLoad(actor);
     const need = !actor.carrying && butcherMissing(butcher);
     if (need) {
-      const qty = Math.min(carryLoad(actor), state.food[need]); state.food[need] -= qty;
+      const qty = Math.min(foodLoad(actor), state.food[need]); state.food[need] -= qty;
       actor.carrying = { food: need, qty, toButcher: butcher.site };
     }
   }
@@ -4447,7 +4492,7 @@ function fishingRoutine(actor, spot) {
   const point = { x: spot.x, y: spot.y };
   if (!isAt(actor, point)) { actor.task = `Indo a ${spot.name}`; walkTo(actor, point); return; }
   if (fishingStock(spot) >= 1) {
-    const qty = Math.min(carryLoad(actor), fishingStock(spot));
+    const qty = Math.min(foodLoad(actor), fishingStock(spot));
     state.fishingStock[spot.site] = fishingStock(spot) - qty; actor.carrying = { food: 'fish', qty };
     gainSkill(actor, 'fishing', 0.3); actor.task = `Pescou ${format(qty)} de peixe`;
     travelToMap(actor, 'city', mapSet); return;
@@ -4469,7 +4514,7 @@ function hunterRoutine(actor) {
   const pile = (state.wildMeatPiles || []).filter(item => item.qty > 0 && (item.mapSet || 2) === 2).sort((a, b) => distanceTo(actor, a) - distanceTo(actor, b))[0];
   if (pile) {
     if (distanceTo(actor, pile) > 1.3) { actor.task = `Buscando ${foodName(pile.food)}`; walkTo(actor, pile); return; }
-    const qty = Math.min(carryLoad(actor), pile.qty);
+    const qty = Math.min(foodLoad(actor), pile.qty);
     pile.qty -= qty;
     actor.carrying = { food: pile.food, qty };
     if (pile.qty <= 0) state.wildMeatPiles = state.wildMeatPiles.filter(item => item !== pile);
@@ -4490,7 +4535,7 @@ function bakeryMissing(bakery) {
     if (load) pantry[load.food] = (pantry[load.food] || 0) + load.qty;
   });
   return bakeryActiveRecipe(bakery).needs
-    .filter(id => (pantry[id] || 0) < CARRY_LOAD && (state.food[id] || 0) >= 0.5)
+    .filter(id => (pantry[id] || 0) < FOOD_LOAD && (state.food[id] || 0) >= 0.5)
     .sort((a, b) => (pantry[a] || 0) - (pantry[b] || 0))[0] || null;
 }
 // Rotina do padeiro: busca um ingrediente por viagem, assa e leva a fornada ao depósito.
@@ -4503,15 +4548,18 @@ function bakeRoutine(actor, bakery) {
       bakery.pantry[actor.carrying.food] = (bakery.pantry[actor.carrying.food] || 0) + actor.carrying.qty;
       actor.carrying = null;
     }
-    if ((bakery.stock || 0) >= 1) {
-      const qty = Math.min(carryLoad(actor), bakery.stock);
+    // Assa até a farinha acabar. Sai com o pão quando junta a carga cheia, ou quando a farinha acabou (e traz mais na volta).
+    const fullLoad = foodLoad(actor);
+    const canBake = bakeryCanBake(bakery);
+    if ((bakery.stock || 0) >= fullLoad - 1e-6 || ((bakery.stock || 0) > 0 && !canBake)) {
+      const qty = Math.min(fullLoad, bakery.stock);
       bakery.stock -= qty;
       actor.carrying = { food: bakery.stockFood || recipe.id, qty };
       actor.task = `Carregando ${format(qty)} de ${foodName(actor.carrying.food)} para o depósito`;
       walkTo(actor, store);
       return;
     }
-    const need = bakeryMissing(bakery);
+    const need = !canBake && bakeryMissing(bakery);
     if (need) {
       actor.task = `Indo buscar ${foodName(need)} no depósito`;
       walkTo(actor, store);
@@ -4527,7 +4575,7 @@ function bakeRoutine(actor, bakery) {
     if (actor.carrying && !actor.carrying.toBakery) deliverLoad(actor);
     const need = !actor.carrying && bakeryMissing(bakery);
     if (need) {
-      const qty = Math.min(carryLoad(actor), state.food[need]);
+      const qty = Math.min(foodLoad(actor), state.food[need]);
       state.food[need] -= qty;
       actor.carrying = { food: need, qty, toBakery: bakery.site };
     }
@@ -4591,7 +4639,10 @@ function pitRoutine(actor, pit) {
   if (!isAt(actor, pit)) { actor.task = `Indo à frente de ${oreName(seam.mineral)}`; walkTo(actor, pit); return; }
   const tool = assignExtractionTool(actor, pit);
   if (!tool) { pit.workStatus = 'Sem picareta disponível'; actor.task = 'Falta picareta'; actor.wait = 3; return; }
-  const loadGrams = Math.min(workerLoadForPit(pit), pit.stockGrams || 0, storageCap() * 100000);
+  // Só sai com a carga cheia (20 kg, 40 no nível 2); leva o resto apenas quando o veio acabou ou o depósito só aceita menos.
+  const fullGrams = Math.min(workerLoadForPit(pit), storageCap() * 100000);
+  const loadGrams = Math.min(fullGrams, pit.stockGrams || 0);
+  if (loadGrams > 0 && loadGrams < fullGrams - 1e-6 && seam.remainingGrams > 0) { pit.workStatus = 'Juntando carga no posto'; actor.task = `Juntando ${oreName(seam.mineral)}: ${formatMass(loadGrams / 1000)} de ${formatMass(fullGrams / 1000)} kg`; actor.wait = 2; actor.actionTime = 2; actor.actionClock = 0; gainSkill(actor, 'mining', 0.05); return; }
   if (loadGrams > 0) {
     pit.stockGrams -= loadGrams;
     tool.durability = Math.max(0, tool.durability - loadGrams / 20000);
@@ -4673,8 +4724,10 @@ function haulRoutine(actor, workplace) {
     const secondaryStock = workplace.secondaryStock || 0;
     const foodId = mill ? 'flour' : secondaryId && secondaryStock >= 1 ? secondaryId : farmFoodId(workplace);
     const availableStock = mill ? workplace.stock || 0 : foodId === secondaryId ? secondaryStock : workplace.stock || 0;
-    if (availableStock >= 1) {
-      const qty = Math.min(carryLoad(actor), availableStock);
+    // Moinho: mói até o trigo acabar e sai com a carga cheia de farinha, ou com o que tiver quando o trigo acabou.
+    const millDone = mill && (workplace.input || 0) <= 1e-6;
+    if (mill ? availableStock >= foodLoad(actor) - 1e-6 || (availableStock >= 0.5 && millDone) : availableStock >= 1) {
+      const qty = Math.min(foodLoad(actor), availableStock);
       if (!mill && foodId === secondaryId) workplace.secondaryStock -= qty; else workplace.stock -= qty;
       actor.carrying = { food: foodId, qty };
       actor.task = `Carregando ${format(qty)} de ${foodName(actor.carrying.food)} para o depósito`;
@@ -4685,7 +4738,7 @@ function haulRoutine(actor, workplace) {
       walkTo(actor, store);
       return;
     }
-    if (mill && (state.food.wheat || 0) >= 1 && (workplace.input || 0) < CARRY_LOAD) {
+    if (mill && (state.food.wheat || 0) >= 1 && millDone) {
       actor.task = 'Indo buscar trigo no depósito';
       walkTo(actor, store);
       return;
@@ -4698,7 +4751,7 @@ function haulRoutine(actor, workplace) {
   if (isAt(actor, store)) {
     if (actor.carrying && (actor.carrying.food !== 'wheat' || !mill)) deliverLoad(actor);
     if (mill && !actor.carrying && (state.food.wheat || 0) >= 0.5) {
-      const qty = Math.min(carryLoad(actor), state.food.wheat);
+      const qty = Math.min(foodLoad(actor), state.food.wheat);
       state.food.wheat -= qty;
       actor.carrying = { food: 'wheat', qty };
     }
@@ -5284,8 +5337,8 @@ function foodPanelHTML() {
   const n = eaters();
   return `<div class="panel-title"><h3>Alimentos e consumo</h3><span>${n} ${n === 1 ? 'boca' : 'bocas'} · ${foodDemand().toFixed(1).replace('.', ',')} por segundo</span></div>
     <div class="food-block"><div class="food-label">RAÇÃO</div>
-      <div class="segmented ration">${RATIONS.map((ration, i) => `<button type="button" data-ration="${i}" class="${state.ration === i ? 'active' : ''}"><b>${ration.label}</b><small>${(eaters() * WORKER_UPKEEP * ration.mult).toFixed(1).replace('.', ',')}/s</small><em class="${ration.mood > 0 ? 'mood-up' : ration.mood < 0 ? 'mood-down' : ''}">${ration.mood > 0 ? '+' : ration.mood < 0 ? '−' : ''}${Math.abs(ration.mood)} felicidade</em></button>`).join('')}</div>
-      <p class="storage-items">Cada camponês come ${WORKER_UPKEEP.toFixed(1).replace('.', ',')} de provisão por segundo na ração normal. Meia come metade; dobrada, o dobro; tripla, o triplo.</p>
+      <div class="segmented ration">${RATIONS.map((ration, i) => `<button type="button" data-ration="${i}" class="${state.ration === i ? 'active' : ''}"><b>${ration.label}</b><small>${hn(eaters() * WORKER_UPKEEP * ration.mult)}/s</small><em class="${ration.mood > 0 ? 'mood-up' : ration.mood < 0 ? 'mood-down' : ''}">${ration.mood > 0 ? '+' : ration.mood < 0 ? '−' : ''}${Math.abs(ration.mood)} felicidade</em></button>`).join('')}</div>
+      <p class="storage-items">Cada camponês come ${hn(WORKER_UPKEEP)} de provisão por segundo na ração normal. Meia come metade; dobrada, o dobro; tripla, o triplo.</p>
       <p class="storage-items">A provisão se mede em pão. ${[1, 2, 4].map(n => `${FOOD_TYPES.filter(food => !food.raw && food.feeds === n).map(food => food.name.toLowerCase()).join(', ')} alimentam ${n}×`).join('; ')}: quanto mais alimenta, menos sai do estoque.</p>
       <p class="ration-effect">Efeito na felicidade do povo: a ração <b>${RATIONS[state.ration].label.toLowerCase()}</b> ${RATIONS[state.ration].mood > 0 ? 'deixa o povo mais feliz' : RATIONS[state.ration].mood < 0 ? 'deixa o povo mais triste' : 'não muda a felicidade'} (${RATIONS[state.ration].mood > 0 ? '+' : RATIONS[state.ration].mood < 0 ? '−' : ''}${Math.abs(RATIONS[state.ration].mood)}). Quanto mais comida, mais feliz o povo, e mais rápido o estoque acaba. Se a comida servida não der para todos, a fome tira até 40.</p></div>
     <div class="food-label">CARDÁPIO</div>
@@ -6256,6 +6309,7 @@ function loadGame(slot) {
 function setStartingStock(on) {
   debug.startingStock = on ? 'full' : 'standard';
   writeStore(DEBUG_KEY, debug);
+  if (game.slot) { grantStartingStock(state); updateHud(); }
 }
 
 function applyOptions() {
@@ -6526,7 +6580,7 @@ const HOWTO = [
     ${howFormula(`XP da ação = XP base × max(0,25; 1 − 0,03 × (nível − nível da ação)) × (1 + bônus de XP)<br>Bônus no trabalho: metade na produção do lugar, metade no ritmo de cada tarefa`)}
     <p>Carga vai de 0 a 100 e sobe a cada entrega, mais devagar quanto mais alta.</p>
     <h3>Carga</h3>
-    ${howFormula(`Carga por viagem = ${CARRY_LOAD} + bônus de carga do equipamento + (Carga/25, arredondado para baixo)`)}` },
+    ${howFormula(`Carga por viagem = ${CARRY_LOAD} + bônus de carga do equipamento + (Carga/25, arredondado para baixo)<br>Comida (trigo, farinha, pão, carne, peixe) = ${FOOD_LOAD} + (Carga/5, arredondado para baixo) + bônus de carga, até ${FOOD_LOAD_MAX}`)}` },
   { title: 'Heróis', html: () => `
     <h3>Alojamento</h3>
     ${howFormula(`Vagas = 1 (Warrior do casarão) + 1 por guilda + 4 por hotel + 1 por taverna`)}
@@ -6876,7 +6930,7 @@ const SCREENS = {
     return { cls: menuMode(), html: `<section class="menu-card">
       <header class="menu-card-head"><span class="eyebrow">AJUSTES DE INÍCIO</span><h2>Estoque e saves</h2><p>A quantidade inicial não altera as regras da partida.</p></header>
       <div class="option-list">
-        <div class="option-row"><div><b>Estoque inicial</b><small>Alto concede ouro, madeira e pedra extras ao iniciar uma partida nova. Custos, consumo e todas as regras continuam iguais.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
+        <div class="option-row"><div><b>Estoque inicial</b><small>Alto mantém ouro e madeira em 1 bilhão e a pedra em 40 kg, repostos a cada segundo, em qualquer partida. Custos, consumo e todas as regras continuam iguais; o saldo só não acaba.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
         <div class="option-row"><div><b>Apagar todos os saves</b><small>Remove os ${SAVE_SLOTS} slots deste navegador.</small></div><button type="button" class="danger small" data-action="wipe" ${used ? '' : 'disabled'}>Apagar</button></div>
       </div>
       <dl class="debug-info"><div><dt>Versão</dt><dd>${GAME_VERSION}</dd></div><div><dt>Slots usados</dt><dd>${used} / ${SAVE_SLOTS}</dd></div><div><dt>Jogo aberto</dt><dd>${game.slot ? `Slot ${game.slot}` : 'Nenhum'}</dd></div></dl>
