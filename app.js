@@ -58,6 +58,14 @@ const HUNT_MEAT_DROP = { boar: [2, 4], elk: [3, 5] }; // mínimo e máximo de ca
 // A colheita fica na fazenda (até FARM_STOCK_CAP) até um camponês carregar CARRY_LOAD por viagem para o depósito.
 const CARRY_LOAD = 5;
 const FARM_STOCK_CAP = 10;
+// Indústrias (moinho, padaria e açougue) acumulam 30 produtos no nível 1, 50 no nível 2 e 70 no nível 3.
+const INDUSTRY_STOCK_CAP = [30, 50, 70];
+const industryCap = building => INDUSTRY_STOCK_CAP[Math.min(building?.level || 0, INDUSTRY_STOCK_CAP.length - 1)];
+// Comida é leve: qualquer alimento (trigo, farinha, pão, carne, peixe) vai 10 por viagem; a habilidade de carga sobe isso
+// até 30 no nível máximo (100), e o equipamento de carga soma, sem passar de 30. Pedra, minério e metal seguem carryLoad.
+const FOOD_LOAD = 10;
+const FOOD_LOAD_MAX = 30;
+const foodLoad = actor => Math.min(FOOD_LOAD_MAX, FOOD_LOAD + Math.floor(skillOf(actor, 'hauling') / 100 * (FOOD_LOAD_MAX - FOOD_LOAD)) + gearBonus(actor, 'carry'));
 const MANOR_DOOR = { x: 42, y: 39 };
 // Fazendas e moinhos sobem até o nível 3. O moinho melhorado mói mais rápido, sem exagero.
 const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 180, wood: 12 }, { gold: 320, wood: 20 }];
@@ -4200,7 +4208,7 @@ const millCapacity = () => state.buildings.filter(building => building.type === 
 // Cada moinho mói o trigo que os camponeses trouxeram; a farinha espera no moinho até alguém levar ao depósito.
 function grindWheat(dt) {
   state.buildings.filter(building => building.type === 'mill' && isDone(building)).forEach(mill => {
-    const qty = Math.min(millRate(mill) * (1 + crewWork(mill)) * dt, mill.input || 0, Math.max(0, FARM_STOCK_CAP - (mill.stock || 0)));
+    const qty = Math.min(millRate(mill) * (1 + crewWork(mill)) * dt, mill.input || 0, Math.max(0, industryCap(mill) - (mill.stock || 0)));
     if (qty <= 0) return;
     mill.input -= qty;
     mill.stock = (mill.stock || 0) + qty;
@@ -4212,14 +4220,14 @@ const bakingCapacity = id => state.buildings.filter(building => building.type ==
 function bakeryCanBake(bakery) {
   const recipe = bakeryActiveRecipe(bakery);
   if ((bakery.stock || 0) > 1e-6 && bakery.stockFood && bakery.stockFood !== recipe.id) return false;
-  return recipe.needs.every(id => (bakery.pantry?.[id] || 0) > 1e-6) && (bakery.stock || 0) < FARM_STOCK_CAP;
+  return recipe.needs.every(id => (bakery.pantry?.[id] || 0) > 1e-6) && (bakery.stock || 0) < industryCap(bakery);
 }
 function bakeFood(dt) {
   state.buildings.filter(building => building.type === 'bakery' && isDone(building)).forEach(bakery => {
     if (!bakeryCanBake(bakery)) return;
     const recipe = bakeryActiveRecipe(bakery);
     const pantry = bakery.pantry;
-    const qty = Math.min(bakeRate(bakery) * (1 + crewWork(bakery)) * dt, ...recipe.needs.map(id => pantry[id]), FARM_STOCK_CAP - (bakery.stock || 0));
+    const qty = Math.min(bakeRate(bakery) * (1 + crewWork(bakery)) * dt, ...recipe.needs.map(id => pantry[id]), industryCap(bakery) - (bakery.stock || 0));
     if (qty <= 0) return;
     recipe.needs.forEach(id => { pantry[id] -= qty; });
     bakery.stockFood = recipe.id;
@@ -4229,13 +4237,13 @@ function bakeFood(dt) {
 function butcherCanProcess(butcher) {
   const recipe = butcherActiveRecipe(butcher);
   if ((butcher.stock || 0) > 1e-6 && butcher.stockFood && butcher.stockFood !== recipe.id) return false;
-  return recipe.needs.every(id => (butcher.pantry?.[id] || 0) >= 1e-6) && (butcher.stock || 0) < FARM_STOCK_CAP;
+  return recipe.needs.every(id => (butcher.pantry?.[id] || 0) >= 1e-6) && (butcher.stock || 0) < industryCap(butcher);
 }
 function processButcher(dt) {
   state.buildings.filter(building => building.type === 'butcher' && isDone(building)).forEach(butcher => {
     if (!butcherCanProcess(butcher)) return;
     const recipe = butcherActiveRecipe(butcher), pantry = butcher.pantry || {};
-    const qty = Math.min(butcherRate(butcher) * (1 + crewWork(butcher)) * dt, ...recipe.needs.map(id => pantry[id]), FARM_STOCK_CAP - (butcher.stock || 0));
+    const qty = Math.min(butcherRate(butcher) * (1 + crewWork(butcher)) * dt, ...recipe.needs.map(id => pantry[id]), industryCap(butcher) - (butcher.stock || 0));
     if (qty <= 0) return;
     recipe.needs.forEach(id => { pantry[id] -= qty; });
     butcher.stockFood = recipe.id;
@@ -4335,7 +4343,7 @@ function butcherMissing(butcher) {
     const load = worker.alive && worker.carrying?.toButcher === butcher.site ? worker.carrying : null;
     if (load) pantry[load.food] = (pantry[load.food] || 0) + load.qty;
   });
-  return butcherActiveRecipe(butcher).needs.filter(id => (pantry[id] || 0) < CARRY_LOAD && (state.food[id] || 0) >= 0.5)
+  return butcherActiveRecipe(butcher).needs.filter(id => (pantry[id] || 0) < FOOD_LOAD && (state.food[id] || 0) >= 0.5)
     .sort((a, b) => (pantry[a] || 0) - (pantry[b] || 0))[0] || null;
 }
 function butcherRoutine(actor, butcher) {
@@ -4346,16 +4354,17 @@ function butcherRoutine(actor, butcher) {
       butcher.pantry[actor.carrying.food] = (butcher.pantry[actor.carrying.food] || 0) + actor.carrying.qty;
       actor.carrying = null;
     }
-    // Mesma regra da padaria: carga cheia, ou o que tiver quando a carne acabou.
-    const fullLoad = Math.min(carryLoad(actor), FARM_STOCK_CAP);
-    if ((butcher.stock || 0) >= fullLoad - 1e-6 || ((butcher.stock || 0) > 1e-6 && !butcherCanProcess(butcher))) {
-      const qty = Math.min(carryLoad(actor), butcher.stock);
+    // Mesma regra da padaria: processa até a carne acabar; sai com a carga cheia, ou com o que tiver quando a carne acabou.
+    const fullLoad = foodLoad(actor);
+    const canProcess = butcherCanProcess(butcher);
+    if ((butcher.stock || 0) >= fullLoad - 1e-6 || ((butcher.stock || 0) > 1e-6 && !canProcess)) {
+      const qty = Math.min(foodLoad(actor), butcher.stock);
       butcher.stock -= qty;
       actor.carrying = { food: butcher.stockFood || recipe.id, qty };
       actor.task = `Levando ${foodName(actor.carrying.food)} ao depósito`;
       walkTo(actor, store); return;
     }
-    const need = butcherMissing(butcher);
+    const need = !canProcess && butcherMissing(butcher);
     if (need) { actor.task = `Buscando ${foodName(need)} para o açougue`; walkTo(actor, store); return; }
     actor.task = butcherCanProcess(butcher) ? `Processando ${recipe.name} no açougue` : `No açougue, esperando ${recipe.needs.map(foodName).join(' e ')}`;
     if (butcherCanProcess(butcher)) gainSkill(actor, 'cooking', 0.3);
@@ -4365,7 +4374,7 @@ function butcherRoutine(actor, butcher) {
     if (actor.carrying && !actor.carrying.toButcher) deliverLoad(actor);
     const need = !actor.carrying && butcherMissing(butcher);
     if (need) {
-      const qty = Math.min(carryLoad(actor), state.food[need]); state.food[need] -= qty;
+      const qty = Math.min(foodLoad(actor), state.food[need]); state.food[need] -= qty;
       actor.carrying = { food: need, qty, toButcher: butcher.site };
     }
   }
@@ -4388,7 +4397,7 @@ function fishingRoutine(actor, spot) {
   const point = { x: spot.x, y: spot.y };
   if (!isAt(actor, point)) { actor.task = `Indo a ${spot.name}`; walkTo(actor, point); return; }
   if (fishingStock(spot) >= 1) {
-    const qty = Math.min(carryLoad(actor), fishingStock(spot));
+    const qty = Math.min(foodLoad(actor), fishingStock(spot));
     state.fishingStock[spot.site] = fishingStock(spot) - qty; actor.carrying = { food: 'fish', qty };
     gainSkill(actor, 'fishing', 0.3); actor.task = `Pescou ${format(qty)} de peixe`;
     travelToMap(actor, 'city', mapSet); return;
@@ -4410,7 +4419,7 @@ function hunterRoutine(actor) {
   const pile = (state.wildMeatPiles || []).filter(item => item.qty > 0 && (item.mapSet || 2) === 2).sort((a, b) => distanceTo(actor, a) - distanceTo(actor, b))[0];
   if (pile) {
     if (distanceTo(actor, pile) > 1.3) { actor.task = `Buscando ${foodName(pile.food)}`; walkTo(actor, pile); return; }
-    const qty = Math.min(carryLoad(actor), pile.qty);
+    const qty = Math.min(foodLoad(actor), pile.qty);
     pile.qty -= qty;
     actor.carrying = { food: pile.food, qty };
     if (pile.qty <= 0) state.wildMeatPiles = state.wildMeatPiles.filter(item => item !== pile);
@@ -4431,7 +4440,7 @@ function bakeryMissing(bakery) {
     if (load) pantry[load.food] = (pantry[load.food] || 0) + load.qty;
   });
   return bakeryActiveRecipe(bakery).needs
-    .filter(id => (pantry[id] || 0) < CARRY_LOAD && (state.food[id] || 0) >= 0.5)
+    .filter(id => (pantry[id] || 0) < FOOD_LOAD && (state.food[id] || 0) >= 0.5)
     .sort((a, b) => (pantry[a] || 0) - (pantry[b] || 0))[0] || null;
 }
 // Rotina do padeiro: busca um ingrediente por viagem, assa e leva a fornada ao depósito.
@@ -4444,17 +4453,18 @@ function bakeRoutine(actor, bakery) {
       bakery.pantry[actor.carrying.food] = (bakery.pantry[actor.carrying.food] || 0) + actor.carrying.qty;
       actor.carrying = null;
     }
-    // Sai com a fornada só quando junta a carga cheia, ou quando a farinha acabou (e aí traz mais na volta).
-    const fullLoad = Math.min(carryLoad(actor), FARM_STOCK_CAP);
-    if ((bakery.stock || 0) >= fullLoad - 1e-6 || ((bakery.stock || 0) > 0 && !bakeryCanBake(bakery))) {
-      const qty = Math.min(carryLoad(actor), bakery.stock);
+    // Assa até a farinha acabar. Sai com o pão quando junta a carga cheia, ou quando a farinha acabou (e traz mais na volta).
+    const fullLoad = foodLoad(actor);
+    const canBake = bakeryCanBake(bakery);
+    if ((bakery.stock || 0) >= fullLoad - 1e-6 || ((bakery.stock || 0) > 0 && !canBake)) {
+      const qty = Math.min(fullLoad, bakery.stock);
       bakery.stock -= qty;
       actor.carrying = { food: bakery.stockFood || recipe.id, qty };
       actor.task = `Carregando ${format(qty)} de ${foodName(actor.carrying.food)} para o depósito`;
       walkTo(actor, store);
       return;
     }
-    const need = bakeryMissing(bakery);
+    const need = !canBake && bakeryMissing(bakery);
     if (need) {
       actor.task = `Indo buscar ${foodName(need)} no depósito`;
       walkTo(actor, store);
@@ -4470,7 +4480,7 @@ function bakeRoutine(actor, bakery) {
     if (actor.carrying && !actor.carrying.toBakery) deliverLoad(actor);
     const need = !actor.carrying && bakeryMissing(bakery);
     if (need) {
-      const qty = Math.min(carryLoad(actor), state.food[need]);
+      const qty = Math.min(foodLoad(actor), state.food[need]);
       state.food[need] -= qty;
       actor.carrying = { food: need, qty, toBakery: bakery.site };
     }
@@ -4614,8 +4624,10 @@ function haulRoutine(actor, workplace) {
     const secondaryStock = workplace.secondaryStock || 0;
     const foodId = mill ? 'flour' : secondaryId && secondaryStock >= 1 ? secondaryId : farmFoodId(workplace);
     const availableStock = mill ? workplace.stock || 0 : foodId === secondaryId ? secondaryStock : workplace.stock || 0;
-    if (availableStock >= 1) {
-      const qty = Math.min(carryLoad(actor), availableStock);
+    // Moinho: mói até o trigo acabar e sai com a carga cheia de farinha, ou com o que tiver quando o trigo acabou.
+    const millDone = mill && (workplace.input || 0) <= 1e-6;
+    if (mill ? availableStock >= foodLoad(actor) - 1e-6 || (availableStock >= 0.5 && millDone) : availableStock >= 1) {
+      const qty = Math.min(foodLoad(actor), availableStock);
       if (!mill && foodId === secondaryId) workplace.secondaryStock -= qty; else workplace.stock -= qty;
       actor.carrying = { food: foodId, qty };
       actor.task = `Carregando ${format(qty)} de ${foodName(actor.carrying.food)} para o depósito`;
@@ -4626,7 +4638,7 @@ function haulRoutine(actor, workplace) {
       walkTo(actor, store);
       return;
     }
-    if (mill && (state.food.wheat || 0) >= 1 && (workplace.input || 0) < CARRY_LOAD) {
+    if (mill && (state.food.wheat || 0) >= 1 && millDone) {
       actor.task = 'Indo buscar trigo no depósito';
       walkTo(actor, store);
       return;
@@ -4639,7 +4651,7 @@ function haulRoutine(actor, workplace) {
   if (isAt(actor, store)) {
     if (actor.carrying && (actor.carrying.food !== 'wheat' || !mill)) deliverLoad(actor);
     if (mill && !actor.carrying && (state.food.wheat || 0) >= 0.5) {
-      const qty = Math.min(carryLoad(actor), state.food.wheat);
+      const qty = Math.min(foodLoad(actor), state.food.wheat);
       state.food.wheat -= qty;
       actor.carrying = { food: 'wheat', qty };
     }
@@ -6470,7 +6482,7 @@ const HOWTO = [
     ${howFormula(`XP da ação = XP base × max(0,25; 1 − 0,03 × (nível − nível da ação)) × (1 + bônus de XP)<br>Bônus no trabalho: metade na produção do lugar, metade no ritmo de cada tarefa`)}
     <p>Carga vai de 0 a 100 e sobe a cada entrega, mais devagar quanto mais alta.</p>
     <h3>Carga</h3>
-    ${howFormula(`Carga por viagem = ${CARRY_LOAD} + bônus de carga do equipamento + (Carga/25, arredondado para baixo)`)}` },
+    ${howFormula(`Carga por viagem = ${CARRY_LOAD} + bônus de carga do equipamento + (Carga/25, arredondado para baixo)<br>Comida (trigo, farinha, pão, carne, peixe) = ${FOOD_LOAD} + (Carga/5, arredondado para baixo) + bônus de carga, até ${FOOD_LOAD_MAX}`)}` },
   { title: 'Heróis', html: () => `
     <h3>Alojamento</h3>
     ${howFormula(`Vagas = 1 (Warrior do casarão) + 1 por guilda + 4 por hotel + 1 por taverna`)}
