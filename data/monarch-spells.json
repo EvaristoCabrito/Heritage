@@ -241,7 +241,7 @@
           "effects": {
             "slowPercent": 30
           },
-          "description": "Inimigos no raio da aura ficam 30% mais lentos por 4 s."
+          "description": "Inimigos no raio da aura ficam 30% mais lentos."
         },
         {
           "level": 9,
@@ -249,7 +249,7 @@
           "effects": {
             "slowPercent": 40
           },
-          "description": "Lentidão de 40% por 5 s."
+          "description": "Lentidão de 40%."
         },
         {
           "level": 16,
@@ -270,7 +270,7 @@
             "rootSeconds": 60,
             "stackWindowSeconds": 60
           },
-          "description": "Lentidão de 60% por 6 s. O inimigo atingido 3 vezes em 20 s fica enraizado por 1,5 s."
+          "description": "Lentidão de 60%. Após 3 acertos na janela indicada, o inimigo fica enraizado."
         }
       ]
     },
@@ -429,7 +429,7 @@
             "shieldPerLevel": 8,
             "shieldMagPercent": 50
           },
-          "description": "Aliados na aura recebem escudo de 60 + 8 × nível + 50% de mag. O escudo dura até ser destruído ou por 60 s."
+          "description": "Aliados na aura recebem escudo de 60 + 8 × nível + 50% de mag. O escudo dura até ser destruído ou por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         },
         {
           "level": 12,
@@ -439,7 +439,7 @@
             "shieldPerLevel": 10,
             "shieldMagPercent": 70
           },
-          "description": "Escudo de 100 + 10 × nível + 70% de mag. Dura até ser destruído ou por 60 s."
+          "description": "Escudo de 100 + 10 × nível + 70% de mag. Dura até ser destruído ou por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         },
         {
           "level": 19,
@@ -450,7 +450,7 @@
             "shieldMagPercent": 90,
             "breakKnockbackMeters": 2
           },
-          "description": "Escudo de 150 + 12 × nível + 90% de mag. Ao quebrar, explode e repele inimigos 2 m. Dura até ser destruído ou por 60 s."
+          "description": "Escudo de 150 + 12 × nível + 90% de mag. Ao quebrar, explode e repele inimigos 2 m. Dura até ser destruído ou por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         },
         {
           "level": 25,
@@ -464,7 +464,7 @@
             "breakKnockbackMeters": 2,
             "expireHealPercent": 50
           },
-          "description": "Escudo de 220 + 15 × nível + 110% de mag. O que sobrar após 60 s vira cura de 50% do valor. Recarga de 20 s."
+          "description": "Escudo de 220 + 15 × nível + 110% de mag. O que sobrar ao expirar o tempo exibido na ficha vira cura de 50% do valor. Recarga de 20 s."
         }
       ]
     },
@@ -897,7 +897,7 @@
           "level": 14,
           "changes": {},
           "effects": {},
-          "description": "Remove efeitos de controle e concede imunidade a controle ao Monarca e aliados a até 7 m por 60 s."
+          "description": "Remove efeitos de controle e concede imunidade a controle ao Monarca e aliados a até 7 m por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         },
         {
           "level": 21,
@@ -905,7 +905,7 @@
           "effects": {
             "cleanseOnStart": true
           },
-          "description": "Remove efeitos de controle e concede imunidade a controle ao Monarca e aliados a até 7 m por 60 s."
+          "description": "Remove efeitos de controle e concede imunidade a controle ao Monarca e aliados a até 7 m por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         },
         {
           "level": 29,
@@ -915,7 +915,7 @@
           "effects": {
             "cleanseOnStart": true
           },
-          "description": "Remove efeitos de controle e concede imunidade a controle ao Monarca e aliados a até 9 m por 60 s."
+          "description": "Remove efeitos de controle e concede imunidade a controle ao Monarca e aliados a até 9 m por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         }
       ]
     },
@@ -1063,7 +1063,7 @@
             "maxStacks": 10,
             "stackDurationSeconds": 60
           },
-          "description": "Cada inimigo derrotado na aura concede ao grupo +3% de dano por 60 s, até 10 acúmulos."
+          "description": "Cada inimigo derrotado na aura concede ao grupo +3% de dano por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca, até 10 acúmulos."
         },
         {
           "level": 23,
@@ -1075,7 +1075,7 @@
             "maxStacks": 12,
             "stackDurationSeconds": 60
           },
-          "description": "Cada inimigo derrotado na aura concede ao grupo +4% de dano por 60 s, até 12 acúmulos."
+          "description": "Cada inimigo derrotado na aura concede ao grupo +4% de dano por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca, até 12 acúmulos."
         }
       ]
     },
@@ -1281,7 +1281,7 @@
           "effects": {
             "damageImmunitySeconds": 60
           },
-          "description": "Aliados a até 9 m ficam imunes a todo dano por 60 s."
+          "description": "Aliados a até 9 m ficam imunes a todo dano por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         },
         {
           "level": 28,
@@ -1292,7 +1292,7 @@
           "effects": {
             "damageImmunitySeconds": 60
           },
-          "description": "Aliados a até 10 m ficam imunes a todo dano por 60 s."
+          "description": "Aliados a até 10 m ficam imunes a todo dano por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         }
       ]
     },
@@ -1615,7 +1615,7 @@
             "bossSlowPercent": 30,
             "bossSlowSeconds": 60
           },
-          "description": "Inimigos que entram na aura são derrubados no chão na hora por 1 s (uma vez a cada 8 s por inimigo). Chefes ficam 30% mais lentos por 2 s."
+          "description": "Inimigos que entram na aura são derrubados. Chefes ficam 30% mais lentos."
         }
       ]
     },
