@@ -766,7 +766,9 @@ const LUMBER_RATE = [0, 0.05, 0.15, 0.25];
 const lumberCrew = camp => state.workers.filter(worker => worker.alive && worker.workplace && worker.workplace.site === camp.site);
 // Pedreira e Campo de Mineração: equipes escolhidas pelo jogador, com 2 vagas no nível 1 e 4 no nível 2.
 const PIT_CREW_MAX = 4;
-const PIT_GOODS = { quarry: { good: 'stone', name: 'pedra', rate: 20 / 15 }, mine: { good: 'metal', name: 'lotes de minério', rate: 20 / 1200 } };
+// A pedreira tira 20 kg de rubble a cada 200 segundos por trabalhador.
+// Com 2 trabalhadores no nível 1: 0,20 kg/s; no nível 2, 0,40 kg/s com 4.
+const PIT_GOODS = { quarry: { good: 'stone', name: 'pedra', rate: 20 / 200 }, mine: { good: 'metal', name: 'lotes de minério', rate: 20 / 1200 } };
 const METAL_DEPOSIT_RANKS = [
   { id: 'I', name: 'Pobre', chance: { ironOre: 75, silverOre: 8, goldOre: 2 }, qty: { ironOre: [1, 2], silverOre: [1, 1], goldOre: [1, 1] } },
   { id: 'II', name: 'Comum', chance: { ironOre: 85, silverOre: 15, goldOre: 5 }, qty: { ironOre: [1, 3], silverOre: [1, 1], goldOre: [1, 1] } },
@@ -2039,7 +2041,7 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['Lenhadores', `${crew.length} de 3: ${names(crew)}`]);
   } else if (isPit(building)) {
     const crew = lumberCrew(building);
-    lines.push(['Produz', building.type === 'mine' ? `${fineRate(pitRate(building))} kg/s de rocha bruta` : `${fineRate(pitRate(building))} de pedra por segundo`]);
+    lines.push(['Produz', building.type === 'mine' ? `${fineRate(pitRate(building))} kg/s de rocha bruta` : `${fineRate(pitRate(building))} kg de pedra por segundo`]);
     if (building.type === 'mine') {
       const rank = metalRankData(building);
       lines.push(['Depósito', `Ranking ${rank.id} · ${rank.name}`]);
