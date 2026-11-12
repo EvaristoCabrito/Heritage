@@ -299,7 +299,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.9';
+const GAME_VERSION = 'Version 0.13.10';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -1874,7 +1874,12 @@ function inspectorHTML() {
     const selectedGuild = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && isDone(building) && BUILDINGS.find(item => item.id === building.type)?.heroClass);
     const currentFarmType = selectedFarm ? farmType(selectedFarm.produce).id : state.selectedFarmType;
     const inspectorActions = selectedBuilding ? `${selectedFarm ? `<section class="inspector-section" aria-label="Tipo de fazenda"><h4>Produção</h4>
-        <div class="farm-type-grid compact">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="+${rateNumber(type.grain[producerLevel(selectedFarm)] * FARM_OUTPUT_MULTIPLIER)} por segundo"><img src="public/art/${type.art}-v01.webp" alt=""><b>${type.name}</b></button>`).join('')}</div></section>` : ''}
+        <div class="farm-type-grid compact">${FARM_TYPES.map(type => {
+          const crewMultiplier = 1 + crewWork(selectedFarm);
+          const rate = type.grain[producerLevel(selectedFarm)] * FARM_OUTPUT_MULTIPLIER * crewMultiplier;
+          const secondaryRate = type.secondary ? rate * FARM_ANIMAL_RATE : 0;
+          return `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="${rateNumber(rate)} de ${foodName(type.foodId || type.id)}/s${type.secondary ? ` · ${rateNumber(secondaryRate)} de ${foodName(type.secondary)}/s` : ''}"><img src="public/art/${type.art}-v01.webp" alt=""><b>${type.name}</b></button>`;
+        }).join('')}</div></section>` : ''}
       ${selectedProducer?.type === 'bakery' ? bakeryRecipeBoxHTML(selectedProducer) : ''}
       ${selectedProducer?.type === 'butcher' ? butcherRecipeBoxHTML(selectedProducer) : ''}
       ${selectedProducer?.type === 'blacksmith' ? blacksmithRecipeBoxHTML(selectedProducer) : ''}
@@ -1994,7 +1999,13 @@ function renderPanel() {
     const currentFarmType = state.selectedFarmType;
     host.innerHTML = `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
       ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
-        <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0] * FARM_OUTPUT_MULTIPLIER)} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small>${type.secondary ? `<small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0] * FARM_OUTPUT_MULTIPLIER * FARM_ANIMAL_RATE)} ${foodName(type.secondary)}/s</small>` : ''}</span></button>`).join('')}</div></section>` : ''}
+        <div class="farm-type-grid">${FARM_TYPES.map(type => {
+          const level = selectedFarm ? producerLevel(selectedFarm) : 0;
+          const multiplier = FARM_OUTPUT_MULTIPLIER * (selectedFarm ? 1 + crewWork(selectedFarm) : 1);
+          const rate = type.grain[level] * multiplier;
+          const secondaryRate = type.secondary ? rate * FARM_ANIMAL_RATE : 0;
+          return `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(rate)} ${foodName(type.foodId || type.id)}/s</small>${type.secondary ? `<small>+${rateNumber(secondaryRate)} ${foodName(type.secondary)}/s</small>` : ''}</span></button>`;
+        }).join('')}</div></section>` : ''}
       ${BUILD_CATEGORIES.map(category => `<section class="build-section" aria-label="${category.name}"><h4 class="build-section-title">${category.name}</h4><div class="build-grid">${BUILDINGS.filter(item => buildCategoryOf(item.id) === category.id).map(buildCardHTML).join('')}</div></section>`).join('')}
       <p class="build-note">Construções comuns usam ouro, madeira e Pedra de Construção. A pedreira inicial não exige pedra.</p>`;
   } else if (state.tab === 'heroes') {
@@ -2029,7 +2040,9 @@ function buildingInfoHTML(building, actions = '') {
   if (building.damage > 0) lines.push(['Conserto', `${building.noWood ? 'Parado: falta madeira' : repairer ? `${repairer.name} está consertando` : 'Esperando um camponês livre'} · ${Math.ceil(building.damage / REPAIR_HP_PER_WOOD)} madeira`]);
   if (building.type === 'farm') {
     const type = farmType(building.produce);
-    lines.push(['Produz', `${rateNumber(farmOutput(building))} de ${foodName(farmFoodId(building))}/s${type.secondary ? ` · ${rateNumber(farmSecondaryRate(building))} de ${foodName(type.secondary)}/s` : ''}${building.produce === 'wheat' ? ' (vai pro moinho)' : ''}`]);
+    const effectiveRate = farmOutput(building) * (1 + crewWork(building));
+    const effectiveSecondaryRate = farmSecondaryRate(building) * (1 + crewWork(building));
+    lines.push(['Produz', `${rateNumber(effectiveRate)} de ${foodName(farmFoodId(building))}/s${type.secondary ? ` · ${rateNumber(effectiveSecondaryRate)} de ${foodName(type.secondary)}/s` : ''}${building.produce === 'wheat' ? ' (vai pro moinho)' : ''}`]);
     lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
     lines.push(['Esperando carregador', `${format(building.stock || 0)} de ${FARM_STOCK_CAP}`]);
     if (type.secondary) lines.push(['Carne aguardando', `${format(building.secondaryStock || 0)} de ${FARM_STOCK_CAP}`]);
