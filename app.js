@@ -28,11 +28,11 @@ BUILDINGS.find(building => building.id === 'quarry').detail += ' O prédio é o 
 BUILDINGS.find(building => building.id === 'mine').detail += ' Apenas em Wilds, no deposito de metais marcado.';
 const FARM_TYPES = [
   // grain: produção por segundo nos níveis 1, 2 e 3 da fazenda.
-  { id: 'garlic', name: 'Alho', art: 'farm-garlic', grain: [0.075, 0.125, 0.2], gold: 0.9 },
-  { id: 'wheat', name: 'Trigo', art: 'farm-wheat-v02', grain: [0.1125, 0.1875, 0.3], gold: 0.55 },
-  { id: 'bacon', name: 'Suínos', foodId: 'pork', art: 'farm-bacon', grain: [0.005, 0.0083, 0.0132], gold: 0.75 },
-  { id: 'eggs', name: 'Galinheiro', foodId: 'eggs', secondary: 'chicken', art: 'farm-eggs', grain: [0.1, 0.166, 0.264], gold: 0.65 },
-  { id: 'milk', name: 'Leite e carne de vaca', foodId: 'milk', secondary: 'beef', art: 'farm-milk', grain: [0.1025, 0.1725, 0.275], gold: 0.6 },
+  { id: 'garlic', name: 'Alho', art: 'farm-garlic', icon: 'icon-market-garlic-photo-v01.png', grain: [0.075, 0.125, 0.2], gold: 0.9 },
+  { id: 'wheat', name: 'Trigo', art: 'farm-wheat-v02', icon: 'icon-market-wheat-photo-v01.png', grain: [0.1125, 0.1875, 0.3], gold: 0.55 },
+  { id: 'bacon', name: 'Suínos', foodId: 'pork', art: 'farm-bacon', icon: 'farm-pigs-animal-v01.png', grain: [0.005, 0.0083, 0.0132], gold: 0.75 },
+  { id: 'eggs', name: 'Galinheiro', foodId: 'eggs', secondary: 'chicken', art: 'farm-eggs', icon: 'farm-chickens-animal-v01.png', grain: [0.1, 0.166, 0.264], gold: 0.65 },
+  { id: 'milk', name: 'Leite e carne de vaca', foodId: 'milk', secondary: 'beef', art: 'farm-milk', icon: 'farm-cow-animal-v01.png', grain: [0.1025, 0.1725, 0.275], gold: 0.6 },
   { id: 'potato', name: 'Batatas', art: 'farm-vegetables', icon: 'potato-v01.png', grain: [0.075, 0.125, 0.2], gold: 0.7, group: 'vegetables' },
   { id: 'carrot', name: 'Cenouras', art: 'farm-vegetables', icon: 'carrot-v01.png', grain: [0.075, 0.125, 0.2], gold: 0.7, group: 'vegetables' },
   { id: 'tomato', name: 'Tomates', art: 'farm-vegetables', icon: 'tomato-v01.png', grain: [0.075, 0.125, 0.2], gold: 0.7, group: 'vegetables' },
@@ -46,7 +46,7 @@ const FISHING_RATE = 0.035; // peixe por segundo por pescador
 const WILDLIFE_MAP_SET = 1; // os Wilds acessíveis no fluxo atual do jogo
 const FISHING_SPOTS = [
   { site: 'wilds-stream-west-map01', type: 'fishing', name: 'Riacho das Wilds · trecho oeste', mapId: 'wilds', mapSet: 1, x: 17, y: 68, stock: 0 },
-  { site: 'wilds-stream-east-map01', type: 'fishing', name: 'Riacho das Wilds · trecho leste', mapId: 'wilds', mapSet: 1, x: 75, y: 54, stock: 0 },
+  { site: 'wilds-stream-east-map01', type: 'fishing', name: 'Riacho das Wilds · trecho leste', mapId: 'wilds', mapSet: 1, x: 47, y: 59, stock: 0 },
   { site: 'wilds-stream-north', type: 'fishing', name: 'Riacho das Wilds · trecho norte', mapId: 'wilds', mapSet: 2, x: 25, y: 42, stock: 0 },
   { site: 'wilds-stream-south', type: 'fishing', name: 'Riacho das Wilds · trecho sul', mapId: 'wilds', mapSet: 2, x: 68, y: 67, stock: 0 },
 ];
@@ -418,7 +418,7 @@ function newGameState(heir = null) {
     ], remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
     food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, potato: 0, carrot: 0, tomato: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: false, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, potato: true, carrot: true, tomato: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, manorArrivalDay: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
-    tab: 'build', won: false, goalStep: 0, goalKills: 0,
+    tab: 'build', won: false, goalStep: 0,
     bandits: [], wildMeatPiles: [], wildlifeSpawnDay: Math.floor(380 / 1440), nextRaidAt: 720,
     heir, heirLevel: 1, heirXp: 0, heirAttributePoints: 0, heirAttributes: { CHA: 0, MAG: 0, INT: 0, WIS: 0, RES: 0 }, equipment: BASIC_EQUIPMENT(), playSeconds: 0,
     buildings: [],
@@ -633,7 +633,7 @@ function openManorInventory() {
 }
 
 function inventorySection(title, rows) {
-  return `<section class="inventory-section"><h3>${title}</h3>${rows.length ? `<div class="inventory-rows">${rows.map(([name, amount, source, shown]) => `<div class="inventory-row${amount > 0 ? '' : ' empty'}"><b>${name}</b><strong>${shown ?? format(amount)}</strong><small>${source}</small></div>`).join('')}</div>` : '<p class="inventory-empty">Nada guardado.</p>'}</section>`;
+  return `<section class="inventory-section"><h3>${title}</h3>${rows.length ? `<div class="inventory-rows">${[...rows].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR')).map(([name, amount, source, shown]) => `<div class="inventory-row${amount > 0 ? '' : ' empty'}"><b>${name}</b><strong>${shown ?? format(amount)}</strong><small>${source}</small></div>`).join('')}</div>` : '<p class="inventory-empty">Nada guardado.</p>'}</section>`;
 }
 function renderManorInventory() {
   const keepFocus = document.activeElement?.id === 'inventory-close';
@@ -859,7 +859,7 @@ function trade(id, amount) {
 function marketPanelHTML() {
   const coin = pixelIcon('coin', 14).replace('class="pixel-icon"', 'class="pixel-icon cost-ico"');
   return `<div class="panel-title"><h3>Mercado</h3><span>${coin} ${format(state.gold)} · depósito ${Math.floor(storedUnits())}/${storageCap()}</span></div>
-    <div class="market-list">${marketGoods().map(good => `<div class="market-row">
+    <div class="market-list">${marketGoods().sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(good => `<div class="market-row">
       <img src="${good.icon ? `public/art/${good.icon}` : `public/art/${good.art}-v01.webp`}" alt="">
       <span class="market-name"><b>${good.name}</b><small>Tem ${format(stockOf(good.id))}</small></span>
       <span class="market-side"><small>VENDER ${formatPrice(unitPrice(good, 'sell'))} ${coin}</small><span><button type="button" data-trade="${good.id}" data-amount="-1">1</button><button type="button" data-trade="${good.id}" data-amount="-10">10</button></span></span>
@@ -1612,10 +1612,10 @@ function updateHud() {
 const SCENARIO_GOALS = [
   { title: 'Acumule 600 moedas',
     progress: () => ({ have: state.gold, need: 600, text: `${format(state.gold)} / 600` }),
-    done: ['Dívidas quitadas. Os credores levaram as 600 moedas e deixaram o recibo.', 'Agora os mortos do vale querem a parte deles. Abata 4 caveiras ou ladrões.'] },
-  { title: 'Noites de Ossos: abata 4 caveiras ou ladrões',
-    progress: () => ({ have: state.goalKills || 0, need: 4, text: `${Math.min(4, state.goalKills || 0)} / 4 abatidos` }),
-    done: ['Os mortos do Vale do Luto aprenderam a ficar deitados. Pelo menos estes.', 'Último desafio: 10 camponeses e uma Taverna de pé. Gente feliz não pega forcado.'] },
+    done: ['Dívidas quitadas. Os credores levaram as 600 moedas e deixaram o recibo.', 'Destrua um covil: na aba Heróis, ofereça uma recompensa para destruir um covil.'] },
+  { title: 'Destrua um covil: na aba Heróis, ofereça uma recompensa para destruir um covil.',
+    progress: () => { const destroyed = (state.lairs || []).some(lair => lair.destroyed); return { have: destroyed ? 1 : 0, need: 1, text: destroyed ? 'Covil destruído' : 'Nenhum covil destruído' }; },
+    done: ['O covil foi destruído.', ''] },
   { title: 'Pão, Cerveja e Gente: 10 camponeses e uma Taverna',
     progress: () => {
       const people = state.workers.filter(worker => worker.alive).length;
@@ -1629,14 +1629,28 @@ function updateGoal() {
   const goal = SCENARIO_GOALS[step];
   const { have, need, text } = goal.progress();
   $('#objective-title').textContent = goal.title;
-  $('#objective-step').textContent = `${step + 1} de ${SCENARIO_GOALS.length}`;
+  $('#objective-step').textContent = 'atual';
   $('#objective-text').textContent = text;
   $('#objective-bar').style.width = `${Math.max(0, Math.min(100, have / need * 100))}%`;
+  renderObjectiveJournal();
   if ((state.goalStep || 0) >= SCENARIO_GOALS.length || have < need) return;
   state.goalStep = (state.goalStep || 0) + 1;
-  if (state.goalStep === 1) { state.goalKills = 0; payDebt(); }
+  if (state.goalStep === 1) payDebt();
   say(...goal.done);
   if (state.goalStep < SCENARIO_GOALS.length) updateGoal();
+}
+
+function renderObjectiveJournal() {
+  const list = $('#objective-list');
+  if (!list) return;
+  const step = state.goalStep || 0;
+  list.innerHTML = SCENARIO_GOALS.map((goal, index) => {
+    const completed = index < step;
+    const current = index === step;
+    const status = completed ? 'Concluído' : current ? 'Atual' : 'A fazer';
+    const detail = completed ? goal.done[0] : current ? goal.progress().text : '';
+    return `<li class="objective-journal-item${current ? ' is-current' : ''}"><span>${status}</span><b>${goal.title}</b>${detail ? `<small>${detail}</small>` : ''}</li>`;
+  }).join('');
 }
 
 // Primeiro objetivo cumprido: os credores levam as 600 moedas e os nobres dão Favor.
@@ -1808,10 +1822,13 @@ function extractionPlaces(type, mapId = currentMap, mapSet = currentMapSet) {
   // Esses pontos ja estao pintados no mapa dos Wilds; servem mesmo sem marcador do editor.
   const defaults = {
     quarry: { id: `map-${mapSet}-stone-quarry`, x: 22, y: 18 },
-    // Mapa 1: lugar fixo do Campo de Mineração, no chão logo à frente da mina de ouro desenhada (nunca em cima dela nem do riacho).
-    mine: { id: `map-${mapSet}-metal-mine`, ...(mapSet === 1 ? { x: 76, y: 112 } : { x: 72, y: 61 }), rank: mapSet === 2 ? 'IV' : 'II' },
+    // Ponto fixo original do Campo de Mineração em Wilds.
+    mine: { id: `map-${mapSet}-metal-mine`, x: 72, y: 61, rank: mapSet === 2 ? 'IV' : 'II' },
   };
-  return mapId === 'wilds' && defaults[type] ? [{ ...defaults[type], type, mapId: 'wilds' }] : [];
+  if (mapId !== 'wilds' || !defaults[type]) return [];
+  const places = [{ ...defaults[type], type, mapId: 'wilds' }];
+  if (type === 'mine' && mapSet === 1) places.push({ ...places[0], x: 37, y: 100 });
+  return places;
 }
 
 // Áreas desenhadas na arte de Wilds (mapa 1) onde nada pode ser construído: a pedreira, a mina de ouro e o riacho.
@@ -1899,11 +1916,9 @@ function renderFishingSpots() {
   });
 }
 
-// O Campo de Mineração tem um lugar fixo por mapa: onde quer que se clique em Wilds, ele vai para o depósito.
+// A prévia e a construção usam o ponto escolhido pelo jogador.
 function snapPlacement(type, x, y) {
-  if (type !== 'mine' || currentMap !== 'wilds') return { x, y };
-  const deposit = extractionPlaces('mine')[0];
-  return deposit ? { x: deposit.x, y: deposit.y } : { x, y };
+  return { x, y };
 }
 
 function selectFishingSpot(site) {
@@ -2156,7 +2171,7 @@ function inspectorHTML() {
     const selectedGuild = state.selectedSite === null ? null : state.buildings.find(building => building.site === state.selectedSite && isDone(building) && BUILDINGS.find(item => item.id === building.type)?.heroClass);
     const currentFarmType = selectedFarm ? farmType(selectedFarm.produce).id : state.selectedFarmType;
     const inspectorActions = selectedBuilding ? `${selectedFarm ? `<section class="inspector-section" aria-label="Tipo de fazenda"><h4>Produção</h4>
-        <div class="farm-type-grid compact">${FARM_TYPES.map(type => {
+        <div class="farm-type-grid compact">${[...FARM_TYPES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(type => {
           const crewMultiplier = 1 + crewWork(selectedFarm);
           const rate = type.grain[producerLevel(selectedFarm)] * FARM_OUTPUT_MULTIPLIER * crewMultiplier;
           const secondaryRate = type.secondary ? rate * FARM_ANIMAL_RATE : 0;
@@ -2185,6 +2200,10 @@ function renderInspector() {
 }
 
 function bindPanel(host) {
+  $$('[data-build-category]', host).forEach(section => section.addEventListener('toggle', () => {
+    if (section.open) openBuildCategories.add(section.dataset.buildCategory);
+    else openBuildCategories.delete(section.dataset.buildCategory);
+  }));
   $$('.build-card', host).forEach(button => button.addEventListener('click', () => chooseBuild(button.dataset.build)));
   $$('[data-farm-type]', host).forEach(button => button.addEventListener('click', () => chooseFarmType(button.dataset.farmType)));
   $$('[data-bakery-recipe]', host).forEach(button => button.addEventListener('click', () => chooseBakeryRecipe(button.dataset.bakeryRecipe)));
@@ -2276,6 +2295,7 @@ const buildCategoryOf = id => BUILD_CATEGORIES.find(category => category.types.i
 
 let panelTabShown = null;
 const panelScroll = {};
+const openBuildCategories = new Set();
 function renderPanel() {
   const host = $('#panel-view');
   // A lista nunca volta pro começo sozinha: cada aba lembra onde estava.
@@ -2287,24 +2307,24 @@ function renderPanel() {
     const currentFarmType = state.selectedFarmType;
     host.innerHTML = `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
       ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
-        <div class="farm-type-grid">${FARM_TYPES.map(type => {
+        <div class="farm-type-grid">${[...FARM_TYPES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(type => {
           const level = selectedFarm ? producerLevel(selectedFarm) : 0;
           const multiplier = FARM_OUTPUT_MULTIPLIER * (selectedFarm ? 1 + crewWork(selectedFarm) : 1);
           const rate = type.grain[level] * multiplier;
           const secondaryRate = type.secondary ? rate * FARM_ANIMAL_RATE : 0;
           return `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.icon || `${type.art}-v01.webp`}" alt=""><span><b>${type.name}</b><small>+${rateNumber(rate)} ${foodName(type.foodId || type.id)}/s</small>${type.secondary ? `<small>+${rateNumber(secondaryRate)} ${foodName(type.secondary)}/s</small>` : ''}</span></button>`;
         }).join('')}</div></section>` : ''}
-      ${BUILD_CATEGORIES.map(category => `<section class="build-section" aria-label="${category.name}"><h4 class="build-section-title">${category.name}</h4><div class="build-grid">${BUILDINGS.filter(item => buildCategoryOf(item.id) === category.id).map(buildCardHTML).join('')}</div></section>`).join('')}
+      ${[...BUILD_CATEGORIES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(category => `<details class="build-section" data-build-category="${category.id}" ${openBuildCategories.has(category.id) ? 'open' : ''}><summary class="build-section-title">${category.name}</summary><div class="build-grid">${BUILDINGS.filter(item => buildCategoryOf(item.id) === category.id).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(buildCardHTML).join('')}</div></details>`).join('')}
       <p class="build-note">Construções comuns usam ouro, madeira e Pedra de Construção. A pedreira inicial não exige pedra.</p>`;
   } else if (state.tab === 'heroes') {
     host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
       ${bountyPanelHTML()}
-      <div class="hero-list">${state.heroes.filter(h => h.alive).map(heroCard).join('') || '<div class="empty-state">Nenhum herói. Ninguém foi corajoso, ou burro, o bastante.<br>Construa uma taverna ou guilda.</div>'}</div>
+      <div class="hero-list">${state.heroes.filter(h => h.alive).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(heroCard).join('') || '<div class="empty-state">Nenhum herói. Ninguém foi corajoso, ou burro, o bastante.<br>Construa uma taverna ou guilda.</div>'}</div>
       <p class="build-note">Você não manda nos heróis. Eles fazem o que querem.</p>`;
   } else if (state.tab === 'workers') {
     host.innerHTML = `<div class="panel-title"><h3>Ofícios dos camponeses</h3><span>${state.workers.filter(worker => worker.alive).length} no domínio</span></div>
       <p class="build-note">Para pescar, abra Wilds, clique em um marcador <b>Pesca</b> no riacho e atribua um camponês naquele ponto.</p>
-      <div class="hero-list">${state.workers.filter(worker => worker.alive).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Construa um casebre para receber trabalhadores.</div>'}</div>`;
+      <div class="hero-list">${state.workers.filter(worker => worker.alive).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(workerCard).join('') || '<div class="empty-state">Nenhum camponês. Construa um casebre para receber trabalhadores.</div>'}</div>`;
   } else if (state.tab === 'food') {
     host.innerHTML = foodPanelHTML();
   } else if (state.tab === 'economy') {
@@ -5440,7 +5460,7 @@ function foodPanelHTML() {
       <p class="storage-items">A provisão se mede em pão. ${[1, 2, 4].map(n => `${FOOD_TYPES.filter(food => !food.raw && food.feeds === n).map(food => food.name.toLowerCase()).join(', ')} alimentam ${n}×`).join('; ')}: quanto mais alimenta, menos sai do estoque.</p>
       <p class="ration-effect">Efeito na felicidade do povo: a ração <b>${RATIONS[state.ration].label.toLowerCase()}</b> ${RATIONS[state.ration].mood > 0 ? 'deixa o povo mais feliz' : RATIONS[state.ration].mood < 0 ? 'deixa o povo mais triste' : 'não muda a felicidade'} (${RATIONS[state.ration].mood > 0 ? '+' : RATIONS[state.ration].mood < 0 ? '−' : ''}${Math.abs(RATIONS[state.ration].mood)}). Quanto mais comida, mais feliz o povo, e mais rápido o estoque acaba. Se a comida servida não der para todos, a fome tira até 40.</p></div>
     <div class="food-label">CARDÁPIO</div>
-    <div class="food-list">${FOOD_TYPES.map(food => { const on = !!state.diet[food.id]; const stock = state.food[food.id] || 0; return `<div class="food-row${on ? ' on' : ''}${stock <= 0 ? ' empty' : ''}">
+    <div class="food-list">${[...FOOD_TYPES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(food => { const on = !!state.diet[food.id]; const stock = state.food[food.id] || 0; return `<div class="food-row${on ? ' on' : ''}${stock <= 0 ? ' empty' : ''}">
         <img src="public/art/${foodIcon(food)}" alt=""><span class="food-name"><b>${food.name}</b><small>${food.raw ? '' : `Alimenta ${food.feeds}×. `}${food.note}</small></span>
         <span class="food-stock"><b>${format(stock)}</b><small>${food.id === 'flour' ? (milling ? `até +${rateNumber(milling)}/s` : 'sem moinho') : food.baked ? (bakingCapacity(food.id) ? `até +${rateNumber(bakingCapacity(food.id))}/s` : 'sem padaria assando') : prod[food.id] ? `+${rateNumber(prod[food.id])}/s${food.raw && milling ? ` · moinho −${rateNumber(milling)}/s` : ''}` : 'sem produção'}</small></span>
         ${food.raw ? '<button type="button" disabled>PRO MOINHO</button>' : `<button type="button" data-diet="${food.id}" class="${on ? 'on' : ''}">${on ? 'SERVINDO' : 'GUARDADO'}</button>`}</div>`; }).join('')}</div>
@@ -5721,7 +5741,6 @@ function killActor(victim, killer) {
   if (victim.summon) { window.Monarch?.summonDied(victim); return; }
   victim.alive = false;
   victim.hp = 0;
-  if (state.goalStep === 1 && ['Bandit', 'Monster'].includes(victim.className)) state.goalKills = (state.goalKills || 0) + 1;
   if (isWildlife(victim)) {
     const range = HUNT_MEAT_DROP[victim.kind] || [1, 2];
     const qty = range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1));
@@ -6632,7 +6651,7 @@ const howFormula = text => `<p class="howto-formula">${text}</p>`;
 const HOWTO = [
   { title: 'Começo', html: () => `
     <h3>O objetivo</h3>
-    <p>Junte <b>600 moedas</b> no cofre. Quando o cofre chega lá, o cenário termina e você escolhe quem segue com o herdeiro: <b>2 servos</b> (camponeses) e <b>3 protetores</b> (heróis). No modo teste o objetivo não conta.</p>
+    <p>O painel de objetivo mostra o que fazer agora e o progresso atual.</p>
     <h3>O que você recebe</h3>
     <p>240 de ouro, 200 de madeira, 200 de pedra, 40 de farinha e 18 de alho. O casarão vem com um casal de camponeses e um Warrior Valente. O casarão guarda ${MANOR_STORAGE} unidades de comida e itens.</p>
     <h3>Você não manda em ninguém</h3>
@@ -6856,7 +6875,7 @@ const HOWTO = [
     <p>O herdeiro não aparece no mapa. Abra o botão <b>✦ MAGIAS</b> no canto do mapa, escolha a magia e clique no alvo. Esc ou botão direito cancela.</p>
     ${howFormula(`MP máximo = 30 + 6 × (nível − 1) + (CHA + INT + WIS) ÷ 2 − reserva das auras ligadas (inclui bônus de equipamento)<br>Recuperação = (WIS × 0,10 + INT × 0,04) × 0,5 por segundo (metade em combate)<br>Potência das auras = efeito-base × (1 + CHA × 0,005)<br>Dano das magias = base + crescimento por nível + (% de MAG da magia × MAG)`)}
     <p>Auras ao mesmo tempo: 1 no nível 2, 2 no nível 12 e 3 no nível 20. São 30 magias do Monarca (ordens, auras, editos, decretos e invocações) e 30 magias de campo, uma nova por nível.</p>
-    ${howFormula(`Duração de uma magia do Monarca = 60 s × (1 + ${hn(STAT_GROWTH)} × (nível do herdeiro − nível em que a magia abre))<br>Vale para todo efeito com tempo: ordens, escudos, zonas, lentidão, silêncio, enraizar, atordoar, provocar, invocações. Recargas não mudam.`)}
+    ${howFormula(`Duração de uma magia do Monarca com base de 60 s = 60 s + 1 s por nível acima do desbloqueio.<br>Vale para efeitos com tempo: auras, ordens, escudos, zonas, lentidão, silêncio, enraizar, atordoar, provocar e invocações. As auras desligam automaticamente ao fim da duração. Recargas não mudam.`)}
     ${howFormula(`Valor de dano de uma magia de campo = base + por nível × (nível do herdeiro − nível da magia) + % de MAG do herdeiro<br>Dano causado = valor² / (valor + metade da Defesa do alvo)`)}
     ${field.length ? howTable(['Nível', 'Magia de campo', 'MP', 'Recarga'], field.map(spell => [spell.unlockLevel, spell.name, spell.manaCost, `${spell.cooldownSeconds} s`])) : ''}`;
   } },
@@ -7133,7 +7152,7 @@ const SCREENS = {
         <p>De manhã chegou uma carta com o selo do Conselho dos Nobres. Eles ficaram impressionados: ninguém nunca tinha pago aquela dívida. Nem o falecido, que morreu justamente pra não pagar.</p>
         <p>O favor tem preço. Os mortos do Vale do Luto pararam de ficar deitados, e os ladrões da estrada acham que o vale agora tem dinheiro. Os nobres querem os dois problemas resolvidos antes do próximo enterro. Mandam ${first} cuidar disso. Pessoalmente, não: mandar heróis serve.</p></header>
       <div class="mission-rewards"><span class="reward-chip loss">−${DEBT_GOLD} ouro</span><span class="reward-chip gain">+${DEBT_FAVOR} Favor dos nobres</span></div>
-      <p class="mission-goal"><b>Próximo objetivo:</b> Noites de Ossos. Abata 4 caveiras ou ladrões.</p>
+      <p class="mission-goal"><b>Objetivo atual:</b> destrua um covil. Na aba Heróis, ofereça uma recompensa para destruí-lo.</p>
       <div class="menu-actions"><button type="button" class="primary" data-action="resume">Voltar ao jogo</button></div>
     </section>` };
   },

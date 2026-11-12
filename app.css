@@ -94,7 +94,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .fishing-spot:focus-visible { outline: 2px solid #f4da9a; outline-offset: 3px; }
 .fishing-spot i { position: relative; z-index: 1; width: 18px; height: 18px; border: 2px solid rgba(205,226,206,.8); border-radius: 50%; background: rgba(70,113,105,.48); box-shadow: 0 0 0 4px rgba(95,144,131,.18), 0 0 14px rgba(179,219,202,.65); }
 .fishing-spot.selected i, .fishing-spot:hover i { border-color: #f4da9a; box-shadow: 0 0 0 5px rgba(244,218,154,.22), 0 0 18px rgba(244,218,154,.9); }
-.fishing-jump { position: absolute; z-index: 0; top: 28px; left: 50%; width: 82px; height: 43px; background-image: url('public/art/fishing-trout-sprites-v01.png'); background-position: 0 0; background-repeat: no-repeat; background-size: 200% 200%; pointer-events: none; animation: trout-frames .72s steps(1,end) infinite, trout-jump 3.2s ease-in-out infinite; animation-delay: 0s, var(--jump-delay, 0s); }
+.fishing-jump { position: absolute; z-index: 0; top: 28px; left: 50%; width: 41px; height: 21.5px; background-image: url('public/art/fishing-trout-sprites-v01.png'); background-position: 0 0; background-repeat: no-repeat; background-size: 200% 200%; pointer-events: none; animation: trout-frames .72s steps(1,end) infinite, trout-jump 3.2s ease-in-out infinite; animation-delay: 0s, var(--jump-delay, 0s); }
 @keyframes trout-frames { 0%,100% { background-position: 0 0; } 25% { background-position: 100% 0; } 50% { background-position: 0 100%; } 75% { background-position: 100% 100%; } }
 @keyframes trout-jump { 0%,100% { opacity: 0; transform: translate(-50%,-50%) translateY(4px) rotate(12deg); } 12% { opacity: 1; } 40% { opacity: 1; transform: translate(-50%,-50%) translateY(-31px) rotate(-18deg); } 63% { opacity: 1; transform: translate(-50%,-50%) translateY(-23px) rotate(10deg); } 86% { opacity: 0; transform: translate(-50%,-50%) translateY(4px) rotate(16deg); } }
 @media (prefers-reduced-motion: reduce) { .fishing-jump { animation-duration: 5s; } }
@@ -180,6 +180,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .character.troll[data-sheet="action"] .character-sprite { width: 115%; height: 115%; margin: -17.9% 0 0 -7.5%; }
 .character.wildlife { width: clamp(44px, 6.4vw, 72px); aspect-ratio: 1; }
 .character.wildlife .character-sprite { width: 100%; aspect-ratio: 1; background-size: 400% 200%; background-position: var(--frame-x, 0%) 0%; }
+.character.wildlife.wild-boar .character-sprite { width: 75%; margin: 25% auto 0; }
 .character.wildlife[data-facing="back"] .character-sprite { background-position-y: 100%; }
 .character::before { content: ''; position: absolute; left: 25%; bottom: 1%; width: 50%; height: 9%; border-radius: 50%; background: rgba(10,12,10,.42); filter: blur(3px); }
 .character-sprite { position: relative; display: block; width: 100%; aspect-ratio: 1; background-repeat: no-repeat; background-size: 400% 200%; background-position: var(--frame-x, 0%) 0%; transform: scaleX(var(--sprite-scale-x, 1)); }
@@ -435,6 +436,14 @@ body { overflow: hidden; }
 .objective-progress .progress-track { flex: 1; height: 7px; }
 .progress-value { color: var(--gold); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .objective-actions { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 10px; }
+.objective-journal { margin-top: 10px; color: #e4d2a8; }
+.objective-journal summary { cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+.objective-journal ol { display: grid; gap: 7px; max-height: 220px; overflow-y: auto; margin: 9px 0 0; padding: 0; list-style: none; }
+.objective-journal-item { display: grid; gap: 3px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: rgba(13,18,14,.45); }
+.objective-journal-item.is-current { border-color: #bca16a; }
+.objective-journal-item span { color: #bca16a; font-size: 10px; text-transform: uppercase; }
+.objective-journal-item b { color: #f0e6d0; font-size: 12px; line-height: 1.35; }
+.objective-journal-item small { color: #b8b2a2; font-size: 11px; line-height: 1.4; }
 .action-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 7px 10px; border: 1px solid rgba(206,186,137,.3); border-radius: 5px; color: #e5d7b5; background: rgba(17,19,16,.55); text-align: left; cursor: pointer; }
 .action-btn small { color: var(--muted); font-size: 9px; letter-spacing: .12em; }
 .action-btn b { font-size: 12px; font-weight: 600; }

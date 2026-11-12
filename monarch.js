@@ -34,7 +34,7 @@ const Monarch = (() => {
   };
 
   const rt = {
-    time: 0, summons: [], zones: [], armies: [], channel: null, majesty: 0, conquest: { stacks: 0, t: 0 },
+    time: 0, auraEnds: new Map(), summons: [], zones: [], armies: [], channel: null, majesty: 0, conquest: { stacks: 0, t: 0 },
     targeting: null, hover: null, mods: new Map(), allies: [], enemies: [], crushInside: new Set(), nextId: 1,
     self: { id: 'monarch', name: 'O Monarca', className: 'Monarch', purse: 0, x: 0, y: 0 }, barKey: '', barClock: 0, cache: new Map(),
     projs: [], timers: [], fzones: [], lastMap: '', panelClock: 0,
@@ -52,10 +52,10 @@ const Monarch = (() => {
   const mpRegen = (fighting = false) => (statTotal('WIS') * 0.10 + statTotal('INT') * 0.04) * 0.5 * (fighting ? 0.5 : 1);
   const isUnlocked = spell => level() >= spell.unlockLevel && !(spell.replacedBySpellId && level() >= byId[spell.replacedBySpellId].unlockLevel);
   const rankIndex = spell => { let index = -1; spell.ranks.forEach((rank, i) => { if (rank.level <= level()) index = i; }); return index; };
-  // Durações crescem a cada nível, na regra do Ember: valor do nível em que a magia abre × (1 + 16% × níveis acima dele).
+  // Durações com base de 60 segundos ganham 1 segundo por nível acima do desbloqueio.
   // Vale para todo campo terminado em Seconds, menos recargas e intervalos.
   const NOT_DURATION = new Set(['cooldownSeconds', 'perEnemyCooldownSeconds', 'tauntEverySeconds', 'stackWindowSeconds']);
-  const durationGrowth = spell => 1 + (typeof STAT_GROWTH === 'number' ? STAT_GROWTH : 0.16) * Math.max(0, level() - spell.unlockLevel);
+  const durationGrowth = spell => 1 + Math.max(0, level() - spell.unlockLevel) / 60;
   function scaleDurations(values, spell) {
     const growth = durationGrowth(spell);
     const out = { ...values };
@@ -315,6 +315,7 @@ const Monarch = (() => {
     } else {
       pay(spell);
       m.auras.push(spell.key);
+      rt.auraEnds.set(spell.key, rt.time + stats(spell).durationSeconds);
       FX.shockwave(m.x, m.y, radiusOf(spell), auraColor(spell.key), 0.8);
       emit(m.x, m.y - BODY, { color: auraColor(spell.key), count: 20, speed: 4, size: 0.4, up: 3 });
       say(`${spell.name} ligada.`);
@@ -1974,6 +1975,8 @@ const Monarch = (() => {
     if (!active()) { hideUi(); togglePanel(false); return; }
     rt.time += dt;
     const m = ms();
+    m.auras = m.auras.filter(key => isUnlocked(byKey[key]) && rt.auraEnds.get(key) > rt.time);
+    m.auras = m.auras.filter(key => !byKey[key].auraSlotShared || m.auras.includes(byKey[key].auraSlotShared));
     refreshLists();
     levelStep();
     computeMods();
@@ -1987,8 +1990,6 @@ const Monarch = (() => {
     fieldStep(dt);
     rt.summons.filter(s => s.alive).forEach(s => summonStep(s, dt, reducedMotion));
     rt.summons = rt.summons.filter(s => s.alive);
-    // Pela borda: aura desligada se o nível caiu (save antigo) ou se a Presença saiu.
-    m.auras = m.auras.filter(key => isUnlocked(byKey[key]) && (!byKey[key].auraSlotShared || m.auras.includes(byKey[key].auraSlotShared)));
     renderToken();
     drawFrame(dt, reducedMotion);
     rt.barClock -= dt;
@@ -2185,12 +2186,13 @@ const Monarch = (() => {
     const st = stats(spell), fx = effects(spell);
     const times = Object.entries({ ...st, ...fx })
       .filter(([key, value]) => key.endsWith('Seconds') && !NON_EFFECT_TIMERS.has(key) && typeof value === 'number' && value > 0)
-      .map(([key, value]) => `${DURATION_LABELS[key] || key.replace(/Seconds$/, '').replace(/([A-Z])/g, ' $1').toLowerCase()}: ${value} s`);
-    const sustained = spell.activation === 'alternavel' ? 'Aura ativa enquanto estiver ligada' : '';
+      .map(([key, value]) => {
+        const label = key === 'durationSeconds' && spell.activation === 'alternavel' ? 'aura ativa' : DURATION_LABELS[key];
+        return `${label || key.replace(/Seconds$/, '').replace(/([A-Z])/g, ' $1').toLowerCase()}: ${value} s`;
+      });
     const detail = [...new Set(times)];
-    if (!detail.length) return sustained;
-    const growth = Math.round((typeof STAT_GROWTH === 'number' ? STAT_GROWTH : 0.16) * 100);
-    return `${sustained ? `${sustained} · ` : ''}Duração no nível ${level()}: ${detail.join(' · ')} · cresce ${growth}% por nível após desbloqueio`;
+    if (!detail.length) return '';
+    return `Duração no nível ${level()}: ${detail.join(' · ')} · a duração base de 60 s aumenta 1 s por nível após desbloqueio`;
   }
   function renderBar(force) {
     if (!bar) return;
@@ -2260,6 +2262,7 @@ const Monarch = (() => {
   }
 
   function reset() {
+    rt.auraEnds.clear();
     rt.summons = []; rt.zones = []; rt.armies = []; rt.channel = null; rt.majesty = 0; rt.conquest = { stacks: 0, t: 0 };
     rt.targeting = null; rt.cache.clear(); rt.barKey = ''; rt.crushInside.clear(); token = null;
     rt.projs = []; rt.timers = []; rt.fzones = []; rt.lastMap = '';

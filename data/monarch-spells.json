@@ -163,7 +163,7 @@
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 8,
-        "durationSeconds": 0
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -549,7 +549,7 @@
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 9,
-        "durationSeconds": 0,
+        "durationSeconds": 60,
         "auraRadiusFollows": "aura-da-presenca"
       },
       "ranks": [
@@ -775,7 +775,7 @@
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 8,
-        "durationSeconds": 0
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -1048,7 +1048,7 @@
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 9,
-        "durationSeconds": 0
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -1504,7 +1504,7 @@
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 12,
-        "durationSeconds": 0
+        "durationSeconds": 60
       },
       "ranks": [
         {
@@ -1598,7 +1598,7 @@
         "cooldownSeconds": 2,
         "castRange": 0,
         "auraRadius": 12,
-        "durationSeconds": 0,
+        "durationSeconds": 60,
         "auraRadiusFollows": "aura-da-presenca"
       },
       "ranks": [
