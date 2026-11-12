@@ -22,7 +22,7 @@ const BUILDINGS = [
   { id: 'armory', name: 'Arsenal do Domínio', glyph: 'E', cost: 165, wood: 9, detail: 'Heróis e camponeses compram equipamento aqui com o próprio ouro. O ouro vem pro cofre.', gold: 0.15, grain: 0, people: 0 },
 ];
 BUILDINGS.find(building => building.id === 'lumber').detail += ' Pode ser construida em City ou Wilds.';
-BUILDINGS.find(building => building.id === 'quarry').detail += ' Uma pedreira inicial de baixa reserva em City; em Wilds, pedreiras livres nos depósitos marcados.';
+BUILDINGS.find(building => building.id === 'quarry').detail += ' O prédio é o local de extração. City permite uma pedreira de baixa reserva; Wilds não tem limite.';
 BUILDINGS.find(building => building.id === 'mine').detail += ' Apenas em Wilds, no deposito de metais marcado.';
 const FARM_TYPES = [
   // grain: produção por segundo nos níveis 1, 2 e 3 da fazenda.
@@ -289,7 +289,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13';
+const GAME_VERSION = 'Version 0.13.2';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -308,8 +308,10 @@ if (options.zoomVersion !== 3 || ![0, 1, 2].includes(options.startZoom)) { optio
 // Som: 1 ligado, 0 desligado. Vale para a música (ver setMusic) e para todo som futuro.
 if (![0, 1].includes(options.sound)) options.sound = 1;
 if (!['dark', 'color'].includes(options.buildingArtStyle)) options.buildingArtStyle = 'dark';
-// Modo teste: ouro e madeira infinitos. Só existe ligado pela tela de Debug.
-const debug = readStore(DEBUG_KEY, { testMode: false });
+// A configuração só escolhe o estoque concedido ao criar uma partida nova.
+const debug = readStore(DEBUG_KEY, { startingStock: 'standard' });
+if (!['standard', 'full'].includes(debug.startingStock)) debug.startingStock = debug.testMode ? 'full' : 'standard';
+delete debug.testMode;
 
 // Começo de um jogo novo. Regra: sem construção, sem ninguém. O casarão traz um camponês e um Warrior;
 // outros heróis saem de guildas, taverna ou hotel; cada fazenda ou moinho traz mais um camponês.
@@ -317,7 +319,7 @@ const debug = readStore(DEBUG_KEY, { testMode: false });
 const WORKER_WAGE = 5;
 const WORKER_START_PURSE = 5;
 const HERO_START_PURSE = 15;
-function newGameState(testMode = false, heir = null) {
+function newGameState(heir = null) {
   return {
     gold: 240, grain: 58, timber: 30, stone: 0, stoneDeposits: {}, quarryMaterials: { wallingKg: 0, lintels: [], dimensionBlocks: [], aggregateKg: 0, settsKg: 0, roofingSlateKg: 0, roofingSlatesKg: 0, millstones: [], quicklimeKg: 0, limePuttyKg: 0, mortarKg: 0, plasterKg: 0 }, metal: 0, charcoal: 0, metals: { ironOre: 0, copperOre: 0, silverOre: 0, goldOre: 0, iron: 0, steel: 0, silver: 0, gold: 0, copper: 0 }, oreGrades: {}, mineralDeposits: {}, residues: {}, extractionTools: [
       { id: 'starter-iron-pick-1', type: 'mine', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
@@ -329,7 +331,7 @@ function newGameState(testMode = false, heir = null) {
     speed: 1, minutes: 380, ticks: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false, goalStep: 0, goalKills: 0,
     bandits: [], wildMeatPiles: [], wildlifeSpawnDay: Math.floor(380 / 1440), nextRaidAt: 720,
-    testMode, heir, heirLevel: 1, heirXp: 0, equipment: BASIC_EQUIPMENT(), stash: null, playSeconds: 0,
+    heir, heirLevel: 1, heirXp: 0, equipment: BASIC_EQUIPMENT(), playSeconds: 0,
     buildings: [],
     mapSet: 1,
     lairs: [
@@ -696,8 +698,8 @@ function trade(id, amount) {
     if (id !== 'timber') qty = Math.min(qty, Math.floor(storageCap() - storedUnits()));
     if (qty <= 0) { say('O Depósito de Provisões está cheio. Não cabe nem um ovo.'); return; }
     const price = qty * unitPrice(good, 'buy');
-    if (!state.testMode && state.gold < price) { say(`Falta ouro. ${qty} de ${good.name.toLowerCase()} custam ${formatPrice(price)}.`); return; }
-    if (!state.testMode) state.gold -= price;
+    if (state.gold < price) { say(`Falta ouro. ${qty} de ${good.name.toLowerCase()} custam ${formatPrice(price)}.`); return; }
+    state.gold -= price;
     if (id === 'timber') state.timber += qty; else state.food[id] = (state.food[id] || 0) + qty;
     say(`Comprou ${qty} de ${good.name.toLowerCase()} por ${formatPrice(price)} de ouro. O mercador sorriu demais.`);
   } else {
@@ -705,7 +707,7 @@ function trade(id, amount) {
     if (qty <= 0) { say(`Não tem ${good.name.toLowerCase()} pra vender.`); return; }
     const price = qty * unitPrice(good, 'sell');
     if (id === 'timber') state.timber -= qty; else state.food[id] -= qty;
-    if (!state.testMode) state.gold += price;
+    state.gold += price;
     say(`Vendeu ${qty} de ${good.name.toLowerCase()} por ${formatPrice(price)} de ouro. O mercador fingiu que era caro.`);
   }
   state.grain = totalFood();
@@ -713,7 +715,7 @@ function trade(id, amount) {
 }
 function marketPanelHTML() {
   const coin = pixelIcon('coin', 14).replace('class="pixel-icon"', 'class="pixel-icon cost-ico"');
-  return `<div class="panel-title"><h3>Mercado</h3><span>${coin} ${state.testMode ? '∞' : format(state.gold)} · depósito ${Math.floor(storedUnits())}/${storageCap()}</span></div>
+  return `<div class="panel-title"><h3>Mercado</h3><span>${coin} ${format(state.gold)} · depósito ${Math.floor(storedUnits())}/${storageCap()}</span></div>
     <div class="market-list">${marketGoods().map(good => `<div class="market-row">
       <img src="${good.icon ? `public/art/${good.icon}` : `public/art/${good.art}-v01.webp`}" alt="">
       <span class="market-name"><b>${good.name}</b><small>Tem ${format(stockOf(good.id))}</small></span>
@@ -832,7 +834,7 @@ function ensureStoneDeposit(place, mapSet = currentMapSet) {
 }
 function stoneDepositForPit(pit) {
   if (!pit?.resourcePlaceId) return null;
-  const place = extractionPlaces('quarry', pit.mapId || 'wilds', pit.mapSet || 2).find(item => String(item.id) === String(pit.resourcePlaceId)) || { id: pit.resourcePlaceId, x: pit.x, y: pit.y };
+  const place = { id: pit.resourcePlaceId, x: pit.x, y: pit.y, initialUnits: pit.quarryInitialUnits ?? ((pit.mapId || 'wilds') === 'city' ? 2400 : 20000) };
   return ensureStoneDeposit(place, pit.mapSet || currentMapSet);
 }
 function selectedQuarryFace(pit) {
@@ -1319,18 +1321,17 @@ function collectTaxes() {
   const fromTavern = (state.tavernTab || 0) * taxFactor();
   state.tavernTab = 0;
   state.armorySales = 0;
-  if (!state.testMode) state.gold += fromPeasants + fromTavern;
+  state.gold += fromPeasants + fromTavern;
   // Depois o salário, direto dos cofres do monarca. Sem ouro, alguém fica sem.
-  const paidCount = state.testMode ? workers.length : Math.min(workers.length, Math.floor(state.gold / WORKER_WAGE));
+  const paidCount = Math.min(workers.length, Math.floor(state.gold / WORKER_WAGE));
   workers.slice(0, paidCount).forEach(worker => { worker.purse = purseOf(worker) + WORKER_WAGE; });
-  if (!state.testMode) state.gold -= paidCount * WORKER_WAGE;
+  state.gold -= paidCount * WORKER_WAGE;
   const unpaid = workers.length - paidCount;
   say(`Impostos a ${state.taxPercent}%: ${format(fromPeasants)} de ouro dos camponeses${openTavern() ? ` e ${format(fromTavern)} da taverna` : ''}. Salários: ${format(paidCount * WORKER_WAGE)} de ouro${unpaid ? `; ${unpaid} ficaram sem receber` : ''}.`,
     unpaid ? 'O cofre não deu pra todos. Alguns trabalharam de graça hoje. Lembram disso.' : 'Os camponeses pagaram e receberam. O ouro deu uma volta e voltou menor.');
 }
 
 function updateHud() {
-  if (state.testMode) { state.gold = 1e9; state.timber = 1e9; }
   const r = rates();
   $('#gold').textContent = format(state.gold);
   state.grain = totalFood();
@@ -1345,7 +1346,6 @@ function updateHud() {
   $('#favor').closest('.stat').dataset.mood = (state.favor ?? 50) < 40 ? 'low' : (state.favor ?? 50) < 60 ? 'mid' : 'high';
   $('#happiness').closest('.stat').dataset.mood = state.happiness < 40 ? 'low' : state.happiness < 60 ? 'mid' : 'high';
   $('#timber').textContent = format(state.timber);
-  if (state.testMode) { $('#gold').textContent = '∞'; $('#timber').textContent = '∞'; }
   const goldNet = dailyTaxEstimate() - dailyWages();
   $('#gold-rate').textContent = `${goldNet < 0 ? '−' : '+'}${format(Math.abs(goldNet))}/dia`;
   $('#grain-rate').textContent = `${r.grain < 0 ? '−' : '+'}${Math.abs(r.grain).toFixed(1).replace('.', ',')}/s`;
@@ -1374,7 +1374,7 @@ function updateHud() {
   const mm = state.minutes % 60;
   $('#clock').textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   $('#date').textContent = `${dayPeriod()} · ${dateLabel()}`;
-  if (!state.testMode && (state.goalStep || 0) >= SCENARIO_GOALS.length && !state.won) {
+  if ((state.goalStep || 0) >= SCENARIO_GOALS.length && !state.won) {
     state.won = true;
     say('Cenário conquistado: o domínio agora paga as próprias dívidas.', 'Os credores receberam a notícia. Infelizmente, também receberam o endereço.');
     if (!state.retinue && game.slot) { menu.stack = []; showScreen('scenarioEnd', { servants: [], protectors: [] }); }
@@ -1384,7 +1384,7 @@ function updateHud() {
 // Objetivos do Cenário 01, um depois do outro. O cenário termina quando o último é cumprido.
 const SCENARIO_GOALS = [
   { title: 'Acumule 600 moedas',
-    progress: () => ({ have: state.gold, need: 600, text: `${state.testMode ? '∞' : format(state.gold)} / 600` }),
+    progress: () => ({ have: state.gold, need: 600, text: `${format(state.gold)} / 600` }),
     done: ['Dívidas quitadas. Os credores levaram as 600 moedas e deixaram o recibo.', 'Agora os mortos do vale querem a parte deles. Abata 4 caveiras ou ladrões.'] },
   { title: 'Noites de Ossos: abata 4 caveiras ou ladrões',
     progress: () => ({ have: state.goalKills || 0, need: 4, text: `${Math.min(4, state.goalKills || 0)} / 4 abatidos` }),
@@ -1405,7 +1405,7 @@ function updateGoal() {
   $('#objective-step').textContent = `${step + 1} de ${SCENARIO_GOALS.length}`;
   $('#objective-text').textContent = text;
   $('#objective-bar').style.width = `${Math.max(0, Math.min(100, have / need * 100))}%`;
-  if (state.testMode || (state.goalStep || 0) >= SCENARIO_GOALS.length || have < need) return;
+  if ((state.goalStep || 0) >= SCENARIO_GOALS.length || have < need) return;
   state.goalStep = (state.goalStep || 0) + 1;
   if (state.goalStep === 1) { state.goalKills = 0; payDebt(); }
   say(...goal.done);
@@ -1572,12 +1572,10 @@ function renderLairs() {
 }
 
 function extractionPlaces(type, mapId = currentMap, mapSet = currentMapSet) {
+  if (type === 'quarry') return [];
   const marked = (worldScenario?.places || []).filter(place => place.type === type)
     .map(place => ({ ...place, mapId: place.mapId || 'wilds' }))
     .filter(place => place.mapId === mapId);
-  if (type === 'quarry' && mapId === 'city') {
-    return [marked.find(place => place.mapId === 'city') || { id: `city-${mapSet}-starter-stone-quarry`, type: 'quarry', mapId: 'city', x: 68, y: 14, initialUnits: 2400 }];
-  }
   if (marked.length) return marked.map(place => type === 'mine' ? { ...place, rank: METAL_DEPOSIT_RANKS.some(rank => rank.id === place.rank) ? place.rank : 'II' } : place);
   // Esses pontos ja estao pintados no mapa dos Wilds; servem mesmo sem marcador do editor.
   const defaults = {
@@ -1607,11 +1605,11 @@ function placementProblem(x, y, ignoreSite = null) {
   if (type === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city' && building.site !== ignoreSite)) return 'City permite apenas uma pedreira.';
   if (type && !['mine', 'quarry', 'lumber'].includes(type) && currentMap !== 'city') return 'Esta constru\u00e7\u00e3o s\u00f3 pode ser erguida em City.';
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
-  if (type === 'mine' || type === 'quarry') {
+  if (type === 'mine') {
     const deposits = extractionPlaces(type);
-    if (!deposits.length) return type === 'mine' ? 'Este mapa n\u00e3o tem um dep\u00f3sito de metal marcado.' : 'Este mapa n\u00e3o tem um dep\u00f3sito de pedra marcado.';
+    if (!deposits.length) return 'Este mapa n\u00e3o tem um dep\u00f3sito de metal marcado.';
     const deposit = deposits.find(place => Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5);
-    if (!deposit) return type === 'mine' ? 'Construa junto ao dep\u00f3sito de metais marcado no mapa.' : 'Construa junto ao dep\u00f3sito de pedra marcado no mapa.';
+    if (!deposit) return 'Construa junto ao dep\u00f3sito de metais marcado no mapa.';
   }
   const crowded = state.buildings.some(building => building.site !== ignoreSite && (building.mapId || 'city') === currentMap && (building.mapSet || 1) === currentMapSet && Math.hypot(building.x - x, (building.y - y) * Y_TO_X_SCALE) < BUILD_SPACING);
   if (crowded) return 'Encostado demais em outra construção.';
@@ -1892,8 +1890,9 @@ const BUILD_CATEGORIES = [
   { id: 'guilds', name: 'Guildas', types: ['warrior', 'archer', 'lancer', 'conjurer', 'healer', 'armory', 'tavern', 'hotel'] },
 ];
 const buildCardHTML = item => {
-  const blocked = (['mine', 'quarry'].includes(item.id) && currentMap !== 'wilds') || (!['mine', 'quarry', 'lumber'].includes(item.id) && currentMap !== 'city');
-  const reason = blocked ? ['mine', 'quarry'].includes(item.id) ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.detail;
+  const cityQuarryExists = item.id === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city');
+  const blocked = (item.id === 'mine' && currentMap !== 'wilds') || (!['mine', 'quarry', 'lumber'].includes(item.id) && currentMap !== 'city') || cityQuarryExists;
+  const reason = cityQuarryExists ? 'A única pedreira de City já foi construída.' : blocked ? item.id === 'mine' ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.id === 'quarry' && currentMap === 'city' ? 'Pedreira inicial de baixa reserva · City permite uma; Wilds não tem limite.' : item.detail;
   return `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira" title="${reason}" ${blocked ? 'disabled aria-disabled="true"' : ''}>
         <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${reason}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`;
 };
@@ -2236,15 +2235,16 @@ function placeBuilding(x, y) {
   state.gold -= item.cost;
   state.timber -= item.wood;
   const site = state.nextBuildingId++;
-  const resourcePlace = ['mine', 'quarry'].includes(item.id) ? extractionPlaces(item.id).find(place => Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5) : null;
-  const building = { site, mapId: currentMap, mapSet: currentMapSet, resourcePlaceId: resourcePlace?.id || null, depositRank: item.id === 'mine' ? (resourcePlace?.rank || (currentMapSet === 2 ? 'IV' : 'II')) : null, type: item.id, produce: ['bakery', 'blacksmith'].includes(item.id) ? (item.id === 'bakery' ? 'bread' : 'iron') : item.id === 'farm' ? state.selectedFarmType : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
+  const resourcePlace = item.id === 'mine' ? extractionPlaces(item.id).find(place => Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5) : null;
+  const quarryInitialUnits = currentMap === 'city' ? 2400 : 20000;
+  const building = { site, mapId: currentMap, mapSet: currentMapSet, resourcePlaceId: item.id === 'quarry' ? `quarry-${currentMapSet}-${site}` : resourcePlace?.id || null, quarryInitialUnits: item.id === 'quarry' ? quarryInitialUnits : undefined, depositRank: item.id === 'mine' ? (resourcePlace?.rank || (currentMapSet === 2 ? 'IV' : 'II')) : null, type: item.id, produce: ['bakery', 'blacksmith'].includes(item.id) ? (item.id === 'bakery' ? 'bread' : 'iron') : item.id === 'farm' ? state.selectedFarmType : null, branch: null, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, builtAt: Date.now(), underConstruction: true, progress: 0, builderId: null };
   if (item.id === 'mine' && resourcePlace) {
     const deposit = ensureMineralDeposit(resourcePlace, currentMapSet);
     const starterIron = deposit.seams.find(seam => seam.mineral === 'iron' && seam.access === 'shallow');
     building.selectedSeamId = starterIron?.id || deposit.seams[0]?.id || null;
     building.stockGrams = 0;
-  } else if (item.id === 'quarry' && resourcePlace) {
-    const deposit = ensureStoneDeposit(resourcePlace, currentMapSet);
+  } else if (item.id === 'quarry') {
+    const deposit = stoneDepositForPit(building);
     building.quarryFaceId = deposit.faces[0]?.id || null;
     building.quarryOrder = 'rubble';
     quarryInventory(building);
@@ -2298,8 +2298,8 @@ function progressConstruction(dt) {
       if (worker && Math.hypot(worker.x - spot.x, worker.y - spot.y) < 1.5) {
         // Conserto custa madeira: sem madeira no estoque, o camponês fica parado esperando.
         const wanted = Math.min(building.damage, REPAIR_RATE * dt * (1 + tradeBuildBonus(worker, true) / 2 + gearBonus(worker, 'build')));
-        const repaired = state.testMode ? wanted : Math.min(wanted, Math.max(0, state.timber) * REPAIR_HP_PER_WOOD);
-        if (!state.testMode) state.timber = Math.max(0, state.timber - repaired / REPAIR_HP_PER_WOOD);
+        const repaired = Math.min(wanted, Math.max(0, state.timber) * REPAIR_HP_PER_WOOD);
+        state.timber = Math.max(0, state.timber - repaired / REPAIR_HP_PER_WOOD);
         building.noWood = repaired < wanted;
         building.damage = Math.max(0, building.damage - repaired);
         if (repaired > 0) buildPractice(worker, dt, true);
@@ -2774,12 +2774,21 @@ function nextActorGoal(actor) {
 }
 
 let lastActorFrame = 0;
+let actorMovementErrorReported = false;
+function reportActorMovementError(error) {
+  if (actorMovementErrorReported) return;
+  actorMovementErrorReported = true;
+  console.error('Falha isolada no ciclo de movimento dos personagens:', error);
+  const line = $('#event-line');
+  if (line) line.textContent = 'Um personagem teve um erro de movimento; os demais continuam. Recarregue a partida para tentar recuperar o caminho.';
+}
 function animateActors(now) {
   const delta = Math.min(0.05, lastActorFrame ? (now - lastActorFrame) / 1000 : 0) * state.speed;
   lastActorFrame = now;
   if (!game.running) { requestAnimationFrame(animateActors); return; }
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   [...state.heroes, ...state.workers].filter(actor => actor.alive).forEach(actor => {
+    try {
     if (actor.className !== 'Peasant' && window.Monarch?.chargeStep(actor, delta, reducedMotion)) return;
     if (actor.className === 'Peasant' ? (peasantHuntStep(actor, delta, reducedMotion) || peasantDefenseStep(actor, delta, reducedMotion)) : heroCombatStep(actor, delta, reducedMotion)) return;
     const construction = actor.className === 'Peasant' && actor.buildSite != null
@@ -2837,15 +2846,29 @@ function animateActors(now) {
     actor.action = 'walk';
     actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
     actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
+    } catch (error) {
+      actor.route = [];
+      actor.finalPoint = null;
+      actor.wait = 0;
+      actor.goal = null;
+      reportActorMovementError(error);
+    }
   });
   (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => {
     // Atordoado, derrubado, empurrado ou convertido pelo Monarca: quem decide o passo é ele.
-    if (!isWildlife(bandit) && window.Monarch?.enemyStep(bandit, delta, reducedMotion)) return;
-    if (isWildlife(bandit)) { wildlifeStep(bandit, delta, reducedMotion); return; }
-    (bandit.className === 'Monster' ? monsterStep : banditStep)(bandit, delta, reducedMotion);
+    try {
+      if (!isWildlife(bandit) && window.Monarch?.enemyStep(bandit, delta, reducedMotion)) return;
+      if (isWildlife(bandit)) { wildlifeStep(bandit, delta, reducedMotion); return; }
+      (bandit.className === 'Monster' ? monsterStep : banditStep)(bandit, delta, reducedMotion);
+    } catch (error) {
+      bandit.route = [];
+      bandit.finalPoint = null;
+      bandit.wait = 0;
+      reportActorMovementError(error);
+    }
   });
-  window.Monarch?.step(delta, reducedMotion);
-  renderHeroes();
+  try { window.Monarch?.step(delta, reducedMotion); } catch (error) { reportActorMovementError(error); }
+  try { renderHeroes(); } catch (error) { reportActorMovementError(error); }
   requestAnimationFrame(animateActors);
 }
 
@@ -3115,7 +3138,7 @@ function monarchShopHTML(tierCap) {
     const current = ITEMS[equipped[slot]];
     const kind = slot.startsWith('ring') ? 'ring' : slot;
     const options = Object.entries(ITEMS).filter(([, item]) => item.slot === kind && item.tier > (current?.tier || 0) && item.tier <= tierCap).sort((a, b) => a[1].tier - b[1].tier);
-    const affordable = options.filter(([, item]) => state.testMode || item.price <= state.gold);
+    const affordable = options.filter(([, item]) => item.price <= state.gold);
     const pick = (affordable[affordable.length - 1] || options[0] || [])[0];
     return `<div class="monarch-shop-row"><span class="monarch-shop-slot">${current ? pixelIcon(current.icon, 24) : ''}<span><small>${label}</small><b>${current ? `${current.name} · T${current.tier}` : 'Vazio'}</b></span></span>
       ${options.length ? `<select data-monarch-pick="${slot}" aria-label="Escolher ${label.toLowerCase()}">${options.map(([id, item]) => `<option value="${id}"${id === pick ? ' selected' : ''}>T${item.tier} · ${item.price} ouro · ${item.name} · ${monarchBonusText(item.bonus)}</option>`).join('')}</select>
@@ -3130,8 +3153,8 @@ function buyMonarchItem(slot, id) {
   const kind = slot.startsWith('ring') ? 'ring' : slot;
   if (!item || item.slot !== kind || item.tier <= (current?.tier || 0)) return;
   if (item.tier > armoryTier()) { say('O Arsenal ainda não vende isso. Melhore o Arsenal.'); return; }
-  if (!state.testMode && state.gold < item.price) { say(`Falta ouro. ${item.name} custa ${item.price}.`); return; }
-  if (!state.testMode) state.gold -= item.price;
+  if (state.gold < item.price) { say(`Falta ouro. ${item.name} custa ${item.price}.`); return; }
+  state.gold -= item.price;
   monarchEquipment()[slot] = id;
   say(`${item.name} agora é do monarca. O cofre emagreceu ${item.price}.`);
   updateHud();
@@ -3478,7 +3501,7 @@ function shopAtArmory() {
     actor.purse = purseOf(actor) - buy.item.price;
     gearOf(actor)[buy.slot] = buy.id;
     actor.lastShopDay = day;
-    if (!state.testMode) state.gold += buy.item.price;
+    state.gold += buy.item.price;
     state.armorySales = (state.armorySales || 0) + buy.item.price;
     say(`${actor.name} comprou ${buy.item.name} no Arsenal por ${buy.item.price} de ouro.`, `${actor.name} saiu do Arsenal com ${buy.item.name}. E com a bolsa mais leve.`);
   });
@@ -4272,7 +4295,7 @@ const heirPhase = (minutes = state.minutes) => Math.min(4, 1 + Math.floor(heirYe
 const heirPortraitSrc = (id, phase = 1) => `public/art/${heirById(id)?.portrait || `heir-portraits-v01/${id}`}-phase-${phase}.webp`;
 const noblePortraitSrc = (house, phase = heirPhase()) => `public/art/noble-portraits-v01/${house}-phase-${phase}.webp`;
 const resourceName = id => id === 'gold' ? 'ouro' : id === 'timber' ? 'madeira' : foodName(id);
-const resourceStock = id => id === 'gold' ? (state.testMode ? Infinity : state.gold) : id === 'timber' ? state.timber : (state.food[id] || 0);
+const resourceStock = id => id === 'gold' ? state.gold : id === 'timber' ? state.timber : (state.food[id] || 0);
 const nobleOf = demand => demand.noble === 'baron' ? BARON : NOBLES.find(noble => noble.id === demand.noble) || BARON;
 function favorLabel(value) {
   return value < FAVOR_ATTACK ? 'Inimigo' : value < 40 ? 'Mal-visto' : value < 60 ? 'Tolerado' : value < 80 ? 'Bem-visto' : 'Favorito';
@@ -4295,7 +4318,7 @@ function deliverDemand(id) {
   if (!demand) return;
   const noble = nobleOf(demand);
   if (resourceStock(demand.res) < demand.qty) { say(`Falta ${resourceName(demand.res)}. ${noble.name} não aceita metade. Nem fiado.`); return; }
-  if (demand.res === 'gold') { if (!state.testMode) state.gold -= demand.qty; }
+  if (demand.res === 'gold') state.gold -= demand.qty;
   else if (demand.res === 'timber') state.timber -= demand.qty;
   else state.food[demand.res] -= demand.qty;
   const gain = demand.late ? 2 : noble.baron ? 15 : 8;
@@ -4307,8 +4330,8 @@ function deliverDemand(id) {
 // Os homens do nobre vêm buscar o que der e ainda quebram alguma coisa no caminho.
 function seizeDemand(demand) {
   const noble = nobleOf(demand);
-  const taken = Math.min(demand.qty, Math.max(0, resourceStock(demand.res) === Infinity ? demand.qty : resourceStock(demand.res)));
-  if (demand.res === 'gold') { if (!state.testMode) state.gold -= taken; }
+  const taken = Math.min(demand.qty, Math.max(0, resourceStock(demand.res)));
+  if (demand.res === 'gold') state.gold -= taken;
   else if (demand.res === 'timber') state.timber -= taken;
   else state.food[demand.res] -= taken;
   changeFavor(noble.baron ? -20 : -10);
@@ -4377,7 +4400,7 @@ function demandsHTML() {
     return `<div class="demand${demand.late ? ' late' : ''}${noble.baron ? ' baron' : ''}">
       <div class="demand-head">${noble.house ? `<img class="noble-portrait" src="${noblePortraitSrc(noble.house)}" alt="Retrato de ${noble.name}, fase ${heirPhase()} de 4" decoding="async">` : '<span class="baron-seal" aria-hidden="true">B</span>'}<span><b>${noble.name}</b><small>${noble.title}</small></span></div>
       <p>${demand.line}</p>
-      <div class="demand-foot"><span><b>${demand.qty} de ${resourceName(demand.res)}</b><small>${when} · você tem ${resourceStock(demand.res) === Infinity ? '∞' : format(resourceStock(demand.res))}</small></span>
+      <div class="demand-foot"><span><b>${demand.qty} de ${resourceName(demand.res)}</b><small>${when} · você tem ${format(resourceStock(demand.res))}</small></span>
         <button type="button" class="hut-upgrade" data-deliver="${demand.id}" ${enough ? '' : 'disabled'}>Entregar</button></div></div>`;
   }).join('');
   return `<div class="econ-block favor-block"><div class="mood-head"><span>FAVOR DOS NOBRES</span><b>${favor}</b><em>${favorLabel(favor)}</em></div>
@@ -4404,8 +4427,8 @@ function bountyLabelAt(x, y) {
 }
 function createBounty(spec) {
   const reward = Math.max(5, Math.round(state.bountyAmount || 25));
-  if (!state.testMode && state.gold < reward) { say(`Falta ouro. Ninguém arrisca o pescoço por promessa.`); return null; }
-  if (!state.testMode) state.gold -= reward;
+  if (state.gold < reward) { say(`Falta ouro. Ninguém arrisca o pescoço por promessa.`); return null; }
+  state.gold -= reward;
   const node = spec.node ?? nearestNode(spec);
   const point = spec.x != null ? { x: spec.x, y: spec.y } : { x: PATH_NODES[node].x, y: PATH_NODES[node].y };
   const bounty = { id: `bounty-${Date.now()}-${Math.floor(Math.random() * 1000)}`, label: spec.label || bountyLabelAt(point.x, point.y), reward, x: point.x, y: point.y, node,
@@ -4435,7 +4458,7 @@ function payHuntBounty(monster, killer) {
   if (taker) taker.bountyId = null;
   state.bounties = state.bounties.filter(item => item !== bounty);
   if (winner) { lootHero(winner, bounty.reward); return ` ${winner.name} embolsou a recompensa de ${bounty.reward} de ouro.`; }
-  if (!state.testMode) state.gold += bounty.reward;
+  state.gold += bounty.reward;
   return ` A recompensa de ${bounty.reward} de ouro voltou pro cofre.`;
 }
 function cancelBounty(id) {
@@ -4443,7 +4466,7 @@ function cancelBounty(id) {
   if (!bounty) return;
   const taker = bountyTaker(bounty);
   if (taker) { taker.bountyId = null; taker.route = []; taker.finalPoint = null; }
-  if (!state.testMode) state.gold += bounty.reward;
+  state.gold += bounty.reward;
   state.bounties = state.bounties.filter(item => item !== bounty);
   renderSites(); renderPanel(); updateHud();
   say(`Recompensa cancelada. ${bounty.reward} de ouro voltou pro cofre${taker ? `, e ${taker.name} reclamou do caminho à toa` : ''}.`);
@@ -4544,17 +4567,17 @@ function processBounties() {
   (state.bounties || []).filter(bounty => bounty.lairId && !(state.lairs || []).some(lair => lair.id === bounty.lairId && lair.active)).forEach(bounty => {
     const taker = bountyTaker(bounty);
     if (taker) taker.bountyId = null;
-    if (!state.testMode) state.gold += bounty.reward;
+    state.gold += bounty.reward;
     state.bounties = state.bounties.filter(item => item !== bounty);
   });
   // Caça cuja caveira sumiu sem ninguém derrubar: o ouro volta.
   (state.bounties || []).filter(bounty => bounty.target && !(state.bandits || []).some(actor => actor.id === bounty.target && actor.alive)).forEach(bounty => {
-    if (!state.testMode) state.gold += bounty.reward;
+    state.gold += bounty.reward;
     state.bounties = state.bounties.filter(item => item !== bounty);
   });
   const expired = (state.bounties || []).filter(bounty => !bounty.target && state.minutes > bounty.until && !bountyTaker(bounty));
   expired.forEach(bounty => {
-    if (!state.testMode) state.gold += bounty.reward;
+    state.gold += bounty.reward;
     say(`Ninguém quis a recompensa (${bounty.label.toLowerCase()}). ${bounty.reward} de ouro voltou pro cofre, envergonhado.`);
   });
   if (expired.length) { state.bounties = state.bounties.filter(bounty => !expired.includes(bounty)); renderSites(); }
@@ -4636,7 +4659,7 @@ function economyPanelHTML() {
     const secondary = type.secondary ? ` + ${per(farmSecondaryRate(building) * (1 + crewWork(building)))} de ${foodName(type.secondary)}` : '';
     return `${per(farmOutput(building) * (1 + crewWork(building)))} de ${foodName(farmFoodId(building))}${secondary}`;
   };
-  return `<div class="panel-title"><h3>Economia</h3><span>${state.testMode ? '∞' : format(state.gold)} de ouro no cofre</span></div>
+  return `<div class="panel-title"><h3>Economia</h3><span>${format(state.gold)} de ouro no cofre</span></div>
     ${demandsHTML()}
     <div class="econ-block"><div class="food-label">OURO POR DIA</div><dl class="econ-lines">
       ${row('Impostos', `+${format(taxes - (state.tavernTab || 0) * taxFactor())}`, `${state.taxPercent}%, da bolsa dos camponeses`)}
@@ -4929,7 +4952,7 @@ function killActor(victim, killer) {
     // Wildlife creates a meat pile above; skip hostile loot handling.
   } else if (isBandit(victim)) {
     let back = '';
-    if (victim.loot?.gold) { if (!state.testMode) state.gold += victim.loot.gold; back = ` Recuperou ${victim.loot.gold} de ouro.`; }
+    if (victim.loot?.gold) { state.gold += victim.loot.gold; back = ` Recuperou ${victim.loot.gold} de ouro.`; }
     if (victim.loot?.food) {
       const qty = Math.min(victim.loot.food.qty, Math.max(0, Math.floor(storageCap() - storedUnits())));
       state.food[victim.loot.food.id] = (state.food[victim.loot.food.id] || 0) + qty;
@@ -5144,7 +5167,7 @@ function fromPlace(name) {
 
 function stealFrom(bandit) {
   const where = bandit.goalName || 'o domínio';
-  if (!state.testMode && state.gold >= 1) {
+  if (state.gold >= 1) {
     const amount = Math.min(Math.floor(state.gold), 10 + 5 * (bandit.level || 1));
     state.gold -= amount;
     bandit.loot = { gold: amount };
@@ -5298,8 +5321,8 @@ function carryRemainsStep(hero) {
   }
   state.remainsFullWarned = false;
   state.remains[grade.id] = (state.remains[grade.id] || 0) + 1;
-  const pay = state.testMode ? grade.gold : Math.min(grade.gold, Math.max(0, Math.floor(state.gold)));
-  if (!state.testMode) state.gold -= pay;
+  const pay = Math.min(grade.gold, Math.max(0, Math.floor(state.gold)));
+  state.gold -= pay;
   lootHero(hero, pay);
   hero.remains = null;
   say(`${hero.name} deixou um Dead Remains grade ${grade.id} no depósito e cobrou ${pay} de ouro do cofre${pay < grade.gold ? ', o que tinha' : ''}.`);
@@ -5431,24 +5454,27 @@ function serializeState() {
   data.selectedBuild = null;
   data.movingSite = null;
   data.placingBounty = false;
+  delete data.testMode;
+  delete data.stash;
   return data;
 }
 
 function hydrateState(data) {
-  const loaded = Object.assign(newGameState(!!data.testMode), data);
-  loaded.metals = { ...newGameState(!!data.testMode).metals, ...(data.metals || {}) };
+  const defaults = newGameState();
+  const loaded = Object.assign(defaults, data);
+  loaded.metals = { ...defaults.metals, ...(data.metals || {}) };
   loaded.metals.steel = (loaded.metals.steel || 0) + (loaded.metals.steelScrap || 0);
   delete loaded.metals.steelScrap;
   if (!data.metals && Number(data.metal) > 0) loaded.metals.ironOre = Number(data.metal);
   loaded.fishingStock = { ...Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])), ...(data.fishingStock || {}) };
   loaded.oreGrades = data.oreGrades && typeof data.oreGrades === 'object' ? data.oreGrades : {};
   loaded.residues = data.residues && typeof data.residues === 'object' ? data.residues : {};
-  loaded.extractionTools = Array.isArray(data.extractionTools) ? data.extractionTools : newGameState(!!data.testMode).extractionTools;
+  loaded.extractionTools = Array.isArray(data.extractionTools) ? data.extractionTools : defaults.extractionTools;
   loaded.mineralDeposits = data.mineralDeposits && typeof data.mineralDeposits === 'object' ? data.mineralDeposits : {};
   loaded.stoneDeposits = data.stoneDeposits && typeof data.stoneDeposits === 'object' ? data.stoneDeposits : {};
-  loaded.quarryMaterials = { ...newGameState(!!data.testMode).quarryMaterials, ...(data.quarryMaterials || {}) };
+  loaded.quarryMaterials = { ...defaults.quarryMaterials, ...(data.quarryMaterials || {}) };
   loaded.mapSet = data.mapSet === 2 ? 2 : 1;
-  const defaultLairs = newGameState(!!data.testMode).lairs;
+  const defaultLairs = defaults.lairs;
   loaded.lairs = defaultLairs.map(base => ({ ...base, mapSet: 1, ...(Array.isArray(data.lairs) ? data.lairs.find(lair => lair.id === base.id) : null) }));
   ['goblin-den-l1', 'troll-den-l1'].forEach(id => { const lair = loaded.lairs.find(item => item.id === id); if (lair && !lair.destroyed) lair.active = true; });
   loaded.remains = { ...emptyRemains(), ...(data.remains || {}) };
@@ -5466,7 +5492,9 @@ function hydrateState(data) {
   });
   if (!data.food) loaded.food = { ...emptyFood(), wheat: data.grain || 0 };
   loaded.food = { ...emptyFood(), ...(loaded.food || {}) };
-  loaded.diet = { ...newGameState(!!data.testMode).diet, ...(loaded.diet || {}) };
+  loaded.diet = { ...defaults.diet, ...(loaded.diet || {}) };
+  delete loaded.testMode;
+  delete loaded.stash;
   if (loaded.food.flour == null) loaded.food.flour = 0;
   if (loaded.diet && loaded.diet.flour == null) loaded.diet.flour = true;
   ['bread', 'cheese', 'quiche'].forEach(id => {
@@ -5554,19 +5582,18 @@ function describeSave(record) {
   return {
     day: Math.floor(s.minutes / 1440) + 1,
     clock: `${pad2(Math.floor(s.minutes / 60) % 24)}:${pad2(s.minutes % 60)}`,
-    gold: s.testMode ? '∞' : format(s.gold),
+    gold: format(s.gold),
     buildings: s.buildings.length,
     heroes: s.heroes.filter(hero => hero.alive).length,
     played: formatPlayTime(s.playSeconds || 0),
     savedAt: new Date(record.savedAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
-    testMode: !!s.testMode,
   };
 }
 
 function saveCard(slot, record) {
   if (!record) return `<div class="save-head"><b>Slot ${slot}</b><span>Vazio</span></div><p class="save-empty">Nenhuma herança registrada. Ainda.</p>`;
   const d = describeSave(record);
-  return `<div class="save-head"><b>Slot ${slot}</b>${d.testMode ? '<span class="tag-test">MODO TESTE</span>' : ''}<span>${d.savedAt}</span></div>
+  return `<div class="save-head"><b>Slot ${slot}</b><span>${d.savedAt}</span></div>
     <div class="save-title">${heirById(record.state.heir) ? `${heirById(record.state.heir).name} · ` : ''}Vale do Luto · Cenário 01</div>
     <dl class="save-stats"><div><dt>Dia</dt><dd>${d.day} · ${d.clock}</dd></div><div><dt>Ouro</dt><dd>${d.gold}</dd></div><div><dt>Construções</dt><dd>${d.buildings}</dd></div><div><dt>Heróis</dt><dd>${d.heroes}</dd></div><div><dt>Tempo de jogo</dt><dd>${d.played}</dd></div></dl>`;
 }
@@ -5624,8 +5651,10 @@ function startGame(newState, slot) {
 }
 
 function newGame(slot, heir) {
-  startGame(newGameState(debug.testMode, heir), slot);
-  say(debug.testMode ? 'A herança é sua. Modo teste: o ouro não acaba, a desgraça também não.' : 'A herança é sua. Os credores já foram avisados.');
+  const fresh = newGameState(heir);
+  if (debug.startingStock === 'full') { fresh.gold = 1e9; fresh.timber = 1e9; }
+  startGame(fresh, slot);
+  say('A herança é sua. Os credores já foram avisados.');
 }
 
 function loadGame(slot) {
@@ -5635,13 +5664,9 @@ function loadGame(slot) {
   say(`Bem-vindo de volta. Dia ${Math.floor(state.minutes / 1440) + 1}. A fazenda continua horrível.`);
 }
 
-function setTestMode(on) {
-  debug.testMode = on;
+function setStartingStock(on) {
+  debug.startingStock = on ? 'full' : 'standard';
   writeStore(DEBUG_KEY, debug);
-  if (!game.slot) return;
-  if (on && !state.testMode) { state.stash = { gold: state.gold, timber: state.timber }; state.testMode = true; }
-  if (!on && state.testMode) { state.gold = state.stash?.gold ?? 240; state.timber = state.stash?.timber ?? 30; state.stash = null; state.testMode = false; }
-  updateHud(); renderPanel();
 }
 
 function applyOptions() {
@@ -6031,7 +6056,6 @@ const SCREENS = {
         <button type="button" data-action="editor">Editor de mapas</button>
       </nav>
       <p class="title-save">${latest ? `Slot ${latest.slot} · ${slotSummary(latest.record)}` : 'Nenhum jogo salvo ainda.'}</p>
-      ${debug.testMode ? '<footer class="title-footer"><span class="tag-test">MODO TESTE LIGADO</span></footer>' : ''}
     </div>` };
   },
   economy() {
@@ -6043,7 +6067,7 @@ const SCREENS = {
     const costs = BUILDINGS.map(building => `<tr><th>${building.name}</th><td>${building.cost} ouro</td><td>${building.wood} madeira</td></tr>`).join('');
     return { cls: menuMode(), html: `<section class="menu-card economy-card wide">
       <header class="menu-card-head"><span class="eyebrow">${game.slot ? `DIA ${Math.floor(source.minutes / 1440) + 1}` : latest ? 'ÚLTIMO SAVE' : 'REGRAS DO INÍCIO'}</span><h2>Economia do domínio</h2><p>${game.slot ? 'Valores atuais do jogo pausado.' : latest ? 'Valores gravados no save mais recente.' : 'Sem save: mostrando o início da partida. Produção e taxas mudam com as construções e moradores.'}</p></header>
-      <div class="economy-metrics"><div><small>OURO DISPONÍVEL</small><b>${source.testMode ? '∞' : format(source.gold || 0)}</b></div><div><small>MADEIRA</small><b>${source.testMode ? '∞' : format(source.timber || 0)}</b><em>+${economyRate(e.woodRate)}/s</em></div><div><small>PROVISÕES EM ESTOQUE</small><b>${format(e.stock)} / ${e.capacity}</b></div><div><small>IMPOSTO CONFIGURADO</small><b>${source.taxPercent ?? 10}%</b></div></div>
+      <div class="economy-metrics"><div><small>OURO DISPONÍVEL</small><b>${format(source.gold || 0)}</b></div><div><small>MADEIRA</small><b>${format(source.timber || 0)}</b><em>+${economyRate(e.woodRate)}/s</em></div><div><small>PROVISÕES EM ESTOQUE</small><b>${format(e.stock)} / ${e.capacity}</b></div><div><small>IMPOSTO CONFIGURADO</small><b>${source.taxPercent ?? 10}%</b></div></div>
       <div class="economy-columns"><section><h3>Provisões por segundo</h3><dl class="economy-list">${foodRows}${demandRow}<div class="economy-net"><dt>Saldo líquido atual</dt><dd>${e.edible - e.consumption >= 0 ? '+' : '−'}${economyRate(Math.abs(e.edible - e.consumption))} /s</dd></div></dl></section>
         <section><h3>Ouro na próxima cobrança</h3><dl class="economy-list"><div><dt>Camponeses · ${e.workers} × ${economyRate(2 * ((source.taxPercent ?? 10) / 10))} por dia</dt><dd>+${economyRate(e.workerTax)}</dd></div><div><dt>Conta da taverna acumulada</dt><dd>+${economyRate(e.tavernTax)}</dd></div><div><dt>Salários · ${e.workers} × ${WORKER_WAGE}</dt><dd>−${economyRate(e.wages)}</dd></div><div class="economy-net"><dt>Estimativa da próxima coleta</dt><dd>≈ ${economyRate(e.taxEstimate)} ouro</dd></div></dl><p class="economy-note">Impostos são recolhidos à meia-noite do jogo. A taverna depende de quem bebe e de quanto tempo ficou.</p></section></div>
       <section class="economy-costs"><h3>Gasto para construir</h3><div class="economy-table-wrap"><table><thead><tr><th>Construção</th><th>Ouro</th><th>Madeira</th></tr></thead><tbody>${costs}</tbody></table></div><p class="economy-note">Esses são custos únicos de construção. Melhorias têm custo próprio; comida é o consumo contínuo. Construções não geram ouro.</p></section>
@@ -6088,7 +6112,6 @@ const SCREENS = {
         <li>O <b>ouro</b> vem dos impostos, cobrados à meia-noite: dos camponeses e de quem bebe na taverna.</li>
         <li><b>Esc</b> ou <b>MENU</b> pausa e salva.</li>
       </ul>
-      ${debug.testMode ? '<p class="title-save"><b class="test-text">Modo teste ligado: ouro e madeira infinitos.</b></p>' : ''}
       <div class="menu-actions"><button type="button" class="primary" data-action="accept" data-slot="${slot}">Aceitar a herança</button><button type="button" data-action="back">Voltar</button></div>
     </section>` };
   },
@@ -6258,12 +6281,12 @@ const SCREENS = {
   debug() {
     const used = allSaves().filter(entry => entry.record).length;
     return { cls: menuMode(), html: `<section class="menu-card">
-      <header class="menu-card-head"><span class="eyebrow">DEBUG</span><h2>Ferramentas de teste</h2><p>Pra trapacear a morte com responsabilidade.</p></header>
+      <header class="menu-card-head"><span class="eyebrow">AJUSTES DE INÍCIO</span><h2>Estoque e saves</h2><p>A quantidade inicial não altera as regras da partida.</p></header>
       <div class="option-list">
-        <div class="option-row"><div><b>Modo teste</b><small>Ouro e madeira infinitos. A economia finge que não viu. Vale para novos jogos e para o jogo aberto.</small></div>${segmented('testMode', debug.testMode ? 1 : 0, [[0, 'Desligado'], [1, 'Ligado']])}</div>
+        <div class="option-row"><div><b>Estoque inicial</b><small>Escolhe a quantidade de ouro e madeira concedida ao começar uma partida nova. Os custos e consumos continuam normais.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
         <div class="option-row"><div><b>Apagar todos os saves</b><small>Remove os ${SAVE_SLOTS} slots deste navegador.</small></div><button type="button" class="danger small" data-action="wipe" ${used ? '' : 'disabled'}>Apagar</button></div>
       </div>
-      <dl class="debug-info"><div><dt>Versão</dt><dd>${GAME_VERSION}</dd></div><div><dt>Slots usados</dt><dd>${used} / ${SAVE_SLOTS}</dd></div><div><dt>Jogo aberto</dt><dd>${game.slot ? `Slot ${game.slot}${state.testMode ? ' · teste' : ''}` : 'Nenhum'}</dd></div></dl>
+      <dl class="debug-info"><div><dt>Versão</dt><dd>${GAME_VERSION}</dd></div><div><dt>Slots usados</dt><dd>${used} / ${SAVE_SLOTS}</dd></div><div><dt>Jogo aberto</dt><dd>${game.slot ? `Slot ${game.slot}` : 'Nenhum'}</dd></div></dl>
       <div class="menu-actions"><button type="button" class="primary" data-action="back">Voltar</button></div>
     </section>` };
   },
@@ -6386,7 +6409,7 @@ function initMenus() {
       const name = button.dataset.set;
       const raw = button.dataset.value;
       const value = Number.isNaN(Number(raw)) ? raw : Number(raw);
-      if (name === 'testMode') setTestMode(value === 1);
+      if (name === 'startingStock') setStartingStock(value === 1);
       else {
         options[name] = value;
         writeStore(OPTIONS_KEY, options);
@@ -6664,13 +6687,10 @@ function placeMarkerHTML(place, editable) {
 function renderPlaces() {
   const editing = editor.active && !editor.preview;
   let places = editor.active ? editor.places : worldScenario?.places || [];
-  places = places.filter(place => place.type !== 'quarry' || (place.mapId || 'wilds') === currentMap);
-  if (currentMap === 'city' && !places.some(place => place.type === 'quarry' && place.mapId === 'city')) {
-    places = [...places, { id: `city-${currentMapSet}-starter-stone-quarry`, type: 'quarry', mapId: 'city', x: 68, y: 14 }];
-  }
+  places = places.filter(place => place.type !== 'quarry');
   const layer = $('#poi-layer');
   layer.classList.toggle('editing', editing);
-  layer.innerHTML = places.map(place => placeMarkerHTML(place, editing && !(place.type === 'quarry' && place.id === `city-${currentMapSet}-starter-stone-quarry`))).join('');
+  layer.innerHTML = places.map(place => placeMarkerHTML(place, editing)).join('');
   // A sombra do objeto escolhido segue o mouse antes do clique: o preview de onde ele vai ficar.
   if (editing && editor.tool) layer.insertAdjacentHTML('beforeend', placeMarkerHTML({ id: 'ghost', type: editor.tool, x: -50, y: -50 }, false).replace('class="poi ', 'class="poi ghost '));
 }
