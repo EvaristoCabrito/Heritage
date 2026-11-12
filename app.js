@@ -6445,7 +6445,14 @@ function initMenus() {
         if (readSave(slot)) confirmThen({ title: `Novo jogo no slot ${slot}?`, text: 'O jogo que está lá some pra sempre.', confirmLabel: 'Começar novo', danger: true }, () => { menu.stack.pop(); showScreen('heir', { slot, selected: 0 }); });
         else showScreen('heir', { slot, selected: 0 });
         break;
-      case 'pick-heir': case 'pick-noble': menu.stack[menu.stack.length - 1].params.selected = Number(button.dataset.index); renderMenu(); break;
+      case 'pick-heir': case 'pick-noble': {
+        // Trocar de retrato redesenha a tela; a rolagem fica onde o jogador estava.
+        const keepScroll = $('#menu-layer').scrollTop;
+        menu.stack[menu.stack.length - 1].params.selected = Number(button.dataset.index);
+        renderMenu();
+        $('#menu-layer').scrollTop = keepScroll;
+        break;
+      }
       case 'choose-heir': showScreen('intro', { slot, heir: HEIRS[menu.stack[menu.stack.length - 1].params.selected].id }); break;
       case 'accept': newGame(slot, menu.stack[menu.stack.length - 1].params.heir); break;
       case 'delete-slot':
