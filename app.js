@@ -360,7 +360,8 @@ if (!['dark', 'color'].includes(options.buildingArtStyle)) options.buildingArtSt
 const debug = readStore(DEBUG_KEY, { startingStock: 'standard' });
 if (!['standard', 'full'].includes(debug.startingStock)) debug.startingStock = debug.testMode ? 'full' : 'standard';
 delete debug.testMode;
-// Estoque de teste: só quantidade inicial. Os custos e consumos continuam normais.
+// Estoque de teste: só quantidade. Reposto ao entrar na partida e a cada segundo (pedido do dono: "maxed out e sem gastar").
+// Os custos são cobrados normalmente; o saldo só não acaba. Pedra fica em 40 kg porque ocupa o depósito.
 const TEST_STOCK = { gold: 1e9, timber: 1e9, stone: 40 };
 function grantStartingStock(target) {
   if (debug.startingStock !== 'full') return;
@@ -1697,11 +1698,36 @@ function extractionPlaces(type, mapId = currentMap, mapSet = currentMapSet) {
   // Esses pontos ja estao pintados no mapa dos Wilds; servem mesmo sem marcador do editor.
   const defaults = {
     quarry: { id: `map-${mapSet}-stone-quarry`, x: 22, y: 18 },
-    mine: { id: `map-${mapSet}-metal-mine`, x: 72, y: 61, rank: mapSet === 2 ? 'IV' : 'II' },
+    // Mapa 1: lugar fixo do Campo de Mineração, no chão logo à frente da mina de ouro desenhada (nunca em cima dela nem do riacho).
+    mine: { id: `map-${mapSet}-metal-mine`, ...(mapSet === 1 ? { x: 76, y: 112 } : { x: 72, y: 61 }), rank: mapSet === 2 ? 'IV' : 'II' },
   };
   return mapId === 'wilds' && defaults[type] ? [{ ...defaults[type], type, mapId: 'wilds' }] : [];
 }
 
+// Áreas desenhadas na arte de Wilds (mapa 1) onde nada pode ser construído: a pedreira, a mina de ouro e o riacho.
+// x em % da largura, y de 0 a 200, medidos sobre mordavia-wilds-map.webp.
+const WILDS_PAINTED = {
+  1: {
+    areas: [
+      { name: 'a pedreira desenhada no mapa', x1: 4, x2: 48, y1: 8, y2: 46 },
+      { name: 'a mina de ouro desenhada no mapa', x1: 64, x2: 90, y1: 62, y2: 95 },
+    ],
+    river: [[4, 70], [13, 68], [24, 65], [34, 61], [42, 59], [53, 59], [62, 56], [75, 54], [83, 52], [89, 51], [98, 49]],
+  },
+};
+function paintedProblem(x, y, mapSet = currentMapSet) {
+  const painted = WILDS_PAINTED[mapSet];
+  if (!painted) return null;
+  const area = painted.areas.find(item => x >= item.x1 && x <= item.x2 && y >= item.y1 && y <= item.y2);
+  if (area) return `Não dá para construir em cima d${area.name.slice(0, 1) === 'a' ? '' : 'e '}${area.name}.`;
+  const near = painted.river.slice(1).some(([bx, by], i) => {
+    const [ax, ay] = painted.river[i];
+    const dx = bx - ax, dy = (by - ay) * Y_TO_X_SCALE, px = x - ax, py = (y - ay) * Y_TO_X_SCALE;
+    const t = Math.max(0, Math.min(1, (px * dx + py * dy) / (dx * dx + dy * dy)));
+    return Math.hypot(px - t * dx, py - t * dy) < 5;
+  });
+  return near ? 'Não dá para construir em cima do riacho.' : null;
+}
 function protectedWildsDeposits(mapSet = currentMapSet) {
   const quarry = (worldScenario?.places || []).find(place => place.type === 'quarry' && (place.mapId || 'wilds') === 'wilds')
     || { id: `map-${mapSet}-stone-quarry`, x: 22, y: 18 };
@@ -1725,13 +1751,20 @@ function renderFishingSpots() {
   });
 }
 
+// O Campo de Mineração tem um lugar fixo por mapa: onde quer que se clique em Wilds, ele vai para o depósito.
+function snapPlacement(type, x, y) {
+  if (type !== 'mine' || currentMap !== 'wilds') return { x, y };
+  const deposit = extractionPlaces('mine')[0];
+  return deposit ? { x: deposit.x, y: deposit.y } : { x, y };
+}
 function placementProblem(x, y, ignoreSite = null) {
   const moving = state.movingSite != null ? state.buildings.find(building => building.site === state.movingSite) : null;
   const type = moving?.type || state.selectedBuild;
   if (type === 'mine' && currentMap !== 'wilds') return 'Minas s\u00f3 podem ser constru\u00eddas em Wilds.';
   if (type === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city' && building.site !== ignoreSite)) return 'City permite apenas uma pedreira.';
   if (x < 6 || x > 94 || y < 4 || y > 196) return 'Fora do mapa.';
-  if (currentMap === 'wilds') {
+  if (currentMap === 'wilds' && paintedProblem(x, y)) return paintedProblem(x, y);
+  if (currentMap === 'wilds' && !WILDS_PAINTED[currentMapSet]) {
     const blockedDeposit = protectedWildsDeposits(currentMapSet).find(({ building, place }) => building !== type
       && Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5);
     if (blockedDeposit) return `Depósito de ${blockedDeposit.name} reservado para ${blockedDeposit.building === 'quarry' ? 'a Pedreira' : 'o Campo de Mineração'}.`;
@@ -1774,7 +1807,7 @@ function showPlacementPreview(event) {
   const item = BUILDINGS.find(building => building.id === state.selectedBuild);
   const moving = state.movingSite != null ? state.buildings.find(building => building.site === state.movingSite) : null;
   if ((!item && !moving) || event.target.closest('.map-tools, .menu-btn')) { preview.hidden = true; return; }
-  const { x, y } = worldPoint(event);
+  const { x, y } = snapPlacement(moving?.type || item?.id, ...Object.values(worldPoint(event)));
   const art = moving ? siteArt(moving) : item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id];
   preview.hidden = false;
   preview.style.setProperty('--x', `${x}%`);
@@ -2297,6 +2330,7 @@ function cancelMove() {
 function moveBuilding(x, y) {
   const building = state.buildings.find(item => item.site === state.movingSite);
   if (!building) { state.movingSite = null; return; }
+  ({ x, y } = snapPlacement(building.type, x, y));
   const problem = placementProblem(x, y, building.site);
   if (problem) { say(problem); return; }
   building.x = Math.round(x * 10) / 10;
@@ -2425,6 +2459,7 @@ const buildingName = building => building.type === 'manor' ? 'o Casarão' : buil
 function placeBuilding(x, y) {
   const item = BUILDINGS.find(building => building.id === state.selectedBuild);
   if (!item) return;
+  ({ x, y } = snapPlacement(item.id, x, y));
   const problem = placementProblem(x, y);
   if (problem) { say(problem); return; }
   if (state.gold < item.cost || state.timber < item.wood || state.stone < buildingStoneCost(item)) {
@@ -3077,6 +3112,7 @@ function animateActors(now) {
 
 function tick() {
   if (!game.running) return;
+  grantStartingStock(state);
   state.ticks++;
   state.playSeconds = (state.playSeconds || 0) + 1;
   if (options.autosave && state.playSeconds % (options.autosave * 60) === 0) writeSave(game.slot);
@@ -6025,6 +6061,7 @@ function loadGame(slot) {
 function setStartingStock(on) {
   debug.startingStock = on ? 'full' : 'standard';
   writeStore(DEBUG_KEY, debug);
+  if (game.slot) { grantStartingStock(state); updateHud(); }
 }
 
 function applyOptions() {
@@ -6645,7 +6682,7 @@ const SCREENS = {
     return { cls: menuMode(), html: `<section class="menu-card">
       <header class="menu-card-head"><span class="eyebrow">AJUSTES DE INÍCIO</span><h2>Estoque e saves</h2><p>A quantidade inicial não altera as regras da partida.</p></header>
       <div class="option-list">
-        <div class="option-row"><div><b>Estoque inicial</b><small>Alto concede ouro, madeira e pedra extras ao iniciar uma partida nova. Custos, consumo e todas as regras continuam iguais.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
+        <div class="option-row"><div><b>Estoque inicial</b><small>Alto mantém ouro e madeira em 1 bilhão e a pedra em 40 kg, repostos a cada segundo, em qualquer partida. Custos, consumo e todas as regras continuam iguais; o saldo só não acaba.</small></div>${segmented('startingStock', debug.startingStock === 'full' ? 1 : 0, [[0, 'Padrão'], [1, 'Alto']])}</div>
         <div class="option-row"><div><b>Apagar todos os saves</b><small>Remove os ${SAVE_SLOTS} slots deste navegador.</small></div><button type="button" class="danger small" data-action="wipe" ${used ? '' : 'disabled'}>Apagar</button></div>
       </div>
       <dl class="debug-info"><div><dt>Versão</dt><dd>${GAME_VERSION}</dd></div><div><dt>Slots usados</dt><dd>${used} / ${SAVE_SLOTS}</dd></div><div><dt>Jogo aberto</dt><dd>${game.slot ? `Slot ${game.slot}` : 'Nenhum'}</dd></div></dl>
