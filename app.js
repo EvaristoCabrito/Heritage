@@ -425,6 +425,24 @@ let state = newGameState();
 let selectedLairId = null;
 let selectedFishingSpotId = null;
 const game = { running: false, slot: null, lastSaved: 0 };
+let arrivalClockState = state;
+let arrivalClock = { workers: state.minutes, heroes: state.minutes };
+
+function resetArrivalClock() {
+  arrivalClockState = state;
+  arrivalClock = { workers: state.minutes, heroes: state.minutes };
+}
+function arrivalIntervalMinutes(kind) {
+  const chaPoints = Math.max(0, Number(state.heirAttributes?.CHA) || 0);
+  const baseMinutes = kind === 'workers' ? 120 : 240;
+  return baseMinutes / (1 + chaPoints / 100);
+}
+function arrivalIsDue(kind) {
+  if (arrivalClockState !== state) resetArrivalClock();
+  if (state.minutes - arrivalClock[kind] < arrivalIntervalMinutes(kind)) return false;
+  arrivalClock[kind] = state.minutes;
+  return true;
+}
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -2816,18 +2834,50 @@ function recruit(className, origin, prestige = null, guildResident = false) {
   return hero;
 }
 
-function manorArrival() {
-  const day = Math.floor(state.minutes / 1440);
-  if (day < 1 || state.manorArrivalDay === day) return null;
-  state.manorArrivalDay = day;
-  if (manorHeroes() >= MANOR_HERO_SLOTS) return null;
-  const className = pick(BASE_HERO_CLASSES);
-  const hero = { id: Date.now() + Math.random(), name: heroName(), className, prestige: null, trait: pick(Object.keys(TRAITS)), level: 1, xp: 0, x: MANOR_DOOR.x, y: MANOR_DOOR.y, alive: true, home: 'manor', guildSite: null, recruitedFromSite: null, homeSite: null, purse: HERO_START_PURSE, gear: STARTER_WEAPON[className] ? { weapon: STARTER_WEAPON[className] } : {} };
-  state.heroes.push(hero);
-  gainHeirXp(10);
-  renderHeroes();
-  updateHud();
-  say(`${hero.name}, ${className}, bateu na porta do casarão de madrugada. Tinha cama vaga, e ninguém teve coragem de recusar.`);
+function freeWorkerHome() {
+  const workers = state.workers.filter(worker => worker.alive);
+  const hut = state.buildings.find(building => building.type === 'hut' && isDone(building)
+    && workers.filter(worker => worker.homeSite === building.site).length < (building.big ? 5 : 2));
+  if (hut) return hut;
+  const manorResidents = workers.filter(worker => worker.home === 'manor' || worker.homeSite == null).length;
+  return manorResidents < 2 ? MANOR() : null;
+}
+
+function workerArrival() {
+  if (!arrivalIsDue('workers') || state.workers.filter(worker => worker.alive).length >= workerCapacity()) return null;
+  const home = freeWorkerHome();
+  if (!home) return null;
+  const worker = hireWorker(home, Math.random() < 0.5);
+  if (worker) say(`${worker.name} chegou ao domínio e foi morar ${home.site === 'manor' ? 'no casarão' : `em ${buildingName(home)}`}.`);
+  return worker;
+}
+
+function heroArrival() {
+  if (!arrivalIsDue('heroes') || state.heroes.filter(hero => hero.alive).length >= heroCapacity()) return null;
+  if (manorHeroes() < MANOR_HERO_SLOTS) {
+    const className = pick(BASE_HERO_CLASSES);
+    const hero = { id: Date.now() + Math.random(), name: heroName(), className, prestige: null, trait: pick(Object.keys(TRAITS)), level: 1, xp: 0, x: MANOR_DOOR.x, y: MANOR_DOOR.y, alive: true, home: 'manor', guildSite: null, recruitedFromSite: null, homeSite: null, purse: HERO_START_PURSE, gear: STARTER_WEAPON[className] ? { weapon: STARTER_WEAPON[className] } : {} };
+    state.heroes.push(hero);
+    gainHeirXp(10);
+    renderHeroes();
+    updateHud();
+    say(`${hero.name}, ${className}, bateu na porta do casarão de madrugada. Tinha cama vaga, e ninguém teve coragem de recusar.`);
+    return hero;
+  }
+  const emptyGuild = state.buildings.find(building => BUILDINGS.some(item => item.id === building.type && item.heroClass)
+    && isDone(building) && !state.heroes.some(hero => hero.alive && hero.guildSite === building.site));
+  if (emptyGuild) {
+    const hero = recruit(BUILDINGS.find(item => item.id === emptyGuild.type).heroClass, emptyGuild, null, true);
+    if (hero) say(`${hero.name}, ${hero.className}, chegou para ocupar a vaga livre na guilda.`);
+    return hero;
+  }
+  const lodging = freeLodging();
+  if (!lodging) return null;
+  const guildClasses = BUILDINGS.filter(item => item.heroClass && state.buildings.some(built => built.type === item.id && isDone(built))).map(item => item.heroClass);
+  const arrivals = lodging.type === 'hotel' && guildClasses.length ? guildClasses : BASE_HERO_CLASSES;
+  const className = pick(arrivals);
+  const hero = recruit(className, lodging);
+  if (hero) say(`${hero.name}, ${className}, chegou ao domínio. Ninguém perguntou de onde.`);
   return hero;
 }
 
@@ -2897,7 +2947,7 @@ function hireWorker(home, female) {
     className: 'Peasant',
     spriteId: female ? 'female-peasant' : 'peasant',
     portraitId: female ? 'female-peasant' : 'male-peasant',
-    x: home.x, y: home.y, alive: true, workTrip: false, homeSite: home.site, purse: WORKER_START_PURSE,
+    x: home.x, y: home.y, alive: true, workTrip: false, ...(home.site === 'manor' ? { home: 'manor' } : { homeSite: home.site }), purse: WORKER_START_PURSE,
   };
   state.workers.push(worker);
   renderHeroes();
@@ -3311,25 +3361,15 @@ function tick() {
   accrueTavern(state.speed);
   if (state.minutes % 60 < state.speed) { shopAtArmory(); processDemands(); processBounties(); }
   state.minutes += state.speed;
+  workerArrival();
+  heroArrival();
   if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) {
-    gainHeirXp(40); collectTaxes(); manorArrival();
+    gainHeirXp(40); collectTaxes();
     if (Math.floor(state.minutes / 1440) % DAYS_PER_WEEK === 0) applyWeeklyMood();
     if (Math.floor(state.minutes / 1440) % DAYS_PER_YEAR === 0) newYear();
   }
-  // Recupera o segundo morador também em saves que já passaram da virada do dia sem registrá-lo.
-  manorArrival();
   // Heróis ganham experiência só em combate (golpes e curas). Aqui chegam os bandos e todos se recuperam.
   combatTick(state.speed);
-  const hasTavern = state.buildings.some(building => building.type === 'tavern' && isDone(building));
-  const hasHotel = state.buildings.some(building => building.type === 'hotel' && isDone(building));
-  if ((hasTavern && state.minutes % 180 < state.speed) || (hasHotel && state.minutes % 150 < state.speed)) {
-    const guildClasses = BUILDINGS.filter(building => building.heroClass && state.buildings.some(built => built.type === building.id && isDone(built))).map(building => building.heroClass);
-    const arrivals = hasHotel && guildClasses.length ? guildClasses : BASE_HERO_CLASSES;
-    const className = arrivals[Math.floor(Math.random() * arrivals.length)];
-    const origin = state.buildings.find(building => building.type === (hasHotel ? 'hotel' : 'tavern') && isDone(building));
-    const arrived = recruit(className, origin);
-    if (arrived) say(`${arrived.name}, ${className}, chegou ao domínio. Ninguém perguntou de onde.`);
-  }
   const minuteOfDay = state.minutes % 1440;
   if (minuteOfDay >= 1200 && minuteOfDay - state.speed < 1200) say(NIGHT_MSG[Math.floor(state.minutes / 1440) % NIGHT_MSG.length]);
   updateHud();
@@ -6267,6 +6307,7 @@ function saveCard(slot, record) {
 function startGame(newState, slot) {
   selectedLairId = null;
   state = newState;
+  resetArrivalClock();
   state.speed = [1, 2, 3].includes(Number(state.speed)) ? Number(state.speed) : 1;
   ensureFarmWorkers();
   game.slot = slot;
