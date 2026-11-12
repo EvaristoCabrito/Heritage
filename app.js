@@ -396,7 +396,7 @@ function newGameState(heir = null) {
     speed: 1, minutes: 380, ticks: 0, manorArrivalDay: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false, goalStep: 0, goalKills: 0,
     bandits: [], wildMeatPiles: [], wildlifeSpawnDay: Math.floor(380 / 1440), nextRaidAt: 720,
-    heir, heirLevel: 1, heirXp: 0, equipment: BASIC_EQUIPMENT(), playSeconds: 0,
+    heir, heirLevel: 1, heirXp: 0, heirAttributePoints: 0, heirAttributes: { MP: 0, CHA: 0, MAG: 0, INT: 0, WIS: 0, RES: 0 }, equipment: BASIC_EQUIPMENT(), playSeconds: 0,
     buildings: [],
     mapSet: 1,
     lairs: [
@@ -3420,6 +3420,7 @@ function gainHeirXp(amount) {
   while (state.heirLevel < HEIR_MAX_LEVEL && state.heirXp >= xpToNext(state.heirLevel)) {
     state.heirXp -= xpToNext(state.heirLevel);
     state.heirLevel++;
+    state.heirAttributePoints = (state.heirAttributePoints || 0) + 6;
     leveled = true;
   }
   if (state.heirLevel >= HEIR_MAX_LEVEL) state.heirXp = 0;
@@ -4121,25 +4122,40 @@ function attributesHTML(attrs, actor = null) {
   const rows = [['Vida', attrs.hp, 'hp'], ['Ataque', attrs.atk, 'atk'], ['Magia', attrs.mag, 'mag'], ['Defesa', attrs.def, 'def'], ['Destreza', attrs.dex, 'dex'], ['Movimento', attrs.mov, null]];
   return `<div class="sheet-section-label">ATRIBUTOS</div><dl class="attr-grid">${rows.map(([label, value, key]) => { const extra = actor && key ? statBonus(actor, key) : 0; return `<div><dt>${label}</dt><dd>${value + extra}${extra ? `<small class="attr-bonus">+${extra}</small>` : ''}</dd></div>`; }).join('')}</dl>`;
 }
-// Monarca: não luta, só usa magia. Atributos MP, CHA, MAG, INT e WIS.
-// MAG segue o Mago Negro do Ember (+3 por nível); os outros crescem em linha reta até o nível 30.
+// Atributos-base do Monarca. Depois do nível 1, o jogador recebe pontos para distribuir.
 const HEIR_STATS = [
-  { key: 'MP', name: 'Mana', base: 30, per: 6 },
-  { key: 'CHA', name: 'Carisma', base: 8, per: 2 },
-  { key: 'MAG', name: 'Magia', base: 10, per: 3 },
-  { key: 'INT', name: 'Inteligência', base: 9, per: 2 },
-  { key: 'WIS', name: 'Sabedoria', base: 7, per: 2 },
-  { key: 'RES', name: 'Resistência', base: 10, per: 2 },
+  { key: 'MP', name: 'Mana', base: 30, pointsValue: 2, effect: '+2 MP máximo por ponto.' },
+  { key: 'CHA', name: 'Carisma', base: 8, pointsValue: 1, effect: '+0,5% de potência das auras por ponto.' },
+  { key: 'MAG', name: 'Magia', base: 10, pointsValue: 1, effect: 'Aumenta o dano das magias conforme o % de MAG de cada magia.' },
+  { key: 'INT', name: 'Inteligência', base: 9, pointsValue: 1, effect: 'Aumenta a regeneração de MP e concede +0,5 MP máximo por ponto.' },
+  { key: 'WIS', name: 'Sabedoria', base: 7, pointsValue: 1, effect: 'Aumenta a regeneração de MP e concede +0,5 MP máximo por ponto.' },
+  { key: 'RES', name: 'Resistência', base: 10, pointsValue: 1, effect: '+3 de vida ao casarão por ponto.' },
 ];
-// Valor final de um atributo do herdeiro: o do nível mais o do equipamento.
+// Valor final de um atributo: base + pontos distribuídos + equipamento.
 function heirStat(key) {
   const stat = HEIR_STATS.find(item => item.key === key);
-  const lv = Math.max(1, Math.min(HEIR_MAX_LEVEL, state.heirLevel || 1));
-  return stat ? stat.base + stat.per * (lv - 1) + monarchBonus(key) : 0;
+  return stat ? stat.base + (state.heirAttributes?.[key] || 0) * stat.pointsValue + monarchBonus(key) : 0;
 }
 function heirAttributesHTML(level) {
-  const lv = Math.max(1, Math.min(HEIR_MAX_LEVEL, level));
-  return `<div class="sheet-section-label">ATRIBUTOS</div><dl class="attr-grid heir-attrs">${HEIR_STATS.map(stat => { const base = stat.base + stat.per * (lv - 1), extra = monarchBonus(stat.key); return `<div title="${stat.name}: ${base} do nível${extra ? ` + ${extra} do equipamento` : ''}"><dt>${stat.key}</dt><dd>${base + extra}${extra ? `<i>+${extra}</i>` : ''}</dd><small>${stat.name}</small></div>`; }).join('')}</dl>`;
+  return `<div class="sheet-section-label">ATRIBUTOS · ${state.heirAttributePoints || 0} PONTOS PARA DISTRIBUIR</div><dl class="attr-grid heir-attrs">${HEIR_STATS.map(stat => { const spent = state.heirAttributes?.[stat.key] || 0, base = stat.base + spent * stat.pointsValue, extra = monarchBonus(stat.key), total = base + extra; return `<div title="${stat.name}: base ${stat.base} + ${spent} ponto(s)${stat.pointsValue !== 1 ? ` × ${stat.pointsValue}` : ''}${extra ? ` + ${extra} do equipamento` : ''}. ${stat.effect}"><dt>${stat.key}</dt><dd>${total}${extra ? `<i>+${extra}</i>` : ''}</dd><small>${stat.name} · ${spent} distribuídos</small><div class="heir-stat-controls"><button type="button" data-action="heir-stat-down" data-stat="${stat.key}" aria-label="Retirar 1 ponto de ${stat.name}" ${spent ? '' : 'disabled'}>−</button><button type="button" data-action="heir-stat-up" data-stat="${stat.key}" aria-label="Adicionar 1 ponto a ${stat.name}" ${state.heirAttributePoints ? '' : 'disabled'}>+</button></div></div>`; }).join('')}</dl>`;
+}
+
+function adjustHeirAttribute(key, amount) {
+  const stat = HEIR_STATS.find(item => item.key === key);
+  if (!stat || !Number.isInteger(amount) || Math.abs(amount) !== 1) return;
+  const spent = state.heirAttributes?.[key] || 0;
+  if (amount > 0) {
+    if ((state.heirAttributePoints || 0) < 1) return;
+    state.heirAttributes[key] = spent + 1;
+    state.heirAttributePoints--;
+  } else {
+    if (spent < 1) return;
+    state.heirAttributes[key] = spent - 1;
+    state.heirAttributePoints = (state.heirAttributePoints || 0) + 1;
+  }
+  window.Monarch?.attributesChanged();
+  if (game.slot) writeSave(game.slot);
+  renderMenu();
 }
 
 function levelHTML(level, xp) {
@@ -6103,6 +6119,13 @@ function serializeState() {
 function hydrateState(data) {
   const defaults = newGameState();
   const loaded = Object.assign(defaults, data);
+  const savedAttributes = data.heirAttributes && typeof data.heirAttributes === 'object' ? data.heirAttributes : {};
+  loaded.heirAttributes = Object.fromEntries(HEIR_STATS.map(stat => [stat.key, Math.max(0, Math.floor(Number(savedAttributes[stat.key]) || 0))]));
+  const spentAttributes = Object.values(loaded.heirAttributes).reduce((sum, value) => sum + value, 0);
+  const earnedAttributes = Math.max(0, (Math.max(1, Number(data.heirLevel) || 1) - 1) * 6);
+  loaded.heirAttributePoints = Number.isFinite(data.heirAttributePoints)
+    ? Math.max(0, Math.floor(data.heirAttributePoints))
+    : Math.max(0, earnedAttributes - spentAttributes);
   loaded.metals = { ...defaults.metals, ...(data.metals || {}) };
   loaded.metals.steel = (loaded.metals.steel || 0) + (loaded.metals.steelScrap || 0);
   delete loaded.metals.steelScrap;
@@ -6673,12 +6696,12 @@ const HOWTO = [
   { title: 'Herdeiro', html: () => {
     const spells = typeof MONARCH_SPELLS !== 'undefined' ? MONARCH_SPELLS : null;
     const field = spells?.fieldSpells || [];
-    return `<h3>Nível</h3>
-    <p>O herdeiro vai até o nível ${HEIR_MAX_LEVEL}, com a mesma tabela de experiência dos heróis. Ganha 10 por herói recrutado, 25 por obra ou melhoria pronta, 40 por dia e 4 por inimigo morto com magia.</p>
-    ${howTable(['Atributo', 'Nível 1', 'Por nível'], HEIR_STATS.map(stat => [`${stat.name} (${stat.key})`, stat.base, `+${stat.per}`]))}
+    return `<h3>Nível e atributos</h3>
+    <p>O herdeiro vai até o nível ${HEIR_MAX_LEVEL}, com a mesma tabela de experiência dos heróis. Ganha 10 por herói recrutado, 25 por obra ou melhoria pronta, 40 por dia e 4 por inimigo morto com magia. A cada nível ganho, recebe 6 pontos para distribuir na ficha; os atributos não aumentam automaticamente.</p>
+    ${howTable(['Atributo', 'Base no nível 1', 'Efeito por ponto distribuído'], HEIR_STATS.map(stat => [`${stat.name} (${stat.key})`, stat.base, stat.effect]))}
     <h3>Magia</h3>
     <p>O herdeiro não aparece no mapa. Abra o botão <b>✦ MAGIAS</b> no canto do mapa, escolha a magia e clique no alvo. Esc ou botão direito cancela.</p>
-    ${howFormula(`Mana máxima = MP − reserva das auras ligadas<br>Recuperação = (Sabedoria × 0,10 + Inteligência × 0,04) × 0,5 por segundo (metade em combate)`)}
+    ${howFormula(`MP máximo sugerido = MP + (INT + WIS) ÷ 2 − reserva das auras ligadas; cada ponto em MP acrescenta 2 ao atributo MP<br>Recuperação = (WIS × 0,10 + INT × 0,04) × 0,5 por segundo (metade em combate)<br>Potência das auras = efeito-base × (1 + CHA × 0,005)<br>Dano das magias = base + crescimento por nível + (% de MAG da magia × MAG)`)}
     <p>Auras ao mesmo tempo: 1 no nível 2, 2 no nível 12 e 3 no nível 20. São 30 magias do Monarca (ordens, auras, editos, decretos e invocações) e 30 magias de campo, uma nova por nível.</p>
     ${howFormula(`Duração de uma magia do Monarca = 60 s × (1 + ${hn(STAT_GROWTH)} × (nível do herdeiro − nível em que a magia abre))<br>Vale para todo efeito com tempo: ordens, escudos, zonas, lentidão, silêncio, enraizar, atordoar, provocar, invocações. Recargas não mudam.`)}
     ${howFormula(`Valor de uma magia de campo = base + por nível × (nível do herdeiro − nível da magia) + % da Magia do herdeiro<br>Dano de magia = valor² / (valor + metade da Defesa do alvo)`)}
@@ -7073,6 +7096,8 @@ function initMenus() {
       return;
     }
     switch (button.dataset.action) {
+      case 'heir-stat-up': adjustHeirAttribute(button.dataset.stat, 1); break;
+      case 'heir-stat-down': adjustHeirAttribute(button.dataset.stat, -1); break;
       case 'continue': showScreen('continue'); break;
       case 'new': showScreen('saves', { mode: 'new' }); break;
       case 'load': showScreen('saves', { mode: 'load' }); break;
