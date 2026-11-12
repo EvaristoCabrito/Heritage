@@ -289,7 +289,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.7';
+const GAME_VERSION = 'Version 0.13.8';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -2836,7 +2836,7 @@ function animateActors(now) {
       if (Math.hypot(actor.x - spot.x, actor.y - spot.y) < 1.5) {
         actor.actionClock = (actor.action === 'build' ? actor.actionClock || 0 : 0) + delta;
         actor.action = 'build';
-        actor.frame = reducedMotion ? 0 : Math.floor(actor.actionClock * 5) % 4;
+        actor.frame = reducedMotion && actor.className !== 'Peasant' ? 0 : Math.floor(actor.actionClock * 5) % 4;
         return;
       }
     }
@@ -2846,7 +2846,7 @@ function animateActors(now) {
       if (actor.actionTime > 0) actor.actionTime = Math.max(0, actor.actionTime - delta);
       if (actor.actionTime <= 0) actor.pickupAnim = false;
       actor.actionClock = (actor.actionClock || 0) + delta;
-      actor.frame = ['action', 'collect', 'work'].includes(actor.action) && !reducedMotion ? Math.floor(actor.actionClock * 5) % 4 : 0;
+      actor.frame = ['action', 'collect', 'work'].includes(actor.action) && (!reducedMotion || actor.className === 'Peasant') ? Math.floor(actor.actionClock * 5) % 4 : 0;
       return;
     }
     if (!actor.route) actor.route = [];
@@ -2882,7 +2882,7 @@ function animateActors(now) {
     }
     actor.action = 'walk';
     actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
-    actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
+    actor.frame = moved && (!reducedMotion || actor.className === 'Peasant') ? Math.floor(actor.walkClock * 7) % 4 : 0;
     } catch (error) {
       actor.route = [];
       actor.wait = 0;
@@ -4931,7 +4931,7 @@ function faceToward(actor, target) {
 function animateWalk(actor, moved, delta, reducedMotion) {
   actor.action = 'walk';
   actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
-  actor.frame = moved && !reducedMotion ? Math.floor(actor.walkClock * 7) % 4 : 0;
+  actor.frame = moved && (!reducedMotion || actor.className === 'Peasant') ? Math.floor(actor.walkClock * 7) % 4 : 0;
 }
 
 // A espera dos animais usa a folha idle própria (quatro poses), nunca um efeito visual sintético.
@@ -4949,7 +4949,7 @@ function animateAttack(actor, delta, reducedMotion) {
     actor.attackAnim -= delta;
     actor.action = actor.className === 'Peasant' ? 'fight' : 'action';
     actor.actionClock = (actor.actionClock || 0) + delta;
-    actor.frame = reducedMotion ? 0 : Math.floor(actor.actionClock * 8) % 4;
+    actor.frame = reducedMotion && actor.className !== 'Peasant' ? 0 : Math.floor(actor.actionClock * 8) % 4;
   } else {
     actor.action = 'walk';
     actor.frame = 0;
