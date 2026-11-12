@@ -227,7 +227,7 @@ const freeLodging = () => {
 const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
   bakery: 'bakery', emberLab: 'ember-lab', butcher: 'butcher', blacksmith: 'blacksmith',
-  farm: 'farm-wheat', mill: 'mill-body', hut: 'hut', depot: 'depot', lumber: 'lumber', quarry: 'lumber', mine: 'lumber', market: 'market', tavern: 'tavern', hotel: 'hotel', warrior: 'guild', archer: 'archer', lancer: 'lancer',
+  farm: 'farm-wheat', mill: 'mill-body', hut: 'hut', depot: 'depot', lumber: 'lumber', quarry: 'quarry-l1', mine: 'mine-l1', market: 'market', tavern: 'tavern', hotel: 'hotel', warrior: 'guild', archer: 'archer', lancer: 'lancer',
   blackMage: 'tower', conjurer: 'conjurer', healer: 'healer', armory: 'armory',
 };
 const PHOTOREAL_BUILDING_ART = new Set([
@@ -249,7 +249,45 @@ const BUILDING_ART_ASPECTS = {
   archer: 1199 / 1312, lancer: 1.5, tower: 1202 / 1308, conjurer: 1312 / 1199, bakery: 1.5, 'ember-lab': 1200 / 1003,
   'bakery-l2': 1.5, 'ember-lab-l2': 1200 / 1003, butcher: 1.5, 'butcher-l2': 1.5, blacksmith: 1.5, 'blacksmith-l2': 1.5,
   healer: 1.5, armory: 1.5, manor: 1.5,
+  'quarry-l1': 1, 'quarry-l2': 1, 'mine-l1': 1, 'mine-l2': 1,
 };
+const PIT_BUILDING_SHEETS = {
+  'quarry-l1': 'public/art/mining-quarry-v01/quarry-level-1-construction-board-v02.png',
+  'quarry-l2': 'public/art/mining-quarry-v01/quarry-level-2-construction-board-v01.png',
+  'mine-l1': 'public/art/mining-quarry-v01/mine-level-1-construction-board-v01.png',
+  'mine-l2': 'public/art/mining-quarry-v01/mine-level-2-construction-board-v01.png',
+};
+function pitSpriteSheet(art, constructionStage = null, building = null) {
+  const match = /^(quarry|mine)-l[12]$/.exec(art || '');
+  if (!match) return null;
+  const type = match[1];
+  const level = building?.underConstruction && building.pendingUpgrade?.kind === 'pit' ? 2 : Number(art.slice(-1));
+  const sheet = PIT_BUILDING_SHEETS[`${type}-l${level}`];
+  if (!sheet) return null;
+  const stage = building?.underConstruction && building.pendingUpgrade?.kind === 'pit'
+    ? ((building.progress || 0) < BUILD_TIME * 0.4 ? 'early' : 'mid')
+    : constructionStage;
+  return { sheet, position: stage === 'early' ? '0%' : stage === 'mid' ? '50%' : '100%' };
+}
+function buildingImageStyle(art, constructionStage = null, building = null) {
+  const sprite = pitSpriteSheet(art, constructionStage, building);
+  return sprite
+    ? `background-image:url('${sprite.sheet}');background-size:300% 100%;background-position:${sprite.position} 50%;background-repeat:no-repeat;`
+    : `background-image:url('${buildingImage(art, constructionStage, building)}')`;
+}
+function applyBuildingImage(element, art, constructionStage = null, building = null) {
+  const sprite = pitSpriteSheet(art, constructionStage, building);
+  element.style.backgroundImage = `url('${sprite?.sheet || buildingImage(art, constructionStage, building)}')`;
+  if (sprite) {
+    element.style.backgroundSize = '300% 100%';
+    element.style.backgroundPosition = `${sprite.position} 50%`;
+    element.style.backgroundRepeat = 'no-repeat';
+  } else {
+    element.style.removeProperty('background-size');
+    element.style.removeProperty('background-position');
+    element.style.removeProperty('background-repeat');
+  }
+}
 const buildingImage = (art, constructionStage = null, building = null) => {
   if (building?.underConstruction && building.pendingUpgrade?.kind === 'producer') {
     const artId = BUILDING_ART[building.type];
@@ -299,7 +337,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.11';
+const GAME_VERSION = 'Version 0.13.12';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -1507,6 +1545,7 @@ function siteLabel(building) {
 }
 function siteArt(building) {
   const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
+  if (building.type === 'quarry' || building.type === 'mine') return `${building.type}-l${(building.level || 0) + 1}`;
   return PRODUCER_TYPES.includes(building.type) ? levelArt(art, building) : art;
 }
 
@@ -1565,7 +1604,7 @@ function renderSites() {
       const label = siteLabel(building);
       const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
       const constructionStage = building.underConstruction
-        ? ((building.progress || 0) < BUILD_TIME / 2 ? 'early' : 'mid')
+        ? ((building.type === 'quarry' || building.type === 'mine' ? (building.progress || 0) < BUILD_TIME * 0.4 : (building.progress || 0) < BUILD_TIME / 2) ? 'early' : 'mid')
         : null;
       site.classList.toggle('just-built', Date.now() - building.builtAt < 1400);
       // Upgrade: a animação continua de onde parou mesmo que o mapa seja redesenhado no meio dela.
@@ -1577,7 +1616,7 @@ function renderSites() {
       site.dataset.type = building.type;
       const displayedArt = siteArt(building);
       const artAspect = options.buildingArtStyle === 'dark' || constructionStage ? BUILDING_ART_ASPECTS[displayedArt] || BUILDING_ART_ASPECTS[art] || 1 : displayedArt === 'manor' ? 1.5 : 1;
-      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};background-image:url('${buildingImage(siteArt(building), constructionStage, building)}')" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${upgrading ? `<span class="upgrade-burst" aria-hidden="true">${'<i></i>'.repeat(8)}<b>${building.upgradeText || 'Melhorado'}</b></span>` : ''}${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${building.damage > 0 ? `${label} · ${building.ruined ? 'em ruínas' : 'vida'} ${buildingHp(building)}/${buildingMaxHp(building)}` : label}</small>`}`;
+      site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};${buildingImageStyle(siteArt(building), constructionStage, building)}" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${upgrading ? `<span class="upgrade-burst" aria-hidden="true">${'<i></i>'.repeat(8)}<b>${building.upgradeText || 'Melhorado'}</b></span>` : ''}${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${building.damage > 0 ? `${label} · ${building.ruined ? 'em ruínas' : 'vida'} ${buildingHp(building)}/${buildingMaxHp(building)}` : label}</small>`}`;
       site.setAttribute('aria-label', `${label}. Toque para ver opções.`);
     }
   });
@@ -1742,7 +1781,7 @@ function showPlacementPreview(event) {
   preview.style.setProperty('--y', `${y / WORLD_Y_UNITS * 100}%`);
   preview.style.zIndex = String(Math.round(y * 10) + 1);
   preview.dataset.art = art;
-  preview.style.backgroundImage = `url('${buildingImage(art)}')`;
+  applyBuildingImage(preview, art, null, moving);
   preview.classList.toggle('invalid', !!placementProblem(x, y, moving ? moving.site : null));
 }
 
@@ -1995,8 +2034,12 @@ const buildCardHTML = item => {
   const cityQuarryExists = item.id === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city');
   const blocked = (item.id === 'mine' && currentMap !== 'wilds') || cityQuarryExists;
   const reason = cityQuarryExists ? 'A única pedreira de City já foi construída.' : blocked ? item.id === 'mine' ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.id === 'quarry' && currentMap === 'city' ? 'Pedreira inicial de baixa reserva · City permite uma; Wilds não tem limite.' : item.detail;
+  const art = item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id];
+  const preview = item.id === 'quarry' || item.id === 'mine'
+    ? `<span class="building-sprite-sheet" style="${buildingImageStyle(art)}" aria-hidden="true"></span>`
+    : `<img src="${buildingImage(art)}" alt="">`;
   return `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas, ${item.wood} madeira e ${buildingStoneCost(item)} pedra de construção" title="${reason}" ${blocked ? 'disabled aria-disabled="true"' : ''}>
-        <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${reason}</small></span><span class="build-cost">${costHTML(item.cost, item.wood, buildingStoneCost(item))}</span></button>`;
+        <span class="build-preview">${preview}${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${reason}</small></span><span class="build-cost">${costHTML(item.cost, item.wood, buildingStoneCost(item))}</span></button>`;
 };
 const buildCategoryOf = id => BUILD_CATEGORIES.find(category => category.types.includes(id))?.id || (BUILDINGS.find(item => item.id === id)?.heroClass ? 'guilds' : 'houses');
 
@@ -2165,7 +2208,7 @@ function buildingInfoHTML(building, actions = '') {
   return `<section class="inspector" aria-label="${siteLabel(building)}">
     <button type="button" class="inspector-back" data-inspector-close aria-label="Fechar" title="Fechar">×</button>
     <header class="inspector-id">
-      <img class="inspector-thumb" src="${buildingImage(siteArt(building))}" alt="">
+      ${building.type === 'quarry' || building.type === 'mine' ? `<span class="inspector-thumb building-sprite-sheet" style="${buildingImageStyle(siteArt(building))}" aria-hidden="true"></span>` : `<img class="inspector-thumb" src="${buildingImage(siteArt(building))}" alt="">`}
       <div><h3>${siteLabel(building)}</h3><small>${[def.name === siteLabel(building) ? '' : def.name, level].filter(Boolean).join(' · ')}</small></div>
     </header>
     ${obra ? `<div class="inspector-hp obra" data-obra-bar title="Progresso da obra" style="--hp:${obra.pct}%"><span>Obra</span><i></i><b>${obra.pct}%</b></div>` : ''}
