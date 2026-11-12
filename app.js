@@ -21,6 +21,8 @@ const BUILDINGS = [
   { id: 'healer', name: 'Guilda de Curandeiros', glyph: 'H', cost: 180, wood: 10, detail: 'Recruta Healers. Mantêm os heróis vivos. Por um tempo.', heroClass: 'Healer', gold: 0.25, grain: 0, people: 1 },
   { id: 'armory', name: 'Arsenal do Domínio', glyph: 'E', cost: 165, wood: 9, detail: 'Heróis e camponeses compram equipamento aqui com o próprio ouro. O ouro vem pro cofre.', gold: 0.15, grain: 0, people: 0 },
 ];
+// Pedra de construção acompanha a madeira nos prédios comuns; a pedreira é a exceção de início para permitir produzir a própria pedra.
+const buildingStoneCost = item => item.id === 'quarry' ? 0 : Math.ceil(item.wood / 2);
 BUILDINGS.find(building => building.id === 'lumber').detail += ' Pode ser construida em City ou Wilds.';
 BUILDINGS.find(building => building.id === 'quarry').detail += ' O prédio é o local de extração. City permite uma pedreira de baixa reserva; Wilds não tem limite.';
 BUILDINGS.find(building => building.id === 'mine').detail += ' Apenas em Wilds, no deposito de metais marcado.';
@@ -320,14 +322,14 @@ function grantStartingStock(target) {
 }
 
 // Começo de um jogo novo. Regra: sem construção, sem ninguém. O casarão traz um camponês e um Warrior;
-// outros heróis saem de guildas, taverna ou hotel; cada fazenda ou moinho traz mais um camponês.
+// outros heróis saem de guildas, taverna ou hotel; camponeses só chegam pelo casarão e pelos casebres.
 // Bolsas: salário diário do trabalhador e o que cada um traz ao chegar.
 const WORKER_WAGE = 5;
 const WORKER_START_PURSE = 5;
 const HERO_START_PURSE = 15;
 function newGameState(heir = null) {
   return {
-    gold: 240, grain: 58, timber: 30, stone: 0, stoneDeposits: {}, quarryMaterials: { wallingKg: 0, lintels: [], dimensionBlocks: [], aggregateKg: 0, settsKg: 0, roofingSlateKg: 0, roofingSlatesKg: 0, millstones: [], quicklimeKg: 0, limePuttyKg: 0, mortarKg: 0, plasterKg: 0 }, metal: 0, charcoal: 0, metals: { ironOre: 0, copperOre: 0, silverOre: 0, goldOre: 0, iron: 0, steel: 0, silver: 0, gold: 0, copper: 0 }, oreGrades: {}, mineralDeposits: {}, residues: {}, extractionTools: [
+    gold: 240, grain: 58, timber: 30, stone: 0, marble: 0, stoneDeposits: {}, quarryMaterials: { wallingKg: 0, lintels: [], dimensionBlocks: [], aggregateKg: 0, settsKg: 0, roofingSlateKg: 0, roofingSlatesKg: 0, millstones: [], quicklimeKg: 0, limePuttyKg: 0, mortarKg: 0, plasterKg: 0 }, metal: 0, charcoal: 0, metals: { ironOre: 0, copperOre: 0, silverOre: 0, goldOre: 0, iron: 0, steel: 0, silver: 0, gold: 0, copper: 0 }, oreGrades: {}, mineralDeposits: {}, residues: {}, extractionTools: [
       { id: 'starter-iron-pick-1', type: 'mine', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-iron-pick-2', type: 'mine', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-1', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
@@ -556,7 +558,7 @@ function renderManorInventory() {
     return [];
   }).concat(state.workers.filter(worker => worker.alive && worker.carrying?.food).map(worker => [`Em transporte · ${foodName(worker.carrying.food)}`, worker.carrying.qty, `${worker.name} levando ao depósito`]));
   const rows = [
-    inventorySection('Moedas e materiais', [['Ouro', state.gold || 0, 'Cofre'], ['Madeira', state.timber || 0, 'Lenhadores'], ['Pedra', state.stone || 0, 'Pedreira'], ['Carvão vegetal (kg)', state.charcoal || 0, 'Blacksmith'], ['Ember', state.ember || 0, 'Laboratório de Ember']]),
+    inventorySection('Moedas e materiais', [['Ouro', state.gold || 0, 'Cofre'], ['Madeira', state.timber || 0, 'Lenhadores'], ['Pedra de Construção (kg)', state.stone || 0, 'Pedreira · obras comuns'], ['Mármore (kg)', state.marble || 0, 'Pedreira nível 2 · mansão'], ['Carvão vegetal (kg)', state.charcoal || 0, 'Blacksmith'], ['Ember', state.ember || 0, 'Laboratório de Ember']]),
     inventorySection('Metais', metalRows),
     inventorySection('Provisões', foodRows),
     inventorySection('Produção nos prédios', workRows),
@@ -768,7 +770,8 @@ const lumberCrew = camp => state.workers.filter(worker => worker.alive && worker
 const PIT_CREW_MAX = 4;
 // A pedreira tira 20 kg de rubble a cada 200 segundos por trabalhador.
 // Com 2 trabalhadores no nível 1: 0,20 kg/s; no nível 2, 0,40 kg/s com 4.
-const PIT_GOODS = { quarry: { good: 'stone', name: 'pedra', rate: 20 / 200 }, mine: { good: 'metal', name: 'lotes de minério', rate: 20 / 1200 } };
+const PIT_GOODS = { quarry: { good: 'stone', name: 'pedra de construção', rate: 20 / 200 }, mine: { good: 'metal', name: 'lotes de minério', rate: 20 / 1200 } };
+const MARBLE_RATE_PER_WORKER = 20 / 800;
 const METAL_DEPOSIT_RANKS = [
   { id: 'I', name: 'Pobre', chance: { ironOre: 75, silverOre: 8, goldOre: 2 }, qty: { ironOre: [1, 2], silverOre: [1, 1], goldOre: [1, 1] } },
   { id: 'II', name: 'Comum', chance: { ironOre: 85, silverOre: 15, goldOre: 5 }, qty: { ironOre: [1, 3], silverOre: [1, 1], goldOre: [1, 1] } },
@@ -885,22 +888,11 @@ function quarryInventory(pit) {
   return pit.quarryInventory;
 }
 const QUARRY_ORDERS = [
-  { id: 'rubble', label: 'Recuperar rubble', level: 0 },
-  { id: 'wall-blank', label: 'Liberar blank de alvenaria', level: 0 },
-  { id: 'dimension-blank', label: 'Cortar bloco dimensional', level: 1 },
-  { id: 'special-blank', label: 'Separar blank especial', level: 0 },
-  { id: 'breakdown-blank', label: 'Quebrar blank para chips', level: 0 },
-  { id: 'dress-wall', label: 'Dress walling block', level: 0 },
-  { id: 'dress-lintel', label: 'Dress limestone lintel', level: 1 },
-  { id: 'split-slate', label: 'Split slate roofing', level: 0 },
-  { id: 'shape-millstone', label: 'Shape gritstone millstone', level: 0 },
-  { id: 'dress-setts', label: 'Dress granite setts', level: 0 },
-  { id: 'grade-chips', label: 'Crush and grade chips', level: 0 },
-  { id: 'lime-feed', label: 'Sort lime feed', level: 0 },
-  { id: 'burn-lime', label: 'Burn lime', level: 0 },
+  { id: 'rubble', label: 'Pedra de Construção', level: 0 },
+  { id: 'marble', label: 'Mármore', level: 1 },
 ];
 const QUARRY_ORDER_OUTPUT = {
-  rubble: 'Rubble solto entra no estoque de pedra.', 'wall-blank': 'Um blank inteiro de alvenaria; fica separado do rubble.',
+  rubble: 'Pedra de Construção vai para obras comuns junto com madeira.', marble: 'Mármore: produção lenta, disponível no nível 2 e reservada para a mansão.', 'wall-blank': 'Um blank inteiro de alvenaria; fica separado do rubble.',
   'dimension-blank': 'Um bloco indivisível de 120 kg no pátio; requer dois trabalhadores e derrick.',
   'special-blank': 'Separa a peça candidata desta frente para slate, mó ou setts; tamanho e elegibilidade vêm da geologia.',
   'breakdown-blank': 'Quebra um blank intacto selecionado em fragmentos; remove para sempre sua elegibilidade dimensional.',
@@ -921,11 +913,18 @@ function processQuarryOrder(pit, dt) {
   const crew = lumberCrew(pit).filter(worker => assignExtractionTool(worker, pit));
   if (!crew.length) { pit.workStatus = lumberCrew(pit).length ? 'Sem ferramenta disponível' : 'Sem trabalhador disponível'; return; }
   const workMinutes = quarryCrewMinutes(crew, dt);
+  if (order.id === 'marble') {
+    if ((pit.level || 0) < 1) { pit.workStatus = 'Mármore requer pedreira nível 2'; return; }
+    if (face.looseMassKg <= 0) { pit.workStatus = 'Sem pedra disponível nesta frente'; return; }
+    const mass = Math.min(face.looseMassKg, pitRate(pit) * dt, Math.max(0, 80 - (pit.stockMarble || 0)));
+    if (mass <= 0) { pit.workStatus = 'Estoque de mármore no posto cheio'; return; }
+    face.looseMassKg -= mass; deposit.remainingUnits = Math.max(0, deposit.remainingUnits - mass); pit.stockMarble = (pit.stockMarble || 0) + mass; pit.workStatus = `Extraindo mármore · ${face.name}`; return;
+  }
   if (order.id === 'rubble') {
-    if (face.looseMassKg <= 0) { pit.workStatus = 'Sem rubble solto nesta frente'; return; }
+    if (face.looseMassKg <= 0) { pit.workStatus = 'Sem Pedra de Construção nesta frente'; return; }
     const mass = Math.min(face.looseMassKg, pitRate(pit) * dt, Math.max(0, 200 - (pit.stockStone || 0)));
-    if (mass <= 0) { pit.workStatus = 'Estoque de rubble cheio'; return; }
-    face.looseMassKg -= mass; deposit.remainingUnits = Math.max(0, deposit.remainingUnits - mass); pit.stockStone = (pit.stockStone || 0) + mass; pit.workStatus = `Recuperando rubble · ${face.name}`; return;
+    if (mass <= 0) { pit.workStatus = 'Estoque de Pedra de Construção cheio'; return; }
+    face.looseMassKg -= mass; deposit.remainingUnits = Math.max(0, deposit.remainingUnits - mass); pit.stockStone = (pit.stockStone || 0) + mass; pit.workStatus = `Extraindo Pedra de Construção · ${face.name}`; return;
   }
   if (order.id === 'wall-blank' || order.id === 'dimension-blank') {
     const wanted = order.id === 'wall-blank' ? 20 : 120;
@@ -1188,7 +1187,7 @@ const isPit = building => !!PIT_GOODS[building?.type];
 const buildingMapId = building => building?.mapId || 'city';
 const pitRate = pit => pit.type === 'mine'
   ? lumberCrew(pit).reduce((sum, actor) => { const tool = (state.extractionTools || []).find(item => item.id === actor.extractionToolId && item.durability > 0); return sum + (tool ? (tool.edge === 'steel' ? 20 / 960 : 20 / 1200) * (1 + gearBonus(actor, 'work') + tradeWorkBonus(actor, 'mine') / 2) : 0); }, 0)
-  : pit.type === 'quarry' ? PIT_GOODS.quarry.rate * lumberCrew(pit).filter(actor => assignExtractionTool(actor, pit)).length * (1 + crewWork(pit)) : 0;
+  : pit.type === 'quarry' ? (pit.quarryOrder === 'marble' ? MARBLE_RATE_PER_WORKER : PIT_GOODS.quarry.rate) * lumberCrew(pit).filter(actor => assignExtractionTool(actor, pit)).length * (1 + crewWork(pit)) : 0;
 // Metal rende 0,025: duas casas cortariam pra 0,03.
 const fineRate = value => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 const CREW_TYPES = ['lumber', 'quarry', 'mine'];
@@ -1222,20 +1221,13 @@ function pitBoxHTML(pit) {
   const doing = worker => worker.workplace?.site === pit.site ? 'trabalhando aqui' : worker.buildSite != null ? 'em obra' : worker.workplace ? workPlaceName(worker.workplace).replace(/^(na|no) /, '') : workplaceOf(worker) ? workPlaceName(workplaceOf(worker)).replace(/^(na|no) /, '') : 'à toa';
   const maxCrew = workerLimitForPit(pit);
   if (pit.type === 'quarry') {
-    const deposit = stoneDepositForPit(pit), faces = deposit?.faces || [], active = selectedQuarryFace(pit), stock = quarryInventory(pit);
-    const chipKg = stock.chipsKg.reduce((sum, chip) => sum + chip.massKg, 0);
-    const sizeBands = Object.entries((active?.blanks || []).reduce((bands, blank) => { const key = `${blank.massKg} kg`; bands[key] = (bands[key] || 0) + 1; return bands; }, {})).map(([size, count]) => `${count} × ${size}`).join(' · ') || 'nenhum blank intacto';
+    const deposit = stoneDepositForPit(pit);
     const selectedOrder = QUARRY_ORDERS.find(order => order.id === pit.quarryOrder) || QUARRY_ORDERS[0];
-    return `<section class="inspector-section"><h4>Frente e ordem da pedreira</h4>
-      <label class="pit-hint">Bancada <select data-quarry-face="${pit.site}">${faces.map(face => `<option value="${face.id}"${face.id === active?.id ? ' selected' : ''}${face.benchLevel > (pit.level || 0) ? ' disabled' : ''}>${face.name} · ${face.rockFamily} · ${face.benchLevel ? 'L2' : 'L1'}${face.benchLevel > (pit.level || 0) ? ' · inacessível' : ''}</option>`).join('')}</select></label>
-      <p class="pit-hint">${active?.weathering || ''} · ${active?.bedding || active?.cleavage || ''} · ${active?.looseMassKg || 0} kg soltos · ${sizeBands} · ${active?.limeCompatible ? 'compatível com cal' : 'sem classificação de cal'}</p>
-      <label class="pit-hint">Ordem <select data-quarry-order="${pit.site}">${QUARRY_ORDERS.map(order => `<option value="${order.id}"${order.id === (pit.quarryOrder || 'rubble') ? ' selected' : ''}${order.level > (pit.level || 0) ? ' disabled' : ''}>${order.label}${order.level > (pit.level || 0) ? ' · nível 2' : ''}</option>`).join('')}</select></label>
-      <p class="pit-hint">Prévia: ${QUARRY_ORDER_OUTPUT[selectedOrder.id] || ''}</p>
-      <p class="pit-hint">${pit.workStatus || 'Aguardando ordem'} · ${formatMass(pit.stockStone || 0)} kg de rubble no estoque · ${formatMass(deposit?.remainingUnits || 0)} kg geológicos restantes</p>
-      <p class="pit-hint">Na bancada: ${stock.wallBlanks.length} blanks · ${stock.dimensionBlocks.length} blocos dimensionais · ${formatMass(stock.wallingKg)} kg walling · ${formatMass(chipKg)} kg chips · ${formatMass(stock.finesKg)} kg fines · ${formatMass(stock.aggregateKg)} kg aggregate · ${formatMass(stock.kilnFeedKg)} kg kiln feed · ${formatMass(stock.quicklimeKg)} kg quicklime · ${formatMass(stock.spoilKg)} kg rejeito</p>
-      ${pit.sharedCart ? `<p class="pit-hint">Derrick ${pit.derrick?.capacityKg || 0} kg · carrinho compartilhado ${pit.sharedCart.capacityKg} kg${pit.sharedCart.cargo ? ` · ${pit.sharedCart.cargo.massKg} kg em trânsito` : ' · livre'} · City: ${(state.quarryMaterials?.dimensionBlocks || []).length} blocos intactos</p>` : ''}
-      ${pit.loadingPad ? (() => { const piece = stock.dimensionBlocks.find(item => item.id === pit.loadingPad.pieceId); return `<p class="pit-hint">Pátio de carga: ${piece?.massKg || 0} kg · ${piece?.transportRequirement || 'aguardando transporte'}</p>`; })() : ''}
-      ${pit.level ? '' : `<button type="button" class="hut-upgrade" data-pit-upgrade="${pit.site}" ${state.stone < 20 || (state.metals.iron || 0) < 1 ? 'disabled' : ''}>Ampliar nível 2 · 20 pedra, 1 kg ferro</button>`}
+    return `<section class="inspector-section"><h4>Produção da Pedreira</h4>
+      <label class="pit-hint">Buscar <select data-quarry-order="${pit.site}">${QUARRY_ORDERS.map(order => `<option value="${order.id}"${order.id === (pit.quarryOrder || 'rubble') ? ' selected' : ''}${order.level > (pit.level || 0) ? ' disabled' : ''}>${order.label}${order.level > (pit.level || 0) ? ' · nível 2' : ''}</option>`).join('')}</select></label>
+      <p class="pit-hint">${QUARRY_ORDER_OUTPUT[selectedOrder.id] || ''}</p>
+      <p class="pit-hint">${pit.workStatus || 'Aguardando trabalho'} · no posto: ${formatMass(pit.stockStone || 0)} kg de Pedra de Construção e ${formatMass(pit.stockMarble || 0)} kg de Mármore · reserva: ${formatMass(deposit?.remainingUnits || 0)} kg</p>
+      ${pit.level ? '' : `<button type="button" class="hut-upgrade" data-pit-upgrade="${pit.site}" ${state.stone < 20 || (state.metals.iron || 0) < 1 ? 'disabled' : ''}>Ampliar nível 2 · 20 kg de Pedra de Construção e 1 kg de ferro</button>`}
       <h4>Equipe · ${crew.length} de ${maxCrew}</h4><small class="pit-hint">Clique no nome para colocar ou tirar.</small>
       <div class="pit-crew">${people.map(worker => { const here = worker.workplace?.site === pit.site; const tool = state.extractionTools?.find(item => item.id === worker.extractionToolId); return `<button type="button" class="pit-worker${here ? ' here' : ''}" data-pit="${pit.site}" data-worker="${worker.id}" aria-pressed="${here}" ${!here && crew.length >= maxCrew ? 'disabled' : ''}><b>${here ? '✓ ' : ''}${worker.name}</b><small>${doing(worker)} · ${tool ? `Ferramenta ${formatMass(tool.durability)}/${tool.maxDurability} cargas` : 'sem ferramenta'} · ${tradeLevel(worker, 'extractor')} nv extrator</small></button>`; }).join('') || '<div class="empty-state">Nenhum camponês. Construa um casebre.</div>'}</div></section>`;
   }
@@ -1245,7 +1237,7 @@ function pitBoxHTML(pit) {
       <label class="pit-hint">Selecionar veio <select data-seam-pit="${pit.site}">${seams.map(seam => `<option value="${seam.id}"${seam.id === active?.id ? ' selected' : ''}${seam.access === 'deep' && (pit.level || 0) < 1 ? ' disabled' : ''}>${oreName(seam.mineral)} · ${seam.access === 'deep' ? 'profundo' : 'raso'}${seam.access === 'deep' && (pit.level || 0) < 1 ? ' · nível 2' : ''}</option>`).join('')}</select></label>
       <p class="pit-hint">Teor aproximado ${(active?.gradePpm || 0).toLocaleString('pt-BR')} ppm · ${(active?.remainingGrams || 0).toLocaleString('pt-BR')} g restantes · ${(pit.stockGrams || 0).toLocaleString('pt-BR')} g no posto</p>
       <p class="pit-hint">${pit.workStatus || 'Aguardando trabalho'} · carga máxima ${(workerLoadForPit(pit) / 1000)} kg por trabalhador</p>
-      ${pit.level ? '' : `<button type="button" class="hut-upgrade" data-pit-upgrade="${pit.site}" ${state.stone < 20 || (state.metals.iron || 0) < 1 ? 'disabled' : ''}>Ampliar para nível 2 · 20 pedra, 1 kg ferro</button>`}
+      ${pit.level ? '' : `<button type="button" class="hut-upgrade" data-pit-upgrade="${pit.site}" ${state.stone < 20 || (state.metals.iron || 0) < 1 ? 'disabled' : ''}>Ampliar para nível 2 · 20 kg Pedra de Construção, 1 kg ferro</button>`}
       <h4>Equipe · ${crew.length} de ${maxCrew}</h4><small class="pit-hint">Clique no nome para colocar ou tirar.</small>
       <div class="pit-crew">${people.map(worker => { const here = worker.workplace?.site === pit.site; const tool = state.extractionTools?.find(item => item.id === worker.extractionToolId); return `<button type="button" class="pit-worker${here ? ' here' : ''}" data-pit="${pit.site}" data-worker="${worker.id}" aria-pressed="${here}" ${!here && crew.length >= maxCrew ? 'disabled' : ''}><b>${here ? '✓ ' : ''}${worker.name}</b><small>${doing(worker)} · ${tool ? `Ferramenta ${tool.edge === 'steel' ? 'aço' : 'ferro'} ${formatMass(tool.durability)}/${tool.maxDurability} cargas` : 'sem ferramenta'} · Extrator nv ${tradeLevel(worker, 'extractor')}</small></button>`; }).join('') || '<div class="empty-state">Nenhum camponês. Construa um casebre.</div>'}</div></section>`;
   }
@@ -1293,9 +1285,11 @@ function rates() {
       sum.people += def.people;
     }
     return sum;
-  }, { gold: 0, grain: 0, timber: 0.14, stone: 0, metal: 0, people: 0 });
+  }, { gold: 0, grain: 0, timber: 0.14, stone: 0, marble: 0, metal: 0, people: 0 });
   state.buildings.filter(building => isPit(building) && isDone(building)).forEach(pit => {
     if (pit.type === 'mine') sum.metal += pitRate(pit);
+    else if (pit.quarryOrder === 'marble') sum.marble += pitRate(pit);
+    else sum.stone += pitRate(pit);
   });
   state.workers.filter(worker => worker.alive && worker.profession === 'fisher').forEach(worker => { sum.grain += FISHING_RATE * (1 + skillOf(worker, 'fishing') / 100); });
   sum.timber += state.buildings.filter(building => building.type === 'lumber' && isDone(building)).reduce((total, camp) => total + LUMBER_RATE[lumberCrew(camp).length] * (1 + crewWork(camp)), 0);
@@ -1391,6 +1385,8 @@ function updateHud() {
   $('#timber-rate').textContent = `+${rateNumber(r.timber)}/s`;
   setHudAmount('#stone', state.stone || 0);
   $('#stone-rate').textContent = `+${fineRate(r.stone)}/s`;
+  setHudAmount('#marble', state.marble || 0);
+  $('#marble-rate').textContent = `+${fineRate(r.marble)}/s`;
   state.metal = metalStockTotal(); // mantém o campo antigo para saves e integrações
   setHudAmount('#metal', state.metal || 0);
   $('#metal-rate').textContent = `+${fineRate(r.metal)}/s`;
@@ -1399,7 +1395,7 @@ function updateHud() {
   const heroes = state.heroes.filter(hero => hero.alive).length;
   const heroCap = heroCapacity();
   const workers = state.workers.filter(worker => worker.alive).length;
-  const workerCap = 2 + state.buildings.filter(building => building.type === 'hut' && isDone(building)).reduce((sum, hut) => sum + (hut.big ? 5 : 2), 0);
+  const workerCap = workerCapacity();
   $('#hero-count').textContent = heroes;
   $('#hero-cap').textContent = heroCap;
   $('#hero-count').closest('.stat').classList.toggle('full', heroes >= heroCap);
@@ -1930,8 +1926,8 @@ const buildCardHTML = item => {
   const cityQuarryExists = item.id === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city');
   const blocked = (item.id === 'mine' && currentMap !== 'wilds') || cityQuarryExists;
   const reason = cityQuarryExists ? 'A única pedreira de City já foi construída.' : blocked ? item.id === 'mine' ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.id === 'quarry' && currentMap === 'city' ? 'Pedreira inicial de baixa reserva · City permite uma; Wilds não tem limite.' : item.detail;
-  return `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas e ${item.wood} madeira" title="${reason}" ${blocked ? 'disabled aria-disabled="true"' : ''}>
-        <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${reason}</small></span><span class="build-cost">${costHTML(item.cost, item.wood)}</span></button>`;
+  return `<button class="build-card${state.selectedBuild === item.id ? ' selected' : ''}" data-build="${item.id}" aria-label="Construir ${item.id === 'farm' ? `Fazenda de ${farmType(state.selectedFarmType).name}` : item.name}, custa ${item.cost} moedas, ${item.wood} madeira e ${buildingStoneCost(item)} pedra de construção" title="${reason}" ${blocked ? 'disabled aria-disabled="true"' : ''}>
+        <span class="build-preview"><img src="${buildingImage(item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id])}" alt="">${item.id === 'mill' ? '<span class="mill-sails"></span>' : ''}</span><span class="build-copy"><b>${item.name}${item.id === 'farm' ? ` · ${farmType(state.selectedFarmType).name}` : ''}</b><small>${reason}</small></span><span class="build-cost">${costHTML(item.cost, item.wood, buildingStoneCost(item))}</span></button>`;
 };
 const buildCategoryOf = id => BUILD_CATEGORIES.find(category => category.types.includes(id))?.id || (BUILDINGS.find(item => item.id === id)?.heroClass ? 'guilds' : 'houses');
 
@@ -1950,7 +1946,7 @@ function renderPanel() {
       ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
         <div class="farm-type-grid">${FARM_TYPES.map(type => `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0] * FARM_OUTPUT_MULTIPLIER)} ${type.id === 'wheat' ? 'trigo' : 'provisões'}/s</small>${type.secondary ? `<small>+${rateNumber(type.grain[selectedFarm ? producerLevel(selectedFarm) : 0] * FARM_OUTPUT_MULTIPLIER * FARM_ANIMAL_RATE)} ${foodName(type.secondary)}/s</small>` : ''}</span></button>`).join('')}</div></section>` : ''}
       ${BUILD_CATEGORIES.map(category => `<section class="build-section" aria-label="${category.name}"><h4 class="build-section-title">${category.name}</h4><div class="build-grid">${BUILDINGS.filter(item => buildCategoryOf(item.id) === category.id).map(buildCardHTML).join('')}</div></section>`).join('')}
-      <p class="build-note">A moeda é o custo em ouro e a lenha é o custo em madeira.</p>`;
+      <p class="build-note">Construções comuns usam ouro, madeira e Pedra de Construção. A pedreira inicial não exige pedra.</p>`;
   } else if (state.tab === 'heroes') {
     host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
       ${bountyPanelHTML()}
@@ -2041,14 +2037,14 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['Lenhadores', `${crew.length} de 3: ${names(crew)}`]);
   } else if (isPit(building)) {
     const crew = lumberCrew(building);
-    lines.push(['Produz', building.type === 'mine' ? `${fineRate(pitRate(building))} kg/s de rocha bruta` : `${fineRate(pitRate(building))} kg de pedra por segundo`]);
+    lines.push(['Produz', building.type === 'mine' ? `${fineRate(pitRate(building))} kg/s de rocha bruta` : `${fineRate(pitRate(building))} kg/s de ${building.quarryOrder === 'marble' ? 'Mármore' : 'Pedra de Construção'}`]);
     if (building.type === 'mine') {
       const rank = metalRankData(building);
       lines.push(['Depósito', `Ranking ${rank.id} · ${rank.name}`]);
       lines.push(['Veios disponíveis', pitSeams(building).map(seam => `${oreName(seam.mineral)} · ${seam.access === 'deep' ? 'profundo' : 'raso'} · ${seam.gradePpm} ppm`).join(' · ')]);
     }
     if (crewWork(building)) lines.push(['Ferramentas', `+${Math.round(crewWork(building) * 100)}% de produção`]);
-    lines.push(['No estoque', building.type === 'mine' ? METAL_STOCK.map(id => `${formatMetalAmount(id, state.metals[id] || 0)} ${METAL_NAMES[id]}`).join(' · ') : `${format(state.stone || 0)} de pedra`]);
+    lines.push(['No estoque', building.type === 'mine' ? METAL_STOCK.map(id => `${formatMetalAmount(id, state.metals[id] || 0)} ${METAL_NAMES[id]}`).join(' · ') : `${formatMass(state.stone || 0)} kg Pedra de Construção · ${formatMass(state.marble || 0)} kg Mármore`]);
   } else if (building.type === 'market') {
     lines.push(['Faz', 'Compra e vende comida e madeira a preço fixo']);
   } else if (building.type === 'tavern') {
@@ -2191,8 +2187,8 @@ function moveBuilding(x, y) {
 function chooseBuild(id) {
   state.placingBounty = false;
   const item = BUILDINGS.find(building => building.id === id);
-  if (id !== 'farm' && (state.gold < item.cost || state.timber < item.wood)) {
-    say('Falta ouro ou madeira. As dívidas, não.');
+  if (id !== 'farm' && (state.gold < item.cost || state.timber < item.wood || state.stone < buildingStoneCost(item))) {
+    say('Falta ouro, madeira ou Pedra de Construção. As dívidas, não.');
     return;
   }
   if (state.selectedBuild === id) { cancelPlacement(); return; }
@@ -2265,12 +2261,13 @@ function placeBuilding(x, y) {
   if (!item) return;
   const problem = placementProblem(x, y);
   if (problem) { say(problem); return; }
-  if (state.gold < item.cost || state.timber < item.wood) {
-    say('A obra parou: falta ouro ou madeira. Os pedreiros foram beber.');
+  if (state.gold < item.cost || state.timber < item.wood || state.stone < buildingStoneCost(item)) {
+    say('A obra parou: falta ouro, madeira ou Pedra de Construção. Os pedreiros foram beber.');
     return;
   }
   state.gold -= item.cost;
   state.timber -= item.wood;
+  state.stone -= buildingStoneCost(item);
   const site = state.nextBuildingId++;
   const resourcePlace = item.id === 'mine' ? extractionPlaces(item.id).find(place => Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5) : null;
   const quarryInitialUnits = currentMap === 'city' ? 2400 : 20000;
@@ -2444,10 +2441,6 @@ function completeBuilding(building) {
   if (item.housing) for (let i = 0; i < item.housing; i++) hireWorker(building, i % 2 === 1);
   // Fazenda ou moinho novo: todo mundo é redistribuído para ninguém ficar vazio.
   if (PRODUCER_TYPES.includes(item.id)) state.workers.forEach(worker => { worker.jobSite = null; });
-  if (['farm', 'mill'].includes(item.id)) {
-    const producerWorker = hireWorker(building, Math.random() < 0.5);
-    producerWorker.jobSite = building.site;
-  }
   assignBuilders();
   renderSites(); renderPanel(); updateHud();
   setTimeout(() => $(`.site[data-site="${building.site}"]`)?.classList.remove('just-built'), 1400);
@@ -2487,7 +2480,6 @@ function manorArrival() {
   return hero;
 }
 
-// Cada fazenda ou moinho traz um camponês, que sai da construção e trabalha nela.
 const HUT_UPGRADE = { gold: 180, wood: 12 };
 // Melhoria vira obra: o ouro e a madeira saem na hora, e o efeito só vale quando o camponês termina.
 function startUpgrade(building, upgrade, label) {
@@ -2542,7 +2534,10 @@ function upgradeHut(site) {
   startUpgrade(hut, { kind: 'hut' }, 'Ampliação para Casebre Grande');
 }
 
+// Camas para camponeses: 2 no casarão, 2 por casebre, 5 no Casebre Grande. Ninguém chega sem cama.
+const workerCapacity = () => 2 + state.buildings.filter(building => building.type === 'hut' && isDone(building)).reduce((sum, hut) => sum + (hut.big ? 5 : 2), 0);
 function hireWorker(home, female) {
+  if (state.workers.filter(worker => worker.alive).length >= workerCapacity()) return null;
   const n = state.workers.length + 1;
   const worker = {
     id: `worker-${Date.now()}-${n}`,
@@ -2569,8 +2564,6 @@ function ensureFarmWorkers() {
       if (worker.homeSite === building.site && !worker.workplace) worker.jobSite = building.site;
       return;
     }
-    const added = hireWorker(building, Math.random() < 0.5);
-    added.jobSite = building.site;
   });
 }
 
@@ -3068,9 +3061,10 @@ PIXEL_ART.coin = ['....kkkk....', '..kkGGGgkk..', '.kGGgggggdk.', '.kGgkkkkgdk.'
 PIXEL_ART.logs = ['............', '............', '.kkkkkkkkkk.', 'kwWwwWwwwkWk', 'kwwwwwwWwkdk', '.kkkkkkkkkk.', '.kkkkkkkkkk.', 'kwwWwwwwWkWk', 'kwwwwWwwwkdk', '.kkkkkkkkkk.', '............', '............'];
 
 // Custo com ícones: moeda para ouro, lenha para madeira.
-function costHTML(gold, wood) {
+function costHTML(gold, wood, stone = 0) {
   const ico = name => pixelIcon(name, 14).replace('class="pixel-icon"', 'class="pixel-icon cost-ico"');
-  return `<span class="cost-pair"><span class="cost-item" title="${gold} de ouro">${ico('coin')}${gold}</span><span class="cost-item" title="${wood} de madeira">${ico('logs')}${wood}</span></span>`;
+  const stoneIcon = '<img class="pixel-icon cost-ico" src="public/art/icon-stone-photo-v01.png" width="14" height="14" alt="" aria-hidden="true">';
+  return `<span class="cost-pair"><span class="cost-item" title="${gold} de ouro">${ico('coin')}${gold}</span><span class="cost-item" title="${wood} de madeira">${ico('logs')}${wood}</span>${stone ? `<span class="cost-item" title="${stone} de Pedra de Construção">${stoneIcon}${stone}</span>` : ''}</span>`;
 }
 
 function pixelIcon(name, size = 48) {
@@ -3791,7 +3785,7 @@ const depots = () => state.buildings.filter(building => building.type === 'depot
 const depotCap = depot => STORAGE_LEVELS[depot.level || 0].cap;
 const storageCap = () => MANOR_STORAGE + depots().reduce((sum, depot) => sum + depotCap(depot), 0);
 const reservedWorkshopSpace = () => (state.buildings || []).reduce((sum, building) => sum + Object.entries(building.metalJob?.output || {}).reduce((n, [id, qty]) => n + qty / 100, 0), 0);
-const storedUnits = () => totalFood() + (state.items?.length || 0) + remainsCount() + (state.stone || 0) + metalStorageUnits() + (state.charcoal || 0) / 100 + reservedWorkshopSpace() + quarryMaterialMass() + (state.buildings || []).reduce((sum, pit) => sum + (pit.type === 'quarry' && pit.sharedCart?.cargo ? pit.sharedCart.cargo.massKg || 0 : 0), 0);
+const storedUnits = () => totalFood() + (state.items?.length || 0) + remainsCount() + (state.stone || 0) + (state.marble || 0) + metalStorageUnits() + (state.charcoal || 0) / 100 + reservedWorkshopSpace() + quarryMaterialMass() + (state.buildings || []).reduce((sum, pit) => sum + (pit.type === 'quarry' ? (pit.stockStone || 0) + (pit.stockMarble || 0) + (pit.sharedCart?.cargo ? pit.sharedCart.cargo.massKg || 0 : 0) : 0), 0);
 function upgradeDepot(site) {
   const depot = state.buildings.find(building => building.site === site && building.type === 'depot');
   const next = depot && STORAGE_LEVELS[(depot.level || 0) + 1];
@@ -4065,24 +4059,33 @@ function nearestStorage(from) {
 function pitRoutine(actor, pit) {
   if (pit.type === 'quarry') {
     const store = nearestStorage({ x: MANOR_DOOR.x, y: MANOR_DOOR.y });
-    if (actor.carrying?.stoneQty) {
-      if ((actor.mapId || 'city') !== 'city') { actor.task = 'Levando pedra para a City'; travelToMap(actor, 'city', pit.mapSet || 2); return; }
-      if (isAt(actor, store)) { deliverLoad(actor); actor.task = 'Pedra entregue no depósito'; actor.wait = 1; return; }
-      actor.task = 'Levando pedra ao depósito'; walkTo(actor, store); return;
+    if (actor.carrying?.stoneQty || actor.carrying?.marbleQty) {
+      const isMarble = Number.isFinite(actor.carrying.marbleQty);
+      const material = isMarble ? 'mármore' : 'pedra de construção';
+      if ((actor.mapId || 'city') !== 'city') { actor.task = `Levando ${material} para a City`; travelToMap(actor, 'city', pit.mapSet || 2); return; }
+      if (isAt(actor, store)) { deliverLoad(actor); actor.task = `${material} entregue no depósito`; actor.wait = 1; return; }
+      actor.task = `Levando ${material} ao depósito`; walkTo(actor, store); return;
     }
     const quarryMap = pit.mapId || 'wilds';
     if ((actor.mapId || 'city') !== quarryMap || (actor.mapSet || 1) !== (pit.mapSet || 2)) { actor.task = 'Indo para a pedreira'; travelToMap(actor, quarryMap, pit.mapSet || 2); return; }
     if (!isAt(actor, pit)) { actor.task = 'Indo à bancada da pedreira'; walkTo(actor, pit); return; }
     const tool = assignExtractionTool(actor, pit);
     if (!tool) { pit.workStatus = 'Sem ferramenta disponível'; actor.task = 'Falta ferramenta de pedreira'; actor.wait = 3; return; }
-    // Só sai com a carga cheia; leva o que sobrou apenas quando a bancada parou de render pedra.
+    // Só sai com a carga cheia; leva o que sobrou apenas quando a bancada parou de render material.
+    const isMarble = pit.quarryOrder === 'marble';
     const fullLoad = pit.level ? 40 : 20;
     const face = selectedQuarryFace(pit);
-    const stalled = (pit.quarryOrder || 'rubble') !== 'rubble' || !face || face.looseMassKg <= 0 || (stoneDepositForPit(pit)?.remainingUnits || 0) <= 0;
-    const qty = Math.min(fullLoad, pit.stockStone || 0);
-    if (qty > 0 && !stalled && qty < fullLoad - 1e-6) { pit.workStatus = 'Juntando carga na bancada'; actor.task = `Juntando pedra: ${formatMass(qty)} de ${fullLoad} kg`; actor.wait = 2; actor.actionTime = 2; actor.actionClock = 0; return; }
-    if (qty > 0) { pit.stockStone -= qty; tool.durability = Math.max(0, tool.durability - qty / 20); actor.carrying = { stoneQty: qty, fromPit: pit.site }; actor.task = `Levando ${formatMass(qty)} pedra`; travelToMap(actor, 'city', pit.mapSet || 2); return; }
-    pit.workStatus = 'Aguardando carga no posto'; actor.task = 'Aguardando pedra na bancada'; actor.wait = 2; return;
+    const stalled = !['rubble', 'marble'].includes(pit.quarryOrder || 'rubble') || !face || face.looseMassKg <= 0 || (stoneDepositForPit(pit)?.remainingUnits || 0) <= 0;
+    const qty = Math.min(fullLoad, isMarble ? (pit.stockMarble || 0) : (pit.stockStone || 0));
+    if (qty > 0 && !stalled && qty < fullLoad - 1e-6) { pit.workStatus = 'Juntando carga na bancada'; actor.task = `Juntando ${isMarble ? 'mármore' : 'pedra'}: ${formatMass(qty)} de ${fullLoad} kg`; actor.wait = 2; actor.actionTime = 2; actor.actionClock = 0; return; }
+    if (qty > 0) {
+      if (isMarble) pit.stockMarble -= qty; else pit.stockStone -= qty;
+      tool.durability = Math.max(0, tool.durability - qty / 20);
+      actor.carrying = isMarble ? { marbleQty: qty, fromPit: pit.site } : { stoneQty: qty, fromPit: pit.site };
+      actor.task = `Levando ${formatMass(qty)} ${isMarble ? 'mármore' : 'pedra de construção'}`;
+      travelToMap(actor, 'city', pit.mapSet || 2); return;
+    }
+    pit.workStatus = 'Aguardando material no posto'; actor.task = `Aguardando ${isMarble ? 'mármore' : 'pedra de construção'} na pedreira`; actor.wait = 2; return;
   }
   const store = nearestStorage({ x: MANOR_DOOR.x, y: MANOR_DOOR.y });
   if (actor.carrying?.ore) {
@@ -4121,6 +4124,16 @@ function deliverLoad(actor) {
       const pit = state.buildings.find(building => building.site === load.fromPit && building.type === 'quarry');
       if (pit) pit.stockStone = (pit.stockStone || 0) + load.stoneQty - accepted;
       if (!state.storageWarned) { state.storageWarned = true; say('O depósito da City está cheio. A pedra voltou ao estoque da pedreira.'); }
+    } else state.storageWarned = false;
+    return;
+  }
+  if (Number.isFinite(load.marbleQty)) {
+    const accepted = Math.min(load.marbleQty, Math.max(0, storageCap() - storedUnits()));
+    state.marble = (state.marble || 0) + accepted;
+    if (accepted < load.marbleQty - 1e-6) {
+      const pit = state.buildings.find(building => building.site === load.fromPit && building.type === 'quarry');
+      if (pit) pit.stockMarble = (pit.stockMarble || 0) + load.marbleQty - accepted;
+      if (!state.storageWarned) { state.storageWarned = true; say('O depósito da City está cheio. O mármore voltou ao estoque da pedreira.'); }
     } else state.storageWarned = false;
     return;
   }
@@ -4723,8 +4736,9 @@ function economyPanelHTML() {
       ${row('<b>Total</b>', `<b>${per(wood)}</b>`, `${format(state.timber)} no estoque`)}
     </dl></div>
     ${pits.length ? `<div class="econ-block"><div class="food-label">PEDRA E EXTRAÇÃO POR SEGUNDO</div><dl class="econ-lines">
-      ${pits.map(pit => row(buildingName(pit), `${fineRate(pitRate(pit))}/s ${pit.type === 'mine' ? 'kg de rocha' : 'de pedra'}`, `${pit.type === 'mine' ? `${selectedSeam(pit) ? oreName(selectedSeam(pit).mineral) : 'sem veio'} · ` : ''}${lumberCrew(pit).length} de ${workerLimitForPit(pit)} camponeses`)).join('')}
-      ${row('<b>Pedra</b>', `<b>${fineRate(rates().stone)}/s</b>`, `${format(state.stone || 0)} no estoque`)}
+      ${pits.map(pit => row(buildingName(pit), `${fineRate(pitRate(pit))}/s ${pit.type === 'mine' ? 'kg de rocha' : `kg de ${pit.quarryOrder === 'marble' ? 'Mármore' : 'Pedra de Construção'}`}`, `${pit.type === 'mine' ? `${selectedSeam(pit) ? oreName(selectedSeam(pit).mineral) : 'sem veio'} · ` : ''}${lumberCrew(pit).length} de ${workerLimitForPit(pit)} camponeses`)).join('')}
+      ${row('<b>Pedra de Construção</b>', `<b>${fineRate(rates().stone)}/s</b>`, `${formatMass(state.stone || 0)} kg no estoque`)}
+      ${row('<b>Mármore</b>', `<b>${fineRate(rates().marble)}/s</b>`, `${formatMass(state.marble || 0)} kg no estoque · usado na mansão`)}
       ${METAL_STOCK.map(id => row(`<b>${METAL_NAMES[id]}</b>`, id.endsWith('Ore') ? 'rocha bruta entregue pelo posto' : id === 'steel' ? 'estoque de corte cementado' : 'produção do Blacksmith', `${formatMetalAmount(id, state.metals[id] || 0)} no estoque`)).join('')}
     </dl></div>` : ''}
     ${state.buildings.some(building => building.type === 'blacksmith' && isDone(building)) ? `<div class="econ-block"><div class="food-label">BLACKSMITH</div><dl class="econ-lines">${state.buildings.filter(building => building.type === 'blacksmith' && isDone(building)).map(building => row(siteLabel(building), `${blacksmithRecipe(building).name} · ${rateNumber(blacksmithRate(building) * (1 + crewWork(building)))}/s`, `nível ${producerLevel(building) + 1} de 2 · receita selecionada`)).join('')}</dl></div>` : ''}
@@ -5559,6 +5573,7 @@ function hydrateState(data) {
   loaded.bandits.forEach(bandit => { bandit.route = []; bandit.finalPoint = null; });
   if (loaded.taxPercent == null) loaded.taxPercent = 10;
   if (loaded.stone == null) loaded.stone = 0;
+  if (!Number.isFinite(loaded.marble)) loaded.marble = 0;
   if (loaded.metal == null) loaded.metal = 0;
   if (loaded.favor == null) loaded.favor = 50;
   if (!Array.isArray(loaded.demands)) loaded.demands = [];
@@ -5670,6 +5685,7 @@ function startGame(newState, slot) {
     if (!QUARRY_ORDERS.some(order => order.id === building.quarryOrder)) building.quarryOrder = 'rubble';
     quarryInventory(building);
     if (!Number.isFinite(building.stockStone)) building.stockStone = 0;
+    if (!Number.isFinite(building.stockMarble)) building.stockMarble = 0;
     if (!Number.isFinite(building.level)) building.level = 0;
     if (building.loadingPad && !building.loadingPad.pieceId && building.loadingPad.id) {
       building.loadingPad = { pieceId: building.loadingPad.id, cargoId: building.loadingPad.cargoId || building.loadingPad.id, state: 'separated-on-pad', location: 'quarry-loading-pad' };
