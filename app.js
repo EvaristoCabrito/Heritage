@@ -4517,7 +4517,10 @@ function pitRoutine(actor, pit) {
   if (!isAt(actor, pit)) { actor.task = `Indo à frente de ${oreName(seam.mineral)}`; walkTo(actor, pit); return; }
   const tool = assignExtractionTool(actor, pit);
   if (!tool) { pit.workStatus = 'Sem picareta disponível'; actor.task = 'Falta picareta'; actor.wait = 3; return; }
-  const loadGrams = Math.min(workerLoadForPit(pit), pit.stockGrams || 0, storageCap() * 100000);
+  // Só sai com a carga cheia (20 kg, 40 no nível 2); leva o resto apenas quando o veio acabou ou o depósito só aceita menos.
+  const fullGrams = Math.min(workerLoadForPit(pit), storageCap() * 100000);
+  const loadGrams = Math.min(fullGrams, pit.stockGrams || 0);
+  if (loadGrams > 0 && loadGrams < fullGrams - 1e-6 && seam.remainingGrams > 0) { pit.workStatus = 'Juntando carga no posto'; actor.task = `Juntando ${oreName(seam.mineral)}: ${formatMass(loadGrams / 1000)} de ${formatMass(fullGrams / 1000)} kg`; actor.wait = 2; actor.actionTime = 2; actor.actionClock = 0; gainSkill(actor, 'mining', 0.05); return; }
   if (loadGrams > 0) {
     pit.stockGrams -= loadGrams;
     tool.durability = Math.max(0, tool.durability - loadGrams / 20000);
