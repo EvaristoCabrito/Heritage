@@ -436,9 +436,9 @@ body { overflow: hidden; }
 .objective-progress .progress-track { flex: 1; height: 7px; }
 .progress-value { color: var(--gold); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .objective-actions { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 10px; }
-.objective-journal { margin-top: 10px; color: #e4d2a8; }
+.objective-journal { position: relative; margin-top: 10px; color: #e4d2a8; }
 .objective-journal summary { cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
-.objective-journal ol { display: grid; gap: 7px; max-height: 220px; overflow-y: auto; margin: 9px 0 0; padding: 0; list-style: none; }
+.objective-journal ol { position: fixed; z-index: 110; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(650px, 85vw); max-height: 70vh; display: grid; gap: 10px; overflow-y: auto; margin: 0; padding: 22px; list-style: none; border: 1px solid var(--line); border-radius: 7px; background: #1c1e19; box-shadow: 0 12px 36px rgba(0,0,0,.65); }
 .objective-journal-item { display: grid; gap: 3px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: rgba(13,18,14,.45); }
 .objective-journal-item.is-current { border-color: #bca16a; }
 .objective-journal-item span { color: #bca16a; font-size: 10px; text-transform: uppercase; }
