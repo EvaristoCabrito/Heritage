@@ -1,0 +1,14 @@
+{
+  "building_type_id": "farm",
+  "art_id": "farm-vegetables-l3",
+  "source_final_sprite": "public/art/buildings-photoreal-v03-runtime/farm-vegetables-l3.webp",
+  "construction_profile": "farm",
+  "generated_inputs": {
+    "early": "tools/construction-art-pipeline/generated/farm-vegetables/farm-vegetables-l3-early.png",
+    "mid": "tools/construction-art-pipeline/generated/farm-vegetables/farm-vegetables-l3-mid.png"
+  },
+  "runtime_outputs": {
+    "early": "public/art/buildings-construction-dark-v01/farm-vegetables-l3-early.webp",
+    "mid": "public/art/buildings-construction-dark-v01/farm-vegetables-l3-mid.webp"
+  }
+}

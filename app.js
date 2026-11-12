@@ -1,5 +1,5 @@
 const BUILDINGS = [
-  { id: 'farm', name: 'Fazenda', glyph: 'F', cost: 115, wood: 6, detail: 'Alho, trigo, bacon, ovos ou leite. Os camponeses trabalham aqui. Melhora até o nível 3.', gold: 0.55, grain: 0.225, people: 0 },
+  { id: 'farm', name: 'Fazenda', glyph: 'F', cost: 115, wood: 6, detail: 'Alho, trigo, suínos, ovos, leite ou hortaliças. Escolha o que plantar e melhore até o nível 3.', gold: 0.55, grain: 0.225, people: 0 },
   { id: 'mill', name: 'Moinho', glyph: 'M', cost: 155, wood: 10, detail: 'Mói o trigo em farinha. Trigo cru não alimenta ninguém. As pás giram; a vila, nem tanto.', gold: 0.4, grain: 0, people: 0 },
   { id: 'bakery', name: 'Padaria', glyph: 'P', cost: 165, wood: 10, detail: 'Assa pão, queijo ou quiche lorraine com o que tem no depósito. Você escolhe a fornada; o forno não discute. Melhora até o nível 3.', gold: 0.4, grain: 0, people: 0 },
   { id: 'emberLab', name: 'Laboratório de Ember', glyph: 'E', cost: 220, wood: 14, detail: 'Refina em Ember os Dead Remains que os heróis trazem dos covis. Quanto melhor a grade, mais Ember. Ninguém pergunta de onde vieram.', gold: 0, grain: 0, people: 0 },
@@ -29,10 +29,13 @@ BUILDINGS.find(building => building.id === 'mine').detail += ' Apenas em Wilds, 
 const FARM_TYPES = [
   // grain: produção por segundo nos níveis 1, 2 e 3 da fazenda.
   { id: 'garlic', name: 'Alho', art: 'farm-garlic', grain: [0.075, 0.125, 0.2], gold: 0.9 },
-  { id: 'wheat', name: 'Trigo', art: 'farm-wheat', grain: [0.1125, 0.1875, 0.3], gold: 0.55 },
+  { id: 'wheat', name: 'Trigo', art: 'farm-wheat-v02', grain: [0.1125, 0.1875, 0.3], gold: 0.55 },
   { id: 'bacon', name: 'Suínos', foodId: 'pork', art: 'farm-bacon', grain: [0.005, 0.0083, 0.0132], gold: 0.75 },
   { id: 'eggs', name: 'Galinheiro', foodId: 'eggs', secondary: 'chicken', art: 'farm-eggs', grain: [0.1, 0.166, 0.264], gold: 0.65 },
   { id: 'milk', name: 'Leite e carne de vaca', foodId: 'milk', secondary: 'beef', art: 'farm-milk', grain: [0.1025, 0.1725, 0.275], gold: 0.6 },
+  { id: 'potato', name: 'Batatas', art: 'farm-vegetables', icon: 'potato-v01.png', grain: [0.075, 0.125, 0.2], gold: 0.7, group: 'vegetables' },
+  { id: 'carrot', name: 'Cenouras', art: 'farm-vegetables', icon: 'carrot-v01.png', grain: [0.075, 0.125, 0.2], gold: 0.7, group: 'vegetables' },
+  { id: 'tomato', name: 'Tomates', art: 'farm-vegetables', icon: 'tomato-v01.png', grain: [0.075, 0.125, 0.2], gold: 0.7, group: 'vegetables' },
 ];
 const FARM_OUTPUT_MULTIPLIER = 2;
 const farmType = id => FARM_TYPES.find(type => type.id === id) || FARM_TYPES[1];
@@ -40,6 +43,7 @@ const FARM_ANIMAL_RATE = 0.1; // produção secundária de carne nas fazendas de
 const farmFoodId = building => farmType(building.produce).foodId || farmType(building.produce).id;
 const farmSecondaryRate = building => farmType(building.produce).secondary ? farmOutput(building) * FARM_ANIMAL_RATE : 0;
 const FISHING_RATE = 0.035; // peixe por segundo por pescador
+const WILDLIFE_MAP_SET = 1; // os Wilds acessíveis no fluxo atual do jogo
 const FISHING_SPOTS = [
   { site: 'wilds-stream-west-map01', type: 'fishing', name: 'Riacho das Wilds · trecho oeste', mapId: 'wilds', mapSet: 1, x: 17, y: 68, stock: 0 },
   { site: 'wilds-stream-east-map01', type: 'fishing', name: 'Riacho das Wilds · trecho leste', mapId: 'wilds', mapSet: 1, x: 75, y: 54, stock: 0 },
@@ -81,17 +85,17 @@ const BAKE_RATE = [0.15, 0.2, 0.27]; // fornadas por segundo, por nível
 const BUTCHER_RATE = [0.12, 0.16]; // unidades processadas por segundo nos níveis 1 e 2
 const BUTCHER_MAX_LEVEL = 2;
 const BUTCHER_RECIPES = [
-  { id: 'bacon', name: 'Bacon', needs: ['pork'], feeds: 1, art: 'farm-bacon' },
+  { id: 'bacon', name: 'Bacon', needs: ['pork'], feeds: 1, art: 'farm-bacon', icon: 'icon-market-bacon-photo-v01.png' },
   { id: 'sausage', name: 'Linguiça', needs: ['pork'], feeds: 1, art: 'sausage' },
   { id: 'nuggets', name: 'Chicken Nuggets', needs: ['chicken'], feeds: 1, art: 'chicken-nuggets' },
   { id: 'wings', name: 'Buffalo Wings', needs: ['chicken'], feeds: 1, art: 'buffalo-wings' },
   { id: 'hamburger', name: 'Hambúrguer', needs: ['beef'], feeds: 1, art: 'hamburger' },
   { id: 'steak', name: 'Filé', needs: ['beef'], feeds: 1, art: 'steak' },
   { id: 'parmesanSteak', name: 'Filé à Parmegiana', needs: ['beef', 'cheese'], feeds: 3, art: 'parmesan-steak' },
-  { id: 'roastBoar', name: 'Javali Assado', needs: ['boarMeat'], feeds: 2, art: 'steak' },
-  { id: 'garlicBoar', name: 'Javali ao Alho', needs: ['boarMeat', 'garlic'], feeds: 4, art: 'parmesan-steak' },
-  { id: 'roastElk', name: 'Alce Assado', needs: ['elkMeat'], feeds: 2, art: 'steak' },
-  { id: 'elkStew', name: 'Ensopado de Alce', needs: ['elkMeat', 'milk', 'garlic'], feeds: 4, art: 'quiche' },
+  { id: 'roastBoar', name: 'Javali Assado', needs: ['boarMeat'], feeds: 2, art: 'roast-boar', icon: 'roast-boar-v01.png' },
+  { id: 'garlicBoar', name: 'Javali ao Alho', needs: ['boarMeat', 'garlic'], feeds: 4, art: 'garlic-boar', icon: 'garlic-boar-v01.png' },
+  { id: 'roastElk', name: 'Alce Assado', needs: ['elkMeat'], feeds: 2, art: 'roast-elk', icon: 'roast-elk-v01.png' },
+  { id: 'elkStew', name: 'Ensopado de Alce', needs: ['elkMeat', 'milk', 'potato'], feeds: 4, art: 'elk-stew', icon: 'elk-stew-v01.png' },
 ];
 const BUTCHER_ART = Object.fromEntries(BUTCHER_RECIPES.map(recipe => [recipe.id, recipe.art]));
 const butcherRecipe = id => BUTCHER_RECIPES.find(recipe => recipe.id === id) || BUTCHER_RECIPES[0];
@@ -129,7 +133,16 @@ const blacksmithRate = building => BLACKSMITH_RATE[producerLevel(building)];
 const blacksmithRecipe = building => BLACKSMITH_RECIPES.find(recipe => recipe.id === building?.produce && recipe.minLevel <= (producerLevel(building) + 1)) || BLACKSMITH_RECIPES[0];
 // Arte por nível: quando houver desenho do upgrade, liste aqui. Ex.: 'farm-garlic': [null, 'farm-garlic-l2', 'farm-garlic-l3']
 const LEVEL_ART = {
-  bakery: [null, 'bakery-l2'], 'ember-lab': [null, 'ember-lab-l2'], butcher: [null, 'butcher-l2'], blacksmith: [null, 'blacksmith-l2'],
+  'farm-garlic': [null, 'farm-garlic-l2', 'farm-garlic-l3'],
+  'farm-wheat-v02': [null, 'farm-wheat-v02-l2', 'farm-wheat-v02-l3'],
+  'farm-bacon': [null, 'farm-bacon-l2', 'farm-bacon-l3'],
+  'farm-eggs': [null, 'farm-eggs-l2', 'farm-eggs-l3'],
+  'farm-milk': [null, 'farm-milk-l2', 'farm-milk-l3'],
+  'farm-vegetables': [null, 'farm-vegetables-l2', 'farm-vegetables-l3'],
+  'mill-body': [null, 'mill-body-l2', 'mill-body-l3'],
+  bakery: [null, 'bakery-l2', 'bakery-l3'],
+  'ember-lab': [null, 'ember-lab-l2', 'ember-lab-l3'],
+  butcher: [null, 'butcher-l2'], blacksmith: [null, 'blacksmith-l2'],
 };
 const producerLevel = building => Math.min(building?.type === 'blacksmith' ? BLACKSMITH_RATE.length - 1 : PRODUCER_LEVELS.length - 1, building?.level || 0);
 const farmOutput = building => farmType(building.produce).grain[producerLevel(building)] * FARM_OUTPUT_MULTIPLIER;
@@ -241,23 +254,33 @@ const BUILDING_ART = {
   blackMage: 'tower', conjurer: 'conjurer', healer: 'healer', armory: 'armory',
 };
 const PHOTOREAL_BUILDING_ART = new Set([
-  'farm-garlic', 'farm-wheat', 'farm-bacon', 'farm-eggs', 'farm-milk',
+  'farm-garlic', 'farm-wheat', 'farm-wheat-v02', 'farm-bacon', 'farm-eggs', 'farm-milk',
+  'farm-garlic-l2', 'farm-garlic-l3', 'farm-wheat-v02-l2', 'farm-wheat-v02-l3',
+  'farm-bacon-l2', 'farm-bacon-l3', 'farm-eggs-l2', 'farm-eggs-l3', 'farm-milk-l2', 'farm-milk-l3',
+  'farm-vegetables', 'farm-vegetables-l2', 'farm-vegetables-l3',
+  'mill-body-l2', 'mill-body-l3',
   'mill-body', 'mill-sails', 'hut', 'hut-big', 'depot', 'lumber', 'market',
-  'tavern', 'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'manor', 'bakery', 'ember-lab', 'butcher', 'blacksmith', 'bakery-l2', 'ember-lab-l2', 'butcher-l2', 'blacksmith-l2',
+  'tavern', 'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'manor', 'bakery', 'ember-lab', 'butcher', 'blacksmith', 'bakery-l2', 'bakery-l3', 'ember-lab-l2', 'ember-lab-l3', 'butcher-l2', 'blacksmith-l2',
 ]);
 // Artes de obra: o sprite final existente continua sendo a fase completa.
 // Para adicionar uma construção nova, inclua a chave aqui e os arquivos -early/-mid.
 const CONSTRUCTION_STAGE_ART = new Set([
-  'farm-garlic', 'farm-wheat', 'farm-bacon', 'farm-eggs', 'farm-milk',
-  'mill-body', 'hut', 'hut-big', 'depot', 'lumber', 'market', 'tavern',
-  'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'bakery', 'ember-lab', 'butcher', 'blacksmith', 'blacksmith-l2',
+  'farm-garlic', 'farm-wheat', 'farm-wheat-v02', 'farm-bacon', 'farm-eggs', 'farm-milk',
+  'farm-garlic-l2', 'farm-garlic-l3', 'farm-wheat-v02-l2', 'farm-wheat-v02-l3',
+  'farm-bacon-l2', 'farm-bacon-l3', 'farm-eggs-l2', 'farm-eggs-l3', 'farm-milk-l2', 'farm-milk-l3',
+  'farm-vegetables', 'farm-vegetables-l2', 'farm-vegetables-l3',
+  'mill-body', 'mill-body-l2', 'mill-body-l3', 'hut', 'hut-big', 'depot', 'lumber', 'market', 'tavern',
+  'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'bakery', 'bakery-l2', 'bakery-l3', 'ember-lab', 'ember-lab-l2', 'ember-lab-l3', 'butcher', 'butcher-l2', 'blacksmith', 'blacksmith-l2',
 ]);
 const BUILDING_ART_ASPECTS = {
-  'farm-garlic': 1.5, 'farm-wheat': 1.5, 'farm-bacon': 1.5, 'farm-eggs': 1.5, 'farm-milk': 1.5,
-  'mill-body': 1105 / 1424, 'mill-sails': 1312 / 1199, hut: 1.5, 'hut-big': 1.5,
+  'farm-garlic': 1.5, 'farm-wheat': 1.5, 'farm-wheat-v02': 1.5, 'farm-bacon': 1.5, 'farm-eggs': 1.5, 'farm-milk': 1.5,
+  'farm-garlic-l2': 1.5, 'farm-garlic-l3': 1.5, 'farm-wheat-v02-l2': 1.5, 'farm-wheat-v02-l3': 1.5,
+  'farm-bacon-l2': 1.5, 'farm-bacon-l3': 1.5, 'farm-eggs-l2': 1.5, 'farm-eggs-l3': 1.5, 'farm-milk-l2': 1.5, 'farm-milk-l3': 1.5,
+  'farm-vegetables': 1.5, 'farm-vegetables-l2': 1.5, 'farm-vegetables-l3': 1.5,
+  'mill-body': 1105 / 1424, 'mill-body-l2': 1105 / 1424, 'mill-body-l3': 1105 / 1424, 'mill-sails': 1312 / 1199, hut: 1.5, 'hut-big': 1.5,
   depot: 2, lumber: 1.5, market: 2, tavern: 1.5, hotel: 2, guild: 1.5,
   archer: 1199 / 1312, lancer: 1.5, tower: 1202 / 1308, conjurer: 1312 / 1199, bakery: 1.5, 'ember-lab': 1200 / 1003,
-  'bakery-l2': 1.5, 'ember-lab-l2': 1200 / 1003, butcher: 1.5, 'butcher-l2': 1.5, blacksmith: 1.5, 'blacksmith-l2': 1.5,
+  'bakery-l2': 1.5, 'bakery-l3': 1.5, 'ember-lab-l2': 1200 / 1003, 'ember-lab-l3': 1200 / 1003, butcher: 1.5, 'butcher-l2': 1.5, blacksmith: 1.5, 'blacksmith-l2': 1.5,
   healer: 1.5, armory: 1.5, manor: 1.5,
   'quarry-l1': 1, 'quarry-l2': 1, 'mine-l1': 1, 'mine-l2': 1,
 };
@@ -300,9 +323,10 @@ function applyBuildingImage(element, art, constructionStage = null, building = n
 }
 const buildingImage = (art, constructionStage = null, building = null) => {
   if (building?.underConstruction && building.pendingUpgrade?.kind === 'producer') {
-    const artId = BUILDING_ART[building.type];
+    const artId = building.type === 'farm' ? farmType(building.produce).art : BUILDING_ART[building.type];
     const targetArt = LEVEL_ART[artId]?.[producerLevel(building) + 1];
     if (targetArt) {
+      if (!CONSTRUCTION_STAGE_ART.has(targetArt)) return buildingImage(targetArt, null);
       if ((building.progress || 0) < BUILD_TIME / 3) return buildingImage(art, null);
       if ((building.progress || 0) < BUILD_TIME * 2 / 3) return `public/art/buildings-construction-dark-v01/${targetArt}-early.webp`;
       return `public/art/buildings-construction-dark-v01/${targetArt}-mid.webp`;
@@ -347,7 +371,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.19';
+const GAME_VERSION = 'Version 0.13.21';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -392,11 +416,11 @@ function newGameState(heir = null) {
       { id: 'starter-quarry-pick-1', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-2', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
     ], remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
-    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: false, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
+    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, potato: 0, carrot: 0, tomato: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: false, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, potato: true, carrot: true, tomato: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, manorArrivalDay: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false, goalStep: 0, goalKills: 0,
     bandits: [], wildMeatPiles: [], wildlifeSpawnDay: Math.floor(380 / 1440), nextRaidAt: 720,
-    heir, heirLevel: 1, heirXp: 0, heirAttributePoints: 0, heirAttributes: { MP: 0, CHA: 0, MAG: 0, INT: 0, WIS: 0, RES: 0 }, equipment: BASIC_EQUIPMENT(), playSeconds: 0,
+    heir, heirLevel: 1, heirXp: 0, heirAttributePoints: 0, heirAttributes: { CHA: 0, MAG: 0, INT: 0, WIS: 0, RES: 0 }, equipment: BASIC_EQUIPMENT(), playSeconds: 0,
     buildings: [],
     mapSet: 1,
     lairs: [
@@ -1976,10 +2000,19 @@ function showPlacementPreview(event) {
   preview.classList.toggle('invalid', !!placementProblem(x, y, moving ? moving.site : null));
 }
 
+function workerIsWorkingIndoors(actor) {
+  if (actor.className !== 'Peasant' || actor.action !== 'work' || !(actor.actionTime > 0) || actor.carrying || actor.buildSite != null) return false;
+  const workplace = actor.workplace || state.buildings.find(building => building.site === actor.jobSite);
+  return !!workplace
+    && ['mill', 'bakery', 'butcher', 'emberLab', 'blacksmith'].includes(workplace.type)
+    && (actor.mapId || 'city') === (workplace.mapId || 'city')
+    && (actor.mapSet || 1) === (workplace.mapSet || 1);
+}
+
 function renderHeroes() {
   const layer = $('#hero-layer');
   const active = new Set();
-  [...state.heroes, ...state.workers, ...(state.bandits || []), ...(window.Monarch?.summons() || [])].filter(actor => actor.alive && (actor.mapId || 'city') === currentMap && (actor.mapSet || 1) === currentMapSet).forEach(actor => {
+  [...state.heroes, ...state.workers, ...(state.bandits || []), ...(window.Monarch?.summons() || [])].filter(actor => actor.alive && !workerIsWorkingIndoors(actor) && (actor.mapId || 'city') === currentMap && (actor.mapSet || 1) === currentMapSet).forEach(actor => {
     active.add(String(actor.id));
     let token = [...layer.children].find(node => node.dataset.actor === String(actor.id));
     if (!token) {
@@ -2127,7 +2160,7 @@ function inspectorHTML() {
           const crewMultiplier = 1 + crewWork(selectedFarm);
           const rate = type.grain[producerLevel(selectedFarm)] * FARM_OUTPUT_MULTIPLIER * crewMultiplier;
           const secondaryRate = type.secondary ? rate * FARM_ANIMAL_RATE : 0;
-          return `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="${rateNumber(rate)} de ${foodName(type.foodId || type.id)}/s${type.secondary ? ` · ${rateNumber(secondaryRate)} de ${foodName(type.secondary)}/s` : ''}"><img src="public/art/${type.art}-v01.webp" alt=""><b>${type.name}</b></button>`;
+          return `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}" title="${rateNumber(rate)} de ${foodName(type.foodId || type.id)}/s${type.secondary ? ` · ${rateNumber(secondaryRate)} de ${foodName(type.secondary)}/s` : ''}"><img src="public/art/${type.icon || `${type.art}-v01.webp`}" alt=""><b>${type.name}</b></button>`;
         }).join('')}</div></section>` : ''}
       ${selectedProducer?.type === 'bakery' ? bakeryRecipeBoxHTML(selectedProducer) : ''}
       ${selectedProducer?.type === 'butcher' ? butcherRecipeBoxHTML(selectedProducer) : ''}
@@ -2259,7 +2292,7 @@ function renderPanel() {
           const multiplier = FARM_OUTPUT_MULTIPLIER * (selectedFarm ? 1 + crewWork(selectedFarm) : 1);
           const rate = type.grain[level] * multiplier;
           const secondaryRate = type.secondary ? rate * FARM_ANIMAL_RATE : 0;
-          return `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.art}-v01.webp" alt=""><span><b>${type.name}</b><small>+${rateNumber(rate)} ${foodName(type.foodId || type.id)}/s</small>${type.secondary ? `<small>+${rateNumber(secondaryRate)} ${foodName(type.secondary)}/s</small>` : ''}</span></button>`;
+          return `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.icon || `${type.art}-v01.webp`}" alt=""><span><b>${type.name}</b><small>+${rateNumber(rate)} ${foodName(type.foodId || type.id)}/s</small>${type.secondary ? `<small>+${rateNumber(secondaryRate)} ${foodName(type.secondary)}/s</small>` : ''}</span></button>`;
         }).join('')}</div></section>` : ''}
       ${BUILD_CATEGORIES.map(category => `<section class="build-section" aria-label="${category.name}"><h4 class="build-section-title">${category.name}</h4><div class="build-grid">${BUILDINGS.filter(item => buildCategoryOf(item.id) === category.id).map(buildCardHTML).join('')}</div></section>`).join('')}
       <p class="build-note">Construções comuns usam ouro, madeira e Pedra de Construção. A pedreira inicial não exige pedra.</p>`;
@@ -2519,7 +2552,7 @@ function chooseBuild(id) {
   state.selectedSite = null;
   selectedLairId = null;
   renderSites(); renderPanel();
-  say(id === 'farm' ? 'Escolha alho, trigo, bacon, ovos ou leite e toque onde quiser no mapa. Esc cancela.' : `${item.name}: toque onde quiser no mapa. Esc cancela.`, `${item.name} procura um terreno. E alguém pra pagar.`);
+  say(id === 'farm' ? 'Escolha alho, trigo, suínos, ovos, leite, batatas, cenouras ou tomates e toque onde quiser no mapa. A produção das hortaliças pode ser trocada no painel. Esc cancela.' : `${item.name}: toque onde quiser no mapa. Esc cancela.`, `${item.name} procura um terreno. E alguém pra pagar.`);
 }
 
 function cancelPlacement() {
@@ -3102,7 +3135,7 @@ function workplaceOf(actor) {
     if (actor) actor.jobSite = spot.site;
     return spot;
   }
-  if (actor?.profession === 'hunter') { actor.jobSite = null; return { type: 'hunting', name: 'nas Wilds', mapId: 'wilds', mapSet: 2, x: 48, y: 98 }; }
+  if (actor?.profession === 'hunter') { actor.jobSite = null; return { type: 'hunting', name: 'nas Wilds', mapId: 'wilds', mapSet: WILDLIFE_MAP_SET, x: 48, y: 98 }; }
   // Lenhador entra sozinho numa Cabana do Lenhador com vaga.
   if (actor?.profession === 'woodcutter') {
     const camp = state.buildings.find(building => building.type === 'lumber' && isDone(building) && lumberCrew(building).length < 3);
@@ -3218,8 +3251,8 @@ function nextActorGoal(actor) {
   actor.bountyId = null;
   if (remainsPileStep(actor)) return;
   if (['Archer', 'Ranger', 'Assassin'].includes(classOf(actor))) {
-    const liveWildlife = (state.bandits || []).some(item => item.alive && item.className === 'Wildlife' && item.mapSet === 2);
-    if (liveWildlife && ((actor.mapId || 'city') !== 'wilds' || actor.mapSet !== 2)) { actor.task = 'Caçando nas Wilds'; travelToMap(actor, 'wilds', 2); return; }
+    const liveWildlife = (state.bandits || []).some(item => item.alive && item.className === 'Wildlife' && (item.mapSet || 1) === WILDLIFE_MAP_SET);
+    if (liveWildlife && ((actor.mapId || 'city') !== 'wilds' || (actor.mapSet || 1) !== WILDLIFE_MAP_SET)) { actor.task = 'Caçando nas Wilds'; travelToMap(actor, 'wilds', WILDLIFE_MAP_SET); return; }
   }
   if ((actor.mapId || 'city') !== 'city') { actor.task = 'Voltando dos Wilds'; travelToMap(actor, 'city', actor.mapSet || 1); return; }
   if (tavernPause(actor)) return;
@@ -3456,16 +3489,16 @@ const LEVEL_MSG = [
 function gainHeirXp(amount) {
   if (!state.heir || state.heirLevel >= HEIR_MAX_LEVEL) return;
   state.heirXp += amount;
-  let leveled = false;
+  let gainedLevels = 0;
   while (state.heirLevel < HEIR_MAX_LEVEL && state.heirXp >= xpToNext(state.heirLevel)) {
     state.heirXp -= xpToNext(state.heirLevel);
     state.heirLevel++;
     state.heirAttributePoints = (state.heirAttributePoints || 0) + 6;
-    leveled = true;
+    gainedLevels++;
   }
   if (state.heirLevel >= HEIR_MAX_LEVEL) state.heirXp = 0;
   const heir = heirById(state.heir);
-  if (leveled && heir) say(`${pick(LEVEL_MSG)(heir.name.split(' ')[0])} Nível ${state.heirLevel}.`);
+  if (gainedLevels && heir) say(`${pick(LEVEL_MSG)(heir.name.split(' ')[0])} Nível ${state.heirLevel}: +${gainedLevels * 6} pontos para distribuir na ficha.`);
 }
 
 // Equipamento básico do herdeiro, com ícones provisórios em pixel art (12 x 12).
@@ -4164,8 +4197,7 @@ function attributesHTML(attrs, actor = null) {
 }
 // Atributos-base do Monarca. Depois do nível 1, o jogador recebe pontos para distribuir.
 const HEIR_STATS = [
-  { key: 'MP', name: 'Mana', base: 30, pointsValue: 2, effect: '+2 MP máximo por ponto.' },
-  { key: 'CHA', name: 'Carisma', base: 8, pointsValue: 1, effect: '+0,5% de potência das auras por ponto.' },
+  { key: 'CHA', name: 'Carisma', base: 8, pointsValue: 1, effect: '+0,5% de potência das auras e +0,5 MP máximo por ponto.' },
   { key: 'MAG', name: 'Magia', base: 10, pointsValue: 1, effect: 'Aumenta o dano das magias conforme o % de MAG de cada magia.' },
   { key: 'INT', name: 'Inteligência', base: 9, pointsValue: 1, effect: 'Aumenta a regeneração de MP e concede +0,5 MP máximo por ponto.' },
   { key: 'WIS', name: 'Sabedoria', base: 7, pointsValue: 1, effect: 'Aumenta a regeneração de MP e concede +0,5 MP máximo por ponto.' },
@@ -4176,7 +4208,7 @@ function heirStat(key) {
   const stat = HEIR_STATS.find(item => item.key === key);
   return stat ? stat.base + (state.heirAttributes?.[key] || 0) * stat.pointsValue + monarchBonus(key) : 0;
 }
-function heirAttributesHTML(level) {
+function heirAttributesHTML() {
   return `<div class="sheet-section-label">ATRIBUTOS · ${state.heirAttributePoints || 0} PONTOS PARA DISTRIBUIR</div><dl class="attr-grid heir-attrs">${HEIR_STATS.map(stat => { const spent = state.heirAttributes?.[stat.key] || 0, base = stat.base + spent * stat.pointsValue, extra = monarchBonus(stat.key), total = base + extra; return `<div title="${stat.name}: base ${stat.base} + ${spent} ponto(s)${stat.pointsValue !== 1 ? ` × ${stat.pointsValue}` : ''}${extra ? ` + ${extra} do equipamento` : ''}. ${stat.effect}"><dt>${stat.key}</dt><dd>${total}${extra ? `<i>+${extra}</i>` : ''}</dd><small>${stat.name} · ${spent} distribuídos</small><div class="heir-stat-controls"><button type="button" data-action="heir-stat-down" data-stat="${stat.key}" aria-label="Retirar 1 ponto de ${stat.name}" ${spent ? '' : 'disabled'}>−</button><button type="button" data-action="heir-stat-up" data-stat="${stat.key}" aria-label="Adicionar 1 ponto a ${stat.name}" ${state.heirAttributePoints ? '' : 'disabled'}>+</button></div></div>`; }).join('')}</dl>`;
 }
 
@@ -4250,7 +4282,7 @@ const FOOD_TYPES = [
   { id: 'pork', name: 'Suínos', art: 'farm-bacon', raw: true, feeds: 0, note: 'Matéria-prima do açougue.' },
   { id: 'chicken', name: 'Carne de frango', art: 'farm-eggs', raw: true, feeds: 0, note: 'Produção secundária do galinheiro; matéria-prima do açougue.' },
   { id: 'beef', name: 'Carne de vaca', art: 'farm-milk', raw: true, feeds: 0, note: 'Produção secundária da fazenda de leite; matéria-prima do açougue.' },
-  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', meat: true, mood: 2, feeds: 1, note: 'Processado no açougue a partir de suínos.' },
+  { id: 'bacon', name: 'Bacon', art: 'farm-bacon', icon: 'icon-market-bacon-photo-v01.png', meat: true, mood: 2, feeds: 1, note: 'Processado no açougue a partir de suínos.' },
   { id: 'eggs', name: 'Ovos', art: 'farm-eggs', mood: 1, feeds: 2, note: 'Variedade. Os camponeses notam.' },
   { id: 'milk', name: 'Leite', art: 'farm-milk', mood: 1, feeds: 1, note: 'Variedade. Às vezes azeda antes.' },
   { id: 'bread', name: 'Pão', art: BAKED_ART.bread, baked: true, mood: 2, feeds: 1, note: 'Da padaria. Duro como a vida, mas é pão.' },
@@ -4262,8 +4294,18 @@ const FOOD_TYPES = [
   { id: 'hamburger', name: 'Hambúrguer', art: 'hamburger', meat: true, mood: 2, feeds: 1, note: 'Processado no açougue.' },
   { id: 'steak', name: 'Filé', art: 'steak', meat: true, mood: 2, feeds: 1, note: 'Processado no açougue.' },
   { id: 'parmesanSteak', name: 'Filé à Parmegiana', art: 'parmesan-steak', baked: true, meat: true, mood: 3, feeds: 3, note: 'Filé com queijo, preparado no açougue.' },
+  { id: 'boarMeat', name: 'Carne de Javali', art: 'boar-meat', icon: 'boar-meat-v01.png', raw: true, feeds: 0, note: 'Carne crua recolhida dos javalis; vai para o açougue.' },
+  { id: 'elkMeat', name: 'Carne de Alce', art: 'elk-meat', icon: 'elk-meat-v01.png', raw: true, feeds: 0, note: 'Carne crua recolhida dos alces; vai para o açougue.' },
+  { id: 'roastBoar', name: 'Javali Assado', art: 'roast-boar', icon: 'roast-boar-v01.png', meat: true, mood: 2, feeds: 2, note: 'Carne de javali assada no açougue.' },
+  { id: 'garlicBoar', name: 'Javali ao Alho', art: 'garlic-boar', icon: 'garlic-boar-v01.png', meat: true, mood: 3, feeds: 4, note: 'Javali assado com alho no açougue.' },
+  { id: 'roastElk', name: 'Alce Assado', art: 'roast-elk', icon: 'roast-elk-v01.png', meat: true, mood: 2, feeds: 2, note: 'Carne de alce assada no açougue.' },
+  { id: 'elkStew', name: 'Ensopado de Alce', art: 'elk-stew', icon: 'elk-stew-v01.png', meat: true, mood: 3, feeds: 4, note: 'Ensopado de alce com leite e batatas, feito no açougue.' },
+  { id: 'potato', name: 'Batatas', art: 'farm-vegetables', icon: 'potato-v01.png', mood: 1, feeds: 2, note: 'Colheita da Fazenda de Hortaliças; também ingrediente do Ensopado de Alce.' },
+  { id: 'carrot', name: 'Cenouras', art: 'farm-vegetables', icon: 'carrot-v01.png', mood: 1, feeds: 1, note: 'Colheita da Fazenda de Hortaliças.' },
+  { id: 'tomato', name: 'Tomates', art: 'farm-vegetables', icon: 'tomato-v01.png', mood: 1, feeds: 1, note: 'Colheita da Fazenda de Hortaliças.' },
   { id: 'fish', name: 'Truta', art: 'fish', meat: true, mood: 2, feeds: 2, note: 'Alimento direto da pesca; vale 2× e não passa pelo açougue.' },
 ];
+const foodIcon = food => food.icon || `${food.art}-v01.webp`;
 const foodFeeds = id => FOOD_TYPES.find(food => food.id === id)?.feeds ?? 1;
 const RATIONS = [
   { label: 'Nenhuma', mult: 0, mood: -20 }, { label: 'Meia', mult: 0.5, mood: -8 }, { label: 'Normal', mult: 1, mood: 0 },
@@ -4313,7 +4355,7 @@ function applyWeeklyMood() {
   updateHud();
   if (state.tab === 'food') renderPanel();
 }
-const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, pork: 0, chicken: 0, beef: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, fish: 0 });
+const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, pork: 0, chicken: 0, beef: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, boarMeat: 0, elkMeat: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, potato: 0, carrot: 0, tomato: 0, fish: 0 });
 // O casarão guarda 500 unidades. Cada Depósito de Provisões construído soma 30, e amplia para 45, 70 e 100.
 // Guardam comida, armas e itens; madeira e ouro ficam fora.
 const MANOR_STORAGE = 500;
@@ -4560,14 +4602,14 @@ function fishingRoutine(actor, spot) {
 function hunterRoutine(actor) {
   const rawMeat = ['boarMeat', 'elkMeat'];
   if (actor.carrying && rawMeat.includes(actor.carrying.food)) {
-    if ((actor.mapId || 'city') !== 'city') { actor.task = 'Voltando com carne das Wilds'; travelToMap(actor, 'city', 2); return; }
+    if ((actor.mapId || 'city') !== 'city') { actor.task = 'Voltando com carne das Wilds'; travelToMap(actor, 'city', WILDLIFE_MAP_SET); return; }
     const store = nearestStorage({ x: 42, y: 39 });
     if (isAt(actor, store)) { deliverLoad(actor); actor.task = 'Entregou a caça no depósito'; return; }
     actor.task = 'Levando a caça ao depósito'; walkTo(actor, store); return;
   }
-  if ((actor.mapId || 'city') !== 'wilds') { actor.task = 'Indo caçar nas Wilds'; travelToMap(actor, 'wilds', 2); return; }
-  actor.mapSet = 2;
-  const pile = (state.wildMeatPiles || []).filter(item => item.qty > 0 && (item.mapSet || 2) === 2).sort((a, b) => distanceTo(actor, a) - distanceTo(actor, b))[0];
+  if ((actor.mapId || 'city') !== 'wilds' || (actor.mapSet || 1) !== WILDLIFE_MAP_SET) { actor.task = 'Indo caçar nas Wilds'; travelToMap(actor, 'wilds', WILDLIFE_MAP_SET); return; }
+  actor.mapSet = WILDLIFE_MAP_SET;
+  const pile = (state.wildMeatPiles || []).filter(item => item.qty > 0 && (item.mapSet || WILDLIFE_MAP_SET) === WILDLIFE_MAP_SET).sort((a, b) => distanceTo(actor, a) - distanceTo(actor, b))[0];
   if (pile) {
     if (distanceTo(actor, pile) > 1.3) { actor.task = `Buscando ${foodName(pile.food)}`; walkTo(actor, pile); return; }
     const qty = Math.min(foodLoad(actor), pile.qty);
@@ -4576,9 +4618,9 @@ function hunterRoutine(actor) {
     if (pile.qty <= 0) state.wildMeatPiles = state.wildMeatPiles.filter(item => item !== pile);
     renderLairs();
     gainSkill(actor, 'hunting', 0.2); actor.task = `Recolheu ${format(qty)} de ${foodName(actor.carrying.food)}`;
-    travelToMap(actor, 'city', 2); return;
+    travelToMap(actor, 'city', WILDLIFE_MAP_SET); return;
   }
-  const animal = (state.bandits || []).filter(item => item.alive && item.className === 'Wildlife' && item.mapSet === 2).sort((a, b) => distanceTo(actor, a) - distanceTo(actor, b))[0];
+  const animal = (state.bandits || []).filter(item => item.alive && item.className === 'Wildlife' && (item.mapSet || WILDLIFE_MAP_SET) === WILDLIFE_MAP_SET).sort((a, b) => distanceTo(actor, a) - distanceTo(actor, b))[0];
   if (animal) { actor.task = `Caçando ${animal.name}`; return; }
   actor.task = 'Procurando caça nas Wilds';
   actor.wait = 2 + Math.random() * 2;
@@ -4885,7 +4927,7 @@ function blacksmithRecipeBoxHTML(building) {
 function butcherRecipeBoxHTML(butcher) {
   const current = butcherActiveRecipe(butcher).id;
   return `<section class="inspector-section" aria-label="Receita do açougue"><h4>Produção</h4>
-    <div class="farm-type-grid compact">${BUTCHER_RECIPES.map(recipe => `<button class="farm-type${current === recipe.id ? ' selected' : ''}" data-butcher-recipe="${recipe.id}" aria-pressed="${current === recipe.id}" title="${recipe.needs.map(id => foodName(id)).join(' + ')} → alimenta ${recipe.feeds}×"><img src="public/art/${recipe.art}-v01.webp" alt=""><b>${recipe.name}</b><small>${recipe.feeds}× alimento</small></button>`).join('')}</div></section>`;
+    <div class="farm-type-grid compact">${BUTCHER_RECIPES.map(recipe => `<button class="farm-type${current === recipe.id ? ' selected' : ''}" data-butcher-recipe="${recipe.id}" aria-pressed="${current === recipe.id}" title="${recipe.needs.map(id => foodName(id)).join(' + ')} → alimenta ${recipe.feeds}×"><img src="public/art/${recipe.icon || `${recipe.art}-v01.webp`}" alt=""><b>${recipe.name}</b><small>${recipe.feeds}× alimento</small></button>`).join('')}</div></section>`;
 }
 function upgradeProducer(site) {
   const building = state.buildings.find(item => item.site === site && PRODUCER_TYPES.includes(item.type) && isDone(item));
@@ -5399,7 +5441,7 @@ function foodPanelHTML() {
       <p class="ration-effect">Efeito na felicidade do povo: a ração <b>${RATIONS[state.ration].label.toLowerCase()}</b> ${RATIONS[state.ration].mood > 0 ? 'deixa o povo mais feliz' : RATIONS[state.ration].mood < 0 ? 'deixa o povo mais triste' : 'não muda a felicidade'} (${RATIONS[state.ration].mood > 0 ? '+' : RATIONS[state.ration].mood < 0 ? '−' : ''}${Math.abs(RATIONS[state.ration].mood)}). Quanto mais comida, mais feliz o povo, e mais rápido o estoque acaba. Se a comida servida não der para todos, a fome tira até 40.</p></div>
     <div class="food-label">CARDÁPIO</div>
     <div class="food-list">${FOOD_TYPES.map(food => { const on = !!state.diet[food.id]; const stock = state.food[food.id] || 0; return `<div class="food-row${on ? ' on' : ''}${stock <= 0 ? ' empty' : ''}">
-        <img src="public/art/${food.art}-v01.webp" alt=""><span class="food-name"><b>${food.name}</b><small>${food.raw ? '' : `Alimenta ${food.feeds}×. `}${food.note}</small></span>
+        <img src="public/art/${foodIcon(food)}" alt=""><span class="food-name"><b>${food.name}</b><small>${food.raw ? '' : `Alimenta ${food.feeds}×. `}${food.note}</small></span>
         <span class="food-stock"><b>${format(stock)}</b><small>${food.id === 'flour' ? (milling ? `até +${rateNumber(milling)}/s` : 'sem moinho') : food.baked ? (bakingCapacity(food.id) ? `até +${rateNumber(bakingCapacity(food.id))}/s` : 'sem padaria assando') : prod[food.id] ? `+${rateNumber(prod[food.id])}/s${food.raw && milling ? ` · moinho −${rateNumber(milling)}/s` : ''}` : 'sem produção'}</small></span>
         ${food.raw ? '<button type="button" disabled>PRO MOINHO</button>' : `<button type="button" data-diet="${food.id}" class="${on ? 'on' : ''}">${on ? 'SERVINDO' : 'GUARDADO'}</button>`}</div>`; }).join('')}</div>
     <div class="mood-box"><div class="mood-head"><span>FELICIDADE</span><b>${Math.round(state.happiness)}</b><em>${happinessLabel(state.happiness)}</em><small>média da semana ${Math.round(moodWeekAverage())} · muda no dia ${nextMoodDay()}</small></div>
@@ -5432,36 +5474,89 @@ const SKELETON_TABLE = statTable(3, [44, 12, 0, 6, 2]);
 const WILDS_ROAD_EXIT = { 1: { x: 57.5, y: 1 }, 2: { x: 64, y: 1 } };
 const SKELETON_PATH = [18, 17, 16, 15, 14, 13, 12, 5, 4, 2, 1];
 const SKELETON_SPEED = 3.6; // monstros andam no passo dos outros personagens (ladrões: 3,6)
+const MONSTER_ROUTE_LANES = [0, -1, 1, -2, 2, -3, 3];
+function assignMonsterRouteLane(monster) {
+  const nearby = (state.bandits || []).filter(other => other !== monster && other.alive && other.className === 'Monster'
+    && (other.mapId || 'city') === (monster.mapId || 'city') && (other.mapSet || 1) === (monster.mapSet || 1));
+  const counts = new Map(MONSTER_ROUTE_LANES.map(lane => [lane, 0]));
+  nearby.forEach(other => { if (counts.has(other.routeLane)) counts.set(other.routeLane, counts.get(other.routeLane) + 1); });
+  monster.routeLane = MONSTER_ROUTE_LANES.find(lane => counts.get(lane) === 0)
+    ?? MONSTER_ROUTE_LANES.reduce((best, lane) => counts.get(lane) < counts.get(best) ? lane : best, MONSTER_ROUTE_LANES[0]);
+  monster.routeMap = `${monster.mapId || 'city'}:${monster.mapSet || 1}`;
+  return monster.routeLane;
+}
+function ensureMonsterRouteLane(monster) {
+  const mapKey = `${monster.mapId || 'city'}:${monster.mapSet || 1}`;
+  if (!Number.isFinite(monster.routeLane) || monster.routeMap !== mapKey) assignMonsterRouteLane(monster);
+  return monster.routeLane;
+}
+function monsterRoutePoint(path, index, lane) {
+  const node = PATH_NODES[path[index]];
+  const previous = PATH_NODES[path[Math.max(0, index - 1)]];
+  const next = PATH_NODES[path[Math.min(path.length - 1, index + 1)]];
+  let dx = next.x - previous.x, dy = next.y - previous.y;
+  const length = Math.hypot(dx, dy) || 1;
+  dx /= length; dy /= length;
+  const offset = lane * 1.15;
+  return { x: node.x - dy * offset, y: node.y + dx * offset };
+}
+function monsterWildsExit(monster) {
+  if (!monster.routeExit) {
+    const exit = WILDS_ROAD_EXIT[monster.mapSet === 2 ? 2 : 1];
+    const dx = exit.x - monster.x, dy = exit.y - monster.y, length = Math.hypot(dx, dy) || 1;
+    const offset = ensureMonsterRouteLane(monster) * 0.8;
+    monster.routeExit = { x: exit.x - dy / length * offset, y: exit.y + dx / length * offset };
+  }
+  return monster.routeExit;
+}
 const SKELETON_NAMES = ['do Coveiro Esquecido', 'Sem Lápide', 'da Cova Rasa', 'do Velório Barato', 'Que Ninguém Chorou', 'do Jazigo Vendido', 'da Vala Comum'];
 const isHostile = actor => actor.className === 'Bandit' || actor.className === 'Monster';
-function spawnSkeleton() {
+function spawnSkeleton(lair) {
+  if (!lair?.active || lair.kind !== 'cemetery' || lair.level !== 1) return;
   const day = Math.floor(state.minutes / 1440) + 1;
   const start = PATH_NODES[SKELETON_PATH[0]];
-  state.bandits.push({
-    id: `skeleton-${Date.now()}`, className: 'Monster', kind: 'skeleton', spriteId: 'skeleton-v02', mapId: 'city', name: `Caveira ${pick(SKELETON_NAMES)}`,
+  const monster = {
+    id: `skeleton-${Date.now()}`, className: 'Monster', kind: 'skeleton', spriteId: 'skeleton-v02', mapId: lair.mapId || 'city', mapSet: lair.mapSet || 1, lairId: lair.id, name: `Caveira ${pick(SKELETON_NAMES)}`,
     level: Math.min(HEIR_MAX_LEVEL, day), alive: true, x: start.x, y: Math.min(198, start.y + 2), leg: 0, mode: 'walk', bornAt: state.minutes,
-  });
-  say('O cemitério dos Wilds soltou uma caveira. Ela vem subindo a estrada velha, devagar. Dá tempo de pagar alguém pra ir atrás.', 'Uma caveira vem pela estrada velha.');
+  };
+  assignMonsterRouteLane(monster);
+  const laneStart = monsterRoutePoint(SKELETON_PATH, 0, monster.routeLane);
+  monster.x = laneStart.x; monster.y = Math.min(198, laneStart.y + 2);
+  state.bandits.push(monster);
+  say(`${lair.name} soltou uma caveira. Ela vem subindo a estrada velha, devagar. Dá tempo de pagar alguém pra ir atrás.`, 'Uma caveira vem pela estrada velha.');
   if (state.tab === 'heroes') renderPanel();
 }
 // Quanto falta (em minutos de jogo, na velocidade 1) para a caveira chegar à cidade.
 
 function spawnWolf(lair) {
+  if (!lair?.active || lair.kind !== 'wolf-den') return;
   const n = (state.bandits || []).filter(actor => actor.kind === 'wolf' && actor.lairId === lair.id).length + 1;
-  state.bandits.push({ id: `wolf-${lair.id}-${state.minutes}`, className: 'Monster', kind: 'wolf', spriteId: 'mordavian-wolf-v01', mapId: 'wilds', lairId: lair.id, name: `Lobo mordaviano ${n}`, level: 1, alive: true, x: lair.x, y: lair.y, mode: 'approach-road', bornAt: state.minutes });
+  const monster = { id: `wolf-${lair.id}-${state.minutes}`, className: 'Monster', kind: 'wolf', spriteId: 'mordavian-wolf-v01', mapId: lair.mapId || 'wilds', mapSet: lair.mapSet || 1, lairId: lair.id, name: `Lobo mordaviano ${n}`, level: lair.level || 1, alive: true, x: lair.x, y: lair.y, mode: 'approach-road', bornAt: state.minutes };
+  assignMonsterRouteLane(monster); monsterWildsExit(monster);
+  state.bandits.push(monster);
   say(`Um novo lobo mordaviano saiu de ${lair.name} e desce em direcao a Estrada Velha.`);
 }
 function spawnLairCreature(lair) {
-  const kind = lair.kind === 'goblin-den' ? 'goblin' : 'troll';
-  const spriteId = kind === 'goblin' ? 'mordavian-goblin-v01' : 'mordavian-troll-v01';
+  if (!lair?.active) return;
+  const creatureByDen = {
+    'goblin-den': { kind: 'goblin', spriteId: 'mordavian-goblin-v01', name: 'Goblin' },
+    'troll-den': { kind: 'troll', spriteId: 'mordavian-troll-v01', name: 'Troll' },
+  };
+  const creature = creatureByDen[lair.kind];
+  if (!creature) return;
+  const { kind, spriteId, name } = creature;
   const n = (state.bandits || []).filter(actor => actor.kind === kind && actor.lairId === lair.id).length + 1;
-  state.bandits.push({ id: `${kind}-${lair.id}-${state.minutes}`, className: 'Monster', kind, spriteId, mapId: 'wilds', lairId: lair.id, name: `${kind === 'goblin' ? 'Goblin' : 'Troll'} ${n}`, level: lair.level || 1, alive: true, x: lair.x, y: lair.y, mode: 'approach-road', bornAt: state.minutes });
+  const monster = { id: `${kind}-${lair.id}-${state.minutes}`, className: 'Monster', kind, spriteId, mapId: lair.mapId || 'wilds', mapSet: lair.mapSet || 1, lairId: lair.id, name: `${name} ${n}`, level: lair.level || 1, alive: true, x: lair.x, y: lair.y, mode: 'approach-road', bornAt: state.minutes };
+  assignMonsterRouteLane(monster); monsterWildsExit(monster);
+  state.bandits.push(monster);
   say(`Um ${kind === 'goblin' ? 'goblin' : 'troll'} saiu de ${lair.name} e avanca pela Estrada Velha.`);
 }
 function spawnZombie() {
   const lair = (state.lairs || []).find(item => item.active && item.kind === 'cemetery' && item.level === 2);
-  if (!lair) return;
-  state.bandits.push({ id: `zombie-${Date.now()}`, className: 'Monster', kind: 'zombie', spriteId: 'zombie-v01', mapId: lair.mapId || 'wilds', lairId: lair.id, name: 'Zumbi da cova funda', level: Math.min(HEIR_MAX_LEVEL, Math.floor(state.minutes / 1440) + 1), alive: true, x: lair.x, y: lair.y, mode: 'approach-road', leg: 0, bornAt: state.minutes });
+  if (!lair?.active || lair.kind !== 'cemetery' || lair.level !== 2) return;
+  const monster = { id: `zombie-${Date.now()}`, className: 'Monster', kind: 'zombie', spriteId: 'zombie-v01', mapId: lair.mapId || 'wilds', mapSet: lair.mapSet || 1, lairId: lair.id, name: 'Zumbi da cova funda', level: Math.min(HEIR_MAX_LEVEL, Math.floor(state.minutes / 1440) + 1), alive: true, x: lair.x, y: lair.y, mode: 'approach-road', leg: 0, bornAt: state.minutes };
+  assignMonsterRouteLane(monster); monsterWildsExit(monster);
+  state.bandits.push(monster);
   say('Uma cova funda se abriu. Um zumbi saiu do cemiterio level 2.');
 }
 function skeletonEta(monster) {
@@ -5471,6 +5566,7 @@ function skeletonEta(monster) {
   return dist / SKELETON_SPEED;
 }
 function monsterStep(monster, delta, reducedMotion) {
+  ensureMonsterRouteLane(monster);
   monster.cooldown = (monster.cooldown || 0) - delta;
   monster.calm = Math.max(0, (monster.calm || 0) - delta);
   const heroes = [...state.heroes, ...(window.Monarch?.allyTargets() || [])].filter(hero => hero.alive && (hero.mapId || 'city') === (monster.mapId || 'city') && distanceTo(monster, hero) < 6);
@@ -5486,13 +5582,18 @@ function monsterStep(monster, delta, reducedMotion) {
     // Nos Wilds a estrada sobe para a cidade: a saída é a ponta de cima, não a de baixo.
     const entry = { x: PATH_NODES[18].x, y: PATH_NODES[18].y };
     const inWilds = (monster.mapId || 'city') === 'wilds';
-    const exit = inWilds ? WILDS_ROAD_EXIT[monster.mapSet === 2 ? 2 : 1] : entry;
+    const exit = inWilds ? monsterWildsExit(monster) : entry;
     animateWalk(monster, moveToward(monster, exit, SKELETON_SPEED * delta) > 0, delta, reducedMotion);
-    if (distanceTo(monster, exit) < 0.5) { monster.mapId = 'city'; monster.mode = 'walk'; monster.leg = 0; monster.x = entry.x; monster.y = entry.y; }
+    if (distanceTo(monster, exit) < 0.5) {
+      monster.mapId = 'city'; monster.mode = 'walk'; monster.leg = 0; monster.routeExit = null;
+      assignMonsterRouteLane(monster);
+      const start = monsterRoutePoint(SKELETON_PATH, 0, monster.routeLane);
+      monster.x = start.x; monster.y = start.y;
+    }
     return;
   }
   if (monster.mode === 'walk') {
-    const node = PATH_NODES[SKELETON_PATH[monster.leg || 0]];
+    const node = monsterRoutePoint(SKELETON_PATH, monster.leg || 0, monster.routeLane);
     animateWalk(monster, moveToward(monster, node, SKELETON_SPEED * delta) > 0, delta, reducedMotion);
     if (distanceTo(monster, node) < 0.5) {
       monster.leg = (monster.leg || 0) + 1;
@@ -5625,7 +5726,7 @@ function killActor(victim, killer) {
     const range = HUNT_MEAT_DROP[victim.kind] || [1, 2];
     const qty = range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1));
     state.wildMeatPiles = state.wildMeatPiles || [];
-    state.wildMeatPiles.push({ id: `wild-meat-${victim.kind}-${state.minutes}-${Math.floor(Math.random() * 9999)}`, food: WILDLIFE_MEAT[victim.kind], qty, mapId: 'wilds', mapSet: 2, x: victim.x, y: victim.y });
+    state.wildMeatPiles.push({ id: `wild-meat-${victim.kind}-${state.minutes}-${Math.floor(Math.random() * 9999)}`, food: WILDLIFE_MEAT[victim.kind], qty, mapId: 'wilds', mapSet: victim.mapSet || WILDLIFE_MAP_SET, x: victim.x, y: victim.y });
     if (killer?.className === 'Peasant') gainSkill(killer, 'hunting', 1.2);
     say(`${killer?.name || 'Um caçador'} abateu ${victim.name}. ${format(qty)} de ${foodName(WILDLIFE_MEAT[victim.kind])} ficou no chão para recolher.`);
     renderLairs();
@@ -5767,8 +5868,8 @@ function heroCombatStep(hero, delta, reducedMotion) {
 
 // Camponês: não caça ladrão, mas depois de apanhar revida quem estiver colado nele. Bate fraco.
 function peasantHuntStep(worker, delta, reducedMotion) {
-  if (worker.profession !== 'hunter' || (worker.mapId || 'city') !== 'wilds' || worker.mapSet !== 2) return false;
-  const animal = (state.bandits || []).filter(item => item.alive && item.className === 'Wildlife' && item.mapSet === 2)
+  if (worker.profession !== 'hunter' || (worker.mapId || 'city') !== 'wilds' || (worker.mapSet || 1) !== WILDLIFE_MAP_SET) return false;
+  const animal = (state.bandits || []).filter(item => item.alive && item.className === 'Wildlife' && (item.mapSet || WILDLIFE_MAP_SET) === WILDLIFE_MAP_SET)
     .sort((a, b) => distanceTo(worker, a) - distanceTo(worker, b))[0];
   if (!animal) return false;
   if (distanceTo(worker, animal) > MELEE_RANGE) {
@@ -5799,7 +5900,7 @@ function peasantDefenseStep(worker, delta, reducedMotion) {
 // Ladrão: revida heróis por perto, ataca camponês colado (espada), senão rouba e foge.
 function wildlifeStep(animal, delta, reducedMotion) {
   animal.cooldown = (animal.cooldown || 0) - delta;
-  const nearby = [...state.heroes, ...state.workers].filter(actor => actor.alive && (actor.mapId || 'city') === 'wilds' && (actor.mapSet || 1) === 2 && distanceTo(animal, actor) < (actor.className === 'Peasant' && actor.profession !== 'hunter' ? 2.5 : 6));
+  const nearby = [...state.heroes, ...state.workers].filter(actor => actor.alive && (actor.mapId || 'city') === 'wilds' && (actor.mapSet || 1) === (animal.mapSet || WILDLIFE_MAP_SET) && distanceTo(animal, actor) < (actor.className === 'Peasant' && actor.profession !== 'hunter' ? 2.5 : 6));
   const foe = nearby.sort((a, b) => distanceTo(animal, a) - distanceTo(animal, b))[0];
   if (foe) {
     if (distanceTo(animal, foe) > MELEE_RANGE) { animateWalk(animal, moveToward(animal, foe, 3.2 * delta) > 0, delta, reducedMotion); return; }
@@ -5908,7 +6009,7 @@ function spawnWildlife() {
     const kind = Math.random() < 0.58 ? 'boar' : 'elk';
     const base = pick(locations);
     const stats = WILDLIFE_STATS[kind];
-    state.bandits.push({ id: `wildlife-${kind}-${state.minutes}-${Math.floor(Math.random() * 99999)}`, className: 'Wildlife', kind, spriteId: WILDLIFE_ART[kind], mapId: 'wilds', mapSet: 2, name: `${WILDLIFE_NAMES[kind]} ${i + 1}`, level: 1, fixedStats: stats, hp: stats.hp, alive: true, x: base.x + Math.random() * 4 - 2, y: base.y + Math.random() * 5 - 2, action: 'idle', frame: Math.floor(Math.random() * 4), idleClock: Math.random() * 2, wait: 1 + Math.random() * 4, facing: 'front', side: 'right' });
+    state.bandits.push({ id: `wildlife-${kind}-${state.minutes}-${Math.floor(Math.random() * 99999)}`, className: 'Wildlife', kind, spriteId: WILDLIFE_ART[kind], mapId: 'wilds', mapSet: WILDLIFE_MAP_SET, name: `${WILDLIFE_NAMES[kind]} ${i + 1}`, level: 1, fixedStats: stats, hp: stats.hp, alive: true, x: base.x + Math.random() * 4 - 2, y: base.y + Math.random() * 5 - 2, action: 'idle', frame: Math.floor(Math.random() * 4), idleClock: Math.random() * 2, wait: 1 + Math.random() * 4, facing: 'front', side: 'right' });
   }
   if (count > 0) say(`${count} ${count === 1 ? 'animal apareceu' : 'animais apareceram'} nas Wilds: javalis e alces podem ser caçados.`);
 }
@@ -6114,7 +6215,8 @@ function combatTick(minutesPassed) {
   const night = Math.floor(state.minutes / 1440);
   if (state.wildlifeSpawnDay == null) state.wildlifeSpawnDay = night;
   if (night > state.wildlifeSpawnDay) { state.wildlifeSpawnDay = night; spawnWildlife(); }
-  if (state.minutes % 1440 >= 1320 && state.lastSkeletonDay !== night && (state.lairs || []).some(lair => lair.active && lair.kind === 'cemetery' && lair.level === 1)) { state.lastSkeletonDay = night; spawnSkeleton(); }
+  const firstLevelCemetery = (state.lairs || []).find(lair => lair.active && lair.kind === 'cemetery' && lair.level === 1);
+  if (state.minutes % 1440 >= 1320 && state.lastSkeletonDay !== night && firstLevelCemetery) { state.lastSkeletonDay = night; spawnSkeleton(firstLevelCemetery); }
   // Covis ativos soltam um bicho a cada 12 horas de jogo (12 minutos reais na velocidade 1).
   // Saves antigos tinham o próximo marcado para dias depois: puxa para no máximo 12 horas.
   (state.lairs || []).filter(lair => lair.active && ['wolf-den', 'goblin-den', 'troll-den'].includes(lair.kind)).forEach(lair => {
@@ -6160,11 +6262,12 @@ function hydrateState(data) {
   const defaults = newGameState();
   const loaded = Object.assign(defaults, data);
   const savedAttributes = data.heirAttributes && typeof data.heirAttributes === 'object' ? data.heirAttributes : {};
+  const returnedMpPoints = Math.max(0, Math.floor(Number(savedAttributes.MP) || 0));
   loaded.heirAttributes = Object.fromEntries(HEIR_STATS.map(stat => [stat.key, Math.max(0, Math.floor(Number(savedAttributes[stat.key]) || 0))]));
   const spentAttributes = Object.values(loaded.heirAttributes).reduce((sum, value) => sum + value, 0);
   const earnedAttributes = Math.max(0, (Math.max(1, Number(data.heirLevel) || 1) - 1) * 6);
   loaded.heirAttributePoints = Number.isFinite(data.heirAttributePoints)
-    ? Math.max(0, Math.floor(data.heirAttributePoints))
+    ? Math.max(0, Math.floor(data.heirAttributePoints)) + returnedMpPoints
     : Math.max(0, earnedAttributes - spentAttributes);
   loaded.metals = { ...defaults.metals, ...(data.metals || {}) };
   loaded.metals.steel = (loaded.metals.steel || 0) + (loaded.metals.steelScrap || 0);
@@ -6179,7 +6282,10 @@ function hydrateState(data) {
   loaded.quarryMaterials = { ...defaults.quarryMaterials, ...(data.quarryMaterials || {}) };
   loaded.mapSet = data.mapSet === 2 ? 2 : 1;
   const defaultLairs = defaults.lairs;
-  loaded.lairs = defaultLairs.map(base => ({ ...base, mapSet: 1, ...(Array.isArray(data.lairs) ? data.lairs.find(lair => lair.id === base.id) : null) }));
+  loaded.lairs = defaultLairs.map(base => ({
+    ...base, mapSet: 1, ...(Array.isArray(data.lairs) ? data.lairs.find(lair => lair.id === base.id) : null),
+    id: base.id, name: base.name, kind: base.kind, level: base.level, art: base.art, mapId: base.mapId, x: base.x, y: base.y,
+  }));
   ['goblin-den-l1', 'troll-den-l1'].forEach(id => { const lair = loaded.lairs.find(item => item.id === id); if (lair && !lair.destroyed) lair.active = true; });
   loaded.remains = { ...emptyRemains(), ...(data.remains || {}) };
   if (!Array.isArray(loaded.remainsPiles)) loaded.remainsPiles = [];
@@ -6211,7 +6317,13 @@ function hydrateState(data) {
     if (!Number.isFinite(lair.nextSpawnAt)) lair.nextSpawnAt = loaded.minutes + 2880;
   });
   if (data.nextRaidAt == null) loaded.nextRaidAt = loaded.minutes + RAID_EVERY;
-  loaded.bandits.forEach(bandit => { bandit.route = []; bandit.finalPoint = null; });
+  loaded.bandits.forEach(bandit => {
+    bandit.route = []; bandit.finalPoint = null;
+    if (isWildlife(bandit)) { bandit.mapId = 'wilds'; bandit.mapSet = WILDLIFE_MAP_SET; }
+  });
+  loaded.wildMeatPiles.forEach(pile => {
+    if ((pile.mapId || 'wilds') === 'wilds') pile.mapSet = WILDLIFE_MAP_SET;
+  });
   if (loaded.taxPercent == null) loaded.taxPercent = 10;
   if (loaded.stone == null) loaded.stone = 0;
   if (!Number.isFinite(loaded.marble)) loaded.marble = 0;
@@ -6742,10 +6854,10 @@ const HOWTO = [
     ${howTable(['Atributo', 'Base no nível 1', 'Efeito por ponto distribuído'], HEIR_STATS.map(stat => [`${stat.name} (${stat.key})`, stat.base, stat.effect]))}
     <h3>Magia</h3>
     <p>O herdeiro não aparece no mapa. Abra o botão <b>✦ MAGIAS</b> no canto do mapa, escolha a magia e clique no alvo. Esc ou botão direito cancela.</p>
-    ${howFormula(`MP máximo sugerido = MP + (INT + WIS) ÷ 2 − reserva das auras ligadas; cada ponto em MP acrescenta 2 ao atributo MP<br>Recuperação = (WIS × 0,10 + INT × 0,04) × 0,5 por segundo (metade em combate)<br>Potência das auras = efeito-base × (1 + CHA × 0,005)<br>Dano das magias = base + crescimento por nível + (% de MAG da magia × MAG)`)}
+    ${howFormula(`MP máximo = 30 + 6 × (nível − 1) + (CHA + INT + WIS) ÷ 2 − reserva das auras ligadas (inclui bônus de equipamento)<br>Recuperação = (WIS × 0,10 + INT × 0,04) × 0,5 por segundo (metade em combate)<br>Potência das auras = efeito-base × (1 + CHA × 0,005)<br>Dano das magias = base + crescimento por nível + (% de MAG da magia × MAG)`)}
     <p>Auras ao mesmo tempo: 1 no nível 2, 2 no nível 12 e 3 no nível 20. São 30 magias do Monarca (ordens, auras, editos, decretos e invocações) e 30 magias de campo, uma nova por nível.</p>
     ${howFormula(`Duração de uma magia do Monarca = 60 s × (1 + ${hn(STAT_GROWTH)} × (nível do herdeiro − nível em que a magia abre))<br>Vale para todo efeito com tempo: ordens, escudos, zonas, lentidão, silêncio, enraizar, atordoar, provocar, invocações. Recargas não mudam.`)}
-    ${howFormula(`Valor de uma magia de campo = base + por nível × (nível do herdeiro − nível da magia) + % da Magia do herdeiro<br>Dano de magia = valor² / (valor + metade da Defesa do alvo)`)}
+    ${howFormula(`Valor de dano de uma magia de campo = base + por nível × (nível do herdeiro − nível da magia) + % de MAG do herdeiro<br>Dano causado = valor² / (valor + metade da Defesa do alvo)`)}
     ${field.length ? howTable(['Nível', 'Magia de campo', 'MP', 'Recarga'], field.map(spell => [spell.unlockLevel, spell.name, spell.manaCost, `${spell.cooldownSeconds} s`])) : ''}`;
   } },
 ];
@@ -6886,7 +6998,7 @@ const SCREENS = {
         <div class="sheet-level-head"><b>Nível ${state.heirLevel}</b><span>de ${HEIR_MAX_LEVEL}</span><small>${state.heirLevel >= HEIR_MAX_LEVEL ? 'Nível máximo. O tédio também.' : `${Math.floor(state.heirXp)} / ${xpToNext(state.heirLevel)} XP`}</small></div>
         <div class="xp-bar"><i style="width:${state.heirLevel >= HEIR_MAX_LEVEL ? 100 : Math.round(state.heirXp / xpToNext(state.heirLevel) * 100)}%"></i></div>
       </div>
-      ${heirAttributesHTML(state.heirLevel)}
+      ${heirAttributesHTML()}
       ${window.Monarch ? Monarch.sheetHTML() : ''}
       <dl class="sheet-facts">
         <div><dt>Idade</dt><dd>${heirAge(heir)} anos</dd></div>

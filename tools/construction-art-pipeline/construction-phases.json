@@ -9,12 +9,28 @@
     "farm": [
       "farm-garlic",
       "farm-wheat",
+      "farm-wheat-v02",
       "farm-bacon",
       "farm-eggs",
-      "farm-milk"
+      "farm-milk",
+      "farm-garlic-l2",
+      "farm-garlic-l3",
+      "farm-wheat-v02-l2",
+      "farm-wheat-v02-l3",
+      "farm-bacon-l2",
+      "farm-bacon-l3",
+      "farm-eggs-l2",
+      "farm-eggs-l3",
+      "farm-milk-l2",
+      "farm-milk-l3",
+      "farm-vegetables",
+      "farm-vegetables-l2",
+      "farm-vegetables-l3"
     ],
     "mill": [
-      "mill-body"
+      "mill-body",
+      "mill-body-l2",
+      "mill-body-l3"
     ],
     "hut": [
       "hut",
@@ -55,6 +71,24 @@
     ],
     "armory": [
       "armory"
+    ],
+    "bakery": [
+      "bakery",
+      "bakery-l2",
+      "bakery-l3"
+    ],
+    "emberLab": [
+      "ember-lab",
+      "ember-lab-l2",
+      "ember-lab-l3"
+    ],
+    "butcher": [
+      "butcher",
+      "butcher-l2"
+    ],
+    "blacksmith": [
+      "blacksmith",
+      "blacksmith-l2"
     ]
   },
   "constructionProfiles": {
@@ -77,7 +111,28 @@
     "tower": "Torre alta de magos, corpo de pedra afunilado em andares e pináculo cônico.",
     "conjurer": "Casa de conjuradores com telhado alto e anexo mágico arredondado.",
     "healer": "Guilda ampla de curandeiros, frontão central e ala lateral.",
-    "armory": "Arsenal de forja, fachada em arco e anexo aberto de ferraria no lado direito."
+    "armory": "Arsenal de forja, fachada em arco e anexo aberto de ferraria no lado direito.",
+    "farm-wheat-v02": "Casa de fazenda original com canteiro de trigo dourado, feixes e depósito de grãos; sem alho pendurado.",
+    "farm-wheat-v02-l2": "A mesma casa de fazenda, com pequena extensão de armazenamento e debulha e trigo dourado.",
+    "farm-wheat-v02-l3": "A mesma casa de fazenda, com celeiro de debulha ampliado e campo de trigo dourado.",
+    "farm-garlic-l2": "A mesma casa de alho com ampliação do varal de alho e área de secagem.",
+    "farm-garlic-l3": "A mesma casa de alho com ampliação do armazenamento e secagem de alho.",
+    "farm-bacon-l2": "A mesma fazenda de suínos com curral e abrigo ampliados.",
+    "farm-bacon-l3": "A mesma fazenda de suínos com área de criação ampliada.",
+    "farm-eggs-l2": "O mesmo galinheiro com mais ninhos e espaço para galinhas.",
+    "farm-eggs-l3": "O mesmo galinheiro com extensão maior e mais ninhos.",
+    "farm-milk-l2": "O mesmo estábulo leiteiro com baia ampliada.",
+    "farm-milk-l3": "O mesmo estábulo leiteiro com ala de gado ampliada.",
+    "mill-body-l2": "A mesma torre de moinho com anexo lateral e mecanismo ampliado; pás separadas.",
+    "mill-body-l3": "A mesma torre de moinho com extensão e mecanismo de moagem ampliados; pás separadas.",
+    "bakery-l2": "A mesma padaria com o primeiro forno lateral ampliado.",
+    "bakery-l3": "A mesma padaria com área de forno e balcão ampliados.",
+    "ember-lab-l2": "O mesmo laboratório com a ala de refino inicial.",
+    "ember-lab-l3": "O mesmo laboratório com ala de refino ampliada e retortas.",
+    "butcher-l2": "O mesmo açougue com extensão funcional de armazenamento.",
+    "farm-vegetables": "Farmhouse de pedra e madeira com abrigo de produção e canteiros de batatas, cenouras e tomates.",
+    "farm-vegetables-l2": "A mesma fazenda de hortaliças com abrigo ampliado e um canteiro adicional.",
+    "farm-vegetables-l3": "A mesma fazenda de hortaliças com extensão de estufa e canteiros ampliados."
   },
   "assets": {
     "farm-garlic": {
@@ -619,6 +674,657 @@
           ]
         }
       }
+    },
+    "farm-garlic-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-garlic-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-garlic-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-garlic-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-garlic-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-garlic-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-garlic-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-garlic-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-wheat-v02": {
+      "source": "buildings-photoreal-v03-runtime/farm-wheat-v02.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-wheat-v02-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-wheat-v02-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-wheat-v02-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-wheat-v02-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-bacon-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-bacon-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-bacon-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-bacon-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-bacon-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-bacon-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-bacon-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-bacon-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-eggs-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-eggs-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-eggs-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-eggs-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-eggs-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-eggs-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-eggs-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-eggs-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-milk-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-milk-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-milk-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-milk-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-milk-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-milk-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-milk-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-milk-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "mill-body-l2": {
+      "source": "buildings-photoreal-v03-runtime/mill-body-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/mill-body-l2-early.webp",
+          "size": [
+            1105,
+            1424
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/mill-body-l2-mid.webp",
+          "size": [
+            1105,
+            1424
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "mill-body-l3": {
+      "source": "buildings-photoreal-v03-runtime/mill-body-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/mill-body-l3-early.webp",
+          "size": [
+            1105,
+            1424
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/mill-body-l3-mid.webp",
+          "size": [
+            1105,
+            1424
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "bakery-l2": {
+      "source": "buildings-photoreal-v03-runtime/bakery-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/bakery-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/bakery-l2-mid.webp",
+          "size": [
+            1200,
+            800
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "bakery-l3": {
+      "source": "buildings-photoreal-v03-runtime/bakery-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/bakery-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/bakery-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "ember-lab-l2": {
+      "source": "buildings-photoreal-v03-runtime/ember-lab-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/ember-lab-l2-early.webp",
+          "size": [
+            1200,
+            1003
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/ember-lab-l2-mid.webp",
+          "size": [
+            1200,
+            1003
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "ember-lab-l3": {
+      "source": "buildings-photoreal-v03-runtime/ember-lab-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/ember-lab-l3-early.webp",
+          "size": [
+            1200,
+            1003
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/ember-lab-l3-mid.webp",
+          "size": [
+            1200,
+            1003
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "butcher-l2": {
+      "source": "buildings-photoreal-v03-runtime/butcher-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/butcher-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/butcher-l2-mid.webp",
+          "size": [
+            1200,
+            800
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "blacksmith-l2": {
+      "source": "buildings-photoreal-v03-runtime/blacksmith-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/blacksmith-l2-early.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/blacksmith-l2-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-vegetables": {
+      "source": "buildings-photoreal-v03-runtime/farm-vegetables.webp",
+      "phases": {
+        "early": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-vegetables-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-vegetables-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-vegetables-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-vegetables-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
     }
+  },
+  "upgradeLevels": {
+    "farm": {
+      "garlic": [
+        "farm-garlic",
+        "farm-garlic-l2",
+        "farm-garlic-l3"
+      ],
+      "wheat": [
+        "farm-wheat-v02",
+        "farm-wheat-v02-l2",
+        "farm-wheat-v02-l3"
+      ],
+      "bacon": [
+        "farm-bacon",
+        "farm-bacon-l2",
+        "farm-bacon-l3"
+      ],
+      "eggs": [
+        "farm-eggs",
+        "farm-eggs-l2",
+        "farm-eggs-l3"
+      ],
+      "milk": [
+        "farm-milk",
+        "farm-milk-l2",
+        "farm-milk-l3"
+      ],
+      "vegetables": [
+        "farm-vegetables",
+        "farm-vegetables-l2",
+        "farm-vegetables-l3"
+      ]
+    },
+    "mill": [
+      "mill-body",
+      "mill-body-l2",
+      "mill-body-l3"
+    ],
+    "bakery": [
+      "bakery",
+      "bakery-l2",
+      "bakery-l3"
+    ],
+    "emberLab": [
+      "ember-lab",
+      "ember-lab-l2",
+      "ember-lab-l3"
+    ],
+    "butcher": [
+      "butcher",
+      "butcher-l2"
+    ],
+    "blacksmith": [
+      "blacksmith",
+      "blacksmith-l2"
+    ]
   }
 }

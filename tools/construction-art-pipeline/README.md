@@ -42,4 +42,4 @@ Uma melhoria também passa por exatamente 60 segundos de trabalho no relógio do
 
 ## Manifesto
 
-`construction-phases.json` lista as 20 variantes de arte atuais, os dois arquivos de obra de cada uma e a relação entre os 15 tipos de construção e suas artes. Use-o para nomear e verificar novas entradas.
+`construction-phases.json` lista as fases de construção inicial e os sprites intermediários de melhoria, com suas artes finais e proporções. A chave `upgradeLevels` registra, por construção e produto, a sequência de níveis que o jogo usa. Use-o para nomear e verificar novas entradas. As artes antigas que foram substituídas permanecem no manifesto como histórico, mas não devem ser registradas como arte ativa no jogo.

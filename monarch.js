@@ -99,8 +99,8 @@ const Monarch = (() => {
   }
   const auraOn = key => !!state.monarch?.auras.includes(key) && isUnlocked(byKey[key]);
   const auraMult = () => (rt.majesty > 0 ? 2 : 1);
-  // Sugestão aplicada: MP recebe metade da soma de INT e WIS, além do atributo MP.
-  const maxMp = () => statTotal('MP') + (statTotal('INT') + statTotal('WIS')) / 2;
+  // MP cresce com o nível e recebe metade da soma de CHA, INT e WIS; equipamento pode somar MP direto.
+  const maxMp = () => 30 + 6 * (level() - 1) + (statTotal('CHA') + statTotal('INT') + statTotal('WIS')) / 2 + (typeof monarchBonus === 'function' ? monarchBonus('MP') : 0);
   const reservedMp = () => (state.monarch?.auras || []).reduce((sum, key) => sum + (stats(byKey[key]).manaReservePercent || 0) / 100 * maxMp(), 0);
   const mpCap = () => Math.max(0, maxMp() - reservedMp());
   const mpBarPercent = (current, cap) => {
@@ -2169,7 +2169,8 @@ const Monarch = (() => {
     const cost = [st.manaCost ? (st.manaCost + ' MP') : '', st.manaReservePercent ? ('reserva ' + st.manaReservePercent + '% do MP') : ''].filter(Boolean).join(' · ') || 'sem custo';
     const reach = [st.castRange ? `alcance ${st.castRange} m` : 'sai do Monarca', st.auraRadius ? `raio ${st.auraRadius} m` : ''].filter(Boolean).join(' · ');
     const duration = spellDurationLine(spell);
-    return `${spell.name} (rank ${rank}/${spell.ranks.length})\n${spell.ranks[rank - 1].description}${duration ? `\n${duration}` : ''}\n${cost} · recarga ${st.cooldownSeconds} s · ${reach}`;
+    const auraBonus = spell.activation === 'alternavel' ? `\nPotência da aura: +${((auraPotency() - 1) * 100).toFixed(1).replace('.', ',')}% pela CHA` : '';
+    return `${spell.name} (rank ${rank}/${spell.ranks.length})\n${spell.ranks[rank - 1].description}${auraBonus}${duration ? `\n${duration}` : ''}\n${cost} · recarga ${st.cooldownSeconds} s · ${reach}`;
   };
   const DURATION_LABELS = {
     durationSeconds: 'efeito', slowSeconds: 'lentidão', rootSeconds: 'enraizamento', silenceSeconds: 'silêncio',
@@ -2247,7 +2248,8 @@ const Monarch = (() => {
       const rank = rankIndex(spell) + 1;
       const cost = [st.manaCost ? (st.manaCost + ' MP') : '', st.manaReservePercent ? ('reserva ' + st.manaReservePercent + '%') : ''].filter(Boolean).join(' · ');
       const duration = spellDurationLine(spell);
-      return `<li><span class="spell-glyph" style="--accent:${ACCENT[spell.type] || '#e9d08f'}">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>rank ${rank}/${spell.ranks.length}</small><p>${spell.ranks[rank - 1].description}</p>${duration ? `<small class="spell-duration">${duration}</small>` : ''}<small>${cost || 'sem custo'} · recarga ${st.cooldownSeconds} s${st.castRange ? ` · alcance ${st.castRange} m` : ''}${st.auraRadius ? ` · raio ${st.auraRadius} m` : ''}</small></div></li>`;
+      const auraBonus = spell.activation === 'alternavel' ? `<small>Potência da aura: +${((auraPotency() - 1) * 100).toFixed(1).replace('.', ',')}% pela CHA</small>` : '';
+      return `<li><span class="spell-glyph" style="--accent:${ACCENT[spell.type] || '#e9d08f'}">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>rank ${rank}/${spell.ranks.length}</small><p>${spell.ranks[rank - 1].description}</p>${auraBonus}${duration ? `<small class="spell-duration">${duration}</small>` : ''}<small>${cost || 'sem custo'} · recarga ${st.cooldownSeconds} s${st.castRange ? ` · alcance ${st.castRange} m` : ''}${st.auraRadius ? ` · raio ${st.auraRadius} m` : ''}</small></div></li>`;
     };
     return `<div class="sheet-section-label">MAGIAS DO MONARCA</div>
       <p class="sheet-spell-res">MP ${Math.floor(m.mp)} de ${Math.floor(mpCap())} · recupera ${mpRegen().toFixed(1).replace('.', ',')} MP/s (metade em combate) · ${auraSlots() ? `até ${auraSlots()} ${auraSlots() === 1 ? 'aura' : 'auras'} ao mesmo tempo` : 'nenhuma aura ainda'}</p>
@@ -2261,6 +2263,8 @@ const Monarch = (() => {
     rt.summons = []; rt.zones = []; rt.armies = []; rt.channel = null; rt.majesty = 0; rt.conquest = { stacks: 0, t: 0 };
     rt.targeting = null; rt.cache.clear(); rt.barKey = ''; rt.crushInside.clear(); token = null;
     rt.projs = []; rt.timers = []; rt.fzones = []; rt.lastMap = '';
+    const monarchState = ms();
+    monarchState.mp = Math.min(mpCap(), Math.max(0, Number(monarchState.mp) || 0));
     togglePanel(false);
     SpellFX.clear();
     if (state.monarch) { state.monarch.pending = null; state.monarch.walkTo = null; }

@@ -1,0 +1,32 @@
+{
+  "building_type_id": "farm",
+  "art_id": "farm-vegetables-l3",
+  "source_final_sprite": "public/art/buildings-photoreal-v03-runtime/farm-vegetables-l3.webp",
+  "construction_profile": "farm",
+  "outputs": [
+    {
+      "phase": "early",
+      "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-l3-early.webp",
+      "size": [
+        1536,
+        1024
+      ],
+      "alpha": [
+        0,
+        254
+      ]
+    },
+    {
+      "phase": "mid",
+      "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-l3-mid.webp",
+      "size": [
+        1536,
+        1024
+      ],
+      "alpha": [
+        0,
+        254
+      ]
+    }
+  ]
+}

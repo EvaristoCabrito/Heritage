@@ -12,8 +12,8 @@
   "resources": {
     "mana": {
       "name": "Mana (MP)",
-      "max": "MP do herdeiro: 30 + 6 × (nível − 1), menos a reserva das auras ligadas",
-      "regen": "1,5% do máximo por segundo com inimigos no mapa, 4% sem inimigos"
+      "max": "MP máximo: 30 + 6 × (nível − 1) + (CHA + INT + WIS) ÷ 2 + bônus de equipamento em MP, menos a reserva das auras",
+      "regen": "(WIS × 0,10 + INT × 0,04) × 0,5 por segundo, metade em combate"
     }
   },
   "auraSlotsByLevel": {
@@ -64,7 +64,7 @@
     "changes": "changes do rank substituem os campos de base e se acumulam com os ranks anteriores.",
     "effects": "effects do rank ativo substituem por completo os do rank anterior.",
     "perLevel": "Campos terminados em PerLevel são multiplicados pelo nível do personagem e somados ao valor Base correspondente.",
-    "magPercent": "Campos terminados em MagPercent somam essa porcentagem do atributo mag do Monarca.",
+    "magPercent": "Campos de dano terminados em MagPercent somam essa porcentagem do atributo MAG do Monarca.",
     "range": "castRange 0 = centrado no Monarca. auraRadius 0 = sem área (alvo único ou invocação).",
     "auras": "Auras são alternáveis: manaCost é pago ao ligar e manaReservePercent fica reservado enquanto ela estiver ativa. O número de auras ligadas ao mesmo tempo segue auraSlotsByLevel.",
     "sharedSlot": "Magias com auraSlotShared ocupam o slot da aura indicada e somam os efeitos dela.",
@@ -426,20 +426,18 @@
           "changes": {},
           "effects": {
             "shieldBase": 60,
-            "shieldPerLevel": 8,
-            "shieldMagPercent": 50
+            "shieldPerLevel": 8
           },
-          "description": "Aliados na aura recebem escudo de 60 + 8 × nível + 50% de mag. O escudo dura até ser destruído ou por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
+          "description": "Aliados na aura recebem escudo de 60 + 8 × nível. O escudo dura até ser destruído ou por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         },
         {
           "level": 12,
           "changes": {},
           "effects": {
             "shieldBase": 100,
-            "shieldPerLevel": 10,
-            "shieldMagPercent": 70
+            "shieldPerLevel": 10
           },
-          "description": "Escudo de 100 + 10 × nível + 70% de mag. Dura até ser destruído ou por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
+          "description": "Escudo de 100 + 10 × nível. Dura até ser destruído ou por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         },
         {
           "level": 19,
@@ -447,10 +445,9 @@
           "effects": {
             "shieldBase": 150,
             "shieldPerLevel": 12,
-            "shieldMagPercent": 90,
             "breakKnockbackMeters": 2
           },
-          "description": "Escudo de 150 + 12 × nível + 90% de mag. Ao quebrar, explode e repele inimigos 2 m. Dura até ser destruído ou por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
+          "description": "Escudo de 150 + 12 × nível. Ao quebrar, explode e repele inimigos 2 m. Dura até ser destruído ou por 60 s no nível de desbloqueio; a duração cresce com o nível do Monarca."
         },
         {
           "level": 25,
@@ -460,11 +457,10 @@
           "effects": {
             "shieldBase": 220,
             "shieldPerLevel": 15,
-            "shieldMagPercent": 110,
             "breakKnockbackMeters": 2,
             "expireHealPercent": 50
           },
-          "description": "Escudo de 220 + 15 × nível + 110% de mag. O que sobrar ao expirar o tempo exibido na ficha vira cura de 50% do valor. Recarga de 20 s."
+          "description": "Escudo de 220 + 15 × nível. O que sobrar ao expirar o tempo exibido na ficha vira cura de 50% do valor. Recarga de 20 s."
         }
       ]
     },
@@ -1425,7 +1421,7 @@
             "damagePerPassMagPercent": 50,
             "knockbackMeters": 2
           },
-          "description": "Uma legião de 8 espíritos varre uma faixa de 8 × 20 m três vezes em 6 s; cada passada causa 40 + 50% de mag de dano e empurra 2 m."
+          "description": "Uma legião de 8 espíritos varre uma faixa de 8 × 20 m três vezes em 6 s; cada passada causa 40 + 50% de MAG de dano e empurra 2 m."
         },
         {
           "level": 30,
@@ -2839,7 +2835,7 @@
   ],
   "fieldRules": {
     "about": "Magias de campo (ids 31 a 60): uma nova por nível, além das 30 do Monarca. O herdeiro não aparece no mapa; ele lança direto no campo. Escolha a magia no botão MAGIAS e clique no inimigo, no aliado ou no ponto do mapa.",
-    "scaling": "Valores que crescem: base + perLevel x (nível do herdeiro - nível da magia) + magPercent% da Magia do herdeiro.",
+    "scaling": "Dano que cresce: base + perLevel x (nível do herdeiro - nível da magia) + magPercent% do atributo MAG. Cura não recebe bônus de MAG.",
     "mana": "Gastam o mesmo MP das magias do Monarca.",
     "targets": {
       "inimigo": "clique num inimigo",

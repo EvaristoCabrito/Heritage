@@ -953,7 +953,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .attr-grid div { padding: 6px 4px; }
 .attr-grid dt, .attr-grid small { font-size: 10px; }
 .attr-grid dd { margin-top: 1px; font-size: 20px; }
-.heir-attrs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.heir-attrs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .sheet-facts { gap: 8px; margin: 0 0 8px; padding: 7px 10px; }
 .sheet-facts dt { font-size: 9px; }
 .sheet-facts dd { margin-top: 2px; font-size: 14px; }
@@ -1043,8 +1043,8 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .hud-stats .stat:has(#grain), .hud-stats .stat.mood { cursor: pointer; }
 .hud-stats .stat:has(#grain):hover, .hud-stats .stat.mood:hover { background: rgba(214,184,117,.08); }
 
-/* Atributos do monarca: cinco colunas, com o nome por extenso. */
-.attr-grid.heir-attrs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* Cinco atributos distribuíveis do Monarca. */
+.attr-grid.heir-attrs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .attr-grid.heir-attrs dt { color: var(--gold); font-size: 12px; font-weight: 700; letter-spacing: .1em; }
 .attr-grid.heir-attrs small { display: block; margin-top: 2px; color: #9d9583; font-size: 10px; }
 .attr-grid.heir-attrs dd i { display: block; color: var(--green); font: 600 10px 'Figtree', sans-serif; font-style: normal; }
@@ -1052,6 +1052,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .heir-stat-controls button { width: 27px; height: 25px; padding: 0; border: 1px solid rgba(206,186,137,.35); border-radius: 4px; color: #ead7aa; background: rgba(20,20,16,.9); font: 700 16px/1 'Figtree', sans-serif; cursor: pointer; }
 .heir-stat-controls button:hover:not(:disabled) { border-color: var(--gold); color: #fff0c2; }
 .heir-stat-controls button:disabled { opacity: .35; cursor: default; }
+@media (max-width: 760px) { .attr-grid.heir-attrs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 /* Loja do monarca no Arsenal: uma linha por slot, peça atual à esquerda, escolha e compra à direita. */
 .monarch-shop { display: grid; gap: 0; border-top: 1px solid var(--line); }
 .monarch-shop-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
