@@ -438,7 +438,7 @@ body { overflow: hidden; }
 .objective-actions { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 10px; }
 .objective-journal { margin-top: 10px; color: #e4d2a8; }
 .objective-journal summary { cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
-.objective-journal ol { display: grid; gap: 7px; max-height: 55vh; overflow-y: auto; margin: 9px 0 0; padding: 0; list-style: none; }
+.objective-journal ol { display: grid; gap: 7px; max-height: 220px; overflow-y: auto; margin: 9px 0 0; padding: 0; list-style: none; }
 .objective-journal-item { display: grid; gap: 3px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: rgba(13,18,14,.45); }
 .objective-journal-item.is-current { border-color: #bca16a; }
 .objective-journal-item span { color: #bca16a; font-size: 10px; text-transform: uppercase; }

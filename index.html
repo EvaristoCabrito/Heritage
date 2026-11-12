@@ -82,7 +82,7 @@
           <section class="objective-card">
             <div class="objective-head"><span class="eyebrow">OBJETIVO <span id="objective-step">1 de 3</span></span><b id="objective-title">Acumule 600 moedas</b></div>
             <div class="objective-progress"><div class="progress-track"><i id="objective-bar"></i></div><span class="progress-value" id="objective-text">240 / 600</span></div>
-            <button type="button" class="economy-open-btn" id="objective-open-btn">OBJETIVOS</button>
+            <details class="objective-journal"><summary>OBJETIVOS</summary><ol id="objective-list"></ol></details>
             <div class="objective-actions">
               <div class="tax-control" role="group" aria-label="Imposto"><small>IMPOSTO</small><button type="button" id="tax-down" aria-label="Baixar imposto">−</button><b id="tax-pct">10%</b><button type="button" id="tax-up" aria-label="Subir imposto">+</button><span id="tax-preview"></span></div>
               <button type="button" class="economy-open-btn" id="economy-open-btn">VER ECONOMIA</button>
@@ -113,13 +113,6 @@
       </main>
     </div>
 
-    <div class="inventory-layer" id="objective-layer" hidden>
-      <div class="inventory-backdrop" data-objective-close aria-hidden="true"></div>
-      <section class="inventory-dialog objective-dialog" role="dialog" aria-modal="true" aria-labelledby="objective-dialog-title">
-        <header class="inventory-head"><h2 id="objective-dialog-title">Objetivos</h2><button type="button" class="inventory-close" id="objective-close" aria-label="Fechar objetivos">×</button></header>
-        <div class="objective-journal"><ol id="objective-list"></ol></div>
-      </section>
-    </div>
     <div class="inventory-layer" id="inventory-layer" hidden>
       <div class="inventory-backdrop" data-inventory-close aria-hidden="true"></div>
       <section class="inventory-dialog" id="inventory-content" role="dialog" aria-modal="true" aria-label="Inventário do Casarão"></section>
