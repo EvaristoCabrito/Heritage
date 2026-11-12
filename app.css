@@ -1275,6 +1275,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .spell-list .spell-glyph { --accent: #e9d08f; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 6px; color: var(--accent); font-size: 16px; }
 .spell-list b { color: #f3e1c2; font: 15px 'Newsreader', Georgia, serif; }
 .spell-list small { color: #8f8a7a; font-size: 10.5px; }
+.spell-list .spell-duration { display: block; margin: 3px 0; color: #e0c27d; }
 .spell-list p { margin: 2px 0 3px; color: #d7cfbd; font-size: 12px; line-height: 1.35; }
 .spell-list.locked li { opacity: .55; }
 @media (max-width: 640px) {

@@ -53,7 +53,7 @@ const Monarch = (() => {
   const rankIndex = spell => { let index = -1; spell.ranks.forEach((rank, i) => { if (rank.level <= level()) index = i; }); return index; };
   // Durações crescem a cada nível, na regra do Ember: valor do nível em que a magia abre × (1 + 16% × níveis acima dele).
   // Vale para todo campo terminado em Seconds, menos recargas e intervalos.
-  const NOT_DURATION = new Set(['cooldownSeconds', 'tauntEverySeconds']);
+  const NOT_DURATION = new Set(['cooldownSeconds', 'perEnemyCooldownSeconds', 'tauntEverySeconds', 'stackWindowSeconds']);
   const durationGrowth = spell => 1 + (typeof STAT_GROWTH === 'number' ? STAT_GROWTH : 0.16) * Math.max(0, level() - spell.unlockLevel);
   function scaleDurations(values, spell) {
     const growth = durationGrowth(spell);
@@ -1397,7 +1397,7 @@ const Monarch = (() => {
     }
     const m = ms();
     const cap = mpCap(), max = maxMp();
-    panel.querySelector('.spell-panel-mp i').style.width = `${Math.round(m.mp / Math.max(1, max) * 100)}%`;
+    panel.querySelector('.spell-panel-mp i').style.width = `${Math.round(m.mp / Math.max(1, cap) * 100)}%`;
     panel.querySelector('.spell-panel-mp span').textContent = `MP ${Math.floor(m.mp)} / ${Math.floor(cap)}`;
     body.querySelectorAll('.spell-cast').forEach(button => {
       const k = button.dataset.spell;
@@ -2140,8 +2140,29 @@ const Monarch = (() => {
     const rank = rankIndex(spell) + 1;
     const cost = [st.manaCost ? (st.manaCost + ' MP') : '', st.manaReservePercent ? ('reserva ' + st.manaReservePercent + '% do MP') : ''].filter(Boolean).join(' · ') || 'sem custo';
     const reach = [st.castRange ? `alcance ${st.castRange} m` : 'sai do Monarca', st.auraRadius ? `raio ${st.auraRadius} m` : ''].filter(Boolean).join(' · ');
-    return `${spell.name} (rank ${rank}/${spell.ranks.length})\n${spell.ranks[rank - 1].description}\n${cost} · recarga ${st.cooldownSeconds} s · ${reach}`;
+    const duration = spellDurationLine(spell);
+    return `${spell.name} (rank ${rank}/${spell.ranks.length})\n${spell.ranks[rank - 1].description}${duration ? `\n${duration}` : ''}\n${cost} · recarga ${st.cooldownSeconds} s · ${reach}`;
   };
+  const DURATION_LABELS = {
+    durationSeconds: 'efeito', slowSeconds: 'lentidão', rootSeconds: 'enraizamento', silenceSeconds: 'silêncio',
+    stunSeconds: 'atordoamento', stunOnCollisionSeconds: 'atordoamento', knockdownSeconds: 'derrubada',
+    bossSlowSeconds: 'lentidão em chefes', damageImmunitySeconds: 'imunidade a dano', shieldSeconds: 'escudo',
+    tauntSeconds: 'provocação', unstoppableSeconds: 'irrefreável', stackDurationSeconds: 'acúmulos',
+    blockShieldsSeconds: 'bloqueio de escudos',
+  };
+  const NON_EFFECT_TIMERS = new Set(['cooldownSeconds', 'perEnemyCooldownSeconds', 'tauntEverySeconds', 'stackWindowSeconds']);
+  function spellDurationLine(spell) {
+    if (!spell.target?.endsWith('_aura')) return '';
+    const st = stats(spell), fx = effects(spell);
+    const times = Object.entries({ ...st, ...fx })
+      .filter(([key, value]) => key.endsWith('Seconds') && !NON_EFFECT_TIMERS.has(key) && typeof value === 'number' && value > 0)
+      .map(([key, value]) => `${DURATION_LABELS[key] || key.replace(/Seconds$/, '').replace(/([A-Z])/g, ' $1').toLowerCase()}: ${value} s`);
+    const sustained = spell.activation === 'alternavel' ? 'Aura ativa enquanto estiver ligada' : '';
+    const detail = [...new Set(times)];
+    if (!detail.length) return sustained;
+    const growth = Math.round((typeof STAT_GROWTH === 'number' ? STAT_GROWTH : 0.16) * 100);
+    return `${sustained ? `${sustained} · ` : ''}Duração no nível ${level()}: ${detail.join(' · ')} · cresce ${growth}% por nível após desbloqueio`;
+  }
   function renderBar(force) {
     if (!bar) return;
     if (!active()) { bar.hidden = true; return; }
@@ -2157,7 +2178,7 @@ const Monarch = (() => {
       bar.querySelectorAll('.spell-btn[data-spell]').forEach(button => { const spell = byKey[button.dataset.spell]; if (spell) button.title = spellTitle(spell); });
     }
     const cap = mpCap(), max = maxMp();
-    bar.querySelector('.res-mp i').style.width = `${Math.round(m.mp / Math.max(1, max) * 100)}%`;
+    bar.querySelector('.res-mp i').style.width = `${Math.round(m.mp / Math.max(1, cap) * 100)}%`;
     bar.querySelector('.res-mp em').style.width = `${Math.round(reservedMp() / Math.max(1, max) * 100)}%`;
     bar.querySelector('.res-mp span').textContent = `MP ${Math.floor(m.mp)}/${Math.floor(cap)}`;
     bar.querySelector('.aura-slots').textContent = auraSlots() ? `Auras ${slotsUsed()}/${auraSlots()}` : '';
@@ -2189,7 +2210,8 @@ const Monarch = (() => {
       const st = stats(spell);
       const rank = rankIndex(spell) + 1;
       const cost = [st.manaCost ? (st.manaCost + ' MP') : '', st.manaReservePercent ? ('reserva ' + st.manaReservePercent + '%') : ''].filter(Boolean).join(' · ');
-      return `<li><span class="spell-glyph" style="--accent:${ACCENT[spell.type] || '#e9d08f'}">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>rank ${rank}/${spell.ranks.length}</small><p>${spell.ranks[rank - 1].description}</p><small>${cost || 'sem custo'} · recarga ${st.cooldownSeconds} s${st.castRange ? ` · alcance ${st.castRange} m` : ''}${st.auraRadius ? ` · raio ${st.auraRadius} m` : ''}</small></div></li>`;
+      const duration = spellDurationLine(spell);
+      return `<li><span class="spell-glyph" style="--accent:${ACCENT[spell.type] || '#e9d08f'}">${GLYPHS[spell.key] || '✦'}</span><div><b>${spell.name}</b> <small>rank ${rank}/${spell.ranks.length}</small><p>${spell.ranks[rank - 1].description}</p>${duration ? `<small class="spell-duration">${duration}</small>` : ''}<small>${cost || 'sem custo'} · recarga ${st.cooldownSeconds} s${st.castRange ? ` · alcance ${st.castRange} m` : ''}${st.auraRadius ? ` · raio ${st.auraRadius} m` : ''}</small></div></li>`;
     };
     return `<div class="sheet-section-label">MAGIAS DO MONARCA</div>
       <p class="sheet-spell-res">MP ${Math.floor(m.mp)} de ${Math.floor(mpCap())} · recupera ${mpRegen().toFixed(1).replace('.', ',')} MP/s (metade em combate) · ${auraSlots() ? `até ${auraSlots()} ${auraSlots() === 1 ? 'aura' : 'auras'} ao mesmo tempo` : 'nenhuma aura ainda'}</p>

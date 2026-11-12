@@ -21,8 +21,8 @@ const BUILDINGS = [
   { id: 'healer', name: 'Guilda de Curandeiros', glyph: 'H', cost: 180, wood: 10, detail: 'Recruta Healers. Mantêm os heróis vivos. Por um tempo.', heroClass: 'Healer', gold: 0.25, grain: 0, people: 1 },
   { id: 'armory', name: 'Arsenal do Domínio', glyph: 'E', cost: 165, wood: 9, detail: 'Heróis e camponeses compram equipamento aqui com o próprio ouro. O ouro vem pro cofre.', gold: 0.15, grain: 0, people: 0 },
 ];
-// Pedra de construção acompanha a madeira nos prédios comuns; a pedreira é a exceção de início para permitir produzir a própria pedra.
-const buildingStoneCost = item => item.id === 'quarry' ? 0 : Math.ceil(item.wood / 2);
+// Toda construção consome pedra adicional, calculada a partir da madeira necessária.
+const buildingStoneCost = item => Math.ceil(item.wood / 2);
 BUILDINGS.find(building => building.id === 'lumber').detail += ' Pode ser construida em City ou Wilds.';
 BUILDINGS.find(building => building.id === 'quarry').detail += ' O prédio é o local de extração. City permite uma pedreira de baixa reserva; Wilds não tem limite.';
 BUILDINGS.find(building => building.id === 'mine').detail += ' Apenas em Wilds, no deposito de metais marcado.';
@@ -347,7 +347,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.15';
+const GAME_VERSION = 'Version 0.13.16';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -386,7 +386,7 @@ const WORKER_START_PURSE = 5;
 const HERO_START_PURSE = 15;
 function newGameState(heir = null) {
   return {
-  gold: 240, grain: 58, timber: 30, stone: 0, marble: 0, stoneDeposits: {}, quarryMaterials: { wallingKg: 0, lintels: [], dimensionBlocks: [], aggregateKg: 0, settsKg: 0, roofingSlateKg: 0, roofingSlatesKg: 0, millstones: [], quicklimeKg: 0, limePuttyKg: 0, mortarKg: 0, plasterKg: 0 }, metal: 0, charcoal: 0, metals: Object.fromEntries(METAL_STOCK.map(id => [id, 0])), craftedWeapons: [], oreLots: [], oreGrades: {}, mineralDeposits: {}, residues: {}, extractionTools: [
+  gold: 240, grain: 58, timber: 200, stone: 200, marble: 0, stoneDeposits: {}, quarryMaterials: { wallingKg: 0, lintels: [], dimensionBlocks: [], aggregateKg: 0, settsKg: 0, roofingSlateKg: 0, roofingSlatesKg: 0, millstones: [], quicklimeKg: 0, limePuttyKg: 0, mortarKg: 0, plasterKg: 0 }, metal: 0, charcoal: 0, metals: Object.fromEntries(METAL_STOCK.map(id => [id, 0])), craftedWeapons: [], oreLots: [], oreGrades: {}, mineralDeposits: {}, residues: {}, extractionTools: [
       { id: 'starter-iron-pick-1', type: 'mine', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-iron-pick-2', type: 'mine', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-1', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
@@ -993,8 +993,11 @@ function processQuarryOrder(pit, dt) {
   if (!deposit || !face) { pit.workStatus = 'Nenhuma frente de pedra'; return; }
   const order = QUARRY_ORDERS.find(item => item.id === pit.quarryOrder) || QUARRY_ORDERS[0];
   if ((pit.level || 0) < order.level) { pit.workStatus = 'Bancada inferior inacessível'; return; }
-  const crew = lumberCrew(pit).filter(worker => assignExtractionTool(worker, pit));
-  if (!crew.length) { pit.workStatus = lumberCrew(pit).length ? 'Sem ferramenta disponível' : 'Sem trabalhador disponível'; return; }
+  const crew = workingCrew(pit).filter(worker => assignExtractionTool(worker, pit));
+  if (!crew.length) {
+    pit.workStatus = workingCrew(pit).length ? 'Sem ferramenta disponível' : lumberCrew(pit).length ? 'Aguardando trabalhador no posto' : 'Sem trabalhador disponível';
+    return;
+  }
   const workMinutes = quarryCrewMinutes(crew, dt);
   if (order.id === 'marble') {
     if ((pit.level || 0) < 1) { pit.workStatus = 'Mármore requer pedreira nível 2'; return; }
@@ -1230,7 +1233,7 @@ function advanceMines(dt) {
     const seam = selectedSeam(pit);
     if (!seam || seam.remainingGrams <= 0) { pit.workStatus = 'Veio esgotado'; return; }
     if (pit.underConstruction) return;
-    if (!lumberCrew(pit).length) { pit.workStatus = 'Sem trabalhador disponível'; return; }
+    if (!workingCrew(pit).length) { pit.workStatus = lumberCrew(pit).length ? 'Aguardando trabalhador no posto' : 'Sem trabalhador disponível'; return; }
     if (!pitRate(pit)) { pit.workStatus = 'Sem ferramenta disponível'; return; }
     const cap = Math.max(0, 200000 - (pit.stockGrams || 0));
     if (!cap) { pit.workStatus = 'Estoque do posto cheio'; return; }
@@ -1281,8 +1284,8 @@ const isPit = building => !!PIT_GOODS[building?.type];
 // Mapa onde a construção fica. Sem registro (saves antigos, casarão), é City.
 const buildingMapId = building => building?.mapId || 'city';
 const pitRate = pit => pit.type === 'mine'
-  ? lumberCrew(pit).reduce((sum, actor) => { const tool = (state.extractionTools || []).find(item => item.id === actor.extractionToolId && item.durability > 0); return sum + (tool ? (tool.edge === 'steel' ? 20 / 960 : 20 / 1200) * (1 + gearBonus(actor, 'work') + tradeWorkBonus(actor, 'mine') / 2) : 0); }, 0)
-  : pit.type === 'quarry' ? (pit.quarryOrder === 'marble' ? MARBLE_RATE_PER_WORKER : PIT_GOODS.quarry.rate) * lumberCrew(pit).filter(actor => assignExtractionTool(actor, pit)).length * (1 + crewWork(pit)) : 0;
+  ? workingCrew(pit).reduce((sum, actor) => { const tool = (state.extractionTools || []).find(item => item.id === actor.extractionToolId && item.durability > 0); return sum + (tool ? (tool.edge === 'steel' ? 20 / 960 : 20 / 1200) * (1 + gearBonus(actor, 'work') + tradeWorkBonus(actor, 'mine') / 2) : 0); }, 0)
+  : pit.type === 'quarry' ? (pit.quarryOrder === 'marble' ? MARBLE_RATE_PER_WORKER : PIT_GOODS.quarry.rate) * workingCrew(pit).filter(actor => assignExtractionTool(actor, pit)).length * (1 + workingCrewWork(pit)) : 0;
 // Metal rende 0,025: duas casas cortariam pra 0,03.
 const fineRate = value => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 const CREW_TYPES = ['lumber', 'quarry', 'mine'];
@@ -1380,14 +1383,14 @@ function rates() {
       sum.people += def.people;
     }
     return sum;
-  }, { gold: 0, grain: 0, timber: 0.14, stone: 0, marble: 0, metal: 0, people: 0 });
+  }, { gold: 0, grain: 0, timber: 0, stone: 0, marble: 0, metal: 0, people: 0 });
   state.buildings.filter(building => isPit(building) && isDone(building)).forEach(pit => {
     if (pit.type === 'mine') sum.metal += pitRate(pit);
     else if (pit.quarryOrder === 'marble') sum.marble += pitRate(pit);
     else sum.stone += pitRate(pit);
   });
   state.workers.filter(worker => worker.alive && worker.profession === 'fisher').forEach(worker => { sum.grain += FISHING_RATE * (1 + skillOf(worker, 'fishing') / 100); });
-  sum.timber += state.buildings.filter(building => building.type === 'lumber' && isDone(building)).reduce((total, camp) => total + LUMBER_RATE[lumberCrew(camp).length] * (1 + crewWork(camp)), 0);
+  sum.timber += state.buildings.filter(building => building.type === 'lumber' && isDone(building)).reduce((total, camp) => total + LUMBER_RATE[workingCrew(camp).length] * (1 + workingCrewWork(camp)), 0);
   // Farinha: o moinho só mói o trigo que existe; sem estoque, fica limitado ao que as fazendas colhem.
   sum.grain += (state.food.wheat || 0) > 0.5 ? millCapacity() : Math.min(millCapacity(), foodProduction().wheat);
   sum.grain -= foodDemand();
@@ -2279,9 +2282,9 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['Guarda', `${depotCap(building)} unidades`]);
     lines.push(['Ocupação total', `${Math.floor(storedUnits())} de ${storageCap()}`]);
   } else if (building.type === 'lumber') {
-    const crew = lumberCrew(building);
-    lines.push(['Produz', `${rateNumber(LUMBER_RATE[crew.length])} de madeira por segundo`]);
-    lines.push(['Lenhadores', `${crew.length} de 3: ${names(crew)}`]);
+    const crew = workingCrew(building);
+    lines.push(['Produz', `${rateNumber(LUMBER_RATE[crew.length] * (1 + workingCrewWork(building)))} de madeira por segundo`]);
+    lines.push(['Lenhadores no posto', `${crew.length} de 3: ${names(crew)}`]);
   } else if (isPit(building)) {
     const crew = lumberCrew(building);
     lines.push(['Produz', building.type === 'mine' ? `${fineRate(pitRate(building))} kg/s de rocha bruta` : `${fineRate(pitRate(building))} kg/s de ${building.quarryOrder === 'marble' ? 'Mármore' : 'Pedra de Construção'}`]);
@@ -2435,7 +2438,7 @@ function moveBuilding(x, y) {
 function chooseBuild(id) {
   state.placingBounty = false;
   const item = BUILDINGS.find(building => building.id === id);
-  if (id !== 'farm' && (state.gold < item.cost || state.timber < item.wood || state.stone < buildingStoneCost(item))) {
+  if (state.gold < item.cost || state.timber < item.wood || state.stone < buildingStoneCost(item)) {
     say('Falta ouro, madeira ou Pedra de Construção. As dívidas, não.');
     return;
   }
@@ -4613,6 +4616,11 @@ function walkTo(actor, point) {
   actor.finalPoint = { x: point.x, y: Math.min(198, point.y + 1.2) };
 }
 const isAt = (actor, point) => Math.hypot(actor.x - point.x, actor.y - Math.min(198, point.y + 1.2)) < 1.5;
+const actorAtPost = (actor, building) =>
+  (actor.mapId || 'city') === (building.mapId || 'city') &&
+  (actor.mapSet || 1) === (building.mapSet || 1) && isAt(actor, building);
+const workingCrew = building => lumberCrew(building).filter(actor => actor.buildSite == null && actorAtPost(actor, building));
+const workingCrewWork = building => workingCrew(building).reduce((sum, worker) => sum + gearBonus(worker, 'work') + tradeWorkBonus(worker, hookOf(building)) / 2, 0);
 // Rotina do camponês de fazenda ou moinho: trabalha, carrega a produção ao depósito e volta.
 // No moinho ele também busca trigo no depósito e leva a farinha de volta.
 function haulRoutine(actor, workplace) {
@@ -5179,8 +5187,8 @@ function economyPanelHTML() {
   state.buildings.filter(building => building.type === 'butcher' && isDone(building)).forEach(building => { produced[butcherActiveRecipe(building).id] += butcherRate(building) * (1 + crewWork(building)); });
   produced.fish += fishers.reduce((sum, worker) => sum + FISHING_RATE * (1 + skillOf(worker, 'fishing') / 100), 0);
   const milling = mills.reduce((sum, mill) => sum + millRate(mill) * (1 + crewWork(mill)), 0);
-  const woodRates = camps.map(camp => LUMBER_RATE[lumberCrew(camp).length] * (1 + crewWork(camp)));
-  const wood = 0.28 + woodRates.reduce((a, b) => a + b, 0);
+  const woodRates = camps.map(camp => LUMBER_RATE[workingCrew(camp).length] * (1 + workingCrewWork(camp)));
+  const wood = woodRates.reduce((a, b) => a + b, 0);
   const taxes = dailyTaxEstimate();
   const wages = dailyWages();
   const waiting = [...farms, ...mills, ...bakeries, ...butchers].reduce((sum, building) => sum + (building.stock || 0) + (building.secondaryStock || 0), 0);
@@ -5202,8 +5210,7 @@ function economyPanelHTML() {
       ${row('<b>Saldo da meia-noite</b>', `<b>${taxes - wages < 0 ? '−' : '+'}${format(Math.abs(taxes - wages))}</b>`)}
     </dl></div>
     <div class="econ-block"><div class="food-label">MADEIRA POR SEGUNDO</div><dl class="econ-lines">
-      ${row('Lenha catada no casarão', per(0.28))}
-      ${camps.map((camp, i) => row(`Cabana do Lenhador ${camps.length > 1 ? i + 1 : ''}`, per(woodRates[i]), `${lumberCrew(camp).length} de 3 lenhadores`)).join('')}
+      ${camps.map((camp, i) => row(`Cabana do Lenhador ${camps.length > 1 ? i + 1 : ''}`, per(woodRates[i]), `${workingCrew(camp).length} de 3 lenhadores no posto`)).join('')}
       ${row('<b>Total</b>', `<b>${per(wood)}</b>`, `${format(state.timber)} no estoque`)}
     </dl></div>
     ${pits.length ? `<div class="econ-block"><div class="food-label">PEDRA E EXTRAÇÃO POR SEGUNDO</div><dl class="econ-lines">
@@ -6330,8 +6337,8 @@ function economySnapshot(source) {
   });
   const ration = RATIONS[source.ration ?? 2] || RATIONS[2];
   const consumption = workers.length * WORKER_UPKEEP * ration.mult;
-  const woodRate = 0.28 + buildings.filter(building => building.type === 'lumber').reduce((sum, camp) => {
-    const crew = workers.filter(worker => (worker.workplace?.site ?? worker.workplace) === camp.site).length;
+  const woodRate = buildings.filter(building => building.type === 'lumber').reduce((sum, camp) => {
+    const crew = workers.filter(worker => worker.buildSite == null && (worker.workplace?.site ?? worker.workplace) === camp.site && actorAtPost(worker, camp)).length;
     return sum + LUMBER_RATE[Math.min(3, crew)];
   }, 0);
   const factor = (source.taxPercent ?? 10) / 10;
