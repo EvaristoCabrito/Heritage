@@ -3,7 +3,7 @@ const BUILDINGS = [
   { id: 'mill', name: 'Moinho', glyph: 'M', cost: 155, wood: 10, detail: 'Mói o trigo em farinha. Trigo cru não alimenta ninguém. As pás giram; a vila, nem tanto.', gold: 0.4, grain: 0, people: 0 },
   { id: 'bakery', name: 'Padaria', glyph: 'P', cost: 165, wood: 10, detail: 'Assa pão, queijo ou quiche lorraine com o que tem no depósito. Você escolhe a fornada; o forno não discute. Melhora até o nível 3.', gold: 0.4, grain: 0, people: 0 },
   { id: 'emberLab', name: 'Laboratório de Ember', glyph: 'E', cost: 220, wood: 14, detail: 'Refina em Ember os Dead Remains que os heróis trazem dos covis. Quanto melhor a grade, mais Ember. Ninguém pergunta de onde vieram.', gold: 0, grain: 0, people: 0 },
-  { id: 'butcher', name: 'Açougue', glyph: 'A', cost: 190, wood: 12, detail: 'Transforma suínos, frango e carne de vaca em alimentos. Melhora até o nível 2.', gold: 0, grain: 0, people: 0 },
+  { id: 'butcher', name: 'Açougue', glyph: 'A', cost: 190, wood: 12, detail: 'Prepara carnes, peixes e hortaliças. Melhora até o nível 3.', gold: 0, grain: 0, people: 0 },
   { id: 'hut', name: 'Casebre Pequeno', glyph: 'C', cost: 60, wood: 4, detail: 'Moradia para 2 camponeses. Amplia para Casebre Grande, com 5. Eles não tinham pra onde ir mesmo.', gold: 0, grain: 0, people: 0, housing: 2 },
   { id: 'depot', name: 'Depósito de Provisões', glyph: 'D', cost: 70, wood: 6, detail: 'Guarda mais 30 unidades de comida, armas e itens. Amplia para 45, 70 e 100. Os ratos aprovam.', gold: 0, grain: 0, people: 0 },
   { id: 'lumber', name: 'Cabana do Lenhador', glyph: 'L', cost: 80, wood: 2, detail: 'Coloque de 1 a 3 camponeses para cortar lenha: 0,05, 0,15 ou 0,25 de madeira por segundo.', gold: 0, grain: 0, people: 0 },
@@ -74,16 +74,28 @@ const MANOR_DOOR = { x: 42, y: 39 };
 // Fazendas e moinhos sobem até o nível 3. O moinho melhorado mói mais rápido, sem exagero.
 const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 180, wood: 12 }, { gold: 320, wood: 20 }];
 const MILL_RATE = [0.225, 0.3, 0.4]; // trigo moído em farinha por segundo, por nível
-// Padaria: o camponês busca os ingredientes no depósito, o forno transforma 1 de cada em 1 do produto
-// e ele leva a fornada de volta. O produto alimenta o mesmo que os ingredientes somados e ocupa menos espaço.
+// Receitas são medidas em lotes: cada lote consome a quantidade declarada e rende yield unidades.
+// A unidade de produção da receita também é a unidade que o trabalhador transporta e o povo consome.
+const recipeNeeds = recipe => Array.isArray(recipe.needs)
+  ? Object.fromEntries(recipe.needs.map(id => [id, 1]))
+  : recipe.needs;
+const recipeInputsText = recipe => Object.entries(recipeNeeds(recipe)).map(([id, qty]) => `${qty} ${foodName(id)}`).join(' + ');
+const recipeOutput = recipe => recipe.yield || 1;
+const recipeDetails = recipe => `${recipeInputsText(recipe)} → ${recipeOutput(recipe)} por lote · alimenta ${foodFeeds(recipe.id)}× · nível ${recipe.level || 1}`;
+const recipeIsUnlocked = (building, recipe) => !recipe.level || producerLevel(building) >= recipe.level - 1;
 const BAKERY_RECIPES = [
-  { id: 'bread', name: 'Pão', needs: ['flour'] },
-  { id: 'cheese', name: 'Queijo', needs: ['flour', 'milk'] },
-  { id: 'quiche', name: 'Quiche Lorraine', needs: ['flour', 'milk', 'bacon'] },
+  { id: 'bread', name: 'Pão', needs: ['flour'], art: 'bread' },
+  { id: 'cheese', name: 'Queijo', needs: ['flour', 'milk'], art: 'cheese' },
+  { id: 'quiche', name: 'Quiche Lorraine', needs: ['flour', 'milk', 'bacon'], art: 'quiche', level: 2 },
+  { id: 'garlicFlatbread', name: 'Pão achatado de alho', needs: { flour: 2, garlic: 1 }, yield: 2, feeds: 1, mood: 2, level: 1, art: 'bread' },
+  { id: 'potatoLoaf', name: 'Pão de batata', needs: { flour: 2, potato: 1, milk: 1 }, yield: 2, feeds: 1, mood: 2, level: 2, art: 'bread' },
+  { id: 'vegetablePie', name: 'Torta de hortaliças', needs: { flour: 1, eggs: 1, potato: 1, carrot: 1 }, yield: 1, feeds: 3, mood: 3, level: 2, art: 'quiche' },
+  { id: 'tomatoTart', name: 'Torta de tomate e queijo', needs: { flour: 1, eggs: 1, tomato: 1, cheese: 1 }, yield: 1, feeds: 3, mood: 3, level: 2, art: 'quiche' },
+  { id: 'fishPie', name: 'Torta de truta', needs: { flour: 1, eggs: 1, fish: 1, milk: 1 }, yield: 1, feeds: 4, mood: 4, level: 3, art: 'quiche' },
 ];
 const BAKE_RATE = [0.15, 0.2, 0.27]; // fornadas por segundo, por nível
-const BUTCHER_RATE = [0.12, 0.16]; // unidades processadas por segundo nos níveis 1 e 2
-const BUTCHER_MAX_LEVEL = 2;
+const BUTCHER_RATE = [0.12, 0.16, 0.22]; // lotes processados por segundo nos níveis 1, 2 e 3
+const BUTCHER_MAX_LEVEL = 3;
 const BUTCHER_RECIPES = [
   { id: 'bacon', name: 'Bacon', needs: ['pork'], feeds: 1, art: 'farm-bacon', icon: 'icon-market-bacon-photo-v01.png' },
   { id: 'sausage', name: 'Linguiça', needs: ['pork'], feeds: 1, art: 'sausage' },
@@ -96,12 +108,21 @@ const BUTCHER_RECIPES = [
   { id: 'garlicBoar', name: 'Javali ao Alho', needs: ['boarMeat', 'garlic'], feeds: 4, art: 'garlic-boar', icon: 'garlic-boar-v01.png' },
   { id: 'roastElk', name: 'Alce Assado', needs: ['elkMeat'], feeds: 2, art: 'roast-elk', icon: 'roast-elk-v01.png' },
   { id: 'elkStew', name: 'Ensopado de Alce', needs: ['elkMeat', 'milk', 'potato'], feeds: 4, art: 'elk-stew', icon: 'elk-stew-v01.png' },
+  { id: 'porkStew', name: 'Ensopado de porco', needs: { pork: 1, potato: 2, carrot: 1 }, yield: 1, feeds: 4, mood: 3, level: 1, art: 'elk-stew' },
+  { id: 'chickenStew', name: 'Ensopado de frango', needs: { chicken: 1, potato: 1, carrot: 1, milk: 1 }, yield: 1, feeds: 4, mood: 3, level: 1, art: 'elk-stew' },
+  { id: 'beefStew', name: 'Ensopado de carne', needs: { beef: 1, potato: 2, tomato: 1, garlic: 1 }, yield: 1, feeds: 5, mood: 4, level: 2, art: 'elk-stew' },
+  { id: 'stuffedTomatoes', name: 'Tomates recheados', needs: { beef: 1, tomato: 2, garlic: 1 }, yield: 2, feeds: 2, mood: 3, level: 2, art: 'garlic-boar' },
+  { id: 'fishStew', name: 'Ensopado de truta', needs: { fish: 1, potato: 1, carrot: 1, milk: 1 }, yield: 1, feeds: 4, mood: 3, level: 2, art: 'elk-stew' },
+  { id: 'hunterPlatter', name: 'Prato do caçador', needs: { boarMeat: 1, elkMeat: 1, potato: 1, garlic: 1 }, yield: 2, feeds: 3, mood: 4, level: 3, art: 'roast-boar' },
+  { id: 'farmersFeast', name: 'Banquete da colheita', needs: { pork: 1, eggs: 1, potato: 1, carrot: 1, tomato: 1 }, yield: 2, feeds: 4, mood: 5, level: 3, art: 'roast-boar' },
 ];
 const BUTCHER_ART = Object.fromEntries(BUTCHER_RECIPES.map(recipe => [recipe.id, recipe.art]));
 const butcherRecipe = id => BUTCHER_RECIPES.find(recipe => recipe.id === id) || BUTCHER_RECIPES[0];
-const butcherActiveRecipe = butcher => butcherRecipe(butcher?.produce);
+const butcherActiveRecipe = butcher => {
+  const recipe = butcherRecipe(butcher?.produce);
+  return recipeIsUnlocked(butcher, recipe) ? recipe : butcherRecipe('bacon');
+};
 const butcherRate = building => BUTCHER_RATE[Math.min(BUTCHER_RATE.length - 1, producerLevel(building))];
-const BAKED_ART = { bread: 'bread', cheese: 'cheese', quiche: 'quiche' };
 const bakeryRecipe = id => BAKERY_RECIPES.find(recipe => recipe.id === id) || BAKERY_RECIPES[0];
 // Construções com nível de produção (melhoria até o nível 3) e camponês fixo.
 const PRODUCER_TYPES = ['farm', 'mill', 'bakery', 'emberLab', 'butcher', 'blacksmith'];
@@ -151,7 +172,7 @@ const bakeRate = building => BAKE_RATE[producerLevel(building)];
 const levelArt = (art, building) => LEVEL_ART[art]?.[producerLevel(building)] || art;
 const bakeryActiveRecipe = bakery => {
   const recipe = bakeryRecipe(bakery?.produce);
-  return recipe.id === 'quiche' && producerLevel(bakery) < 1 ? bakeryRecipe('bread') : recipe;
+  return recipeIsUnlocked(bakery, recipe) ? recipe : bakeryRecipe('bread');
 };
 const rateNumber = value => value.toFixed(2).replace('.', ',');
 
@@ -416,7 +437,7 @@ function newGameState(heir = null) {
       { id: 'starter-quarry-pick-1', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-2', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
     ], remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
-    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, potato: 0, carrot: 0, tomato: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: false, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, potato: true, carrot: true, tomato: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
+    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, potato: 0, carrot: 0, tomato: 0, fish: 0, garlicFlatbread: 0, potatoLoaf: 0, vegetablePie: 0, tomatoTart: 0, fishPie: 0, porkStew: 0, chickenStew: 0, beefStew: 0, stuffedTomatoes: 0, fishStew: 0, hunterPlatter: 0, farmersFeast: 0 }, items: [], ration: 2, diet: { wheat: false, flour: false, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, potato: true, carrot: true, tomato: true, fish: true, garlicFlatbread: true, potatoLoaf: true, vegetablePie: true, tomatoTart: true, fishPie: true, porkStew: true, chickenStew: true, beefStew: true, stuffedTomatoes: true, fishStew: true, hunterPlatter: true, farmersFeast: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, manorArrivalDay: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false, goalStep: 0, goalKills: 0,
     bandits: [], wildMeatPiles: [], wildlifeSpawnDay: Math.floor(380 / 1440), nextRaidAt: 720,
@@ -811,9 +832,9 @@ const MARKET_GOODS = [
   { id: 'boarMeat', name: 'Carne de javali', art: 'farm-bacon', sell: 3, buy: 6 },
   { id: 'elkMeat', name: 'Carne de alce', art: 'farm-milk', sell: 4, buy: 8 },
   // Da Padaria. Vale um pouco mais que os ingredientes: o forno também cobra.
-  { id: 'bread', name: 'Pão', art: BAKED_ART.bread, sell: 3, buy: 6 },
-  { id: 'cheese', name: 'Queijo', art: BAKED_ART.cheese, sell: 5, buy: 10 },
-  { id: 'quiche', name: 'Quiche Lorraine', art: BAKED_ART.quiche, sell: 9, buy: 18 },
+  { id: 'bread', name: 'Pão', art: 'bread', sell: 3, buy: 6 },
+  { id: 'cheese', name: 'Queijo', art: 'cheese', sell: 5, buy: 10 },
+  { id: 'quiche', name: 'Quiche Lorraine', art: 'quiche', sell: 9, buy: 18 },
   { id: 'sausage', name: 'Linguiça', art: 'sausage', sell: 5, buy: 10 },
   { id: 'nuggets', name: 'Chicken Nuggets', art: 'chicken-nuggets', sell: 4, buy: 8 },
   { id: 'wings', name: 'Buffalo Wings', art: 'buffalo-wings', sell: 4, buy: 8 },
@@ -824,6 +845,18 @@ const MARKET_GOODS = [
   { id: 'garlicBoar', name: 'Javali ao Alho', art: 'parmesan-steak', sell: 14, buy: 28 },
   { id: 'roastElk', name: 'Alce Assado', art: 'steak', sell: 9, buy: 18 },
   { id: 'elkStew', name: 'Ensopado de Alce', art: 'quiche', sell: 16, buy: 32 },
+  { id: 'garlicFlatbread', name: 'Pão achatado de alho', art: 'bread', sell: 5, buy: 10 },
+  { id: 'potatoLoaf', name: 'Pão de batata', art: 'bread', sell: 7, buy: 14 },
+  { id: 'vegetablePie', name: 'Torta de hortaliças', art: 'quiche', sell: 9, buy: 18 },
+  { id: 'tomatoTart', name: 'Torta de tomate e queijo', art: 'quiche', sell: 11, buy: 22 },
+  { id: 'fishPie', name: 'Torta de truta', art: 'quiche', sell: 15, buy: 30 },
+  { id: 'porkStew', name: 'Ensopado de porco', icon: 'elk-stew-v01.png', sell: 12, buy: 24 },
+  { id: 'chickenStew', name: 'Ensopado de frango', icon: 'elk-stew-v01.png', sell: 12, buy: 24 },
+  { id: 'beefStew', name: 'Ensopado de carne', icon: 'elk-stew-v01.png', sell: 15, buy: 30 },
+  { id: 'stuffedTomatoes', name: 'Tomates recheados', icon: 'garlic-boar-v01.png', sell: 12, buy: 24 },
+  { id: 'fishStew', name: 'Ensopado de truta', icon: 'elk-stew-v01.png', sell: 14, buy: 28 },
+  { id: 'hunterPlatter', name: 'Prato do caçador', icon: 'roast-boar-v01.png', sell: 22, buy: 44 },
+  { id: 'farmersFeast', name: 'Banquete da colheita', icon: 'roast-boar-v01.png', sell: 24, buy: 48 },
   { id: 'fish', name: 'Truta', art: 'fish', sell: 3, buy: 6 },
   { id: 'timber', name: 'Madeira', icon: 'icon-logs-photo-v01.png', sell: 2, buy: 4 },
 ];
@@ -2347,19 +2380,19 @@ function buildingInfoHTML(building, actions = '') {
   } else if (building.type === 'bakery') {
     const recipe = bakeryActiveRecipe(building);
     const pantry = building.pantry || {};
-    lines.push(['Assa', `${rateNumber(bakeRate(building))} de ${recipe.name.toLowerCase()} por segundo`]);
-    lines.push(['Receita', `${recipe.needs.map(id => `1 de ${foodName(id)}`).join(' + ')} → 1 de ${recipe.name.toLowerCase()}`]);
+    lines.push(['Assa', `${rateNumber(bakeRate(building) * (1 + crewWork(building)) * recipeOutput(recipe))} de ${recipe.name.toLowerCase()} por segundo`]);
+    lines.push(['Receita', `${recipeInputsText(recipe)} → ${recipeOutput(recipe)} por lote de ${recipe.name.toLowerCase()}`]);
     lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
-    lines.push(['No forno', `${recipe.needs.map(id => `${format(pantry[id] || 0)} de ${foodName(id)}`).join(' · ')} · ${format(building.stock || 0)} de ${foodName(building.stockFood || recipe.id)} esperando`]);
-    lines.push(['No depósito', recipe.needs.map(id => `${format(state.food[id] || 0)} de ${foodName(id)}`).join(' · ')]);
+    lines.push(['No forno', `${recipeStockText(recipe, pantry)} · ${format(building.stock || 0)} de ${foodName(building.stockFood || recipe.id)} esperando`]);
+    lines.push(['No depósito', recipeStockText(recipe, state.food)]);
     if (crewWork(building)) lines.push(['Ferramentas e profissão', `+${Math.round(crewWork(building) * 100)}% de produção`]);
     lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
   } else if (building.type === 'butcher') {
     const recipe = butcherActiveRecipe(building), pantry = building.pantry || {};
-    lines.push(['Processa', `${rateNumber(butcherRate(building))} de ${recipe.name} por segundo`]);
-    lines.push(['Receita', `${recipe.needs.map(id => `1 de ${foodName(id)}`).join(' + ')} → 1 ${recipe.name} · alimenta ${recipe.feeds}×`]);
+    lines.push(['Processa', `${rateNumber(butcherRate(building) * (1 + crewWork(building)) * recipeOutput(recipe))} de ${recipe.name} por segundo`]);
+    lines.push(['Receita', `${recipeInputsText(recipe)} → ${recipeOutput(recipe)} por lote · alimenta ${foodFeeds(recipe.id)}×`]);
     lines.push(['Nível', `${producerLevel(building) + 1} de ${BUTCHER_MAX_LEVEL}`]);
-    lines.push(['Matéria-prima', recipe.needs.map(id => `${format(pantry[id] || 0)} de ${foodName(id)}`).join(' · ')]);
+    lines.push(['Matéria-prima', recipeStockText(recipe, pantry)]);
     lines.push(['Produto pronto', `${format(building.stock || 0)} de ${foodName(building.stockFood || recipe.id)}`]);
     if (crewWork(building)) lines.push(['Culinária', `+${Math.round(crewWork(building) * 100)}% de produção`]);
     lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
@@ -2583,16 +2616,21 @@ function chooseFarmType(id) {
 function chooseBakeryRecipe(id) {
   const bakery = state.buildings.find(building => building.site === state.selectedSite && building.type === 'bakery' && isDone(building));
   if (!bakery) return;
-  const recipe = bakeryRecipe(id);
-  if (recipe.id === 'quiche' && producerLevel(bakery) < 1) { say('A Quiche Lorraine só fica disponível quando a padaria chega ao nível 2.'); return; }
+  const recipe = BAKERY_RECIPES.find(item => item.id === id);
+  if (!recipe) return;
+  if (!recipeIsUnlocked(bakery, recipe)) { say(`${recipe.name} só fica disponível no nível ${recipe.level} da padaria.`); return; }
+  if (bakery.stock > 0) bakery.stockFood ||= bakeryActiveRecipe(bakery).id;
   bakery.produce = recipe.id;
   renderSites(); renderPanel(); updateHud();
-  say(`A padaria agora assa ${recipe.name.toLowerCase()}: ${recipe.needs.map(need => foodName(need)).join(', ')}.`, `A padaria mudou a fornada para ${recipe.name.toLowerCase()}.`);
+  say(`A padaria agora assa ${recipe.name.toLowerCase()}: ${recipeInputsText(recipe)}.`, `A padaria mudou a fornada para ${recipe.name.toLowerCase()}.`);
 }
 function chooseButcherRecipe(id) {
   const butcher = state.buildings.find(building => building.site === state.selectedSite && building.type === 'butcher' && isDone(building));
   if (!butcher) return;
-  butcher.produce = butcherRecipe(id).id;
+  const recipe = BUTCHER_RECIPES.find(item => item.id === id && recipeIsUnlocked(butcher, item));
+  if (!recipe) return;
+  if (butcher.stock > 0) butcher.stockFood ||= butcherActiveRecipe(butcher).id;
+  butcher.produce = recipe.id;
   renderSites(); renderPanel(); updateHud();
   say(`O açougue agora prepara ${butcherActiveRecipe(butcher).name.toLowerCase()}.`);
 }
@@ -4285,9 +4323,9 @@ const FOOD_TYPES = [
   { id: 'bacon', name: 'Bacon', art: 'farm-bacon', icon: 'icon-market-bacon-photo-v01.png', meat: true, mood: 2, feeds: 1, note: 'Processado no açougue a partir de suínos.' },
   { id: 'eggs', name: 'Ovos', art: 'farm-eggs', mood: 1, feeds: 2, note: 'Variedade. Os camponeses notam.' },
   { id: 'milk', name: 'Leite', art: 'farm-milk', mood: 1, feeds: 1, note: 'Variedade. Às vezes azeda antes.' },
-  { id: 'bread', name: 'Pão', art: BAKED_ART.bread, baked: true, mood: 2, feeds: 1, note: 'Da padaria. Duro como a vida, mas é pão.' },
-  { id: 'cheese', name: 'Queijo', art: BAKED_ART.cheese, baked: true, mood: 2, feeds: 2, note: 'Da padaria. Farinha e leite que resolveram durar mais.' },
-  { id: 'quiche', name: 'Quiche Lorraine', art: BAKED_ART.quiche, baked: true, meat: true, mood: 3, feeds: 4, note: 'Da padaria. Comida de nobre na mesa de servo. Ninguém conta pro Barão.' },
+  { id: 'bread', name: 'Pão', art: 'bread', baked: true, mood: 2, feeds: 1, note: 'Da padaria. Duro como a vida, mas é pão.' },
+  { id: 'cheese', name: 'Queijo', art: 'cheese', baked: true, mood: 2, feeds: 2, note: 'Da padaria. Farinha e leite que resolveram durar mais.' },
+  { id: 'quiche', name: 'Quiche Lorraine', art: 'quiche', baked: true, meat: true, mood: 3, feeds: 4, note: 'Da padaria. Comida de nobre na mesa de servo. Ninguém conta pro Barão.' },
   { id: 'sausage', name: 'Linguiça', art: 'sausage', meat: true, mood: 2, feeds: 1, note: 'Processada no açougue.' },
   { id: 'nuggets', name: 'Chicken Nuggets', art: 'chicken-nuggets', meat: true, mood: 2, feeds: 1, note: 'Processado no açougue.' },
   { id: 'wings', name: 'Buffalo Wings', art: 'buffalo-wings', meat: true, mood: 2, feeds: 1, note: 'Processadas no açougue.' },
@@ -4300,6 +4338,18 @@ const FOOD_TYPES = [
   { id: 'garlicBoar', name: 'Javali ao Alho', art: 'garlic-boar', icon: 'garlic-boar-v01.png', meat: true, mood: 3, feeds: 4, note: 'Javali assado com alho no açougue.' },
   { id: 'roastElk', name: 'Alce Assado', art: 'roast-elk', icon: 'roast-elk-v01.png', meat: true, mood: 2, feeds: 2, note: 'Carne de alce assada no açougue.' },
   { id: 'elkStew', name: 'Ensopado de Alce', art: 'elk-stew', icon: 'elk-stew-v01.png', meat: true, mood: 3, feeds: 4, note: 'Ensopado de alce com leite e batatas, feito no açougue.' },
+  { id: 'garlicFlatbread', name: 'Pão achatado de alho', art: 'bread', baked: true, mood: 2, feeds: 1, note: 'Farinha e alho assados juntos na padaria.' },
+  { id: 'potatoLoaf', name: 'Pão de batata', art: 'bread', baked: true, mood: 2, feeds: 1, note: 'Pão reforçado com batata e leite.' },
+  { id: 'vegetablePie', name: 'Torta de hortaliças', art: 'quiche', baked: true, mood: 3, feeds: 3, note: 'Farinha, ovos, batata e cenoura assados.' },
+  { id: 'tomatoTart', name: 'Torta de tomate e queijo', art: 'quiche', baked: true, mood: 3, feeds: 3, note: 'Tomate e queijo numa massa de ovos.' },
+  { id: 'fishPie', name: 'Torta de truta', art: 'quiche', baked: true, meat: true, mood: 4, feeds: 4, note: 'Truta, ovos e leite em massa de farinha.' },
+  { id: 'porkStew', name: 'Ensopado de porco', art: 'elk-stew', icon: 'elk-stew-v01.png', meat: true, mood: 3, feeds: 4, note: 'Porco, batata e cenoura cozidos juntos.' },
+  { id: 'chickenStew', name: 'Ensopado de frango', art: 'elk-stew', icon: 'elk-stew-v01.png', meat: true, mood: 3, feeds: 4, note: 'Frango, batata, cenoura e leite.' },
+  { id: 'beefStew', name: 'Ensopado de carne', art: 'elk-stew', icon: 'elk-stew-v01.png', meat: true, mood: 4, feeds: 5, note: 'Carne, batata, tomate e alho.' },
+  { id: 'stuffedTomatoes', name: 'Tomates recheados', art: 'garlic-boar', icon: 'garlic-boar-v01.png', meat: true, mood: 3, feeds: 2, note: 'Tomates recheados com carne e alho.' },
+  { id: 'fishStew', name: 'Ensopado de truta', art: 'elk-stew', icon: 'elk-stew-v01.png', meat: true, mood: 3, feeds: 4, note: 'Truta, batata, cenoura e leite.' },
+  { id: 'hunterPlatter', name: 'Prato do caçador', art: 'roast-boar', icon: 'roast-boar-v01.png', meat: true, mood: 4, feeds: 3, note: 'Caças variadas assadas com batata e alho.' },
+  { id: 'farmersFeast', name: 'Banquete da colheita', art: 'roast-boar', icon: 'roast-boar-v01.png', meat: true, mood: 5, feeds: 4, note: 'Carne, ovo e hortaliças preparados para partilhar.' },
   { id: 'potato', name: 'Batatas', art: 'farm-vegetables', icon: 'potato-v01.png', mood: 1, feeds: 2, note: 'Colheita da Fazenda de Hortaliças; também ingrediente do Ensopado de Alce.' },
   { id: 'carrot', name: 'Cenouras', art: 'farm-vegetables', icon: 'carrot-v01.png', mood: 1, feeds: 1, note: 'Colheita da Fazenda de Hortaliças.' },
   { id: 'tomato', name: 'Tomates', art: 'farm-vegetables', icon: 'tomato-v01.png', mood: 1, feeds: 1, note: 'Colheita da Fazenda de Hortaliças.' },
@@ -4307,6 +4357,7 @@ const FOOD_TYPES = [
 ];
 const foodIcon = food => food.icon || `${food.art}-v01.webp`;
 const foodFeeds = id => FOOD_TYPES.find(food => food.id === id)?.feeds ?? 1;
+const recipeStockText = (recipe, stock) => Object.entries(recipeNeeds(recipe)).map(([id, qty]) => `${format(stock[id] || 0)} de ${foodName(id)}${qty > 1 ? ` (precisa ${qty})` : ''}`).join(' · ');
 const RATIONS = [
   { label: 'Nenhuma', mult: 0, mood: -20 }, { label: 'Meia', mult: 0.5, mood: -8 }, { label: 'Normal', mult: 1, mood: 0 },
   { label: 'Dobrada', mult: 2, mood: 5 }, { label: 'Tripla', mult: 3, mood: 10 },
@@ -4392,6 +4443,12 @@ function foodProduction() {
       prod[farmFoodId(building)] += farmOutput(building);
       const secondary = farmType(building.produce).secondary;
       if (secondary) prod[secondary] += farmSecondaryRate(building);
+    } else if (building.type === 'bakery') {
+      const recipe = bakeryActiveRecipe(building);
+      prod[recipe.id] += bakeRate(building) * (1 + crewWork(building)) * recipeOutput(recipe);
+    } else if (building.type === 'butcher') {
+      const recipe = butcherActiveRecipe(building);
+      prod[recipe.id] += butcherRate(building) * (1 + crewWork(building)) * recipeOutput(recipe);
     }
   });
   return prod;
@@ -4407,40 +4464,38 @@ function grindWheat(dt) {
     mill.stock = (mill.stock || 0) + qty;
   });
 }
-// Padarias prontas: quanto de cada produto conseguem assar por segundo, somados.
-const bakingCapacity = id => state.buildings.filter(building => building.type === 'bakery' && isDone(building) && bakeryActiveRecipe(building).id === id).reduce((sum, bakery) => sum + bakeRate(bakery), 0);
 // A fornada só sai com todos os ingredientes no forno; a fornada antiga precisa sair antes de começar outra.
 function bakeryCanBake(bakery) {
   const recipe = bakeryActiveRecipe(bakery);
-  if ((bakery.stock || 0) > 1e-6 && bakery.stockFood && bakery.stockFood !== recipe.id) return false;
-  return recipe.needs.every(id => (bakery.pantry?.[id] || 0) > 1e-6) && (bakery.stock || 0) < industryCap(bakery);
+  if ((bakery.stock || 0) > 0 && bakery.stockFood && bakery.stockFood !== recipe.id) return false;
+  return Object.keys(recipeNeeds(recipe)).every(id => (bakery.pantry?.[id] || 0) > 0) && (bakery.stock || 0) < industryCap(bakery);
 }
 function bakeFood(dt) {
   state.buildings.filter(building => building.type === 'bakery' && isDone(building)).forEach(bakery => {
     if (!bakeryCanBake(bakery)) return;
     const recipe = bakeryActiveRecipe(bakery);
     const pantry = bakery.pantry;
-    const qty = Math.min(bakeRate(bakery) * (1 + crewWork(bakery)) * dt, ...recipe.needs.map(id => pantry[id]), industryCap(bakery) - (bakery.stock || 0));
+    const qty = Math.min(bakeRate(bakery) * (1 + crewWork(bakery)) * dt, ...Object.entries(recipeNeeds(recipe)).map(([id, amount]) => pantry[id] / amount), (industryCap(bakery) - (bakery.stock || 0)) / recipeOutput(recipe));
     if (qty <= 0) return;
-    recipe.needs.forEach(id => { pantry[id] -= qty; });
+    Object.entries(recipeNeeds(recipe)).forEach(([id, amount]) => { pantry[id] -= qty * amount; });
     bakery.stockFood = recipe.id;
-    bakery.stock = (bakery.stock || 0) + qty;
+    bakery.stock = (bakery.stock || 0) + qty * recipeOutput(recipe);
   });
 }
 function butcherCanProcess(butcher) {
   const recipe = butcherActiveRecipe(butcher);
-  if ((butcher.stock || 0) > 1e-6 && butcher.stockFood && butcher.stockFood !== recipe.id) return false;
-  return recipe.needs.every(id => (butcher.pantry?.[id] || 0) >= 1e-6) && (butcher.stock || 0) < industryCap(butcher);
+  if ((butcher.stock || 0) > 0 && butcher.stockFood && butcher.stockFood !== recipe.id) return false;
+  return recipeIsUnlocked(butcher, recipe) && Object.keys(recipeNeeds(recipe)).every(id => (butcher.pantry?.[id] || 0) > 0) && (butcher.stock || 0) < industryCap(butcher);
 }
 function processButcher(dt) {
   state.buildings.filter(building => building.type === 'butcher' && isDone(building)).forEach(butcher => {
     if (!butcherCanProcess(butcher)) return;
     const recipe = butcherActiveRecipe(butcher), pantry = butcher.pantry || {};
-    const qty = Math.min(butcherRate(butcher) * (1 + crewWork(butcher)) * dt, ...recipe.needs.map(id => pantry[id]), industryCap(butcher) - (butcher.stock || 0));
+    const qty = Math.min(butcherRate(butcher) * (1 + crewWork(butcher)) * dt, ...Object.entries(recipeNeeds(recipe)).map(([id, amount]) => (pantry[id] || 0) / amount), (industryCap(butcher) - (butcher.stock || 0)) / recipeOutput(recipe));
     if (qty <= 0) return;
-    recipe.needs.forEach(id => { pantry[id] -= qty; });
+    Object.entries(recipeNeeds(recipe)).forEach(([id, amount]) => { pantry[id] -= qty * amount; });
     butcher.stockFood = recipe.id;
-    butcher.stock = (butcher.stock || 0) + qty;
+    butcher.stock = (butcher.stock || 0) + qty * recipeOutput(recipe);
   });
 }
 function processMetalworks(dt) {
@@ -4536,13 +4591,15 @@ function butcherMissing(butcher) {
     const load = worker.alive && worker.carrying?.toButcher === butcher.site ? worker.carrying : null;
     if (load) pantry[load.food] = (pantry[load.food] || 0) + load.qty;
   });
-  return butcherActiveRecipe(butcher).needs.filter(id => (pantry[id] || 0) < FOOD_LOAD && (state.food[id] || 0) >= 0.5)
-    .sort((a, b) => (pantry[a] || 0) - (pantry[b] || 0))[0] || null;
+  const needs = recipeNeeds(butcherActiveRecipe(butcher));
+  return Object.entries(needs).filter(([id, qty]) => (pantry[id] || 0) + 1e-6 < qty && (state.food[id] || 0) > 0)
+    .sort(([a, qa], [b, qb]) => (pantry[a] || 0) / qa - (pantry[b] || 0) / qb)[0]?.[0] || null;
 }
 function butcherRoutine(actor, butcher) {
   const store = nearestStorage(butcher), recipe = butcherActiveRecipe(butcher);
   if (isAt(actor, butcher)) {
-    if (actor.carrying?.toButcher) {
+    if (actor.carrying && actor.carrying.toButcher !== butcher.site) { walkTo(actor, store); return; }
+    if (actor.carrying?.toButcher === butcher.site) {
       butcher.pantry = butcher.pantry || {};
       butcher.pantry[actor.carrying.food] = (butcher.pantry[actor.carrying.food] || 0) + actor.carrying.qty;
       actor.carrying = null;
@@ -4550,7 +4607,7 @@ function butcherRoutine(actor, butcher) {
     // Mesma regra da padaria: processa até a carne acabar; sai com a carga cheia, ou com o que tiver quando a carne acabou.
     const fullLoad = foodLoad(actor);
     const canProcess = butcherCanProcess(butcher);
-    if ((butcher.stock || 0) >= fullLoad - 1e-6 || ((butcher.stock || 0) > 1e-6 && !canProcess)) {
+    if ((butcher.stock || 0) >= fullLoad - 1e-6 || ((butcher.stock || 0) > 0 && !canProcess)) {
       const qty = Math.min(foodLoad(actor), butcher.stock);
       butcher.stock -= qty;
       actor.carrying = { food: butcher.stockFood || recipe.id, qty };
@@ -4559,7 +4616,7 @@ function butcherRoutine(actor, butcher) {
     }
     const need = !canProcess && butcherMissing(butcher);
     if (need) { actor.task = `Buscando ${foodName(need)} para o açougue`; walkTo(actor, store); return; }
-    actor.task = butcherCanProcess(butcher) ? `Processando ${recipe.name} no açougue` : `No açougue, esperando ${recipe.needs.map(foodName).join(' e ')}`;
+    actor.task = butcherCanProcess(butcher) ? `Processando ${recipe.name} no açougue` : `No açougue, esperando ${recipeInputsText(recipe)}`;
     if (butcherCanProcess(butcher)) gainSkill(actor, 'cooking', 0.3);
     actor.wait = 3; actor.actionTime = 3; actor.actionClock = 0; return;
   }
@@ -4567,7 +4624,9 @@ function butcherRoutine(actor, butcher) {
     if (actor.carrying && !actor.carrying.toButcher) deliverLoad(actor);
     const need = !actor.carrying && butcherMissing(butcher);
     if (need) {
-      const qty = Math.min(foodLoad(actor), state.food[need]); state.food[need] -= qty;
+      const target = Math.max(FOOD_LOAD, recipeNeeds(butcherActiveRecipe(butcher))[need]);
+      const carried = (butcher.pantry?.[need] || 0) + state.workers.filter(worker => worker.alive && worker.carrying?.toButcher === butcher.site && worker.carrying.food === need).reduce((sum, worker) => sum + worker.carrying.qty, 0);
+      const qty = Math.min(foodLoad(actor), state.food[need], Math.max(0, target - carried)); state.food[need] -= qty;
       actor.carrying = { food: need, qty, toButcher: butcher.site };
     }
   }
@@ -4632,16 +4691,17 @@ function bakeryMissing(bakery) {
     const load = worker.alive && worker.carrying?.toBakery === bakery.site ? worker.carrying : null;
     if (load) pantry[load.food] = (pantry[load.food] || 0) + load.qty;
   });
-  return bakeryActiveRecipe(bakery).needs
-    .filter(id => (pantry[id] || 0) < FOOD_LOAD && (state.food[id] || 0) >= 0.5)
-    .sort((a, b) => (pantry[a] || 0) - (pantry[b] || 0))[0] || null;
+  const needs = recipeNeeds(bakeryActiveRecipe(bakery));
+  return Object.entries(needs).filter(([id, qty]) => (pantry[id] || 0) + 1e-6 < qty && (state.food[id] || 0) > 0)
+    .sort(([a, qa], [b, qb]) => (pantry[a] || 0) / qa - (pantry[b] || 0) / qb)[0]?.[0] || null;
 }
 // Rotina do padeiro: busca um ingrediente por viagem, assa e leva a fornada ao depósito.
 function bakeRoutine(actor, bakery) {
   const store = nearestStorage(bakery);
   const recipe = bakeryActiveRecipe(bakery);
   if (isAt(actor, bakery)) {
-    if (actor.carrying?.toBakery) {
+    if (actor.carrying && actor.carrying.toBakery !== bakery.site) { walkTo(actor, store); return; }
+    if (actor.carrying?.toBakery === bakery.site) {
       bakery.pantry = bakery.pantry || {};
       bakery.pantry[actor.carrying.food] = (bakery.pantry[actor.carrying.food] || 0) + actor.carrying.qty;
       actor.carrying = null;
@@ -4664,7 +4724,7 @@ function bakeRoutine(actor, bakery) {
       return;
     }
     const baking = bakeryCanBake(bakery);
-    actor.task = baking ? `Assando ${foodName(recipe.id)} na padaria` : `Na padaria, esperando ${recipe.needs.map(id => foodName(id)).join(', ')}`;
+    actor.task = baking ? `Assando ${foodName(recipe.id)} na padaria` : `Na padaria, esperando ${recipeInputsText(recipe)}`;
     if (baking) gainTrade(actor, 'bakery');
     actor.wait = 3 / taskSpeed(actor, bakery); actor.actionTime = actor.wait; actor.actionClock = 0;
     return;
@@ -4673,7 +4733,9 @@ function bakeRoutine(actor, bakery) {
     if (actor.carrying && !actor.carrying.toBakery) deliverLoad(actor);
     const need = !actor.carrying && bakeryMissing(bakery);
     if (need) {
-      const qty = Math.min(foodLoad(actor), state.food[need]);
+      const target = Math.max(FOOD_LOAD, recipeNeeds(bakeryActiveRecipe(bakery))[need]);
+      const carried = (bakery.pantry?.[need] || 0) + state.workers.filter(worker => worker.alive && worker.carrying?.toBakery === bakery.site && worker.carrying.food === need).reduce((sum, worker) => sum + worker.carrying.qty, 0);
+      const qty = Math.min(foodLoad(actor), state.food[need], Math.max(0, target - carried));
       state.food[need] -= qty;
       actor.carrying = { food: need, qty, toBakery: bakery.site };
     }
@@ -4878,8 +4940,7 @@ function producerBoxHTML(building) {
   const next = level + 1 < maxLevel ? PRODUCER_LEVELS[level + 1] : null;
   const mill = building.type === 'mill';
   const bakery = building.type === 'bakery';
-  const rateAt = lv => mill ? MILL_RATE[lv] : bakery ? BAKE_RATE[lv] : building.type === 'emberLab' ? LAB_RATE[lv] : building.type === 'butcher' ? BUTCHER_RATE[lv] : building.type === 'blacksmith' ? BLACKSMITH_RATE[lv] : farmType(building.produce).grain[lv];
-  const unit = building.type === 'blacksmith' ? 'lotes por segundo' : mill ? 'de trigo moído em farinha por segundo' : `de ${farmType(building.produce).name.toLowerCase()} por segundo`;
+  const rateAt = lv => mill ? MILL_RATE[lv] : bakery ? BAKE_RATE[lv] * recipeOutput(bakeryActiveRecipe(building)) : building.type === 'emberLab' ? LAB_RATE[lv] : building.type === 'butcher' ? BUTCHER_RATE[lv] * recipeOutput(butcherActiveRecipe(building)) : building.type === 'blacksmith' ? BLACKSMITH_RATE[lv] : farmType(building.produce).grain[lv];
   return `<section class="inspector-section"><h4>Melhoria</h4>
     ${next ? `<button type="button" class="hut-upgrade" data-producer-upgrade="${building.site}">Nível ${level + 2} · ${rateNumber(rateAt(level + 1))}/s · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. Mais que isso, só com milagre.</p>'}</section>`;
 }
@@ -4887,9 +4948,9 @@ function bakeryRecipeBoxHTML(bakery) {
   const current = bakeryActiveRecipe(bakery).id;
   return `<section class="inspector-section" aria-label="Fornada da padaria"><h4>Produção</h4>
     <div class="farm-type-grid compact">${BAKERY_RECIPES.map(recipe => {
-      const locked = recipe.id === 'quiche' && producerLevel(bakery) < 1;
-      const detail = locked ? 'Desbloqueia no nível 2' : `${recipe.needs.map(id => foodName(id)).join(' + ')} · alimenta ${foodFeeds(recipe.id)}×`;
-      return `<button class="farm-type${current === recipe.id ? ' selected' : ''}${locked ? ' locked' : ''}" data-bakery-recipe="${recipe.id}" aria-pressed="${current === recipe.id}"${locked ? ' disabled aria-disabled="true"' : ''} title="${detail}"><img src="public/art/${BAKED_ART[recipe.id]}-v01.webp" alt=""><b>${recipe.name}</b>${locked ? '<small>nível 2</small>' : ''}</button>`;
+      const locked = !recipeIsUnlocked(bakery, recipe);
+      const detail = recipeDetails(recipe);
+      return `<button class="farm-type${current === recipe.id ? ' selected' : ''}${locked ? ' locked' : ''}" data-bakery-recipe="${recipe.id}" aria-pressed="${current === recipe.id}"${locked ? ' disabled aria-disabled="true"' : ''} title="${detail}"><img src="public/art/${foodIcon(FOOD_TYPES.find(food => food.id === recipe.id))}" alt=""><b>${recipe.name}</b><small>${detail}</small></button>`;
     }).join('')}</div></section>`;
 }
 function weaponOrderBoxHTML(building) {
@@ -4927,7 +4988,7 @@ function blacksmithRecipeBoxHTML(building) {
 function butcherRecipeBoxHTML(butcher) {
   const current = butcherActiveRecipe(butcher).id;
   return `<section class="inspector-section" aria-label="Receita do açougue"><h4>Produção</h4>
-    <div class="farm-type-grid compact">${BUTCHER_RECIPES.map(recipe => `<button class="farm-type${current === recipe.id ? ' selected' : ''}" data-butcher-recipe="${recipe.id}" aria-pressed="${current === recipe.id}" title="${recipe.needs.map(id => foodName(id)).join(' + ')} → alimenta ${recipe.feeds}×"><img src="public/art/${recipe.icon || `${recipe.art}-v01.webp`}" alt=""><b>${recipe.name}</b><small>${recipe.feeds}× alimento</small></button>`).join('')}</div></section>`;
+    <div class="farm-type-grid compact">${BUTCHER_RECIPES.map(recipe => { const locked = !recipeIsUnlocked(butcher, recipe); return `<button class="farm-type${current === recipe.id ? ' selected' : ''}${locked ? ' locked' : ''}" data-butcher-recipe="${recipe.id}" aria-pressed="${current === recipe.id}"${locked ? ' disabled aria-disabled="true"' : ''} title="${recipeDetails(recipe)}"><img src="public/art/${foodIcon(FOOD_TYPES.find(food => food.id === recipe.id))}" alt=""><b>${recipe.name}</b><small>${recipeDetails(recipe)}</small></button>`; }).join('')}</div></section>`;
 }
 function upgradeProducer(site) {
   const building = state.buildings.find(item => item.site === site && PRODUCER_TYPES.includes(item.type) && isDone(item));
@@ -5373,8 +5434,8 @@ function economyPanelHTML() {
   const crewOf = building => state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site).length;
   const produced = emptyFood();
   farms.forEach(farm => { produced[farmFoodId(farm)] += farmOutput(farm) * (1 + crewWork(farm)); const secondary = farmType(farm.produce).secondary; if (secondary) produced[secondary] += farmSecondaryRate(farm) * (1 + crewWork(farm)); });
-  bakeries.forEach(bakery => { produced[bakeryActiveRecipe(bakery).id] += bakeRate(bakery) * (1 + crewWork(bakery)); });
-  state.buildings.filter(building => building.type === 'butcher' && isDone(building)).forEach(building => { produced[butcherActiveRecipe(building).id] += butcherRate(building) * (1 + crewWork(building)); });
+  bakeries.forEach(bakery => { const recipe = bakeryActiveRecipe(bakery); produced[recipe.id] += bakeRate(bakery) * (1 + crewWork(bakery)) * recipeOutput(recipe); });
+  butchers.forEach(building => { const recipe = butcherActiveRecipe(building); produced[recipe.id] += butcherRate(building) * (1 + crewWork(building)) * recipeOutput(recipe); });
   produced.fish += fishers.reduce((sum, worker) => sum + FISHING_RATE * (1 + skillOf(worker, 'fishing') / 100), 0);
   const milling = mills.reduce((sum, mill) => sum + millRate(mill) * (1 + crewWork(mill)), 0);
   const woodRates = camps.map(camp => LUMBER_RATE[workingCrew(camp).length] * (1 + workingCrewWork(camp)));
@@ -5384,8 +5445,8 @@ function economyPanelHTML() {
   const waiting = [...farms, ...mills, ...bakeries, ...butchers].reduce((sum, building) => sum + (building.stock || 0) + (building.secondaryStock || 0), 0);
   const buildingRateText = building => {
     if (building.type === 'mill') return `${per(millRate(building) * (1 + crewWork(building)))} de trigo`;
-    if (building.type === 'bakery') return `${per(bakeRate(building) * (1 + crewWork(building)))} de ${foodName(bakeryActiveRecipe(building).id)}`;
-    if (building.type === 'butcher') return `${per(butcherRate(building) * (1 + crewWork(building)))} de ${foodName(butcherActiveRecipe(building).id)}`;
+    if (building.type === 'bakery') { const recipe = bakeryActiveRecipe(building); return `${per(bakeRate(building) * (1 + crewWork(building)) * recipeOutput(recipe))} de ${foodName(recipe.id)}`; }
+    if (building.type === 'butcher') { const recipe = butcherActiveRecipe(building); return `${per(butcherRate(building) * (1 + crewWork(building)) * recipeOutput(recipe))} de ${foodName(recipe.id)}`; }
     const type = farmType(building.produce);
     const secondary = type.secondary ? ` + ${per(farmSecondaryRate(building) * (1 + crewWork(building)))} de ${foodName(type.secondary)}` : '';
     return `${per(farmOutput(building) * (1 + crewWork(building)))} de ${foodName(farmFoodId(building))}${secondary}`;
@@ -5437,12 +5498,12 @@ function foodPanelHTML() {
     <div class="food-block"><div class="food-label">RAÇÃO</div>
       <div class="segmented ration">${RATIONS.map((ration, i) => `<button type="button" data-ration="${i}" class="${state.ration === i ? 'active' : ''}"><b>${ration.label}</b><small>${hn(eaters() * WORKER_UPKEEP * ration.mult)}/s</small><em class="${ration.mood > 0 ? 'mood-up' : ration.mood < 0 ? 'mood-down' : ''}">${ration.mood > 0 ? '+' : ration.mood < 0 ? '−' : ''}${Math.abs(ration.mood)} felicidade</em></button>`).join('')}</div>
       <p class="storage-items">Cada camponês come ${hn(WORKER_UPKEEP)} de provisão por segundo na ração normal. Meia come metade; dobrada, o dobro; tripla, o triplo.</p>
-      <p class="storage-items">A provisão se mede em pão. ${[1, 2, 4].map(n => `${FOOD_TYPES.filter(food => !food.raw && food.feeds === n).map(food => food.name.toLowerCase()).join(', ')} alimentam ${n}×`).join('; ')}: quanto mais alimenta, menos sai do estoque.</p>
+      <p class="storage-items">A provisão se mede em pão. ${[1, 2, 3, 4, 5].map(n => `${FOOD_TYPES.filter(food => !food.raw && food.feeds === n).map(food => food.name.toLowerCase()).join(', ')} alimentam ${n}×`).join('; ')}: quanto mais alimenta, menos sai do estoque.</p>
       <p class="ration-effect">Efeito na felicidade do povo: a ração <b>${RATIONS[state.ration].label.toLowerCase()}</b> ${RATIONS[state.ration].mood > 0 ? 'deixa o povo mais feliz' : RATIONS[state.ration].mood < 0 ? 'deixa o povo mais triste' : 'não muda a felicidade'} (${RATIONS[state.ration].mood > 0 ? '+' : RATIONS[state.ration].mood < 0 ? '−' : ''}${Math.abs(RATIONS[state.ration].mood)}). Quanto mais comida, mais feliz o povo, e mais rápido o estoque acaba. Se a comida servida não der para todos, a fome tira até 40.</p></div>
     <div class="food-label">CARDÁPIO</div>
-    <div class="food-list">${FOOD_TYPES.map(food => { const on = !!state.diet[food.id]; const stock = state.food[food.id] || 0; return `<div class="food-row${on ? ' on' : ''}${stock <= 0 ? ' empty' : ''}">
+    <div class="food-list">${[...FOOD_TYPES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(food => { const on = !!state.diet[food.id]; const stock = state.food[food.id] || 0; return `<div class="food-row${on ? ' on' : ''}${stock <= 0 ? ' empty' : ''}">
         <img src="public/art/${foodIcon(food)}" alt=""><span class="food-name"><b>${food.name}</b><small>${food.raw ? '' : `Alimenta ${food.feeds}×. `}${food.note}</small></span>
-        <span class="food-stock"><b>${format(stock)}</b><small>${food.id === 'flour' ? (milling ? `até +${rateNumber(milling)}/s` : 'sem moinho') : food.baked ? (bakingCapacity(food.id) ? `até +${rateNumber(bakingCapacity(food.id))}/s` : 'sem padaria assando') : prod[food.id] ? `+${rateNumber(prod[food.id])}/s${food.raw && milling ? ` · moinho −${rateNumber(milling)}/s` : ''}` : 'sem produção'}</small></span>
+        <span class="food-stock"><b>${format(stock)}</b><small>${food.id === 'flour' ? (milling ? `até +${rateNumber(milling)}/s` : 'sem moinho') : prod[food.id] ? `+${rateNumber(prod[food.id])}/s${food.raw && milling ? ` · moinho −${rateNumber(milling)}/s` : ''}` : 'sem produção'}</small></span>
         ${food.raw ? '<button type="button" disabled>PRO MOINHO</button>' : `<button type="button" data-diet="${food.id}" class="${on ? 'on' : ''}">${on ? 'SERVINDO' : 'GUARDADO'}</button>`}</div>`; }).join('')}</div>
     <div class="mood-box"><div class="mood-head"><span>FELICIDADE</span><b>${Math.round(state.happiness)}</b><em>${happinessLabel(state.happiness)}</em><small>média da semana ${Math.round(moodWeekAverage())} · muda no dia ${nextMoodDay()}</small></div>
       <div class="mood-bar"><i style="width:${Math.round(state.happiness)}%"></i></div>
@@ -6702,11 +6763,11 @@ const HOWTO = [
     <h3>Moinho</h3>
     <p>Trigo cru não alimenta ninguém. O moinho mói trigo em farinha, 1 para 1: o camponês busca trigo no depósito e leva a farinha de volta. Moagem por nível: ${MILL_RATE.map(value => `${hn(value)}/s`).join(', ')}, com o mesmo bônus da equipe.</p>
     <h3>Padaria</h3>
-    <p>Você escolhe a fornada no painel da padaria. O camponês busca os ingredientes no depósito, um por viagem, e leva o que sai do forno de volta. Cada fornada gasta 1 de cada ingrediente e faz 1 do produto. A Quiche Lorraine só abre no nível 2. Fornadas por nível: ${BAKE_RATE.map(value => `${hn(value)}/s`).join(', ')}. A habilidade <b>Culinária</b> melhora a produção.</p>
-    ${howTable(['Fornada', 'Ingredientes', 'Alimenta', 'Disponível'], BAKERY_RECIPES.map(recipe => [recipe.name, recipe.needs.map(id => FOOD_TYPES.find(food => food.id === id).name).join(' + '), `${foodFeeds(recipe.id)}×`, recipe.id === 'quiche' ? 'Padaria nível 2' : 'Padaria nível 1']))}
+    <p>Você escolhe uma receita no painel da padaria. O padeiro busca cada ingrediente no depósito, respeitando as quantidades da receita, e transporta o produto pronto de volta. As receitas mostram os ingredientes por lote, o rendimento e o nível de desbloqueio. Lotes por segundo: ${BAKE_RATE.map(value => `${hn(value)}/s`).join(', ')}. A habilidade <b>Culinária</b> melhora a produção.</p>
+      ${howTable(['Fornada', 'Ingredientes', 'Rendimento', 'Alimenta', 'Disponível'], BAKERY_RECIPES.map(recipe => [recipe.name, recipeInputsText(recipe), recipeOutput(recipe), `${foodFeeds(recipe.id)}×`, `Padaria nível ${recipe.level || 1}`]))}
     <h3>Açougue</h3>
-    <p>O Galinheiro continua produzindo ovos e também frango; a fazenda de leite continua produzindo leite e também carne de vaca. Cada carne animal sai a ${hn(FARM_ANIMAL_RATE)}× a taxa normal da fazenda. A fazenda de Suínos entrega matéria-prima ao açougue. O camponês busca insumos e entrega a produção no depósito. Nível 2: ${hn(BUTCHER_RATE[1])} unidades por segundo, com valores padrão editáveis.</p>
-    ${howTable(['Produto', 'Ingredientes', 'Alimenta'], BUTCHER_RECIPES.map(recipe => [recipe.name, recipe.needs.map(id => FOOD_TYPES.find(food => food.id === id).name).join(' + '), `${recipe.feeds}×`]))}
+    <p>O Galinheiro produz ovos e frango; a fazenda de leite produz leite e carne de vaca. Cada carne animal sai a ${hn(FARM_ANIMAL_RATE)}× a taxa normal da fazenda. A fazenda de Suínos entrega matéria-prima ao açougue. O açougue combina carnes, pesca e hortaliças em receitas por lote, busca insumos e entrega a produção no depósito. Lotes por segundo por nível: ${BUTCHER_RATE.map(value => `${hn(value)}/s`).join(', ')}.</p>
+      ${howTable(['Produto', 'Ingredientes', 'Rendimento', 'Alimenta', 'Disponível'], BUTCHER_RECIPES.map(recipe => [recipe.name, recipeInputsText(recipe), recipeOutput(recipe), `${foodFeeds(recipe.id)}×`, `Açougue nível ${recipe.level || 1}`]))}
     <h3>Pesca</h3>
     <p>Nas Wilds, clique em um ponto de pesca marcado e escolha um camponês. Ele vai ao ponto, acumula Trutas, leva a carga ao depósito e melhora com a habilidade Pesca. Taxa base: ${hn(FISHING_RATE)} por segundo; cada ponto guarda até ${FARM_STOCK_CAP}.</p>
     <h3>Caça nas Wilds</h3>
