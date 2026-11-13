@@ -1032,7 +1032,7 @@ button.slot-main:hover:not([disabled]), button.slot-main:focus-visible { border-
 .market-side > small { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: 100%; color: #a59d89; font-size: 10px; letter-spacing: .06em; }
 .market-side:nth-child(4) > small { color: #e8a873; }
 .market-side .cost-ico { width: 13px; height: 13px; }
-.market-side > span { display: flex; gap: 4px; }
+.market-side > span { display: flex; flex-wrap: wrap; gap: 4px; }
 .market-side button { min-width: 30px; height: 26px; padding: 0 6px; border: 1px solid rgba(206,186,137,.35); border-radius: 4px; color: #e5d7b5; background: rgba(30,32,27,.9); font: 600 12px 'Figtree', sans-serif; cursor: pointer; }
 .market-side button:hover { border-color: var(--gold); color: var(--gold); }
 .market-side button.buy { border-color: rgba(255,200,130,.5); color: #f2e4d0; background: linear-gradient(180deg, #d9621c 0%, #9c2f10 55%, #561708 100%); }
