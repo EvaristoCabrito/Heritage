@@ -1,3 +1,8 @@
+const GUILD_FORMS = {
+  moonwarden: [['Guerreiro de machado e escudo'], ['Lobisomem de machado e escudo'], ['Grande Lobo']],
+  vanguard: [['Vanguard'], ['Swordsmaster', 'WarBringer']],
+};
+
 const BUILDINGS = [
   { id: 'farm', name: 'Fazenda', glyph: 'F', cost: 115, wood: 6, detail: 'Alho, trigo, suínos, ovos, leite ou hortaliças. Escolha o que plantar e melhore até o nível 3.', gold: 0.55, grain: 0.225, people: 0 },
   { id: 'mill', name: 'Moinho', glyph: 'M', cost: 155, wood: 10, detail: 'Mói o trigo em farinha. Trigo cru não alimenta ninguém. As pás giram; a vila, nem tanto.', gold: 0.4, grain: 0, people: 0 },
@@ -19,6 +24,8 @@ const BUILDINGS = [
   { id: 'blackMage', name: 'Torre dos Magos', glyph: 'M', cost: 210, wood: 12, detail: 'Recruta Black Mages. Magia que explode em área. Eles também morrem fácil.', heroClass: 'Black Mage', gold: 0.2, grain: 0, people: 1 },
   { id: 'conjurer', name: 'Casa dos Conjuradores', glyph: 'C', cost: 200, wood: 12, detail: 'Recruta Conjurers. Chegam sozinhos e lutam acompanhados.', heroClass: 'Conjurer', gold: 0.2, grain: 0, people: 1 },
   { id: 'healer', name: 'Guilda de Curandeiros', glyph: 'H', cost: 180, wood: 10, detail: 'Recruta Healers. Mantêm os heróis vivos. Por um tempo.', heroClass: 'Healer', gold: 0.25, grain: 0, people: 1 },
+  { id: 'moonwarden', name: 'Guilda MoonWarden', glyph: 'M', cost: 185, wood: 11, detail: 'Seu morador evolui de guerreiro a lobisomem e, por fim, a Grande Lobo.', heroClass: 'MoonWarden', gold: 0.3, grain: 0, people: 1 },
+  { id: 'vanguard', name: 'Guilda dos Vanguards', glyph: 'V', cost: 185, wood: 11, detail: 'Seu Vanguard escolhe entre Swordsmaster e WarBringer no nível 2.', heroClass: 'Vanguard', gold: 0.3, grain: 0, people: 1 },
   { id: 'armory', name: 'Arsenal do Domínio', glyph: 'E', cost: 165, wood: 9, detail: 'Heróis e camponeses compram equipamento aqui com o próprio ouro. O ouro vem pro cofre.', gold: 0.15, grain: 0, people: 0 },
 ];
 // Toda construção consome pedra adicional, calculada a partir da madeira necessária.
@@ -74,16 +81,27 @@ const MANOR_DOOR = { x: 42, y: 39 };
 // Fazendas e moinhos sobem até o nível 3. O moinho melhorado mói mais rápido, sem exagero.
 const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 180, wood: 12 }, { gold: 320, wood: 20 }];
 const MILL_RATE = [0.225, 0.3, 0.4]; // trigo moído em farinha por segundo, por nível
-// Padaria: o camponês busca os ingredientes no depósito, o forno transforma 1 de cada em 1 do produto
-// e ele leva a fornada de volta. O produto alimenta o mesmo que os ingredientes somados e ocupa menos espaço.
+// Receitas são medidas em lotes: cada lote consome a quantidade declarada e rende yield unidades.
+// A unidade de produção da receita também é a unidade que o trabalhador transporta e o povo consome.
+const recipeNeeds = recipe => Array.isArray(recipe.needs)
+  ? Object.fromEntries(recipe.needs.map(id => [id, 1]))
+  : recipe.needs;
+const recipeInputsText = recipe => Object.entries(recipeNeeds(recipe)).map(([id, qty]) => `${qty > 1 ? `${qty} ` : ''}${foodName(id)}`).join(' + ');
+const recipeOutput = recipe => recipe.yield || 1;
+const recipeIsUnlocked = (building, recipe) => !recipe.level || producerLevel(building) >= recipe.level - 1;
 const BAKERY_RECIPES = [
-  { id: 'bread', name: 'Pão', needs: ['flour'] },
-  { id: 'cheese', name: 'Queijo', needs: ['flour', 'milk'] },
-  { id: 'quiche', name: 'Quiche Lorraine', needs: ['flour', 'milk', 'bacon'] },
+  { id: 'bread', name: 'Pão', needs: ['flour'], art: 'bread' },
+  { id: 'cheese', name: 'Queijo', needs: ['flour', 'milk'], art: 'cheese' },
+  { id: 'quiche', name: 'Quiche Lorraine', needs: ['flour', 'milk', 'bacon'], art: 'quiche', level: 2 },
+  { id: 'garlicFlatbread', name: 'Pão achatado de alho', needs: { flour: 2, garlic: 1 }, yield: 2, feeds: 1, mood: 2, level: 1, art: 'bread' },
+  { id: 'potatoLoaf', name: 'Pão de batata', needs: { flour: 2, potato: 1, milk: 1 }, yield: 2, feeds: 1, mood: 2, level: 2, art: 'bread' },
+  { id: 'vegetablePie', name: 'Torta de hortaliças', needs: { flour: 1, eggs: 1, potato: 1, carrot: 1 }, yield: 1, feeds: 3, mood: 3, level: 2, art: 'quiche' },
+  { id: 'tomatoTart', name: 'Torta de tomate e queijo', needs: { flour: 1, eggs: 1, tomato: 1, cheese: 1 }, yield: 1, feeds: 3, mood: 3, level: 2, art: 'quiche' },
+  { id: 'fishPie', name: 'Torta de truta', needs: { flour: 1, eggs: 1, fish: 1, milk: 1 }, yield: 1, feeds: 4, mood: 4, level: 3, art: 'quiche' },
 ];
 const BAKE_RATE = [0.15, 0.2, 0.27]; // fornadas por segundo, por nível
-const BUTCHER_RATE = [0.12, 0.16]; // unidades processadas por segundo nos níveis 1 e 2
-const BUTCHER_MAX_LEVEL = 2;
+const BUTCHER_RATE = [0.12, 0.16, 0.22]; // lotes processados por segundo nos níveis 1, 2 e 3
+const BUTCHER_MAX_LEVEL = 3;
 const BUTCHER_RECIPES = [
   { id: 'bacon', name: 'Bacon', needs: ['pork'], feeds: 1, art: 'farm-bacon', icon: 'icon-market-bacon-photo-v01.png' },
   { id: 'sausage', name: 'Linguiça', needs: ['pork'], feeds: 1, art: 'sausage' },
@@ -96,12 +114,22 @@ const BUTCHER_RECIPES = [
   { id: 'garlicBoar', name: 'Javali ao Alho', needs: ['boarMeat', 'garlic'], feeds: 4, art: 'garlic-boar', icon: 'garlic-boar-v01.png' },
   { id: 'roastElk', name: 'Alce Assado', needs: ['elkMeat'], feeds: 2, art: 'roast-elk', icon: 'roast-elk-v01.png' },
   { id: 'elkStew', name: 'Ensopado de Alce', needs: ['elkMeat', 'milk', 'potato'], feeds: 4, art: 'elk-stew', icon: 'elk-stew-v01.png' },
+  { id: 'porkStew', name: 'Ensopado de porco', needs: { pork: 1, potato: 2, carrot: 1 }, yield: 1, feeds: 4, mood: 3, level: 1, art: 'elk-stew' },
+  { id: 'chickenStew', name: 'Ensopado de frango', needs: { chicken: 1, potato: 1, carrot: 1, milk: 1 }, yield: 1, feeds: 4, mood: 3, level: 1, art: 'elk-stew' },
+  { id: 'beefStew', name: 'Ensopado de carne', needs: { beef: 1, potato: 2, tomato: 1, garlic: 1 }, yield: 1, feeds: 5, mood: 4, level: 2, art: 'elk-stew' },
+  { id: 'stuffedTomatoes', name: 'Tomates recheados', needs: { beef: 1, tomato: 2, garlic: 1 }, yield: 2, feeds: 2, mood: 3, level: 2, art: 'garlic-boar' },
+  { id: 'fishStew', name: 'Ensopado de truta', needs: { fish: 1, potato: 1, carrot: 1, milk: 1 }, yield: 1, feeds: 4, mood: 3, level: 2, art: 'elk-stew' },
+  { id: 'hunterPlatter', name: 'Prato do caçador', needs: { boarMeat: 1, elkMeat: 1, potato: 1, garlic: 1 }, yield: 2, feeds: 3, mood: 4, level: 3, art: 'roast-boar' },
+  { id: 'farmersFeast', name: 'Banquete da colheita', needs: { pork: 1, eggs: 1, potato: 1, carrot: 1, tomato: 1 }, yield: 2, feeds: 4, mood: 5, level: 3, art: 'roast-boar' },
 ];
 const BUTCHER_ART = Object.fromEntries(BUTCHER_RECIPES.map(recipe => [recipe.id, recipe.art]));
 const butcherRecipe = id => BUTCHER_RECIPES.find(recipe => recipe.id === id) || BUTCHER_RECIPES[0];
-const butcherActiveRecipe = butcher => butcherRecipe(butcher?.produce);
+const butcherActiveRecipe = butcher => {
+  const recipe = butcherRecipe(butcher?.produce);
+  return recipeIsUnlocked(butcher, recipe) ? recipe : butcherRecipe('bacon');
+};
 const butcherRate = building => BUTCHER_RATE[Math.min(BUTCHER_RATE.length - 1, producerLevel(building))];
-const BAKED_ART = { bread: 'bread', cheese: 'cheese', quiche: 'quiche' };
+const BAKED_ART = Object.fromEntries(BAKERY_RECIPES.map(recipe => [recipe.id, recipe.art || 'quiche']));
 const bakeryRecipe = id => BAKERY_RECIPES.find(recipe => recipe.id === id) || BAKERY_RECIPES[0];
 // Construções com nível de produção (melhoria até o nível 3) e camponês fixo.
 const PRODUCER_TYPES = ['farm', 'mill', 'bakery', 'emberLab', 'butcher', 'blacksmith'];
@@ -151,7 +179,7 @@ const bakeRate = building => BAKE_RATE[producerLevel(building)];
 const levelArt = (art, building) => LEVEL_ART[art]?.[producerLevel(building)] || art;
 const bakeryActiveRecipe = bakery => {
   const recipe = bakeryRecipe(bakery?.produce);
-  return recipe.id === 'quiche' && producerLevel(bakery) < 1 ? bakeryRecipe('bread') : recipe;
+  return recipeIsUnlocked(bakery, recipe) ? recipe : bakeryRecipe('bread');
 };
 const rateNumber = value => value.toFixed(2).replace('.', ',');
 
@@ -163,15 +191,24 @@ const GUILD_FOR = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', 'Bla
 const CLASS_ART = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', 'Black Mage': 'black-mage', Conjurer: 'conjurer', Healer: 'healer', Peasant: 'peasant' };
 const PORTRAIT_ART = { Warrior: 'warrior', Archer: 'archer', Lancer: 'lancer', 'Black Mage': 'black-mage', Conjurer: 'conjurer', Healer: 'healer' };
 const PRESTIGE_ART = { Paladin: 'paladin', 'Heavy Knight': 'heavy-knight', Ranger: 'ranger', Assassin: 'assassin', Sentinel: 'sentinel', Templar: 'templar', Elementalist: 'elementalist', Warlock: 'warlock', Sorcerer: 'sorcerer', Necromancer: 'necromancer', Bishop: 'bishop', Cleric: 'cleric' };
-const actorArt = actor => PRESTIGE_ART[actor.prestige] || actor.spriteId || (actor.kind === 'skeleton' ? 'skeleton-v02' : actor.kind === 'zombie' ? 'zombie-v01' : actor.kind === 'wolf' ? 'mordavian-wolf-v01' : actor.kind === 'goblin' ? 'mordavian-goblin-v01' : actor.kind === 'troll' ? 'mordavian-troll-v01' : null) || CLASS_ART[actor.className];
-const actorPortrait = actor => PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || 'male-peasant';
+const GUILD_HERO_ART = {
+  MoonWarden: 'moonwarden-human',
+  'Lobisomem de machado e escudo': 'moonwarden-werewolf',
+  'Grande Lobo': 'moonwarden-great-wolf',
+  Vanguard: 'vanguard',
+  Swordsmaster: 'swordsmaster',
+  WarBringer: 'warbringer',
+};
+const guildHeroArt = actor => GUILD_HERO_ART[actor.guildForm || actor.className];
+const actorArt = actor => guildHeroArt(actor) || PRESTIGE_ART[actor.prestige] || actor.spriteId || (actor.kind === 'skeleton' ? 'skeleton-v02' : actor.kind === 'zombie' ? 'zombie-v01' : actor.kind === 'wolf' ? 'mordavian-wolf-v01' : actor.kind === 'goblin' ? 'mordavian-goblin-v01' : actor.kind === 'troll' ? 'mordavian-troll-v01' : null) || CLASS_ART[actor.className];
+const actorPortrait = actor => guildHeroArt(actor) || PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || 'male-peasant';
 const actorSheet = actor => {
   if (actor.action === 'build') return 'build';
   if (actor.action === 'idle') return 'idle';
   if (actor.className === 'Peasant' && actor.action === 'work') return 'work';
   if (actor.className === 'Peasant' && actor.action === 'collect') return 'action';
   if (actor.className === 'Peasant' && actor.action === 'fight') return 'fight';
-  if (actor.action === 'action' && !actor.prestige) return 'action';
+  if (actor.action === 'action' && (!actor.prestige || guildHeroArt(actor))) return 'action';
   return 'walk';
 };
 // Nomes, manias e falas vindos do Herança de Cinzas original.
@@ -251,8 +288,24 @@ const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
   bakery: 'bakery', emberLab: 'ember-lab', butcher: 'butcher', blacksmith: 'blacksmith',
   farm: 'farm-wheat', mill: 'mill-body', hut: 'hut', depot: 'depot', lumber: 'lumber', quarry: 'quarry-l1', mine: 'mine-l1', market: 'market', tavern: 'tavern', hotel: 'hotel', warrior: 'guild', archer: 'archer', lancer: 'lancer',
-  blackMage: 'tower', conjurer: 'conjurer', healer: 'healer', armory: 'armory',
+  blackMage: 'tower', conjurer: 'conjurer', healer: 'healer', armory: 'armory', moonwarden: 'guild-moonwarden', vanguard: 'guild-vanguard',
 };
+const GUILD_BUILDING_ART = {
+  warrior: [null, 'guild-l2', { Paladin: 'guild-paladin', 'Heavy Knight': 'guild-heavy-knight' }],
+  archer: [null, 'archer-l2', { Ranger: 'archer-ranger', Assassin: 'archer-assassin' }],
+  lancer: [null, 'lancer-l2', { Sentinel: 'lancer-sentinel', Templar: 'lancer-templar' }],
+  blackMage: [null, 'tower-l2-v02', { Elementalist: 'tower-elementalist-v02', Warlock: 'tower-warlock-v02' }],
+  conjurer: [null, 'conjurer-l2', { Sorcerer: 'conjurer-sorcerer', Necromancer: 'conjurer-necromancer' }],
+  healer: [null, 'healer-l2', { Bishop: 'healer-bishop', Cleric: 'healer-cleric' }],
+  moonwarden: [null, 'guild-moonwarden-l2', 'guild-moonwarden-l3'],
+  vanguard: [null, { Swordsmaster: 'guild-vanguard-swordsmaster', WarBringer: 'guild-vanguard-warbringer' }],
+};
+const GUILD_UPGRADE_ART = new Set(Object.values(GUILD_BUILDING_ART).flatMap(levels =>
+  levels.slice(1).flatMap(art => typeof art === 'string' ? [art] : Object.values(art))));
+function guildBuildingArt(type, tier, branch) {
+  const variant = GUILD_BUILDING_ART[type]?.[tier];
+  return (typeof variant === 'string' ? variant : variant?.[branch]) || BUILDING_ART[type];
+}
 const PHOTOREAL_BUILDING_ART = new Set([
   'farm-garlic', 'farm-wheat', 'farm-wheat-v02', 'farm-bacon', 'farm-eggs', 'farm-milk',
   'farm-garlic-l2', 'farm-garlic-l3', 'farm-wheat-v02-l2', 'farm-wheat-v02-l3',
@@ -265,6 +318,7 @@ const PHOTOREAL_BUILDING_ART = new Set([
 // Artes de obra: o sprite final existente continua sendo a fase completa.
 // Para adicionar uma construção nova, inclua a chave aqui e os arquivos -early/-mid.
 const CONSTRUCTION_STAGE_ART = new Set([
+  'guild-moonwarden', 'guild-vanguard',
   'farm-garlic', 'farm-wheat', 'farm-wheat-v02', 'farm-bacon', 'farm-eggs', 'farm-milk',
   'farm-garlic-l2', 'farm-garlic-l3', 'farm-wheat-v02-l2', 'farm-wheat-v02-l3',
   'farm-bacon-l2', 'farm-bacon-l3', 'farm-eggs-l2', 'farm-eggs-l3', 'farm-milk-l2', 'farm-milk-l3',
@@ -322,6 +376,15 @@ function applyBuildingImage(element, art, constructionStage = null, building = n
   }
 }
 const buildingImage = (art, constructionStage = null, building = null) => {
+  const upgrade = building?.pendingUpgrade;
+  if (constructionStage && upgrade?.kind === 'guild') {
+    if (constructionStage === 'mid') {
+      const target = guildBuildingArt(building.type, upgrade.tier + 1, upgrade.branch);
+      if (GUILD_UPGRADE_ART.has(target)) return `public/art/buildings-construction-dark-v01/${target}-mid.webp`;
+    }
+    return buildingImage(art);
+  }
+  if (GUILD_UPGRADE_ART.has(art)) return `public/art/buildings-photoreal-v03-runtime/${art}.webp`;
   if (building?.underConstruction && building.pendingUpgrade?.kind === 'producer') {
     const artId = building.type === 'farm' ? farmType(building.produce).art : BUILDING_ART[building.type];
     const targetArt = LEVEL_ART[artId]?.[producerLevel(building) + 1];
@@ -371,7 +434,7 @@ const PATROLS = {
   other: [0, 1, 3, 6, 2],
 };
 
-const GAME_VERSION = 'Version 0.13.21';
+const GAME_VERSION = 'Version 0.13.6';
 const SAVE_SLOTS = 3;
 const SAVE_KEY = slot => `mordavia.save.${slot}`;
 const OPTIONS_KEY = 'mordavia.options';
@@ -415,7 +478,7 @@ function newGameState(heir = null) {
       { id: 'starter-iron-pick-2', type: 'mine', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-1', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-2', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
-    ], remains: { D: 0, C: 0, B: 0, A: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
+    ], remains: { D: 0, C: 0, B: 0, A: 0, nekomata: 0, nekomataWild: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
     food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, potato: 0, carrot: 0, tomato: 0, fish: 0 }, items: [], ration: 2, diet: { wheat: false, flour: false, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, potato: true, carrot: true, tomato: true, fish: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
     speed: 1, minutes: 380, ticks: 0, manorArrivalDay: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false, goalStep: 0,
@@ -429,6 +492,8 @@ function newGameState(heir = null) {
       { id: 'wolf-den-2', name: 'Covil de lobos 2', kind: 'wolf-den', level: 1, art: 'mordavia-wolf-den-l1-v01.png', mapId: 'wilds', x: 91, y: 184, active: true, nextSpawnAt: 380 + 420 },
       { id: 'cemetery-l2', name: 'Cemiterio level 2', kind: 'cemetery', level: 2, art: 'mordavia-cemetery-l2-v01.png', mapId: 'wilds', x: 44, y: 190, active: false },
       { id: 'wolf-den-l2', name: 'Covil de lobos level 2', kind: 'wolf-den', level: 2, art: 'mordavia-wolf-den-l2-v01.png', mapId: 'wilds', x: 82, y: 173, active: false, nextScenario: true },
+      { id: 'nekomata-den-l1', name: 'Covil da Nekomata · nível 1', kind: 'nekomata-den', level: 1, art: 'nekomata-lair-photo-candidate-v02.png', mapId: 'wilds', mapSet: 1, x: 24, y: 55, active: true, nextSpawnAt: 380 + 360 },
+      { id: 'nekomata-den-l2', name: 'Covil da Nekomata · nível 2', kind: 'nekomata-den', level: 2, art: 'nekomata-lair-photo-v04.png', mapId: 'wilds', mapSet: 2, x: 34, y: 118, active: true, nextSpawnAt: 380 + 360 },
       { id: 'goblin-den-l1', name: 'Covil goblin level 1', kind: 'goblin-den', level: 1, art: 'mordavia-goblin-den-l1-v01.png', mapId: 'wilds', x: 82, y: 24, active: true, nextSpawnAt: 380 + 200 },
       { id: 'goblin-den-l2', name: 'Covil goblin level 2', kind: 'goblin-den', level: 2, art: 'mordavia-goblin-den-l2-v01.png', mapId: 'wilds', x: 34, y: 118, active: false, nextScenario: true },
       { id: 'troll-den-l1', name: 'Covil de trolls level 1', kind: 'troll-den', level: 1, art: 'mordavia-troll-den-l1-v01.png', mapId: 'wilds', x: 90, y: 34, active: true, nextSpawnAt: 380 + 300 },
@@ -645,7 +710,7 @@ function renderManorInventory() {
     const source = ORE_STOCK.has(id) ? (lots.length ? lots.map(lot => `${oreName(lot.mineral)} · ${formatMass(lot.quantityKg)} kg · ${lot.gradePpm} ppm · veio ${lot.seamId || 'local'}`).join(' / ') : 'Rocha ou achado entregue do posto') : 'Metal manufaturado';
     return [METAL_NAMES[id], state.metals?.[id] || 0, source, formatMetalAmount(id, state.metals?.[id] || 0)];
   });
-  const remainsRows = REMAINS_GRADES.map(grade => [`Dead Remains ${grade.id}`, state.remains?.[grade.id] || 0, 'Guardado · matéria-prima do Laboratório de Ember']);
+  const remainsRows = [...REMAINS_GRADES.map(grade => [`Dead Remains ${grade.id}`, state.remains?.[grade.id] || 0, 'Guardado · matéria-prima do Laboratório de Ember']), ['Nekomata Remains · covil', state.remains?.nekomata || 0, 'Guardado · material especial'], ['Nekomata Remains · individual', state.remains?.nekomataWild || 0, 'Guardado · material especial']];
   const workRows = state.buildings.filter(isDone).flatMap(building => {
     const name = buildingName(building);
     const crew = state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site).length;
@@ -717,17 +782,14 @@ function initCamera() {
     const unit = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? scene.clientHeight : 1;
     moveCamera(-event.deltaX * unit, -event.deltaY * unit);
   }, { passive: false });
-  scene.addEventListener('keydown', event => {
+  document.addEventListener('keydown', event => {
     const step = 48;
     const moves = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
-    if (moves[event.key]) {
-      event.preventDefault();
-      moveCamera(...moves[event.key]);
-    } else if (event.key === 'Home') {
-      event.preventDefault();
-      homeCamera();
-    }
-  });
+    if (!moves[event.key]) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    moveCamera(...moves[event.key]);
+  }, true);
   $('#camera-home')?.addEventListener('click', () => {
     focusRegion('manor');
   });
@@ -824,6 +886,18 @@ const MARKET_GOODS = [
   { id: 'garlicBoar', name: 'Javali ao Alho', art: 'parmesan-steak', sell: 14, buy: 28 },
   { id: 'roastElk', name: 'Alce Assado', art: 'steak', sell: 9, buy: 18 },
   { id: 'elkStew', name: 'Ensopado de Alce', art: 'quiche', sell: 16, buy: 32 },
+  { id: 'garlicFlatbread', name: 'Pão achatado de alho', art: 'bread', sell: 5, buy: 10 },
+  { id: 'potatoLoaf', name: 'Pão de batata', art: 'bread', sell: 7, buy: 14 },
+  { id: 'vegetablePie', name: 'Torta de hortaliças', art: 'quiche', sell: 9, buy: 18 },
+  { id: 'tomatoTart', name: 'Torta de tomate e queijo', art: 'quiche', sell: 11, buy: 22 },
+  { id: 'fishPie', name: 'Torta de truta', art: 'quiche', sell: 15, buy: 30 },
+  { id: 'porkStew', name: 'Ensopado de porco', art: 'elk-stew', sell: 12, buy: 24 },
+  { id: 'chickenStew', name: 'Ensopado de frango', art: 'elk-stew', sell: 12, buy: 24 },
+  { id: 'beefStew', name: 'Ensopado de carne', art: 'elk-stew', sell: 15, buy: 30 },
+  { id: 'stuffedTomatoes', name: 'Tomates recheados', art: 'garlic-boar', sell: 12, buy: 24 },
+  { id: 'fishStew', name: 'Ensopado de truta', art: 'elk-stew', sell: 14, buy: 28 },
+  { id: 'hunterPlatter', name: 'Prato do caçador', art: 'roast-boar', sell: 22, buy: 44 },
+  { id: 'farmersFeast', name: 'Banquete da colheita', art: 'roast-boar', sell: 24, buy: 48 },
   { id: 'fish', name: 'Truta', art: 'fish', sell: 3, buy: 6 },
   { id: 'timber', name: 'Madeira', icon: 'icon-logs-photo-v01.png', sell: 2, buy: 4 },
 ];
@@ -1670,6 +1744,7 @@ function siteLabel(building) {
 }
 function siteArt(building) {
   const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
+  if (GUILD_BUILDING_ART[building.type]) return guildBuildingArt(building.type, guildTier(building), building.guildForm || building.branch);
   if (building.type === 'quarry' || building.type === 'mine') return `${building.type}-l${(building.level || 0) + 1}`;
   return PRODUCER_TYPES.includes(building.type) ? levelArt(art, building) : art;
 }
@@ -1740,7 +1815,7 @@ function renderSites() {
       site.dataset.art = art;
       site.dataset.type = building.type;
       const displayedArt = siteArt(building);
-      const artAspect = options.buildingArtStyle === 'dark' || constructionStage ? BUILDING_ART_ASPECTS[displayedArt] || BUILDING_ART_ASPECTS[art] || 1 : displayedArt === 'manor' ? 1.5 : 1;
+      const artAspect = options.buildingArtStyle === 'dark' || constructionStage || GUILD_UPGRADE_ART.has(displayedArt) ? BUILDING_ART_ASPECTS[displayedArt] || BUILDING_ART_ASPECTS[art] || 1 : displayedArt === 'manor' ? 1.5 : 1;
       site.innerHTML = `<span class="building-art" style="--art-aspect:${artAspect};${buildingImageStyle(siteArt(building), constructionStage, building)}" aria-hidden="true">${building.type === 'mill' && !building.underConstruction ? '<span class="mill-sails"></span>' : ''}</span>${upgrading ? `<span class="upgrade-burst" aria-hidden="true">${'<i></i>'.repeat(8)}<b>${building.upgradeText || 'Melhorado'}</b></span>` : ''}${building.underConstruction ? `<small class="build-progress">${constructionLabel(building)}</small><small class="build-spacer" aria-hidden="true">Em obra</small>` : `<small>${building.damage > 0 ? `${label} · ${building.ruined ? 'em ruínas' : 'vida'} ${buildingHp(building)}/${buildingMaxHp(building)}` : label}</small>`}`;
       site.setAttribute('aria-label', `${label}. Toque para ver opções.`);
     }
@@ -1787,14 +1862,14 @@ function renderLairs() {
       marker = document.createElement('div');
       marker.className = 'lair-marker remains-pile';
       marker.dataset.lair = pile.id;
-      marker.innerHTML = `<img src="${remainsImage(pile.grade)}" alt=""><small>Dead Remains ${pile.grade}</small>`;
+      marker.innerHTML = `<img src="${remainsImage(pile.grade)}" alt=""><small>${remainsName(pile.grade)}</small>`;
       layer.append(marker);
     }
     marker.style.left = `${pile.x}%`;
     marker.style.top = `${pile.y / WORLD_Y_UNITS * 100}%`;
     marker.style.zIndex = String(Math.round(pile.y * 10));
     marker.hidden = (pile.mapId || 'city') !== currentMap || (pile.mapSet || 1) !== currentMapSet;
-    marker.setAttribute('aria-label', `Dead Remains grade ${pile.grade}`);
+    marker.setAttribute('aria-label', remainsName(pile.grade));
   });
   (state.wildMeatPiles || []).forEach(pile => {
     visibleIds.add(pile.id);
@@ -2024,10 +2099,22 @@ function workerIsWorkingIndoors(actor) {
     && (actor.mapSet || 1) === (workplace.mapSet || 1);
 }
 
+const NEKOMATA_FRAME_MS = { base: 130.787, atk: 142.361, move: 55.556, 'move-left': 55.556, cast: 138.889, special: 84.491, hit: 52.083, death: 92.593 };
+const NEKOMATA_BOX = { base: [4.7, 2.32857, 0.05714], atk: [4.95, 2.90714, 0.09286], move: [4.71429, 2.17143, 0.07143], 'move-left': [4.71429, 2.17143, 0.07143], cast: [4.91429, 2.7, 0.22857], special: [4.9, 3, 0.3], hit: [4.65714, 2.97143, 0.12857], death: [5.05714, 1.82857, 0.17143] };
+let nekomataDeaths = [];
+function nekomataFrame(actor) {
+  const clip = actor.nekoDeathClock != null ? 'death' : actor.nekoHitClock != null ? 'hit' : actor.attackAnim > 0 ? (actor.nekoAttackClip || 'atk') : actor.nekoMoving ? (actor.side === 'left' ? 'move-left' : 'move') : 'base';
+  const clock = clip === 'death' ? actor.nekoDeathClock : clip === 'hit' ? actor.nekoHitClock : ['atk', 'cast', 'special'].includes(clip) ? actor.actionClock || 0 : clip === 'base' ? actor.nekoIdleClock || 0 : actor.walkClock || 0;
+  let frame = Math.floor(clock * 1000 / NEKOMATA_FRAME_MS[clip]);
+  if (clip === 'base') { frame %= 70; frame = frame < 36 ? frame : 70 - frame; }
+  else if (clip === 'move' || clip === 'move-left') frame %= 36;
+  else frame = Math.min(35, frame);
+  return { clip, frame: frame + 1 };
+}
 function renderHeroes() {
   const layer = $('#hero-layer');
   const active = new Set();
-  [...state.heroes, ...state.workers, ...(state.bandits || []), ...(window.Monarch?.summons() || [])].filter(actor => actor.alive && !workerIsWorkingIndoors(actor) && (actor.mapId || 'city') === currentMap && (actor.mapSet || 1) === currentMapSet).forEach(actor => {
+  [...state.heroes, ...state.workers, ...(state.bandits || []), ...(window.Monarch?.summons() || []), ...nekomataDeaths].filter(actor => (actor.alive || actor.nekoDeathClock != null) && !workerIsWorkingIndoors(actor) && (actor.mapId || 'city') === currentMap && (actor.mapSet || 1) === currentMapSet).forEach(actor => {
     active.add(String(actor.id));
     let token = [...layer.children].find(node => node.dataset.actor === String(actor.id));
     if (!token) {
@@ -2041,6 +2128,7 @@ function renderHeroes() {
         : actor.className === 'Monster' ? `<span class="monster-skull" aria-hidden="true">☠</span><span class="character-name">${actor.name}</span>`
         : `<span class="hero-face">${actor.className[0]}</span><span class="character-name">${actor.name}</span>`;
       token.addEventListener('click', () => {
+        if (!actor.alive) return;
         if (state.selectedBuild) return;
         // Clique esquerdo num inimigo põe recompensa pela cabeça dele (valor escolhido na aba Heróis).
         if (isHostile(actor)) {
@@ -2059,7 +2147,7 @@ function renderHeroes() {
     }
     if (token.parentElement !== layer) layer.append(token);
     const hurt = actor.hp != null && actor.hp < maxHpOf(actor);
-    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${actor.className === 'Wildlife' ? ' wildlife' : ''}${actor.kind === 'boar' ? ' wild-boar' : actor.kind === 'elk' ? ' elk' : actor.kind === 'wolf' ? ' wolf' : actor.kind === 'goblin' ? ' goblin' : actor.kind === 'troll' ? ' troll' : actor.kind === 'zombie' ? ' zombie' : ''}${actor.summon ? ' summon' : ''}${actor.mfx?.convert ? ' converted' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
+    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${actor.className === 'Wildlife' ? ' wildlife' : ''}${actor.kind === 'boar' ? ' wild-boar' : actor.kind === 'elk' ? ' elk' : actor.kind === 'wolf' ? ' wolf' : actor.kind === 'nekomata' ? ' nekomata' : actor.kind === 'goblin' ? ' goblin' : actor.kind === 'troll' ? ' troll' : actor.kind === 'zombie' ? ' zombie' : ''}${actor.summon ? ' summon' : ''}${actor.mfx?.convert ? ' converted' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
     if (hurt) token.style.setProperty('--hp', `${Math.max(0, Math.round(hpOf(actor) / maxHpOf(actor) * 100))}%`);
     token.style.left = `${actor.x}%`;
     token.style.top = `${actor.y / WORLD_Y_UNITS * 100}%`;
@@ -2075,7 +2163,16 @@ function renderHeroes() {
       const backWalk = art === 'peasant' && sheet === 'walk' && token.dataset.facing === 'back';
       const verticalTrollWalk = actor.kind === 'troll' && sheet === 'walk' && ['up', 'down'].includes(actor.walkDirection);
       const extension = actor.className === 'Wildlife' || (art === 'peasant' && ['build', 'work', 'fight'].includes(sheet)) || (art === 'female-peasant' && ['work', 'fight'].includes(sheet)) || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp';
-      const spriteFile = backWalk ? 'peasant-walk-back-v02.png' : verticalTrollWalk ? 'mordavian-troll-v01-walk-vertical-v01.png' : art === 'female-peasant' && sheet === 'work' ? 'female-peasant-work-v02.png' : art === 'peasant' && sheet === 'fight' ? 'peasant-fight-side-v01.png' : art === 'female-peasant' && sheet === 'fight' ? 'female-peasant-fight-side-v01.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : actor.className === 'Wildlife' && sheet === 'idle' ? `${art}-idle-v02.png` : actor.className === 'Wildlife' && art === 'elk' && sheet === 'walk' ? 'elk-walk-v02.png' : `${art}-${sheet}-v01.${extension}`;
+      const nekoFrame = actor.kind === 'nekomata' ? nekomataFrame(actor) : null;
+      if (nekoFrame) {
+        const [width, height, foot] = NEKOMATA_BOX[nekoFrame.clip];
+        token.style.setProperty('--neko-width', `${width / 4.7 * 100}%`);
+        token.style.setProperty('--neko-height', `${height / 2.32857 * 100}%`);
+        token.style.setProperty('--neko-bottom', `${(0.05714 - foot) / 2.32857 * 100}%`);
+      }
+      const nativeLeft = /^moonwarden-(human|werewolf)$/.test(art) && token.dataset.side === 'left' && ['walk', 'action'].includes(sheet);
+      const guildSprite = guildHeroArt(actor) ? `${art}-${sheet === 'action' || sheet === 'idle' ? sheet : 'walk'}${nativeLeft ? '-left' : ''}-v${sheet === 'idle' ? (art.startsWith('moonwarden-') ? '02' : '03') : (art.startsWith('moonwarden-') ? '01' : '02')}.webp` : null;
+      const spriteFile = guildSprite || (nekoFrame ? `nekomata-media36-v01/${nekoFrame.clip}-media36-v01/${nekoFrame.clip}-${nekoFrame.frame}.png` : backWalk ? 'peasant-walk-back-v02.png' : verticalTrollWalk ? 'mordavian-troll-v01-walk-vertical-v01.png' : art === 'female-peasant' && sheet === 'work' ? 'female-peasant-work-v02.png' : art === 'peasant' && sheet === 'fight' ? 'peasant-fight-side-v01.png' : art === 'female-peasant' && sheet === 'fight' ? 'female-peasant-fight-side-v01.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : actor.className === 'Wildlife' && sheet === 'idle' ? `${art}-idle-v02.png` : actor.className === 'Wildlife' && art === 'elk' && sheet === 'walk' ? 'elk-walk-v02.png' : `${art}-${sheet}-v01.${extension}`);
       if (token.dataset.spriteFile !== spriteFile) {
         $('.character-sprite', token).style.backgroundImage = `url('public/art/${spriteFile}')`;
         token.dataset.spriteFile = spriteFile;
@@ -2084,7 +2181,7 @@ function renderHeroes() {
       }
       token.dataset.backWalk = backWalk ? 'true' : 'false';
       token.dataset.verticalWalk = verticalTrollWalk ? 'true' : 'false';
-      const flipSprite = !verticalTrollWalk && actor.action !== 'fight' && token.dataset.side === 'left'; token.style.setProperty('--sprite-scale-x', flipSprite ? -1 : 1);
+      const flipSprite = guildSprite ? !nativeLeft && token.dataset.side === 'left' : actor.kind === 'nekomata' ? (token.dataset.side === 'left' && nekoFrame.clip !== 'move-left') : !verticalTrollWalk && actor.action !== 'fight' && token.dataset.side === 'left'; token.style.setProperty('--sprite-scale-x', flipSprite ? -1 : 1);
     }
     token.style.setProperty('--frame-x', `${(actor.frame || 0) * 100 / 3}%`);
     // Recompensa pela cabeça: a placa acompanha a caveira.
@@ -2099,12 +2196,10 @@ function renderHeroes() {
 }
 
 function heroCard(hero) {
-  const prestigeTargets = PRESTIGE[hero.className];
-  const nextInfo = hero.prestige ? `Caminho de prestígio: ${hero.prestige}` : hero.level >= 15 ? 'A guilda disponível mais próxima define a especialização.' : `${15 - hero.level} ${15 - hero.level === 1 ? 'nível' : 'níveis'} até o prestígio`;
-  const guildType = GUILD_FOR[hero.className];
+  const nextInfo = guildHeroArt(hero) ? 'A forma acompanha o nível da guilda.' : hero.prestige ? `Caminho de prestígio: ${hero.prestige}` : hero.level >= 15 ? 'A guilda disponível mais próxima define a especialização.' : `${15 - hero.level} ${15 - hero.level === 1 ? 'nível' : 'níveis'} até o prestígio`;
   return `<article class="hero-card">
     <img class="hero-portrait" data-actor-sheet="${hero.id}" title="Ver ficha" src="public/art/portraits/${actorPortrait(hero)}-portrait-v01.webp" alt="Retrato de ${hero.name}">
-    <div class="hero-details"><b>${hero.name}</b><small>${hero.className}${hero.prestige ? ` · ${hero.prestige}` : ''}</small>${hero.trait ? `<small class="hero-trait"><b>${hero.trait}.</b> ${TRAITS[hero.trait] || ''}</small>` : ''}<small>${nextInfo}</small><small>Alcoolismo · penalidade ${Math.floor(alcoholismOf(hero))}/100</small><small>Bolsa: ${format(purseOf(hero))} de ouro</small></div>
+    <div class="hero-details"><b>${hero.name}</b><small>${actorLabel(hero)}</small>${hero.trait ? `<small class="hero-trait"><b>${hero.trait}.</b> ${TRAITS[hero.trait] || ''}</small>` : ''}<small>${nextInfo}</small><small>Alcoolismo · penalidade ${Math.floor(alcoholismOf(hero))}/100</small><small>Bolsa: ${format(purseOf(hero))} de ouro</small></div>
     <div class="hero-xp">NÍV. ${hero.level}<i style="--xp:${hero.level >= HEIR_MAX_LEVEL ? 100 : Math.round((hero.xp || 0) / xpToNext(hero.level) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${hero.id}">FICHA</button></div>
   </article>`;
 }
@@ -2125,6 +2220,7 @@ function lairInfoHTML(lair) {
   const creature = lair.kind === 'wolf-den' ? 'Lobo mordaviano'
     : lair.kind === 'goblin-den' ? 'Goblin'
     : lair.kind === 'troll-den' ? 'Troll'
+    : lair.kind === 'nekomata-den' ? 'Nekomata'
     : lair.kind === 'cemetery' ? (level >= 2 ? 'Zumbi' : 'Caveira')
     : 'Criatura';
   const activity = den ? 'Solta uma criatura a cada 12 horas de jogo.'
@@ -2277,8 +2373,9 @@ function bindPanel(host) {
 // A aba Construir mostra as construções agrupadas por tipo, uma seção embaixo da outra.
 const BUILD_CATEGORIES = [
   { id: 'houses', name: 'Casas', types: ['hut', 'depot'] },
-  { id: 'production', name: 'Produção', types: ['farm', 'mill', 'bakery', 'emberLab', 'butcher', 'lumber', 'quarry', 'mine', 'blacksmith', 'market'] },
-  { id: 'guilds', name: 'Guildas', types: ['warrior', 'archer', 'lancer', 'conjurer', 'healer', 'armory', 'tavern', 'hotel'] },
+  { id: 'farms', name: 'Fazendas', types: ['farm'] },
+  { id: 'production', name: 'Produção', types: ['mill', 'bakery', 'emberLab', 'butcher', 'lumber', 'quarry', 'mine', 'blacksmith', 'market'] },
+  { id: 'guilds', name: 'Guildas', types: ['warrior', 'archer', 'lancer', 'blackMage', 'conjurer', 'healer', 'moonwarden', 'vanguard', 'armory', 'tavern', 'hotel'] },
 ];
 const buildCardHTML = item => {
   const cityQuarryExists = item.id === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city');
@@ -2305,16 +2402,16 @@ function renderPanel() {
     const selectedFarm = null;
     const farmChoice = state.selectedBuild === 'farm';
     const currentFarmType = state.selectedFarmType;
-    host.innerHTML = `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
-      ${farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
+    const farmSelector = farmChoice ? `<section class="farm-selector" aria-label="Tipo de fazenda"><div class="farm-selector-heading"><b>${selectedFarm ? 'Produção desta fazenda' : 'Escolha a produção da fazenda'}</b><small>${selectedFarm ? 'Toque para trocar a produção' : 'Depois toque no mapa'}</small></div>
         <div class="farm-type-grid">${[...FARM_TYPES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(type => {
           const level = selectedFarm ? producerLevel(selectedFarm) : 0;
           const multiplier = FARM_OUTPUT_MULTIPLIER * (selectedFarm ? 1 + crewWork(selectedFarm) : 1);
           const rate = type.grain[level] * multiplier;
           const secondaryRate = type.secondary ? rate * FARM_ANIMAL_RATE : 0;
           return `<button class="farm-type${currentFarmType === type.id ? ' selected' : ''}" data-farm-type="${type.id}" aria-pressed="${currentFarmType === type.id}"><img src="public/art/${type.icon || `${type.art}-v01.webp`}" alt=""><span><b>${type.name}</b><small>+${rateNumber(rate)} ${foodName(type.foodId || type.id)}/s</small>${type.secondary ? `<small>+${rateNumber(secondaryRate)} ${foodName(type.secondary)}/s</small>` : ''}</span></button>`;
-        }).join('')}</div></section>` : ''}
-      ${[...BUILD_CATEGORIES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(category => `<details class="build-section" data-build-category="${category.id}" ${openBuildCategories.has(category.id) ? 'open' : ''}><summary class="build-section-title">${category.name}</summary><div class="build-grid">${BUILDINGS.filter(item => buildCategoryOf(item.id) === category.id).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(buildCardHTML).join('')}</div></details>`).join('')}
+        }).join('')}</div></section>` : '';
+    host.innerHTML = `<div class="panel-title"><h3>Erga o domínio</h3><span>Escolha uma carta e toque no mapa</span></div>
+      ${[...BUILD_CATEGORIES].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(category => `<details class="build-section" data-build-category="${category.id}" ${openBuildCategories.has(category.id) ? 'open' : ''}><summary class="build-section-title">${category.name}</summary><div class="build-grid">${BUILDINGS.filter(item => buildCategoryOf(item.id) === category.id).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(buildCardHTML).join('')}</div>${category.id === 'farms' ? farmSelector : ''}</details>`).join('')}
       <p class="build-note">Construções comuns usam ouro, madeira e Pedra de Construção. A pedreira inicial não exige pedra.</p>`;
   } else if (state.tab === 'heroes') {
     host.innerHTML = `<div class="panel-title"><h3>Companhia autônoma</h3><span>${state.heroes.filter(h => h.alive).length}/${heroCapacity()} hóspedes</span></div>
@@ -2368,18 +2465,18 @@ function buildingInfoHTML(building, actions = '') {
     const recipe = bakeryActiveRecipe(building);
     const pantry = building.pantry || {};
     lines.push(['Assa', `${rateNumber(bakeRate(building))} de ${recipe.name.toLowerCase()} por segundo`]);
-    lines.push(['Receita', `${recipe.needs.map(id => `1 de ${foodName(id)}`).join(' + ')} → 1 de ${recipe.name.toLowerCase()}`]);
+    lines.push(['Receita', `${recipeInputsText(recipe)} → ${recipeOutput(recipe)} por lote de ${recipe.name.toLowerCase()}`]);
     lines.push(['Nível', `${producerLevel(building) + 1} de ${PRODUCER_LEVELS.length}`]);
-    lines.push(['No forno', `${recipe.needs.map(id => `${format(pantry[id] || 0)} de ${foodName(id)}`).join(' · ')} · ${format(building.stock || 0)} de ${foodName(building.stockFood || recipe.id)} esperando`]);
-    lines.push(['No depósito', recipe.needs.map(id => `${format(state.food[id] || 0)} de ${foodName(id)}`).join(' · ')]);
+    lines.push(['No forno', `${recipeStockText(recipe, pantry)} · ${format(building.stock || 0)} de ${foodName(building.stockFood || recipe.id)} esperando`]);
+    lines.push(['No depósito', recipeStockText(recipe, state.food)]);
     if (crewWork(building)) lines.push(['Ferramentas e profissão', `+${Math.round(crewWork(building) * 100)}% de produção`]);
     lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
   } else if (building.type === 'butcher') {
     const recipe = butcherActiveRecipe(building), pantry = building.pantry || {};
     lines.push(['Processa', `${rateNumber(butcherRate(building))} de ${recipe.name} por segundo`]);
-    lines.push(['Receita', `${recipe.needs.map(id => `1 de ${foodName(id)}`).join(' + ')} → 1 ${recipe.name} · alimenta ${recipe.feeds}×`]);
+    lines.push(['Receita', `${recipeInputsText(recipe)} → ${recipeOutput(recipe)} por lote · alimenta ${foodFeeds(recipe.id)}×`]);
     lines.push(['Nível', `${producerLevel(building) + 1} de ${BUTCHER_MAX_LEVEL}`]);
-    lines.push(['Matéria-prima', recipe.needs.map(id => `${format(pantry[id] || 0)} de ${foodName(id)}`).join(' · ')]);
+    lines.push(['Matéria-prima', recipeStockText(recipe, pantry)]);
     lines.push(['Produto pronto', `${format(building.stock || 0)} de ${foodName(building.stockFood || recipe.id)}`]);
     if (crewWork(building)) lines.push(['Culinária', `+${Math.round(crewWork(building) * 100)}% de produção`]);
     lines.push(['Trabalhando', `${workersHere.length}: ${names(workersHere)}`]);
@@ -2439,7 +2536,7 @@ function buildingInfoHTML(building, actions = '') {
     lines.push(['Equipados', `${geared} personagens`]);
   } else if (def.heroClass) {
     const recruits = state.heroes.filter(hero => hero.alive && hero.guildSite === building.site);
-    lines.push(['Recruta', building.branch || def.heroClass]);
+    lines.push(['Recruta', GUILD_FORMS[def.id] ? guildForm(building) : building.branch || def.heroClass]);
     lines.push(['Heróis daqui', `${recruits.length}: ${names(recruits)}`]);
   }
   const moving = state.movingSite === building.site;
@@ -2447,7 +2544,7 @@ function buildingInfoHTML(building, actions = '') {
   const level = PRODUCER_TYPES.includes(building.type) ? `Nível ${producerLevel(building) + 1} de ${building.type === 'butcher' ? BUTCHER_MAX_LEVEL : building.type === 'blacksmith' ? BLACKSMITH_RATE.length : PRODUCER_LEVELS.length}`
     : building.type === 'armory' ? `Nível ${(building.level || 0) + 1} de ${ARMORY_LEVELS.length}`
     : building.type === 'depot' ? `Nível ${(building.level || 0) + 1} de ${STORAGE_LEVELS.length}`
-    : def.heroClass ? `Nível ${guildTier(building) + 1} de 3` : building.type === 'hut' ? (building.big ? 'Grande' : 'Pequeno') : '';
+    : def.heroClass ? `Nível ${guildTier(building) + 1} de ${GUILD_FORMS[def.id]?.length || 3}` : building.type === 'hut' ? (building.big ? 'Grande' : 'Pequeno') : '';
   // Obra nova ainda não funciona: mostra o que ela vai fazer. Reforma mostra os dados de antes, parados até acabar.
   const obra = building.underConstruction ? constructionStatus(building) : null;
   const reform = obra && (building.pendingUpgrade || building.armoryUpgradeTo);
@@ -2604,15 +2701,17 @@ function chooseBakeryRecipe(id) {
   const bakery = state.buildings.find(building => building.site === state.selectedSite && building.type === 'bakery' && isDone(building));
   if (!bakery) return;
   const recipe = bakeryRecipe(id);
-  if (recipe.id === 'quiche' && producerLevel(bakery) < 1) { say('A Quiche Lorraine só fica disponível quando a padaria chega ao nível 2.'); return; }
+  if (!recipeIsUnlocked(bakery, recipe)) { say(`${recipe.name} só fica disponível no nível ${recipe.level} da padaria.`); return; }
   bakery.produce = recipe.id;
   renderSites(); renderPanel(); updateHud();
-  say(`A padaria agora assa ${recipe.name.toLowerCase()}: ${recipe.needs.map(need => foodName(need)).join(', ')}.`, `A padaria mudou a fornada para ${recipe.name.toLowerCase()}.`);
+  say(`A padaria agora assa ${recipe.name.toLowerCase()}: ${recipeInputsText(recipe)}.`, `A padaria mudou a fornada para ${recipe.name.toLowerCase()}.`);
 }
 function chooseButcherRecipe(id) {
   const butcher = state.buildings.find(building => building.site === state.selectedSite && building.type === 'butcher' && isDone(building));
   if (!butcher) return;
-  butcher.produce = butcherRecipe(id).id;
+  const recipe = BUTCHER_RECIPES.find(item => item.id === id && recipeIsUnlocked(butcher, item));
+  if (!recipe) return;
+  butcher.produce = recipe.id;
   renderSites(); renderPanel(); updateHud();
   say(`O açougue agora prepara ${butcherActiveRecipe(butcher).name.toLowerCase()}.`);
 }
@@ -2880,6 +2979,8 @@ function recruit(className, origin, prestige = null, guildResident = false) {
     return null;
   }
   const hero = { id: Date.now() + Math.random(), name: heroName(), className, prestige, trait: pick(Object.keys(TRAITS)), level: 1, xp: 0, x: origin.x, y: origin.y, alive: true, guildSite: guildResident ? origin.site : null, recruitedFromSite: origin.site ?? null, homeSite: lodging?.site ?? null, purse: HERO_START_PURSE, gear: STARTER_WEAPON[className] ? { weapon: STARTER_WEAPON[className] } : {} };
+  if (guildResident && GUILD_FORMS[origin.type]) hero.guildForm = guildForm(origin);
+  if (className === 'MoonWarden') hero.gear.offhand = 'plankShield';
   state.heroes.push(hero);
   gainHeirXp(10);
   renderHeroes();
@@ -2926,7 +3027,7 @@ function heroArrival() {
   }
   const lodging = freeLodging();
   if (!lodging) return null;
-  const guildClasses = BUILDINGS.filter(item => item.heroClass && state.buildings.some(built => built.type === item.id && isDone(built))).map(item => item.heroClass);
+  const guildClasses = BUILDINGS.filter(item => item.heroClass && !GUILD_FORMS[item.id] && state.buildings.some(built => built.type === item.id && isDone(built))).map(item => item.heroClass);
   const arrivals = lodging.type === 'hotel' && guildClasses.length ? guildClasses : BASE_HERO_CLASSES;
   const className = pick(arrivals);
   const hero = recruit(className, lodging);
@@ -2966,7 +3067,17 @@ function finishUpgrade(building, upgrade) {
     say(building.type === 'mill' ? `Moinho no nível ${building.level + 1}: mói ${rateNumber(millRate(building))} de trigo por segundo.` : building.type === 'emberLab' ? `Laboratório de Ember no nível ${building.level + 1}: refina ${rateNumber(labRate(building))} Dead Remains por segundo. Os vapores também melhoraram.` : building.type === 'bakery' ? `Padaria no nível ${building.level + 1}: ${rateNumber(bakeRate(building))} fornadas por segundo. O forno esquenta mais; o padeiro, também.` : building.type === 'butcher' ? `Açougue no nível ${building.level + 1}: processa ${rateNumber(butcherRate(building))} por segundo.` : `${buildingName(building)} no nível ${building.level + 1}: ${rateNumber(farmOutput(building))} por segundo. A terra não pediu, mas aceitou.`);
   } else if (upgrade.kind === 'guild') {
     const def = BUILDINGS.find(item => item.id === building.type);
-    if (upgrade.tier === 0) {
+    if (GUILD_FORMS[building.type]) {
+      building.tier = upgrade.tier + 1;
+      building.guildForm = upgrade.branch;
+      const resident = state.heroes.find(hero => hero.alive && hero.guildSite === building.site);
+      if (resident) {
+        const life = hpOf(resident) / maxHpOf(resident);
+        resident.guildForm = guildForm(building);
+        resident.hp = Math.max(1, Math.round(life * maxHpOf(resident)));
+      }
+      say(`${def.name} chegou ao nível ${building.tier + 1}. Forma disponível: ${guildForm(building)}.`);
+    } else if (upgrade.tier === 0) {
       building.tier = 1;
       const hero = recruit(def.heroClass, building, null, false);
       say(hero ? `${def.name} chegou ao nível 2. ${hero.name} ficou alojado fora da guilda.` : `${def.name} chegou ao nível 2, mas falta alojamento para o herói novo.`);
@@ -3024,6 +3135,7 @@ function ensureFarmWorkers() {
 // Nível 1 traz um morador da guilda; níveis 2 e 3 trazem heróis extras, alojados em taverna/hotel.
 const GUILD_UPGRADES = [{ gold: 240, wood: 16 }, { gold: 360, wood: 24 }];
 const guildTier = guild => guild.tier ?? (guild.branch ? 2 : 0);
+const guildForm = guild => guild.guildForm || GUILD_FORMS[guild.type][guildTier(guild)][0];
 function upgradeGuild(site, branch) {
   const guild = state.buildings.find(building => building.site === site);
   const def = guild && BUILDINGS.find(item => item.id === guild.type);
@@ -3031,8 +3143,9 @@ function upgradeGuild(site, branch) {
   const tier = guildTier(guild);
   const cost = GUILD_UPGRADES[tier];
   if (!cost) return;
-  if (tier === 1 && !PRESTIGE[def.heroClass]?.includes(branch)) return;
-  if (!freeLodging()) { say('A guilda mantém um único herói. Construa uma taverna ou hotel para alojar os próximos níveis.'); return; }
+  const forms = GUILD_FORMS[def.id];
+  if (forms ? !forms[tier + 1]?.includes(branch) : tier === 1 && !PRESTIGE[def.heroClass]?.includes(branch)) return;
+  if (!forms && !freeLodging()) { say('A guilda mantém um único herói. Construa uma taverna ou hotel para alojar os próximos níveis.'); return; }
   if (state.gold < cost.gold || state.timber < cost.wood) { say('Falta ouro ou madeira. Os heróis vão continuar dividindo beliche.'); return; }
   state.gold -= cost.gold;
   state.timber -= cost.wood;
@@ -3042,12 +3155,17 @@ function upgradeGuild(site, branch) {
 function guildBoxHTML(guild) {
   const def = BUILDINGS.find(item => item.id === guild.type);
   const tier = guildTier(guild);
-  const branchNames = { Bishop: 'Templo Bishop', Cleric: 'Treino Cleric', Elementalist: 'Torre dos Elementalistas', Warlock: 'Torre dos Arcanistas' };
-  const name = guild.branch ? (branchNames[guild.branch] || `Guilda ${guild.branch}`) : def.name;
   const members = state.heroes.filter(hero => hero.alive && hero.guildSite === guild.site).length;
   const cost = GUILD_UPGRADES[tier];
   let actions = '';
-  if (tier === 0) actions = `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" ${freeLodging() ? '' : 'disabled'}>Nível 2 · ${costHTML(cost.gold, cost.wood)} · +1 ${def.heroClass} (precisa de cama)</button>`;
+  const forms = GUILD_FORMS[def.id];
+  if (forms) {
+    const next = forms[tier + 1];
+    actions = `<p class="storage-items">Nível ${tier + 1} · ${guildForm(guild)}</p>`;
+    if (next) actions += `<div class="guild-branches">${next.map(form =>
+      `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" data-branch="${form}">Nível ${tier + 2} · ${form} · ${costHTML(cost.gold, cost.wood)}</button>`
+    ).join('')}</div>`;
+  } else if (tier === 0) actions = `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" ${freeLodging() ? '' : 'disabled'}>Nível 2 · ${costHTML(cost.gold, cost.wood)} · +1 ${def.heroClass} (precisa de cama)</button>`;
   else if (tier === 1) actions = `<p class="storage-items">Nível 3: escolha a especialização (${costHTML(cost.gold, cost.wood)}). Chega um herói especializado; os anteriores ficam como são.</p>
       <div class="guild-branches">${PRESTIGE[def.heroClass].map(path => `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" data-branch="${path}" ${freeLodging() ? '' : 'disabled'}>${path} · +1 ${path}</button>`).join('')}</div>`;
   else actions = `<p class="storage-items">Especializada em ${guild.branch}. Guilda no nível máximo.</p>`;
@@ -3320,6 +3438,7 @@ function animateActors(now) {
     }
     if (actor.wait > 0) {
       actor.wait = Math.max(0, actor.wait - delta);
+      if (guildHeroArt(actor) && !(actor.actionTime > 0)) { animateIdle(actor, delta, reducedMotion); return; }
       actor.action = actor.actionTime > 0 ? (actor.className === 'Peasant' ? (actor.pickupAnim ? 'collect' : 'work') : 'action') : 'walk';
       if (actor.actionTime > 0) actor.actionTime = Math.max(0, actor.actionTime - delta);
       if (actor.actionTime <= 0) actor.pickupAnim = false;
@@ -3358,9 +3477,8 @@ function animateActors(now) {
         }
       }
     }
-    actor.action = 'walk';
-    actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
-    actor.frame = moved && (!reducedMotion || actor.className === 'Peasant') ? Math.floor(actor.walkClock * 7) % 4 : 0;
+    if (!moved && guildHeroArt(actor)) animateIdle(actor, delta, reducedMotion);
+    else animateWalk(actor, moved, delta, reducedMotion);
     } catch (error) {
       actor.route = [];
       actor.wait = 0;
@@ -3377,7 +3495,16 @@ function animateActors(now) {
       reportActorMovementError(error);
     }
   });
+  nekomataDeaths.forEach(actor => { actor.nekoDeathClock += delta; });
+  nekomataDeaths = nekomataDeaths.filter(actor => actor.nekoDeathClock < NEKOMATA_FRAME_MS.death * 36 / 1000);
   (state.bandits || []).filter(bandit => bandit.alive).forEach(bandit => {
+    if (bandit.kind === 'nekomata') {
+      bandit.nekoIdleClock = (bandit.nekoIdleClock || 0) + delta;
+      if (bandit.nekoHitClock != null) {
+        bandit.nekoHitClock += delta;
+        if (bandit.nekoHitClock >= NEKOMATA_FRAME_MS.hit * 36 / 1000) bandit.nekoHitClock = null;
+      }
+    }
     // Atordoado, derrubado, empurrado ou convertido pelo Monarca: quem decide o passo é ele.
     try {
       if (!isWildlife(bandit) && window.Monarch?.enemyStep(bandit, delta, reducedMotion)) return;
@@ -3399,6 +3526,7 @@ function tick() {
   grantStartingStock(state);
   state.ticks++;
   state.playSeconds = (state.playSeconds || 0) + 1;
+  if (state.playSeconds % 300 === 0 && Math.random() < 0.25) spawnRandomNekomata();
   if (options.autosave && state.playSeconds % (options.autosave * 60) === 0) writeSave(game.slot);
   const r = rates();
   feedWorkers(state.speed);
@@ -3695,14 +3823,14 @@ const HERO_WEAPON_ART_CLASS = {
 const PEASANT_SLOTS = [
   { slot: 'tool', label: 'Ferramenta' }, { slot: 'clothes', label: 'Roupa' }, { slot: 'hands', label: 'Mãos' }, { slot: 'feet', label: 'Pés' }, { slot: 'head', label: 'Cabeça' },
 ];
-const MELEE = ['Warrior', 'Lancer', 'Healer'];
-const FRONT = ['Warrior', 'Lancer'];
+const MELEE = ['MoonWarden', 'Warrior', 'Lancer', 'Healer'];
+const FRONT = ['MoonWarden', 'Warrior', 'Lancer'];
 const CASTERS = ['Black Mage', 'Conjurer'];
 // bonus: atk, def, mag, hp, dex (heróis) · work (produção, fração), carry (carga extra), speed (passo, fração) (camponeses)
 const GEAR = {
   rustySword: { name: 'Espada Enferrujada', slot: 'weapon', tier: 1, price: 10, classes: ['Warrior'], bonus: { atk: 2 }, about: 'A ferrugem também corta. Mais devagar.' },
-  warAxe: { name: 'Machado de Guerra', slot: 'weapon', tier: 2, price: 40, classes: ['Warrior'], bonus: { atk: 5 }, about: 'Pesado o bastante pra resolver discussões.' },
-  valeGreatsword: { name: 'Montante do Vale', slot: 'weapon', tier: 3, price: 110, classes: ['Warrior'], bonus: { atk: 9 }, about: 'Forjado pra um herói. Vendido pra quem pagou.' },
+  warAxe: { name: 'Machado de Guerra', slot: 'weapon', tier: 2, price: 40, classes: ['Warrior', 'MoonWarden'], bonus: { atk: 5 }, about: 'Pesado o bastante pra resolver discussões.' },
+  valeGreatsword: { name: 'Montante do Vale', slot: 'weapon', tier: 3, price: 110, classes: ['Warrior', 'Vanguard'], bonus: { atk: 9 }, about: 'Forjado pra um herói. Vendido pra quem pagou.' },
   shortBow: { name: 'Arco Curto', slot: 'weapon', tier: 1, price: 10, classes: ['Archer'], bonus: { atk: 2, dex: 1 }, about: 'Curto no alcance e na paciência.' },
   yewBow: { name: 'Arco Longo de Teixo', slot: 'weapon', tier: 2, price: 40, classes: ['Archer'], bonus: { atk: 4, dex: 2 }, about: 'Teixo de cemitério. Por isso acerta.' },
   hornBow: { name: 'Arco de Chifre', slot: 'weapon', tier: 3, price: 110, classes: ['Archer'], bonus: { atk: 7, dex: 3 }, about: 'O dono anterior era o bicho do chifre.' },
@@ -3779,7 +3907,7 @@ const METAL_WEAPON_PROFILE = {
 const WEAPON_PATTERNS = [
   { id: 'dagger', name: 'Adaga', base: 'rustySword', classes: MELEE, sharp: true, cost: 1, designs: { copper: ['copper'], arsenicalCopper: ['arsenicalCopper'], bronze: ['bronze'], iron: ['iron'], steel: ['steel'], crucibleSteel: ['crucibleSteel'], meteoriteIron: ['meteoriteIron'] } },
   { id: 'spear', name: 'Lança', base: 'ashSpear', classes: ['Lancer'], sharp: true, shaft: 1, cost: 2, designs: { copper: ['copper'], arsenicalCopper: ['arsenicalCopper'], bronze: ['bronze'], iron: ['iron'], steel: ['steel'] } },
-  { id: 'axe', name: 'Machado', base: 'warAxe', classes: ['Warrior'], sharp: true, handle: 1, cost: 3, designs: { bronze: ['bronze'], iron: ['iron'], steelEdge: ['iron', 'steel'], steel: ['steel'] } },
+  { id: 'axe', name: 'Machado', base: 'warAxe', classes: ['Warrior', 'MoonWarden'], sharp: true, handle: 1, cost: 3, designs: { bronze: ['bronze'], iron: ['iron'], steelEdge: ['iron', 'steel'], steel: ['steel'] } },
   { id: 'mace', name: 'Maça', base: 'woodenMace', classes: MELEE, sharp: false, handle: 1, cost: 3, designs: { bronze: ['bronze'], iron: ['iron'], castIron: ['castIron'] } },
   { id: 'sword', name: 'Espada', base: 'rustySword', classes: ['Warrior'], sharp: true, grip: 1, cost: 4, designs: { bronze: ['bronze'], iron: ['iron'], steelEdge: ['iron', 'steel'], steel: ['steel'], crucibleSteel: ['crucibleSteel'] } },
 ];
@@ -3797,7 +3925,7 @@ function weaponDesign(patternId, materialId) {
 }
 const craftedWeapon = id => (state.craftedWeapons || []).find(item => item.id === id) || null;
 const gearItem = id => GEAR[id] || craftedWeapon(id);
-const STARTER_WEAPON = { Warrior: 'rustySword', Archer: 'shortBow', Lancer: 'ashSpear', 'Black Mage': 'crookedStaff', Conjurer: 'scorchedTome', Healer: 'woodenMace' };
+const STARTER_WEAPON = { MoonWarden: 'warAxe', Vanguard: 'valeGreatsword', Warrior: 'rustySword', Archer: 'shortBow', Lancer: 'ashSpear', 'Black Mage': 'crookedStaff', Conjurer: 'scorchedTome', Healer: 'woodenMace' };
 function gearIconHTML(item, actorClass, label = '') {
   const artClass = HERO_WEAPON_ART_CLASS[actorClass];
   const tier = Number(item?.tier);
@@ -4057,10 +4185,12 @@ const ARMORY_LEVELS = [
 ];
 const BONUS_LABELS = { atk: 'Ataque', def: 'Defesa', mag: 'Magia', hp: 'Vida', dex: 'Destreza', work: 'trabalho', carry: 'carga', speed: 'passo', build: 'obra' };
 const gearOf = actor => actor.gear || (actor.gear = {});
-const slotsFor = actor => actor.className === 'Peasant' ? PEASANT_SLOTS : HERO_SLOTS;
+const slotsFor = actor => actor.className === 'Peasant' ? PEASANT_SLOTS
+  : actor.guildForm === 'Grande Lobo' ? []
+  : actor.className === 'Vanguard' ? HERO_SLOTS.filter(({ slot }) => slot !== 'offhand') : HERO_SLOTS;
 const slotKind = slot => slot.startsWith('ring') ? 'ring' : slot;
-const fitsSlot = (item, actor, slot) => item.slot === slotKind(slot) && (actor.className === 'Peasant' ? !!item.peasant && (!item.prof || item.prof.includes(actor.profession)) : !item.peasant && (!item.classes || item.classes.includes(actor.className)));
-const gearBonus = (actor, key) => Object.values(gearOf(actor)).reduce((sum, id) => {
+const fitsSlot = (item, actor, slot) => (actor.guildForm !== 'Grande Lobo' && !(actor.className === 'Vanguard' && slot === 'offhand')) && item.slot === slotKind(slot) && (actor.className === 'Peasant' ? !!item.peasant && (!item.prof || item.prof.includes(actor.profession)) : !item.peasant && (!item.classes || item.classes.includes(actor.className)));
+const gearBonus = (actor, key) => actor.guildForm === 'Grande Lobo' ? 0 : Object.values(gearOf(actor)).reduce((sum, id) => {
   const item = gearItem(id);
   if (!item || (item.crafted && ((item.structuralCondition || 0) <= 0 || (key === 'atk' && item.sharp && (item.edgeCondition || 0) <= 0)))) return sum;
   return sum + (item.bonus?.[key] || 0);
@@ -4141,13 +4271,13 @@ function gearHTML(actor) {
   }).join('')}</div>${actor.className !== 'Peasant' ? craftedWeaponOptionsHTML(actor) : ''}`;
 }
 function craftedWeaponOptionsHTML(actor) {
-  const candidates = (state.items || []).map(id => craftedWeapon(id)).filter(item => item && item.classes.includes(actor.className));
+  const candidates = (state.items || []).map(id => craftedWeapon(id)).filter(item => item && fitsSlot(item, actor, 'weapon'));
   if (!candidates.length) return '';
   return `<section class="inspector-section"><h4>Armas forjadas no depósito</h4><div class="pit-crew">${candidates.map(item => `<button type="button" class="pit-worker" data-action="equip-crafted-weapon" data-actor="${actor.id}" data-item="${item.id}"><b>${item.name}</b><small>${WEAPON_MATERIAL_LABELS[item.materialId]} · estrutura ${formatMass(item.structuralCondition)}/${formatMass(item.structuralMax)}${item.sharp ? ` · gume ${formatMass(item.edgeCondition)}/${formatMass(item.edgeMax)}` : ''} · ${bonusText(item.bonus)}</small></button>`).join('')}</div></section>`;
 }
 function equipCraftedWeapon(actorId, itemId) {
   const actor = findActor(actorId), item = craftedWeapon(itemId);
-  if (!actor || actor.className === 'Peasant' || !item || !item.classes.includes(actor.className) || !(state.items || []).includes(itemId)) return;
+  if (!actor || actor.className === 'Peasant' || !item || !fitsSlot(item, actor, 'weapon') || !(state.items || []).includes(itemId)) return;
   const previousId = gearOf(actor).weapon;
   state.items.splice(state.items.indexOf(itemId), 1);
   item.location = actor.id;
@@ -4169,6 +4299,16 @@ const statTable = (mov, base) => ({
 });
 const EMBER_CLASSES = {
   swordsman: statTable(5, [40, 11, 0, 10, 4]),
+  moonwardenWerewolf: statTable(5, [49, 14, 0, 12, 5]),
+  moonwardenGreatWolf: statTable(6, [58, 22, 0, 14, 8]),
+  vanguard: { mov: 5, stats: [
+    [34, 9, 5, 6, 3], [38, 11, 6, 8, 4], [42, 13, 7, 10, 5], [46, 15, 8, 12, 6], [50, 17, 9, 14, 7],
+    [54, 19, 10, 16, 8], [58, 21, 11, 18, 9], [62, 23, 12, 20, 10], [66, 25, 13, 22, 11], [70, 27, 14, 24, 12],
+    [74, 29, 15, 26, 13], [78, 31, 16, 28, 14], [82, 33, 17, 30, 15], [86, 35, 18, 32, 16], [90, 37, 19, 34, 17],
+    [94, 39, 20, 36, 18], [98, 41, 21, 38, 19], [102, 43, 22, 40, 20], [106, 45, 23, 42, 21], [110, 47, 24, 44, 22],
+    [114, 49, 25, 46, 23], [118, 51, 26, 48, 24], [122, 53, 27, 50, 25], [126, 55, 28, 52, 26], [130, 57, 29, 54, 27],
+    [134, 59, 30, 56, 28], [138, 61, 31, 58, 29], [142, 63, 32, 60, 30], [146, 65, 33, 62, 31], [150, 67, 34, 64, 32],
+  ] },
   archer: statTable(6, [26, 11, 0, 4, 8]),
   lancer: statTable(5, [34, 11, 0, 7, 5]),
   mage: statTable(5, [22, 3, 14, 3, 6]),
@@ -4195,6 +4335,8 @@ const EMBER_CLASSES = {
 // Cada classe do jogo usa a tabela da classe equivalente do Ember. Sentinel não existe no Ember e usa a do Lanceiro;
 // o herdeiro usa a do Capitão; camponeses usam Camponês e Aldeã.
 const CLASS_TABLE = {
+  MoonWarden: 'swordsman', 'Lobisomem de machado e escudo': 'moonwardenWerewolf', 'Grande Lobo': 'moonwardenGreatWolf',
+  Vanguard: 'vanguard', Swordsmaster: 'vanguard', WarBringer: 'vanguard',
   Warrior: 'swordsman', Archer: 'archer', Lancer: 'lancer', 'Black Mage': 'mage', Conjurer: 'conjurer', Healer: 'healer',
   Paladin: 'paladin', 'Heavy Knight': 'heavyKnight', Ranger: 'ranger', Assassin: 'assassin', Sentinel: 'lancer', Templar: 'templar',
   Elementalist: 'elementalist', Warlock: 'warlock', Sorcerer: 'sorcerer', Necromancer: 'necromancer', Bishop: 'bishop', Cleric: 'cleric',
@@ -4205,7 +4347,7 @@ function tableFor(actor) {
   if (actor.className === 'Bandit') return EMBER_CLASSES[actor.kind === 'crossbow' ? 'brigandCrossbowman' : 'rogue'];
   if (actor.className === 'Monster') return SKELETON_TABLE;
   if (actor.className === 'Peasant') return EMBER_CLASSES[isFemalePeasant(actor) ? 'villagerF1' : 'peasant1'];
-  return EMBER_CLASSES[CLASS_TABLE[actor.prestige] || CLASS_TABLE[actor.className]] || EMBER_CLASSES.swordsman;
+  return EMBER_CLASSES[CLASS_TABLE[actor.guildForm || actor.prestige] || CLASS_TABLE[actor.className]] || EMBER_CLASSES.swordsman;
 }
 function attributesAt(table, level) {
   const [hp, atk, mag, def, dex] = table.stats[Math.max(1, Math.min(HEIR_MAX_LEVEL, level)) - 1];
@@ -4277,7 +4419,7 @@ function peasantName(female) {
   for (let i = 0; i < 40; i++) { const name = `${pick(firsts)} ${pick(PEASANT_EPITHETS)}`; if (!taken.has(name)) return name; }
   return `${pick(firsts)} ${pick(PEASANT_EPITHETS)} ${state.workers.length + 1}`;
 }
-const actorLabel = actor => actor.className === 'Wildlife' ? `${WILDLIFE_NAMES[actor.kind] || 'Animal selvagem'}` : actor.className === 'Monster' ? `Caveira · nível ${actor.level || 1}` : actor.className === 'Bandit' ? (actor.kind === 'crossbow' ? 'Ladrão de besta' : 'Ladrão de espada') : actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.prestige ? ` · ${actor.prestige}` : ''}`;
+const actorLabel = actor => actor.className === 'Wildlife' ? `${WILDLIFE_NAMES[actor.kind] || 'Animal selvagem'}` : actor.className === 'Monster' ? `Caveira · nível ${actor.level || 1}` : actor.className === 'Bandit' ? (actor.kind === 'crossbow' ? 'Ladrão de besta' : 'Ladrão de espada') : actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.guildForm && actor.guildForm !== actor.className ? ` · ${actor.guildForm}` : actor.prestige ? ` · ${actor.prestige}` : ''}`;
 const findActor = id => [...state.heroes, ...state.workers, ...(state.bandits || [])].find(actor => String(actor.id) === String(id)) || null;
 function actorOrigin(actor) {
   if (actor.className === 'Bandit') return 'Veio pela estrada velha atrás do que não é dele.';
@@ -4320,6 +4462,18 @@ const FOOD_TYPES = [
   { id: 'garlicBoar', name: 'Javali ao Alho', art: 'garlic-boar', icon: 'garlic-boar-v01.png', meat: true, mood: 3, feeds: 4, note: 'Javali assado com alho no açougue.' },
   { id: 'roastElk', name: 'Alce Assado', art: 'roast-elk', icon: 'roast-elk-v01.png', meat: true, mood: 2, feeds: 2, note: 'Carne de alce assada no açougue.' },
   { id: 'elkStew', name: 'Ensopado de Alce', art: 'elk-stew', icon: 'elk-stew-v01.png', meat: true, mood: 3, feeds: 4, note: 'Ensopado de alce com leite e batatas, feito no açougue.' },
+  { id: 'garlicFlatbread', name: 'Pão achatado de alho', art: 'bread', baked: true, mood: 2, feeds: 1, note: 'Farinha e alho assados juntos na padaria.' },
+  { id: 'potatoLoaf', name: 'Pão de batata', art: 'bread', baked: true, mood: 2, feeds: 1, note: 'Pão reforçado com batata e leite.' },
+  { id: 'vegetablePie', name: 'Torta de hortaliças', art: 'quiche', baked: true, mood: 3, feeds: 3, note: 'Farinha, ovos, batata e cenoura assados.' },
+  { id: 'tomatoTart', name: 'Torta de tomate e queijo', art: 'quiche', baked: true, mood: 3, feeds: 3, note: 'Tomate e queijo numa massa de ovos.' },
+  { id: 'fishPie', name: 'Torta de truta', art: 'quiche', baked: true, meat: true, mood: 4, feeds: 4, note: 'Truta, ovos e leite em massa de farinha.' },
+  { id: 'porkStew', name: 'Ensopado de porco', art: 'elk-stew', meat: true, mood: 3, feeds: 4, note: 'Porco, batata e cenoura cozidos juntos.' },
+  { id: 'chickenStew', name: 'Ensopado de frango', art: 'elk-stew', meat: true, mood: 3, feeds: 4, note: 'Frango, batata, cenoura e leite.' },
+  { id: 'beefStew', name: 'Ensopado de carne', art: 'elk-stew', meat: true, mood: 4, feeds: 5, note: 'Carne, batata, tomate e alho.' },
+  { id: 'stuffedTomatoes', name: 'Tomates recheados', art: 'garlic-boar', meat: true, mood: 3, feeds: 2, note: 'Tomates recheados com carne e alho.' },
+  { id: 'fishStew', name: 'Ensopado de truta', art: 'elk-stew', meat: true, mood: 3, feeds: 4, note: 'Truta, batata, cenoura e leite.' },
+  { id: 'hunterPlatter', name: 'Prato do caçador', art: 'roast-boar', meat: true, mood: 4, feeds: 3, note: 'Caças variadas assadas com batata e alho.' },
+  { id: 'farmersFeast', name: 'Banquete da colheita', art: 'roast-boar', meat: true, mood: 5, feeds: 4, note: 'Carne, ovo e hortaliças preparados para partilhar.' },
   { id: 'potato', name: 'Batatas', art: 'farm-vegetables', icon: 'potato-v01.png', mood: 1, feeds: 2, note: 'Colheita da Fazenda de Hortaliças; também ingrediente do Ensopado de Alce.' },
   { id: 'carrot', name: 'Cenouras', art: 'farm-vegetables', icon: 'carrot-v01.png', mood: 1, feeds: 1, note: 'Colheita da Fazenda de Hortaliças.' },
   { id: 'tomato', name: 'Tomates', art: 'farm-vegetables', icon: 'tomato-v01.png', mood: 1, feeds: 1, note: 'Colheita da Fazenda de Hortaliças.' },
@@ -4327,6 +4481,7 @@ const FOOD_TYPES = [
 ];
 const foodIcon = food => food.icon || `${food.art}-v01.webp`;
 const foodFeeds = id => FOOD_TYPES.find(food => food.id === id)?.feeds ?? 1;
+const recipeStockText = (recipe, stock) => Object.entries(recipeNeeds(recipe)).map(([id, qty]) => `${format(stock[id] || 0)} de ${foodName(id)}${qty > 1 ? ` (precisa ${qty})` : ''}`).join(' · ');
 const RATIONS = [
   { label: 'Nenhuma', mult: 0, mood: -20 }, { label: 'Meia', mult: 0.5, mood: -8 }, { label: 'Normal', mult: 1, mood: 0 },
   { label: 'Dobrada', mult: 2, mood: 5 }, { label: 'Tripla', mult: 3, mood: 10 },
@@ -4375,7 +4530,7 @@ function applyWeeklyMood() {
   updateHud();
   if (state.tab === 'food') renderPanel();
 }
-const emptyFood = () => ({ wheat: 0, flour: 0, garlic: 0, bacon: 0, pork: 0, chicken: 0, beef: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, boarMeat: 0, elkMeat: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, potato: 0, carrot: 0, tomato: 0, fish: 0 });
+const emptyFood = () => Object.fromEntries(FOOD_TYPES.map(food => [food.id, 0]));
 // O casarão guarda 500 unidades. Cada Depósito de Provisões construído soma 30, e amplia para 45, 70 e 100.
 // Guardam comida, armas e itens; madeira e ouro ficam fora.
 const MANOR_STORAGE = 500;
@@ -4433,34 +4588,34 @@ const bakingCapacity = id => state.buildings.filter(building => building.type ==
 function bakeryCanBake(bakery) {
   const recipe = bakeryActiveRecipe(bakery);
   if ((bakery.stock || 0) > 1e-6 && bakery.stockFood && bakery.stockFood !== recipe.id) return false;
-  return recipe.needs.every(id => (bakery.pantry?.[id] || 0) > 1e-6) && (bakery.stock || 0) < industryCap(bakery);
+  return Object.entries(recipeNeeds(recipe)).every(([id, qty]) => (bakery.pantry?.[id] || 0) + 1e-6 >= qty) && (bakery.stock || 0) < industryCap(bakery);
 }
 function bakeFood(dt) {
   state.buildings.filter(building => building.type === 'bakery' && isDone(building)).forEach(bakery => {
     if (!bakeryCanBake(bakery)) return;
     const recipe = bakeryActiveRecipe(bakery);
     const pantry = bakery.pantry;
-    const qty = Math.min(bakeRate(bakery) * (1 + crewWork(bakery)) * dt, ...recipe.needs.map(id => pantry[id]), industryCap(bakery) - (bakery.stock || 0));
+    const qty = Math.min(bakeRate(bakery) * (1 + crewWork(bakery)) * dt, ...Object.entries(recipeNeeds(recipe)).map(([id, amount]) => pantry[id] / amount), (industryCap(bakery) - (bakery.stock || 0)) / recipeOutput(recipe));
     if (qty <= 0) return;
-    recipe.needs.forEach(id => { pantry[id] -= qty; });
+    Object.entries(recipeNeeds(recipe)).forEach(([id, amount]) => { pantry[id] -= qty * amount; });
     bakery.stockFood = recipe.id;
-    bakery.stock = (bakery.stock || 0) + qty;
+    bakery.stock = (bakery.stock || 0) + qty * recipeOutput(recipe);
   });
 }
 function butcherCanProcess(butcher) {
   const recipe = butcherActiveRecipe(butcher);
   if ((butcher.stock || 0) > 1e-6 && butcher.stockFood && butcher.stockFood !== recipe.id) return false;
-  return recipe.needs.every(id => (butcher.pantry?.[id] || 0) >= 1e-6) && (butcher.stock || 0) < industryCap(butcher);
+  return recipeIsUnlocked(butcher, recipe) && Object.entries(recipeNeeds(recipe)).every(([id, qty]) => (butcher.pantry?.[id] || 0) + 1e-6 >= qty) && (butcher.stock || 0) < industryCap(butcher);
 }
 function processButcher(dt) {
   state.buildings.filter(building => building.type === 'butcher' && isDone(building)).forEach(butcher => {
     if (!butcherCanProcess(butcher)) return;
     const recipe = butcherActiveRecipe(butcher), pantry = butcher.pantry || {};
-    const qty = Math.min(butcherRate(butcher) * (1 + crewWork(butcher)) * dt, ...recipe.needs.map(id => pantry[id]), industryCap(butcher) - (butcher.stock || 0));
+    const qty = Math.min(butcherRate(butcher) * (1 + crewWork(butcher)) * dt, ...Object.entries(recipeNeeds(recipe)).map(([id, amount]) => (pantry[id] || 0) / amount), (industryCap(butcher) - (butcher.stock || 0)) / recipeOutput(recipe));
     if (qty <= 0) return;
-    recipe.needs.forEach(id => { pantry[id] -= qty; });
+    Object.entries(recipeNeeds(recipe)).forEach(([id, amount]) => { pantry[id] -= qty * amount; });
     butcher.stockFood = recipe.id;
-    butcher.stock = (butcher.stock || 0) + qty;
+    butcher.stock = (butcher.stock || 0) + qty * recipeOutput(recipe);
   });
 }
 function processMetalworks(dt) {
@@ -4556,8 +4711,9 @@ function butcherMissing(butcher) {
     const load = worker.alive && worker.carrying?.toButcher === butcher.site ? worker.carrying : null;
     if (load) pantry[load.food] = (pantry[load.food] || 0) + load.qty;
   });
-  return butcherActiveRecipe(butcher).needs.filter(id => (pantry[id] || 0) < FOOD_LOAD && (state.food[id] || 0) >= 0.5)
-    .sort((a, b) => (pantry[a] || 0) - (pantry[b] || 0))[0] || null;
+  const needs = recipeNeeds(butcherActiveRecipe(butcher));
+  return Object.entries(needs).filter(([id, qty]) => (pantry[id] || 0) + 1e-6 < qty && (state.food[id] || 0) > 0)
+    .sort(([a, qa], [b, qb]) => (pantry[a] || 0) / qa - (pantry[b] || 0) / qb)[0]?.[0] || null;
 }
 function butcherRoutine(actor, butcher) {
   const store = nearestStorage(butcher), recipe = butcherActiveRecipe(butcher);
@@ -4579,7 +4735,7 @@ function butcherRoutine(actor, butcher) {
     }
     const need = !canProcess && butcherMissing(butcher);
     if (need) { actor.task = `Buscando ${foodName(need)} para o açougue`; walkTo(actor, store); return; }
-    actor.task = butcherCanProcess(butcher) ? `Processando ${recipe.name} no açougue` : `No açougue, esperando ${recipe.needs.map(foodName).join(' e ')}`;
+    actor.task = butcherCanProcess(butcher) ? `Processando ${recipe.name} no açougue` : `No açougue, esperando ${recipeInputsText(recipe)}`;
     if (butcherCanProcess(butcher)) gainSkill(actor, 'cooking', 0.3);
     actor.wait = 3; actor.actionTime = 3; actor.actionClock = 0; return;
   }
@@ -4587,7 +4743,9 @@ function butcherRoutine(actor, butcher) {
     if (actor.carrying && !actor.carrying.toButcher) deliverLoad(actor);
     const need = !actor.carrying && butcherMissing(butcher);
     if (need) {
-      const qty = Math.min(foodLoad(actor), state.food[need]); state.food[need] -= qty;
+      const target = recipeNeeds(butcherActiveRecipe(butcher))[need];
+      const carried = (butcher.pantry?.[need] || 0) + state.workers.filter(worker => worker.alive && worker.carrying?.toButcher === butcher.site && worker.carrying.food === need).reduce((sum, worker) => sum + worker.carrying.qty, 0);
+      const qty = Math.min(foodLoad(actor), state.food[need], Math.max(0, target - carried)); state.food[need] -= qty;
       actor.carrying = { food: need, qty, toButcher: butcher.site };
     }
   }
@@ -4652,9 +4810,9 @@ function bakeryMissing(bakery) {
     const load = worker.alive && worker.carrying?.toBakery === bakery.site ? worker.carrying : null;
     if (load) pantry[load.food] = (pantry[load.food] || 0) + load.qty;
   });
-  return bakeryActiveRecipe(bakery).needs
-    .filter(id => (pantry[id] || 0) < FOOD_LOAD && (state.food[id] || 0) >= 0.5)
-    .sort((a, b) => (pantry[a] || 0) - (pantry[b] || 0))[0] || null;
+  const needs = recipeNeeds(bakeryActiveRecipe(bakery));
+  return Object.entries(needs).filter(([id, qty]) => (pantry[id] || 0) + 1e-6 < qty && (state.food[id] || 0) > 0)
+    .sort(([a, qa], [b, qb]) => (pantry[a] || 0) / qa - (pantry[b] || 0) / qb)[0]?.[0] || null;
 }
 // Rotina do padeiro: busca um ingrediente por viagem, assa e leva a fornada ao depósito.
 function bakeRoutine(actor, bakery) {
@@ -4684,7 +4842,7 @@ function bakeRoutine(actor, bakery) {
       return;
     }
     const baking = bakeryCanBake(bakery);
-    actor.task = baking ? `Assando ${foodName(recipe.id)} na padaria` : `Na padaria, esperando ${recipe.needs.map(id => foodName(id)).join(', ')}`;
+    actor.task = baking ? `Assando ${foodName(recipe.id)} na padaria` : `Na padaria, esperando ${recipeInputsText(recipe)}`;
     if (baking) gainTrade(actor, 'bakery');
     actor.wait = 3 / taskSpeed(actor, bakery); actor.actionTime = actor.wait; actor.actionClock = 0;
     return;
@@ -4693,7 +4851,9 @@ function bakeRoutine(actor, bakery) {
     if (actor.carrying && !actor.carrying.toBakery) deliverLoad(actor);
     const need = !actor.carrying && bakeryMissing(bakery);
     if (need) {
-      const qty = Math.min(foodLoad(actor), state.food[need]);
+      const target = recipeNeeds(bakeryActiveRecipe(bakery))[need];
+      const carried = (bakery.pantry?.[need] || 0) + state.workers.filter(worker => worker.alive && worker.carrying?.toBakery === bakery.site && worker.carrying.food === need).reduce((sum, worker) => sum + worker.carrying.qty, 0);
+      const qty = Math.min(foodLoad(actor), state.food[need], Math.max(0, target - carried));
       state.food[need] -= qty;
       actor.carrying = { food: need, qty, toBakery: bakery.site };
     }
@@ -4907,8 +5067,8 @@ function bakeryRecipeBoxHTML(bakery) {
   const current = bakeryActiveRecipe(bakery).id;
   return `<section class="inspector-section" aria-label="Fornada da padaria"><h4>Produção</h4>
     <div class="farm-type-grid compact">${BAKERY_RECIPES.map(recipe => {
-      const locked = recipe.id === 'quiche' && producerLevel(bakery) < 1;
-      const detail = locked ? 'Desbloqueia no nível 2' : `${recipe.needs.map(id => foodName(id)).join(' + ')} · alimenta ${foodFeeds(recipe.id)}×`;
+      const locked = !recipeIsUnlocked(bakery, recipe);
+      const detail = locked ? `Desbloqueia no nível ${recipe.level}` : `${recipeInputsText(recipe)} → alimenta ${foodFeeds(recipe.id)}×`;
       return `<button class="farm-type${current === recipe.id ? ' selected' : ''}${locked ? ' locked' : ''}" data-bakery-recipe="${recipe.id}" aria-pressed="${current === recipe.id}"${locked ? ' disabled aria-disabled="true"' : ''} title="${detail}"><img src="public/art/${BAKED_ART[recipe.id]}-v01.webp" alt=""><b>${recipe.name}</b>${locked ? '<small>nível 2</small>' : ''}</button>`;
     }).join('')}</div></section>`;
 }
@@ -4947,7 +5107,7 @@ function blacksmithRecipeBoxHTML(building) {
 function butcherRecipeBoxHTML(butcher) {
   const current = butcherActiveRecipe(butcher).id;
   return `<section class="inspector-section" aria-label="Receita do açougue"><h4>Produção</h4>
-    <div class="farm-type-grid compact">${BUTCHER_RECIPES.map(recipe => `<button class="farm-type${current === recipe.id ? ' selected' : ''}" data-butcher-recipe="${recipe.id}" aria-pressed="${current === recipe.id}" title="${recipe.needs.map(id => foodName(id)).join(' + ')} → alimenta ${recipe.feeds}×"><img src="public/art/${recipe.icon || `${recipe.art}-v01.webp`}" alt=""><b>${recipe.name}</b><small>${recipe.feeds}× alimento</small></button>`).join('')}</div></section>`;
+    <div class="farm-type-grid compact">${BUTCHER_RECIPES.map(recipe => { const locked = !recipeIsUnlocked(butcher, recipe); return `<button class="farm-type${current === recipe.id ? ' selected' : ''}${locked ? ' locked' : ''}" data-butcher-recipe="${recipe.id}" aria-pressed="${current === recipe.id}"${locked ? ' disabled aria-disabled="true"' : ''} title="${recipeInputsText(recipe)} → ${recipeOutput(recipe)} por lote · alimenta ${foodFeeds(recipe.id)}×"><img src="public/art/${recipe.icon || `${recipe.art}-v01.webp`}" alt=""><b>${recipe.name}</b><small>${locked ? `nível ${recipe.level}` : `${recipe.feeds || foodFeeds(recipe.id)}× alimento`}</small></button>`; }).join('')}</div></section>`;
 }
 function upgradeProducer(site) {
   const building = state.buildings.find(item => item.site === site && PRODUCER_TYPES.includes(item.type) && isDone(item));
@@ -5556,9 +5716,18 @@ function spawnWolf(lair) {
   state.bandits.push(monster);
   say(`Um novo lobo mordaviano saiu de ${lair.name} e desce em direcao a Estrada Velha.`);
 }
+function spawnRandomNekomata() {
+  const locations = [{ x: 16, y: 31 }, { x: 31, y: 55 }, { x: 48, y: 83 }, { x: 72, y: 42 }, { x: 79, y: 116 }, { x: 23, y: 143 }, { x: 54, y: 158 }, { x: 91, y: 88 }];
+  const spot = pick(locations);
+  const monster = { id: `nekomata-wild-${state.playSeconds}`, className: 'Monster', kind: 'nekomata', spriteId: 'nekomata', name: 'Nekomata errante', level: 1, alive: true, mapId: 'wilds', mapSet: state.mapSet || 1, x: spot.x, y: spot.y, mode: 'approach-road', bornAt: state.minutes, wildNekomata: true };
+  assignMonsterRouteLane(monster); monsterWildsExit(monster);
+  state.bandits.push(monster);
+  say('Uma Nekomata errante apareceu nos Wilds.');
+}
 function spawnLairCreature(lair) {
   if (!lair?.active) return;
   const creatureByDen = {
+    'nekomata-den': { kind: 'nekomata', spriteId: 'nekomata', name: 'Nekomata' },
     'goblin-den': { kind: 'goblin', spriteId: 'mordavian-goblin-v01', name: 'Goblin' },
     'troll-den': { kind: 'troll', spriteId: 'mordavian-troll-v01', name: 'Troll' },
   };
@@ -5569,7 +5738,7 @@ function spawnLairCreature(lair) {
   const monster = { id: `${kind}-${lair.id}-${state.minutes}`, className: 'Monster', kind, spriteId, mapId: lair.mapId || 'wilds', mapSet: lair.mapSet || 1, lairId: lair.id, name: `${name} ${n}`, level: lair.level || 1, alive: true, x: lair.x, y: lair.y, mode: 'approach-road', bornAt: state.minutes };
   assignMonsterRouteLane(monster); monsterWildsExit(monster);
   state.bandits.push(monster);
-  say(`Um ${kind === 'goblin' ? 'goblin' : 'troll'} saiu de ${lair.name} e avanca pela Estrada Velha.`);
+  say(`${name} saiu de ${lair.name} e avança pela Estrada Velha.`);
 }
 function spawnZombie() {
   const lair = (state.lairs || []).find(item => item.active && item.kind === 'cemetery' && item.level === 2);
@@ -5591,10 +5760,20 @@ function monsterStep(monster, delta, reducedMotion) {
   monster.calm = Math.max(0, (monster.calm || 0) - delta);
   const heroes = [...state.heroes, ...(window.Monarch?.allyTargets() || [])].filter(hero => hero.alive && (hero.mapId || 'city') === (monster.mapId || 'city') && distanceTo(monster, hero) < 6);
   const foe = window.Monarch?.tauntTarget(monster) || heroes.sort((x, y) => distanceTo(monster, x) - distanceTo(monster, y))[0] || state.workers.find(worker => worker.alive && (worker.mapId || 'city') === (monster.mapId || 'city') && distanceTo(monster, worker) < 2.5) || null;
+  if (monster.kind === 'nekomata' && monster.attackAnim > 0) { animateAttack(monster, delta, reducedMotion); return; }
   if (foe) {
     if (distanceTo(monster, foe) > MELEE_RANGE) { animateWalk(monster, moveToward(monster, foe, SKELETON_SPEED * delta) > 0, delta, reducedMotion); return; }
     faceToward(monster, foe);
-    if (monster.cooldown <= 0) { monster.cooldown = ATTACK_COOLDOWN; monster.attackAnim = 0.5; monster.actionClock = 0; strike(monster, foe); }
+    if (monster.cooldown <= 0) {
+      if (monster.kind === 'nekomata') {
+        const clips = ['atk', 'cast', 'special'];
+        monster.nekoAttackClip = clips[(monster.nekoAttackIndex || 0) % clips.length];
+        monster.nekoAttackIndex = (monster.nekoAttackIndex || 0) + 1;
+        monster.attackAnim = NEKOMATA_FRAME_MS[monster.nekoAttackClip] * 36 / 1000;
+        monster.cooldown = monster.attackAnim;
+      } else { monster.cooldown = ATTACK_COOLDOWN; monster.attackAnim = 0.5; }
+      monster.actionClock = 0; strike(monster, foe);
+    }
     animateAttack(monster, delta, reducedMotion);
     return;
   }
@@ -5636,7 +5815,14 @@ function monsterStep(monster, delta, reducedMotion) {
   if (!target) { animateWalk(monster, false, delta, reducedMotion); return; }
   faceToward(monster, target);
   if (monster.cooldown <= 0) {
-    monster.cooldown = ATTACK_COOLDOWN * 1.5; monster.attackAnim = 0.5; monster.actionClock = 0;
+    if (monster.kind === 'nekomata') {
+      const clips = ['atk', 'cast', 'special'];
+      monster.nekoAttackClip = clips[(monster.nekoAttackIndex || 0) % clips.length];
+      monster.nekoAttackIndex = (monster.nekoAttackIndex || 0) + 1;
+      monster.attackAnim = NEKOMATA_FRAME_MS[monster.nekoAttackClip] * 36 / 1000;
+      monster.cooldown = monster.attackAnim;
+    } else { monster.cooldown = ATTACK_COOLDOWN * 1.5; monster.attackAnim = 0.5; }
+    monster.actionClock = 0;
     damageBuilding(target, Math.round(statsOf(monster).atk * 1.5));
     if (target.ruined) monster.targetSite = null;
   }
@@ -5657,7 +5843,7 @@ const DEATH_MSG = [
 ];
 const isBandit = actor => actor.className === 'Bandit';
 const isWildlife = actor => actor.className === 'Wildlife';
-const classOf = actor => actor.prestige || actor.className;
+const classOf = actor => actor.guildForm || actor.prestige || actor.className;
 // Atributos de luta: os da classe no nível, mais o equipamento.
 // Invocações do Monarca trazem os próprios atributos (fixedStats); auras e debuffs dele entram por último.
 // No camponês, os atributos das profissões também entram.
@@ -5695,6 +5881,7 @@ function faceToward(actor, target) {
 }
 
 function animateWalk(actor, moved, delta, reducedMotion) {
+  if (actor.kind === 'nekomata') actor.nekoMoving = moved;
   actor.action = 'walk';
   actor.walkClock = (actor.walkClock || 0) + (moved ? delta : 0);
   actor.frame = moved && (!reducedMotion || actor.className === 'Peasant') ? Math.floor(actor.walkClock * 7) % 4 : 0;
@@ -5702,12 +5889,15 @@ function animateWalk(actor, moved, delta, reducedMotion) {
 
 // A espera dos animais usa a folha idle própria (quatro poses), nunca um efeito visual sintético.
 function animateIdle(actor, delta, reducedMotion) {
+  if (guildHeroArt(actor) && actor.action !== 'idle') actor.idleClock = 0;
   actor.action = 'idle';
   actor.idleClock = (actor.idleClock || 0) + delta;
-  actor.frame = reducedMotion ? 0 : Math.floor(actor.idleClock * 2.4) % 4;
+  const idleRate = guildHeroArt(actor) ? 3.2 : 2.4;
+  actor.frame = reducedMotion ? 0 : Math.floor(actor.idleClock * idleRate) % 4;
 }
 
 function animateAttack(actor, delta, reducedMotion) {
+  if (actor.kind === 'nekomata') actor.nekoMoving = false;
   // O ataque do troll só existe de lado: em combate ele fica de lado entre um golpe e outro,
   // senão alterna com a folha de frente/costas a cada golpe.
   if (actor.kind === 'troll') actor.walkDirection = 'side';
@@ -5717,13 +5907,13 @@ function animateAttack(actor, delta, reducedMotion) {
     actor.actionClock = (actor.actionClock || 0) + delta;
     actor.frame = reducedMotion && actor.className !== 'Peasant' ? 0 : Math.floor(actor.actionClock * 8) % 4;
   } else {
-    actor.action = 'walk';
-    actor.frame = 0;
+    if (guildHeroArt(actor)) animateIdle(actor, delta, reducedMotion);
+    else { actor.action = 'walk'; actor.frame = 0; }
   }
 }
 
 function checkPrestige(hero, before) {
-  if (before < 15 && hero.level >= 15) {
+  if (!guildHeroArt(hero) && before < 15 && hero.level >= 15) {
     say(`${hero.name} chegou ao nível 15 e acha que merece mais.`, `${hero.name} procura uma guilda de prestígio. As guildas fingem que não estão.`);
     assignPrestige(hero);
     if (state.tab === 'heroes') renderPanel();
@@ -5741,6 +5931,14 @@ function killActor(victim, killer) {
   if (victim.summon) { window.Monarch?.summonDied(victim); return; }
   victim.alive = false;
   victim.hp = 0;
+  if (victim.kind === 'nekomata') {
+    nekomataDeaths.push({ ...victim, id: `${victim.id}-death`, nekoDeathClock: 0 });
+    if (victim.wildNekomata) {
+      state.remainsPiles = state.remainsPiles || [];
+      state.remainsPiles.push({ id: `remains-${victim.id}`, grade: 'nekomataWild', mapId: victim.mapId || 'city', mapSet: victim.mapSet || 1, x: victim.x, y: victim.y });
+      renderLairs();
+    }
+  }
   if (isWildlife(victim)) {
     const range = HUNT_MEAT_DROP[victim.kind] || [1, 2];
     const qty = range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1));
@@ -5804,7 +6002,7 @@ const dexChance = (mine, theirs) => Math.max(0, Math.min(0.3, (40 * mine / Math.
 // Um golpe: dano proporcional (ataque² / (ataque + defesa)), então defesa alta reduz o dano mas nunca zera;
 // magia ignora metade da defesa. Destreza dá crítico (×1,5) e esquiva. Heróis ganham experiência a cada golpe, mais 25% quando matam.
 function wearCraftedWeapon(actor) {
-  const item = craftedWeapon(gearOf(actor).weapon);
+  const item = actor.guildForm === 'Grande Lobo' ? null : craftedWeapon(gearOf(actor).weapon);
   if (!item || item.structuralCondition <= 0) return;
   item.structuralCondition = Math.max(0, item.structuralCondition - 0.5);
   if (item.sharp && item.edgeCondition > 0) item.edgeCondition = Math.max(0, item.edgeCondition - item.wearMultiplier);
@@ -5825,6 +6023,7 @@ function strike(attacker, defender) {
   if (!attacker.alive) return; // refletido pelo Santuário do Trono
   if (damage > 0 && !magic) wearCraftedWeapon(attacker);
   defender.hp = hpOf(defender) - damage;
+  if (damage > 0 && defender.kind === 'nekomata' && defender.hp > 0) defender.nekoHitClock = 0;
   defender.calm = 5;
   attacker.calm = 5;
   const killed = defender.hp <= 0;
@@ -6039,7 +6238,7 @@ const LAIR_SPAWN_EVERY = 720;
 // deixa um Dead Remains, de grade D a A. Só herói recolhe. Ao deixar no depósito, o herói cobra
 // do cofre 1 de ouro pelas grades D e C e 2 pelas grades B e A. O Laboratório de Ember refina em Ember.
 // ==========================================================================
-const CREATURE_DENS = ['wolf-den', 'goblin-den', 'troll-den'];
+const CREATURE_DENS = ['wolf-den', 'goblin-den', 'troll-den', 'nekomata-den'];
 const LAIR_HP = { 1: 300, 2: 700 }; // por nível do covil
 const lairMaxHp = lair => LAIR_HP[lair.level || 1] || LAIR_HP[1];
 const lairHp = lair => Math.max(0, lairMaxHp(lair) - (lair.damage || 0));
@@ -6048,11 +6247,13 @@ const REMAINS_GRADES = [
 ];
 // Chance de cada grade (D, C, B, A) pelo nível do covil.
 const REMAINS_ODDS = { 1: [0.6, 0.3, 0.1, 0], 2: [0.1, 0.3, 0.4, 0.2] };
-const REMAINS_ART = { D: 'icon-dead-remains-d-photo-v01.png', C: 'icon-dead-remains-c-photo-v01.png', B: 'icon-dead-remains-b-photo-v01.png', A: 'icon-dead-remains-a-photo-v01.png' };
+const SPECIAL_REMAINS = { nekomata: { id: 'nekomata', gold: 2 }, nekomataWild: { id: 'nekomataWild', gold: 2 } };
+const REMAINS_ART = { nekomata: 'nekomata-remains-photo-candidate-v01.png', nekomataWild: 'nekomata-remains-photo-v04.png', D: 'icon-dead-remains-d-photo-v01.png', C: 'icon-dead-remains-c-photo-v01.png', B: 'icon-dead-remains-b-photo-v01.png', A: 'icon-dead-remains-a-photo-v01.png' };
 const remainsImage = grade => `public/art/${REMAINS_ART[grade]}`;
-const remainsGrade = id => REMAINS_GRADES.find(grade => grade.id === id) || REMAINS_GRADES[0];
+const remainsGrade = id => SPECIAL_REMAINS[id] || REMAINS_GRADES.find(grade => grade.id === id) || REMAINS_GRADES[0];
+const remainsName = id => id === 'nekomata' ? 'Nekomata Remains · covil' : id === 'nekomataWild' ? 'Nekomata Remains · individual' : `Dead Remains grade ${id}`;
 const emptyRemains = () => ({ D: 0, C: 0, B: 0, A: 0 });
-const remainsCount = () => REMAINS_GRADES.reduce((sum, grade) => sum + (state.remains?.[grade.id] || 0), 0);
+const remainsCount = () => REMAINS_GRADES.reduce((sum, grade) => sum + (state.remains?.[grade.id] || 0), 0) + (state.remains?.nekomata || 0) + (state.remains?.nekomataWild || 0);
 function rollRemains(level) {
   const odds = REMAINS_ODDS[level] || REMAINS_ODDS[1];
   let roll = Math.random();
@@ -6114,20 +6315,20 @@ function destroyLair(lair, hero, bounty) {
   lair.active = false;
   lair.destroyed = true;
   lair.damage = 0;
-  const grade = rollRemains(lair.level || 1);
+  const grade = lair.kind === 'nekomata-den' ? 'nekomata' : rollRemains(lair.level || 1);
   hero.bountyId = null;
   state.bounties = state.bounties.filter(item => item !== bounty);
   lootHero(hero, bounty.reward);
   hero.remains = grade;
   gainHeirXp(25);
-  say(`${hero.name} derrubou ${lair.name} e embolsou ${bounty.reward} de ouro. Sobrou um Dead Remains grade ${grade}; ele vai levar pro depósito.`, `${lair.name} caiu. Os bichos vão ter que morar em outro lugar.`);
+  say(`${hero.name} derrubou ${lair.name} e embolsou ${bounty.reward} de ouro. Sobrou ${remainsName(grade)}; ele vai levar pro depósito.`, `${lair.name} caiu. Os bichos vão ter que morar em outro lugar.`);
   renderLairs(); renderSites();
   if (state.tab === 'heroes') renderPanel();
 }
 // Herói com restos na mão: volta pra cidade, deixa no depósito mais perto e cobra do cofre.
 function carryRemainsStep(hero) {
   const grade = remainsGrade(hero.remains);
-  hero.task = `Levando um Dead Remains grade ${grade.id} pro depósito`;
+  hero.task = `Levando ${remainsName(grade.id)} pro depósito`;
   if (travelToMap(hero, 'city')) return;
   const store = nearestStorage(hero);
   if (!isAt(hero, store)) { walkTo(hero, store); return; }
@@ -6143,7 +6344,7 @@ function carryRemainsStep(hero) {
   state.gold -= pay;
   lootHero(hero, pay);
   hero.remains = null;
-  say(`${hero.name} deixou um Dead Remains grade ${grade.id} no depósito e cobrou ${pay} de ouro do cofre${pay < grade.gold ? ', o que tinha' : ''}.`);
+  say(`${hero.name} deixou ${remainsName(grade.id)} no depósito e cobrou ${pay} de ouro do cofre${pay < grade.gold ? ', o que tinha' : ''}.`);
   updateHud();
   if (['food', 'heroes'].includes(state.tab)) renderPanel();
 }
@@ -6157,7 +6358,7 @@ function remainsPileStep(hero) {
     if (!pile) return false;
     pile.claimedBy = hero.id;
   }
-  hero.task = `Indo buscar um Dead Remains grade ${pile.grade}`;
+  hero.task = `Indo buscar ${remainsName(pile.grade)}`;
   if (travelToMap(hero, pile.mapId || 'city', pile.mapSet || 1)) return true;
   if (distanceTo(hero, pile) < 1.5) {
     hero.remains = pile.grade;
@@ -6238,7 +6439,7 @@ function combatTick(minutesPassed) {
   if (state.minutes % 1440 >= 1320 && state.lastSkeletonDay !== night && firstLevelCemetery) { state.lastSkeletonDay = night; spawnSkeleton(firstLevelCemetery); }
   // Covis ativos soltam um bicho a cada 12 horas de jogo (12 minutos reais na velocidade 1).
   // Saves antigos tinham o próximo marcado para dias depois: puxa para no máximo 12 horas.
-  (state.lairs || []).filter(lair => lair.active && ['wolf-den', 'goblin-den', 'troll-den'].includes(lair.kind)).forEach(lair => {
+  (state.lairs || []).filter(lair => lair.active && CREATURE_DENS.includes(lair.kind)).forEach(lair => {
     if (lair.nextSpawnAt == null || lair.nextSpawnAt > state.minutes + LAIR_SPAWN_EVERY) lair.nextSpawnAt = state.minutes + LAIR_SPAWN_EVERY;
     if (state.minutes < lair.nextSpawnAt) return;
     if (lair.kind === 'wolf-den') spawnWolf(lair); else spawnLairCreature(lair);
@@ -6708,6 +6909,9 @@ const HOWTO = [
       ...STORAGE_LEVELS.slice(1).map(level => [`Depósito para ${level.cap}`, level.gold, level.wood, `guarda ${level.cap}`]),
       ['Guilda, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, 'recruta mais um herói'],
       ['Guilda, nível 3', GUILD_UPGRADES[1].gold, GUILD_UPGRADES[1].wood, 'especialização e mais um herói'],
+      ['MoonWarden, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, 'morador vira lobisomem de machado e escudo'],
+      ['MoonWarden, nível 3', GUILD_UPGRADES[1].gold, GUILD_UPGRADES[1].wood, 'morador vira Grande Lobo'],
+      ['Vanguards, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, 'escolha Swordsmaster ou WarBringer para o morador'],
       ...ARMORY_LEVELS.slice(1).map((level, i) => [`Arsenal, nível ${i + 2}`, level.gold, level.wood, `vende até tier ${level.tierCap}`]),
     ])}
     <h3>Dano e conserto</h3>
@@ -6722,10 +6926,10 @@ const HOWTO = [
     <p>Trigo cru não alimenta ninguém. O moinho mói trigo em farinha, 1 para 1: o camponês busca trigo no depósito e leva a farinha de volta. Moagem por nível: ${MILL_RATE.map(value => `${hn(value)}/s`).join(', ')}, com o mesmo bônus da equipe.</p>
     <h3>Padaria</h3>
     <p>Você escolhe a fornada no painel da padaria. O camponês busca os ingredientes no depósito, um por viagem, e leva o que sai do forno de volta. Cada fornada gasta 1 de cada ingrediente e faz 1 do produto. A Quiche Lorraine só abre no nível 2. Fornadas por nível: ${BAKE_RATE.map(value => `${hn(value)}/s`).join(', ')}. A habilidade <b>Culinária</b> melhora a produção.</p>
-    ${howTable(['Fornada', 'Ingredientes', 'Alimenta', 'Disponível'], BAKERY_RECIPES.map(recipe => [recipe.name, recipe.needs.map(id => FOOD_TYPES.find(food => food.id === id).name).join(' + '), `${foodFeeds(recipe.id)}×`, recipe.id === 'quiche' ? 'Padaria nível 2' : 'Padaria nível 1']))}
+      ${howTable(['Fornada', 'Ingredientes', 'Alimenta', 'Disponível'], BAKERY_RECIPES.map(recipe => [recipe.name, recipeInputsText(recipe), `${foodFeeds(recipe.id)}×`, `Padaria nível ${recipe.level || 1}`]))}
     <h3>Açougue</h3>
     <p>O Galinheiro continua produzindo ovos e também frango; a fazenda de leite continua produzindo leite e também carne de vaca. Cada carne animal sai a ${hn(FARM_ANIMAL_RATE)}× a taxa normal da fazenda. A fazenda de Suínos entrega matéria-prima ao açougue. O camponês busca insumos e entrega a produção no depósito. Nível 2: ${hn(BUTCHER_RATE[1])} unidades por segundo, com valores padrão editáveis.</p>
-    ${howTable(['Produto', 'Ingredientes', 'Alimenta'], BUTCHER_RECIPES.map(recipe => [recipe.name, recipe.needs.map(id => FOOD_TYPES.find(food => food.id === id).name).join(' + '), `${recipe.feeds}×`]))}
+      ${howTable(['Produto', 'Ingredientes', 'Alimenta'], BUTCHER_RECIPES.map(recipe => [recipe.name, recipeInputsText(recipe), `${foodFeeds(recipe.id)}×`]))}
     <h3>Pesca</h3>
     <p>Nas Wilds, clique em um ponto de pesca marcado e escolha um camponês. Ele vai ao ponto, acumula Trutas, leva a carga ao depósito e melhora com a habilidade Pesca. Taxa base: ${hn(FISHING_RATE)} por segundo; cada ponto guarda até ${FARM_STOCK_CAP}.</p>
     <h3>Caça nas Wilds</h3>
@@ -6779,7 +6983,8 @@ const HOWTO = [
   { title: 'Heróis', html: () => `
     <h3>Alojamento</h3>
     ${howFormula(`Vagas = 1 (Warrior do casarão) + 1 por guilda + 4 por hotel + 1 por taverna`)}
-    <p>Cada guilda abriga só o seu morador. Quem chega de fora e os heróis dos níveis 2 e 3 da guilda precisam de cama na taverna ou no hotel; sem cama, vão embora.</p>
+    <p>Cada guilda abriga só o seu morador. Quem chega de fora e os recrutas extras das guildas precisam de cama na taverna ou no hotel; sem cama, vão embora.</p>
+    <p>MoonWarden e Vanguards melhoram o próprio morador e usam a mesma vaga da guilda.</p>
     <h3>Quem chega</h3>
     <ul>
       <li>Guilda pronta: chega um herói da classe.</li>
@@ -7359,6 +7564,16 @@ function initMenus() {
     }
   });
   $('#menu-btn').addEventListener('click', openPause);
+  const positionObjectiveMenu = () => {
+    const map = $('#map-scene').getBoundingClientRect();
+    const list = $('#objective-list');
+    const top = Math.max(0, map.top), bottom = Math.min(window.innerHeight, map.bottom);
+    list.style.setProperty('--objective-left', `${map.left + map.width / 2}px`);
+    list.style.setProperty('--objective-top', `${(top + bottom) / 2}px`);
+    list.style.setProperty('--objective-width', `${Math.max(0, map.width - 24)}px`);
+  };
+  $('#objective-journal').addEventListener('toggle', positionObjectiveMenu);
+  window.addEventListener('resize', positionObjectiveMenu);
   $('#economy-open-btn').addEventListener('click', () => {
     state.tab = 'economy';
     $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });

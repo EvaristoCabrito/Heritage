@@ -52,22 +52,43 @@
       "hotel"
     ],
     "warrior": [
-      "guild"
+      "guild",
+      "guild-l2",
+      "guild-paladin",
+      "guild-heavy-knight"
     ],
     "archer": [
-      "archer"
+      "archer",
+      "archer-l2",
+      "archer-ranger",
+      "archer-assassin"
     ],
     "lancer": [
-      "lancer"
+      "lancer",
+      "lancer-l2",
+      "lancer-sentinel",
+      "lancer-templar"
     ],
     "blackMage": [
-      "tower"
+      "tower",
+      "tower-l2",
+      "tower-elementalist",
+      "tower-warlock",
+      "tower-l2-v02",
+      "tower-elementalist-v02",
+      "tower-warlock-v02"
     ],
     "conjurer": [
-      "conjurer"
+      "conjurer",
+      "conjurer-l2",
+      "conjurer-sorcerer",
+      "conjurer-necromancer"
     ],
     "healer": [
-      "healer"
+      "healer",
+      "healer-l2",
+      "healer-bishop",
+      "healer-cleric"
     ],
     "armory": [
       "armory"
@@ -89,6 +110,16 @@
     "blacksmith": [
       "blacksmith",
       "blacksmith-l2"
+    ],
+    "moonwarden": [
+      "guild-moonwarden",
+      "guild-moonwarden-l2",
+      "guild-moonwarden-l3"
+    ],
+    "vanguard": [
+      "guild-vanguard",
+      "guild-vanguard-swordsmaster",
+      "guild-vanguard-warbringer"
     ]
   },
   "constructionProfiles": {
@@ -132,7 +163,34 @@
     "butcher-l2": "O mesmo açougue com extensão funcional de armazenamento.",
     "farm-vegetables": "Farmhouse de pedra e madeira com abrigo de produção e canteiros de batatas, cenouras e tomates.",
     "farm-vegetables-l2": "A mesma fazenda de hortaliças com abrigo ampliado e um canteiro adicional.",
-    "farm-vegetables-l3": "A mesma fazenda de hortaliças com extensão de estufa e canteiros ampliados."
+    "farm-vegetables-l3": "A mesma fazenda de hortaliças com extensão de estufa e canteiros ampliados.",
+    "guild-l2": "guild-l2 · reforma fotorealista a partir de guild.",
+    "guild-paladin": "guild-paladin · reforma fotorealista a partir de guild.",
+    "guild-heavy-knight": "guild-heavy-knight · reforma fotorealista a partir de guild.",
+    "archer-l2": "archer-l2 · reforma fotorealista a partir de archer.",
+    "archer-ranger": "archer-ranger · reforma fotorealista a partir de archer.",
+    "archer-assassin": "archer-assassin · reforma fotorealista a partir de archer.",
+    "lancer-l2": "lancer-l2 · reforma fotorealista a partir de lancer.",
+    "lancer-sentinel": "lancer-sentinel · reforma fotorealista a partir de lancer.",
+    "lancer-templar": "lancer-templar · reforma fotorealista a partir de lancer.",
+    "tower-l2": "tower-l2 · reforma fotorealista a partir de tower.",
+    "tower-elementalist": "tower-elementalist · reforma fotorealista a partir de tower.",
+    "tower-warlock": "tower-warlock · reforma fotorealista a partir de tower.",
+    "tower-l2-v02": "tower-l2-v02 · reforma fotorealista a partir de tower.",
+    "tower-elementalist-v02": "tower-elementalist-v02 · reforma fotorealista a partir de tower.",
+    "tower-warlock-v02": "tower-warlock-v02 · reforma fotorealista a partir de tower.",
+    "healer-l2": "healer-l2 · reforma fotorealista a partir de healer.",
+    "healer-bishop": "healer-bishop · reforma fotorealista a partir de healer.",
+    "healer-cleric": "healer-cleric · reforma fotorealista a partir de healer.",
+    "guild-moonwarden": "guild-moonwarden · reforma fotorealista a partir de guild-moonwarden.",
+    "guild-moonwarden-l2": "guild-moonwarden-l2 · reforma fotorealista a partir de guild-moonwarden.",
+    "guild-moonwarden-l3": "guild-moonwarden-l3 · reforma fotorealista a partir de guild-moonwarden.",
+    "conjurer-l2": "conjurer-l2 · reforma fotorealista a partir de conjurer.",
+    "conjurer-sorcerer": "conjurer-sorcerer · reforma fotorealista a partir de conjurer.",
+    "conjurer-necromancer": "conjurer-necromancer · reforma fotorealista a partir de conjurer.",
+    "guild-vanguard": "guild-vanguard · reforma fotorealista a partir de guild-vanguard.",
+    "guild-vanguard-swordsmaster": "guild-vanguard-swordsmaster · reforma fotorealista a partir de guild-vanguard.",
+    "guild-vanguard-warbringer": "guild-vanguard-warbringer · reforma fotorealista a partir de guild-vanguard."
   },
   "assets": {
     "farm-garlic": {
@@ -1268,6 +1326,460 @@
           ]
         }
       }
+    },
+    "guild-l2": {
+      "source": "buildings-photoreal-v03-runtime/guild-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-paladin": {
+      "source": "buildings-photoreal-v03-runtime/guild-paladin.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-paladin-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-heavy-knight": {
+      "source": "buildings-photoreal-v03-runtime/guild-heavy-knight.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-heavy-knight-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "archer-l2": {
+      "source": "buildings-photoreal-v03-runtime/archer-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/archer-l2-mid.webp",
+          "size": [
+            1199,
+            1312
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "archer-ranger": {
+      "source": "buildings-photoreal-v03-runtime/archer-ranger.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/archer-ranger-mid.webp",
+          "size": [
+            1199,
+            1312
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "archer-assassin": {
+      "source": "buildings-photoreal-v03-runtime/archer-assassin.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/archer-assassin-mid.webp",
+          "size": [
+            1199,
+            1312
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "lancer-l2": {
+      "source": "buildings-photoreal-v03-runtime/lancer-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/lancer-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "lancer-sentinel": {
+      "source": "buildings-photoreal-v03-runtime/lancer-sentinel.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/lancer-sentinel-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "lancer-templar": {
+      "source": "buildings-photoreal-v03-runtime/lancer-templar.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/lancer-templar-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-l2": {
+      "source": "buildings-photoreal-v03-runtime/tower-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-l2-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-elementalist": {
+      "source": "buildings-photoreal-v03-runtime/tower-elementalist.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-elementalist-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-warlock": {
+      "source": "buildings-photoreal-v03-runtime/tower-warlock.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-warlock-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-l2-v02": {
+      "source": "buildings-photoreal-v03-runtime/tower-l2-v02.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-l2-v02-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-elementalist-v02": {
+      "source": "buildings-photoreal-v03-runtime/tower-elementalist-v02.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-elementalist-v02-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-warlock-v02": {
+      "source": "buildings-photoreal-v03-runtime/tower-warlock-v02.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-warlock-v02-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "healer-l2": {
+      "source": "buildings-photoreal-v03-runtime/healer-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/healer-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "healer-bishop": {
+      "source": "buildings-photoreal-v03-runtime/healer-bishop.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/healer-bishop-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "healer-cleric": {
+      "source": "buildings-photoreal-v03-runtime/healer-cleric.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/healer-cleric-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-moonwarden": {
+      "source": "guild-moonwarden-v01.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/guild-moonwarden-early.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-moonwarden-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-moonwarden-l2": {
+      "source": "buildings-photoreal-v03-runtime/guild-moonwarden-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-moonwarden-l2-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-moonwarden-l3": {
+      "source": "buildings-photoreal-v03-runtime/guild-moonwarden-l3.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-moonwarden-l3-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "conjurer-l2": {
+      "source": "buildings-photoreal-v03-runtime/conjurer-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/conjurer-l2-mid.webp",
+          "size": [
+            1312,
+            1199
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "conjurer-sorcerer": {
+      "source": "buildings-photoreal-v03-runtime/conjurer-sorcerer.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/conjurer-sorcerer-mid.webp",
+          "size": [
+            1312,
+            1199
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "conjurer-necromancer": {
+      "source": "buildings-photoreal-v03-runtime/conjurer-necromancer.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/conjurer-necromancer-mid.webp",
+          "size": [
+            1312,
+            1199
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-vanguard": {
+      "source": "guild-vanguard-v01.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/guild-vanguard-early.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-vanguard-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-vanguard-swordsmaster": {
+      "source": "buildings-photoreal-v03-runtime/guild-vanguard-swordsmaster.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-vanguard-swordsmaster-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-vanguard-warbringer": {
+      "source": "buildings-photoreal-v03-runtime/guild-vanguard-warbringer.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-vanguard-warbringer-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
     }
   },
   "upgradeLevels": {
@@ -1325,6 +1837,66 @@
     "blacksmith": [
       "blacksmith",
       "blacksmith-l2"
+    ],
+    "warrior": [
+      "guild",
+      "guild-l2",
+      [
+        "guild-paladin",
+        "guild-heavy-knight"
+      ]
+    ],
+    "archer": [
+      "archer",
+      "archer-l2",
+      [
+        "archer-ranger",
+        "archer-assassin"
+      ]
+    ],
+    "lancer": [
+      "lancer",
+      "lancer-l2",
+      [
+        "lancer-sentinel",
+        "lancer-templar"
+      ]
+    ],
+    "blackMage": [
+      "tower",
+      "tower-l2-v02",
+      [
+        "tower-elementalist-v02",
+        "tower-warlock-v02"
+      ]
+    ],
+    "healer": [
+      "healer",
+      "healer-l2",
+      [
+        "healer-bishop",
+        "healer-cleric"
+      ]
+    ],
+    "moonwarden": [
+      "guild-moonwarden",
+      "guild-moonwarden-l2",
+      "guild-moonwarden-l3"
+    ],
+    "conjurer": [
+      "conjurer",
+      "conjurer-l2",
+      [
+        "conjurer-sorcerer",
+        "conjurer-necromancer"
+      ]
+    ],
+    "vanguard": [
+      "guild-vanguard",
+      [
+        "guild-vanguard-swordsmaster",
+        "guild-vanguard-warbringer"
+      ]
     ]
   }
 }

@@ -52,7 +52,6 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #a5b38c; box-shadow: 0 0 9px #92a77f; }
 .map-scene { isolation: isolate; position: relative; width: 100%; max-width: 100%; margin: 0 auto; overflow: hidden; aspect-ratio: 1199 / 1312; min-height: 0; border: 1px solid rgba(202,184,141,.26); border-radius: 8px; background: #24291f; box-shadow: 0 18px 45px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.04); cursor: grab; touch-action: none; }
 .map-scene.dragging { cursor: grabbing; }
-.map-scene:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
 .map-world { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1199 / 2624; transform-origin: top left; transform: translate3d(var(--camera-x, 0px), var(--camera-y, 0px), 0) scale(var(--zoom, 1)); will-change: transform; }
 .map-region { position: absolute; left: 0; width: 100%; height: 100%; }
 .manor-region { top: 0; }
@@ -175,8 +174,8 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 /* Troll: manter as proporções e alinhamento das folhas originais. */
 .character.troll { width: clamp(38px, 5.5vw, 62px); aspect-ratio: 543 / 724; }
 .character.troll .character-sprite, .character.troll[data-facing] .character-sprite { width: 100%; height: 100%; aspect-ratio: 543 / 724; background-size: 400% 100%; background-position: var(--frame-x, 0%) 0%; }
-.character.troll[data-vertical-walk="true"] .character-sprite { background-size: 347.7% 195.6%; background-position: calc(var(--frame-x, 0%) * 1.0528 - 2.64%) -1.81%; }
-.character.troll[data-vertical-walk="true"][data-facing="back"] .character-sprite { background-position-y: 100.5%; }
+.character.troll[data-vertical-walk="true"] .character-sprite { background-size: 400% 200%; background-position: var(--frame-x, 0%) 0%; }
+.character.troll[data-vertical-walk="true"][data-facing="back"] .character-sprite { background-position-y: 100%; }
 .character.troll[data-sheet="action"] .character-sprite { width: 115%; height: 115%; margin: -17.9% 0 0 -7.5%; }
 .character.wildlife { width: clamp(44px, 6.4vw, 72px); aspect-ratio: 1; }
 .character.wildlife .character-sprite { width: 100%; aspect-ratio: 1; background-size: 400% 200%; background-position: var(--frame-x, 0%) 0%; }
@@ -437,8 +436,10 @@ body { overflow: hidden; }
 .progress-value { color: var(--gold); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .objective-actions { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 10px; }
 .objective-journal { position: relative; margin-top: 10px; color: #e4d2a8; }
-.objective-journal summary { cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
-.objective-journal ol { position: fixed; z-index: 110; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(650px, 85vw); max-height: 70vh; display: grid; gap: 10px; overflow-y: auto; margin: 0; padding: 22px; list-style: none; border: 1px solid var(--line); border-radius: 7px; background: #1c1e19; box-shadow: 0 12px 36px rgba(0,0,0,.65); }
+.objective-journal summary { display: grid; place-items: center; min-height: 36px; box-sizing: border-box; border: 1px solid rgba(214,184,117,.48); border-radius: 4px; color: #ead6a7; background: rgba(17,19,16,.72); font: 700 12px Figtree, sans-serif; letter-spacing: .12em; cursor: pointer; list-style: none; }
+.objective-journal summary::-webkit-details-marker { display: none; }
+.objective-journal summary:hover, .objective-journal summary:focus-visible { border-color: var(--gold); color: #fff0c8; background: rgba(106,87,51,.32); outline: none; }
+.objective-journal ol { position: fixed; z-index: 110; top: var(--objective-top, 50%); left: var(--objective-left, 50%); transform: translate(-50%, -50%); box-sizing: border-box; width: min(650px, var(--objective-width, 85vw)); max-height: 70vh; display: grid; gap: 10px; overflow-y: auto; margin: 0; padding: 22px; list-style: none; border: 1px solid var(--line); border-radius: 7px; background: #1c1e19; box-shadow: 0 12px 36px rgba(0,0,0,.65); }
 .objective-journal-item { display: grid; gap: 3px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: rgba(13,18,14,.45); }
 .objective-journal-item.is-current { border-color: #bca16a; }
 .objective-journal-item span { color: #bca16a; font-size: 10px; text-transform: uppercase; }
@@ -1515,3 +1516,7 @@ body.map-editing #site-layer, body.map-editing #hero-layer, body.map-editing .ma
   .trade-specs { grid-template-columns: 1fr; }
 }
 
+
+/* Nekomata: os quadros recortados são imagens individuais, sem folha de quatro poses. */
+.character.nekomata { width: clamp(55px, 8vw, 90px); aspect-ratio: 4.7 / 2.32857; }
+.character.nekomata .character-sprite, .character.nekomata[data-facing] .character-sprite { position: absolute; left: 50%; bottom: var(--neko-bottom, 0%); width: var(--neko-width, 100%); height: var(--neko-height, 100%); aspect-ratio: auto; background-size: contain; background-position: center bottom; transform: translateX(-50%) scaleX(var(--sprite-scale-x, 1)); }

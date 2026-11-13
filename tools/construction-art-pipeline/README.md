@@ -42,4 +42,6 @@ Uma melhoria também passa por exatamente 60 segundos de trabalho no relógio do
 
 ## Manifesto
 
+Nas guildas, a obra inicial usa as fases `early` e `mid` da sede. A primeira metade de uma melhoria exibe o nível atual. A segunda metade usa a fase `mid` do nível e do caminho escolhidos. O sprite concluído só aparece quando a obra termina. Os valores agrupados em `upgradeLevels` são caminhos alternativos do mesmo nível.
+
 `construction-phases.json` lista as fases de construção inicial e os sprites intermediários de melhoria, com suas artes finais e proporções. A chave `upgradeLevels` registra, por construção e produto, a sequência de níveis que o jogo usa. Use-o para nomear e verificar novas entradas. As artes antigas que foram substituídas permanecem no manifesto como histórico, mas não devem ser registradas como arte ativa no jogo.
