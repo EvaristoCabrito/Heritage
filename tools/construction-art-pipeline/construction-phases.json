@@ -1,0 +1,1902 @@
+{
+  "version": 1,
+  "stageThresholds": {
+    "early": "0-49%",
+    "mid": "50-99%",
+    "complete": "100%"
+  },
+  "buildingTypes": {
+    "farm": [
+      "farm-garlic",
+      "farm-wheat",
+      "farm-wheat-v02",
+      "farm-bacon",
+      "farm-eggs",
+      "farm-milk",
+      "farm-garlic-l2",
+      "farm-garlic-l3",
+      "farm-wheat-v02-l2",
+      "farm-wheat-v02-l3",
+      "farm-bacon-l2",
+      "farm-bacon-l3",
+      "farm-eggs-l2",
+      "farm-eggs-l3",
+      "farm-milk-l2",
+      "farm-milk-l3",
+      "farm-vegetables",
+      "farm-vegetables-l2",
+      "farm-vegetables-l3"
+    ],
+    "mill": [
+      "mill-body",
+      "mill-body-l2",
+      "mill-body-l3"
+    ],
+    "hut": [
+      "hut",
+      "hut-big"
+    ],
+    "depot": [
+      "depot"
+    ],
+    "lumber": [
+      "lumber"
+    ],
+    "market": [
+      "market"
+    ],
+    "tavern": [
+      "tavern"
+    ],
+    "hotel": [
+      "hotel"
+    ],
+    "warrior": [
+      "guild",
+      "guild-l2",
+      "guild-paladin",
+      "guild-heavy-knight"
+    ],
+    "archer": [
+      "archer",
+      "archer-l2",
+      "archer-ranger",
+      "archer-assassin"
+    ],
+    "lancer": [
+      "lancer",
+      "lancer-l2",
+      "lancer-sentinel",
+      "lancer-templar"
+    ],
+    "blackMage": [
+      "tower",
+      "tower-l2",
+      "tower-elementalist",
+      "tower-warlock",
+      "tower-l2-v02",
+      "tower-elementalist-v02",
+      "tower-warlock-v02"
+    ],
+    "conjurer": [
+      "conjurer",
+      "conjurer-l2",
+      "conjurer-sorcerer",
+      "conjurer-necromancer"
+    ],
+    "healer": [
+      "healer",
+      "healer-l2",
+      "healer-bishop",
+      "healer-cleric"
+    ],
+    "armory": [
+      "armory"
+    ],
+    "bakery": [
+      "bakery",
+      "bakery-l2",
+      "bakery-l3"
+    ],
+    "emberLab": [
+      "ember-lab",
+      "ember-lab-l2",
+      "ember-lab-l3"
+    ],
+    "butcher": [
+      "butcher",
+      "butcher-l2"
+    ],
+    "blacksmith": [
+      "blacksmith",
+      "blacksmith-l2"
+    ],
+    "moonwarden": [
+      "guild-moonwarden",
+      "guild-moonwarden-l2",
+      "guild-moonwarden-l3"
+    ],
+    "vanguard": [
+      "guild-vanguard",
+      "guild-vanguard-swordsmaster",
+      "guild-vanguard-warbringer"
+    ]
+  },
+  "constructionProfiles": {
+    "farm-garlic": "Farmhouse baixo de pedra e madeira, cercado de jardim e ramalhete de alho.",
+    "farm-wheat": "Farmhouse baixo com anexo comprido, canteiros e feixes de trigo.",
+    "farm-bacon": "Farmhouse de pedra com abrigo lateral aberto para animais e cerca de curral.",
+    "farm-eggs": "Farmhouse baixo com anexo de galinheiro e caixas de ninho.",
+    "farm-milk": "Farmhouse de pedra e estábulo lateral largo para gado leiteiro.",
+    "mill-body": "Moinho de torre redonda afunilada, corpo de pedra e telhado cônico; as pás são um sprite separado.",
+    "hut": "Casebre compacto de um piso, gable íngreme, porta frontal e pilha lateral de lenha.",
+    "hut-big": "Casebre ampliado mais largo, dois volumes de telhado e entrada maior.",
+    "depot": "Depósito baixo e comprido, base de pedra, telhado de duas águas e porta dupla larga.",
+    "lumber": "Oficina aberta de madeira com roda mecânica lateral e estrutura de serraria.",
+    "market": "Salão largo e baixo com arco central e várias baias de venda.",
+    "tavern": "Taverna compacta de dois pisos, fachada de empena e pequeno alpendre.",
+    "hotel": "Hotel largo de estrada, vários frontões, águas-furtadas e longa ala de hospedagem.",
+    "guild": "Guilda ampla de guerreiros, frontão alto e entrada fortificada em arco.",
+    "archer": "Salão estreito de arqueiros com frontão alto e extensão lateral de treino.",
+    "lancer": "Salão compacto de lanceiros ligado a um alpendre comprido e aberto para treino.",
+    "tower": "Torre alta de magos, corpo de pedra afunilado em andares e pináculo cônico.",
+    "conjurer": "Casa de conjuradores com telhado alto e anexo mágico arredondado.",
+    "healer": "Guilda ampla de curandeiros, frontão central e ala lateral.",
+    "armory": "Arsenal de forja, fachada em arco e anexo aberto de ferraria no lado direito.",
+    "farm-wheat-v02": "Casa de fazenda original com canteiro de trigo dourado, feixes e depósito de grãos; sem alho pendurado.",
+    "farm-wheat-v02-l2": "A mesma casa de fazenda, com pequena extensão de armazenamento e debulha e trigo dourado.",
+    "farm-wheat-v02-l3": "A mesma casa de fazenda, com celeiro de debulha ampliado e campo de trigo dourado.",
+    "farm-garlic-l2": "A mesma casa de alho com ampliação do varal de alho e área de secagem.",
+    "farm-garlic-l3": "A mesma casa de alho com ampliação do armazenamento e secagem de alho.",
+    "farm-bacon-l2": "A mesma fazenda de suínos com curral e abrigo ampliados.",
+    "farm-bacon-l3": "A mesma fazenda de suínos com área de criação ampliada.",
+    "farm-eggs-l2": "O mesmo galinheiro com mais ninhos e espaço para galinhas.",
+    "farm-eggs-l3": "O mesmo galinheiro com extensão maior e mais ninhos.",
+    "farm-milk-l2": "O mesmo estábulo leiteiro com baia ampliada.",
+    "farm-milk-l3": "O mesmo estábulo leiteiro com ala de gado ampliada.",
+    "mill-body-l2": "A mesma torre de moinho com anexo lateral e mecanismo ampliado; pás separadas.",
+    "mill-body-l3": "A mesma torre de moinho com extensão e mecanismo de moagem ampliados; pás separadas.",
+    "bakery-l2": "A mesma padaria com o primeiro forno lateral ampliado.",
+    "bakery-l3": "A mesma padaria com área de forno e balcão ampliados.",
+    "ember-lab-l2": "O mesmo laboratório com a ala de refino inicial.",
+    "ember-lab-l3": "O mesmo laboratório com ala de refino ampliada e retortas.",
+    "butcher-l2": "O mesmo açougue com extensão funcional de armazenamento.",
+    "farm-vegetables": "Farmhouse de pedra e madeira com abrigo de produção e canteiros de batatas, cenouras e tomates.",
+    "farm-vegetables-l2": "A mesma fazenda de hortaliças com abrigo ampliado e um canteiro adicional.",
+    "farm-vegetables-l3": "A mesma fazenda de hortaliças com extensão de estufa e canteiros ampliados.",
+    "guild-l2": "guild-l2 · reforma fotorealista a partir de guild.",
+    "guild-paladin": "guild-paladin · reforma fotorealista a partir de guild.",
+    "guild-heavy-knight": "guild-heavy-knight · reforma fotorealista a partir de guild.",
+    "archer-l2": "archer-l2 · reforma fotorealista a partir de archer.",
+    "archer-ranger": "archer-ranger · reforma fotorealista a partir de archer.",
+    "archer-assassin": "archer-assassin · reforma fotorealista a partir de archer.",
+    "lancer-l2": "lancer-l2 · reforma fotorealista a partir de lancer.",
+    "lancer-sentinel": "lancer-sentinel · reforma fotorealista a partir de lancer.",
+    "lancer-templar": "lancer-templar · reforma fotorealista a partir de lancer.",
+    "tower-l2": "tower-l2 · reforma fotorealista a partir de tower.",
+    "tower-elementalist": "tower-elementalist · reforma fotorealista a partir de tower.",
+    "tower-warlock": "tower-warlock · reforma fotorealista a partir de tower.",
+    "tower-l2-v02": "tower-l2-v02 · reforma fotorealista a partir de tower.",
+    "tower-elementalist-v02": "tower-elementalist-v02 · reforma fotorealista a partir de tower.",
+    "tower-warlock-v02": "tower-warlock-v02 · reforma fotorealista a partir de tower.",
+    "healer-l2": "healer-l2 · reforma fotorealista a partir de healer.",
+    "healer-bishop": "healer-bishop · reforma fotorealista a partir de healer.",
+    "healer-cleric": "healer-cleric · reforma fotorealista a partir de healer.",
+    "guild-moonwarden": "guild-moonwarden · reforma fotorealista a partir de guild-moonwarden.",
+    "guild-moonwarden-l2": "guild-moonwarden-l2 · reforma fotorealista a partir de guild-moonwarden.",
+    "guild-moonwarden-l3": "guild-moonwarden-l3 · reforma fotorealista a partir de guild-moonwarden.",
+    "conjurer-l2": "conjurer-l2 · reforma fotorealista a partir de conjurer.",
+    "conjurer-sorcerer": "conjurer-sorcerer · reforma fotorealista a partir de conjurer.",
+    "conjurer-necromancer": "conjurer-necromancer · reforma fotorealista a partir de conjurer.",
+    "guild-vanguard": "guild-vanguard · reforma fotorealista a partir de guild-vanguard.",
+    "guild-vanguard-swordsmaster": "guild-vanguard-swordsmaster · reforma fotorealista a partir de guild-vanguard.",
+    "guild-vanguard-warbringer": "guild-vanguard-warbringer · reforma fotorealista a partir de guild-vanguard."
+  },
+  "assets": {
+    "farm-garlic": {
+      "source": "buildings-photoreal-v03-runtime/farm-garlic.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-garlic-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-garlic-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-wheat": {
+      "source": "buildings-photoreal-v03-runtime/farm-wheat.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-bacon": {
+      "source": "buildings-photoreal-v03-runtime/farm-bacon.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-bacon-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-bacon-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-eggs": {
+      "source": "buildings-photoreal-v03-runtime/farm-eggs.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-eggs-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-eggs-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-milk": {
+      "source": "buildings-photoreal-v03-runtime/farm-milk.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-milk-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-milk-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "mill-body": {
+      "source": "buildings-photoreal-v03-runtime/mill-body.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/mill-body-early.webp",
+          "size": [
+            1105,
+            1424
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/mill-body-mid.webp",
+          "size": [
+            1105,
+            1424
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "hut": {
+      "source": "buildings-photoreal-v03-runtime/hut.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/hut-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/hut-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "hut-big": {
+      "source": "buildings-photoreal-v03-runtime/hut-big.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/hut-big-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/hut-big-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "depot": {
+      "source": "buildings-photoreal-v03-runtime/depot.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/depot-early.webp",
+          "size": [
+            1774,
+            887
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/depot-mid.webp",
+          "size": [
+            1774,
+            887
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "lumber": {
+      "source": "buildings-photoreal-v03-runtime/lumber.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/lumber-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/lumber-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "market": {
+      "source": "buildings-photoreal-v03-runtime/market.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/market-early.webp",
+          "size": [
+            1774,
+            887
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/market-mid.webp",
+          "size": [
+            1774,
+            887
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tavern": {
+      "source": "buildings-photoreal-v03-runtime/tavern.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/tavern-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tavern-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "hotel": {
+      "source": "buildings-photoreal-v03-runtime/hotel.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/hotel-early.webp",
+          "size": [
+            1774,
+            887
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/hotel-mid.webp",
+          "size": [
+            1774,
+            887
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild": {
+      "source": "buildings-photoreal-v03-runtime/guild.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/guild-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "archer": {
+      "source": "buildings-photoreal-v03-runtime/archer.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/archer-early.webp",
+          "size": [
+            1199,
+            1312
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/archer-mid.webp",
+          "size": [
+            1199,
+            1312
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "lancer": {
+      "source": "buildings-photoreal-v03-runtime/lancer.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/lancer-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/lancer-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "tower": {
+      "source": "buildings-photoreal-v03-runtime/tower.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/tower-early.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "conjurer": {
+      "source": "buildings-photoreal-v03-runtime/conjurer.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/conjurer-early.webp",
+          "size": [
+            1312,
+            1199
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/conjurer-mid.webp",
+          "size": [
+            1312,
+            1199
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "healer": {
+      "source": "buildings-photoreal-v03-runtime/healer.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/healer-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/healer-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "armory": {
+      "source": "buildings-photoreal-v03-runtime/armory.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/armory-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/armory-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-garlic-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-garlic-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-garlic-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-garlic-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-garlic-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-garlic-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-garlic-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-garlic-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-wheat-v02": {
+      "source": "buildings-photoreal-v03-runtime/farm-wheat-v02.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-wheat-v02-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-wheat-v02-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-wheat-v02-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-wheat-v02-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-wheat-v02-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-bacon-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-bacon-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-bacon-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-bacon-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-bacon-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-bacon-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-bacon-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-bacon-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-eggs-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-eggs-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-eggs-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-eggs-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-eggs-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-eggs-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-eggs-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-eggs-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-milk-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-milk-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-milk-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-milk-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-milk-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-milk-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/farm-milk-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/farm-milk-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "mill-body-l2": {
+      "source": "buildings-photoreal-v03-runtime/mill-body-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/mill-body-l2-early.webp",
+          "size": [
+            1105,
+            1424
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/mill-body-l2-mid.webp",
+          "size": [
+            1105,
+            1424
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "mill-body-l3": {
+      "source": "buildings-photoreal-v03-runtime/mill-body-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/mill-body-l3-early.webp",
+          "size": [
+            1105,
+            1424
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/mill-body-l3-mid.webp",
+          "size": [
+            1105,
+            1424
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "bakery-l2": {
+      "source": "buildings-photoreal-v03-runtime/bakery-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/bakery-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/bakery-l2-mid.webp",
+          "size": [
+            1200,
+            800
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "bakery-l3": {
+      "source": "buildings-photoreal-v03-runtime/bakery-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/bakery-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/bakery-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "ember-lab-l2": {
+      "source": "buildings-photoreal-v03-runtime/ember-lab-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/ember-lab-l2-early.webp",
+          "size": [
+            1200,
+            1003
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/ember-lab-l2-mid.webp",
+          "size": [
+            1200,
+            1003
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "ember-lab-l3": {
+      "source": "buildings-photoreal-v03-runtime/ember-lab-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/ember-lab-l3-early.webp",
+          "size": [
+            1200,
+            1003
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/ember-lab-l3-mid.webp",
+          "size": [
+            1200,
+            1003
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "butcher-l2": {
+      "source": "buildings-photoreal-v03-runtime/butcher-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/butcher-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/butcher-l2-mid.webp",
+          "size": [
+            1200,
+            800
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "blacksmith-l2": {
+      "source": "buildings-photoreal-v03-runtime/blacksmith-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/blacksmith-l2-early.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/blacksmith-l2-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-vegetables": {
+      "source": "buildings-photoreal-v03-runtime/farm-vegetables.webp",
+      "phases": {
+        "early": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-vegetables-l2": {
+      "source": "buildings-photoreal-v03-runtime/farm-vegetables-l2.webp",
+      "phases": {
+        "early": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-l2-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "farm-vegetables-l3": {
+      "source": "buildings-photoreal-v03-runtime/farm-vegetables-l3.webp",
+      "phases": {
+        "early": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-l3-early.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        },
+        "mid": {
+          "file": "public\\art\\buildings-construction-dark-v01\\farm-vegetables-l3-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            254
+          ]
+        }
+      }
+    },
+    "guild-l2": {
+      "source": "buildings-photoreal-v03-runtime/guild-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-paladin": {
+      "source": "buildings-photoreal-v03-runtime/guild-paladin.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-paladin-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-heavy-knight": {
+      "source": "buildings-photoreal-v03-runtime/guild-heavy-knight.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-heavy-knight-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "archer-l2": {
+      "source": "buildings-photoreal-v03-runtime/archer-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/archer-l2-mid.webp",
+          "size": [
+            1199,
+            1312
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "archer-ranger": {
+      "source": "buildings-photoreal-v03-runtime/archer-ranger.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/archer-ranger-mid.webp",
+          "size": [
+            1199,
+            1312
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "archer-assassin": {
+      "source": "buildings-photoreal-v03-runtime/archer-assassin.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/archer-assassin-mid.webp",
+          "size": [
+            1199,
+            1312
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "lancer-l2": {
+      "source": "buildings-photoreal-v03-runtime/lancer-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/lancer-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "lancer-sentinel": {
+      "source": "buildings-photoreal-v03-runtime/lancer-sentinel.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/lancer-sentinel-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "lancer-templar": {
+      "source": "buildings-photoreal-v03-runtime/lancer-templar.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/lancer-templar-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-l2": {
+      "source": "buildings-photoreal-v03-runtime/tower-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-l2-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-elementalist": {
+      "source": "buildings-photoreal-v03-runtime/tower-elementalist.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-elementalist-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-warlock": {
+      "source": "buildings-photoreal-v03-runtime/tower-warlock.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-warlock-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-l2-v02": {
+      "source": "buildings-photoreal-v03-runtime/tower-l2-v02.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-l2-v02-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-elementalist-v02": {
+      "source": "buildings-photoreal-v03-runtime/tower-elementalist-v02.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-elementalist-v02-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "tower-warlock-v02": {
+      "source": "buildings-photoreal-v03-runtime/tower-warlock-v02.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/tower-warlock-v02-mid.webp",
+          "size": [
+            1202,
+            1308
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "healer-l2": {
+      "source": "buildings-photoreal-v03-runtime/healer-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/healer-l2-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "healer-bishop": {
+      "source": "buildings-photoreal-v03-runtime/healer-bishop.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/healer-bishop-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "healer-cleric": {
+      "source": "buildings-photoreal-v03-runtime/healer-cleric.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/healer-cleric-mid.webp",
+          "size": [
+            1536,
+            1024
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-moonwarden": {
+      "source": "guild-moonwarden-v01.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/guild-moonwarden-early.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-moonwarden-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-moonwarden-l2": {
+      "source": "buildings-photoreal-v03-runtime/guild-moonwarden-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-moonwarden-l2-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-moonwarden-l3": {
+      "source": "buildings-photoreal-v03-runtime/guild-moonwarden-l3.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-moonwarden-l3-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "conjurer-l2": {
+      "source": "buildings-photoreal-v03-runtime/conjurer-l2.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/conjurer-l2-mid.webp",
+          "size": [
+            1312,
+            1199
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "conjurer-sorcerer": {
+      "source": "buildings-photoreal-v03-runtime/conjurer-sorcerer.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/conjurer-sorcerer-mid.webp",
+          "size": [
+            1312,
+            1199
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "conjurer-necromancer": {
+      "source": "buildings-photoreal-v03-runtime/conjurer-necromancer.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/conjurer-necromancer-mid.webp",
+          "size": [
+            1312,
+            1199
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-vanguard": {
+      "source": "guild-vanguard-v01.webp",
+      "phases": {
+        "early": {
+          "file": "public/art/buildings-construction-dark-v01/guild-vanguard-early.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        },
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-vanguard-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-vanguard-swordsmaster": {
+      "source": "buildings-photoreal-v03-runtime/guild-vanguard-swordsmaster.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-vanguard-swordsmaster-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    },
+    "guild-vanguard-warbringer": {
+      "source": "buildings-photoreal-v03-runtime/guild-vanguard-warbringer.webp",
+      "phases": {
+        "mid": {
+          "file": "public/art/buildings-construction-dark-v01/guild-vanguard-warbringer-mid.webp",
+          "size": [
+            512,
+            512
+          ],
+          "alpha": [
+            0,
+            255
+          ]
+        }
+      }
+    }
+  },
+  "upgradeLevels": {
+    "farm": {
+      "garlic": [
+        "farm-garlic",
+        "farm-garlic-l2",
+        "farm-garlic-l3"
+      ],
+      "wheat": [
+        "farm-wheat-v02",
+        "farm-wheat-v02-l2",
+        "farm-wheat-v02-l3"
+      ],
+      "bacon": [
+        "farm-bacon",
+        "farm-bacon-l2",
+        "farm-bacon-l3"
+      ],
+      "eggs": [
+        "farm-eggs",
+        "farm-eggs-l2",
+        "farm-eggs-l3"
+      ],
+      "milk": [
+        "farm-milk",
+        "farm-milk-l2",
+        "farm-milk-l3"
+      ],
+      "vegetables": [
+        "farm-vegetables",
+        "farm-vegetables-l2",
+        "farm-vegetables-l3"
+      ]
+    },
+    "mill": [
+      "mill-body",
+      "mill-body-l2",
+      "mill-body-l3"
+    ],
+    "bakery": [
+      "bakery",
+      "bakery-l2",
+      "bakery-l3"
+    ],
+    "emberLab": [
+      "ember-lab",
+      "ember-lab-l2",
+      "ember-lab-l3"
+    ],
+    "butcher": [
+      "butcher",
+      "butcher-l2"
+    ],
+    "blacksmith": [
+      "blacksmith",
+      "blacksmith-l2"
+    ],
+    "warrior": [
+      "guild",
+      "guild-l2",
+      [
+        "guild-paladin",
+        "guild-heavy-knight"
+      ]
+    ],
+    "archer": [
+      "archer",
+      "archer-l2",
+      [
+        "archer-ranger",
+        "archer-assassin"
+      ]
+    ],
+    "lancer": [
+      "lancer",
+      "lancer-l2",
+      [
+        "lancer-sentinel",
+        "lancer-templar"
+      ]
+    ],
+    "blackMage": [
+      "tower",
+      "tower-l2-v02",
+      [
+        "tower-elementalist-v02",
+        "tower-warlock-v02"
+      ]
+    ],
+    "healer": [
+      "healer",
+      "healer-l2",
+      [
+        "healer-bishop",
+        "healer-cleric"
+      ]
+    ],
+    "moonwarden": [
+      "guild-moonwarden",
+      "guild-moonwarden-l2",
+      "guild-moonwarden-l3"
+    ],
+    "conjurer": [
+      "conjurer",
+      "conjurer-l2",
+      [
+        "conjurer-sorcerer",
+        "conjurer-necromancer"
+      ]
+    ],
+    "vanguard": [
+      "guild-vanguard",
+      [
+        "guild-vanguard-swordsmaster",
+        "guild-vanguard-warbringer"
+      ]
+    ]
+  }
+}
