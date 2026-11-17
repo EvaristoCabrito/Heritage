@@ -438,9 +438,7 @@ const buildingImage = (art, constructionStage = null, building = null) => {
     const type = upgrade?.kind === 'fortification' ? upgrade.type : building.type;
     const level = ['reinforcedWoodenWall', 'reinforcedWoodenGate'].includes(type) ? 2 : 1;
     const structure = SIEGE_DEPLOYMENTS[type]?.deploy === 'gate' ? 'gate' : 'wall';
-    // Keep the in-game wall visible while work is in progress. Dedicated phase
-    // art only ships once it shares the accepted module silhouette.
-    return `public/art/military-v01/${structure}-l${level}.png`;
+    return `public/art/military-v01/${structure}-l${level}${constructionStage ? `-${constructionStage}` : ''}.png`;
   }
   // Early and middle construction views for the first Bowyer's Workshop are
   // individual high-resolution sprites, kept on the same site anchor as its
