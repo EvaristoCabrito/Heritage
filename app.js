@@ -30,6 +30,7 @@ const BUILDINGS = [
 ];
 // Toda construção consome pedra adicional, calculada a partir da madeira necessária.
 BUILDINGS.push(
+  { id: 'taxOffice', name: 'Centro de Cobrança', glyph: 'T', cost: 150, wood: 12, detail: 'Coordena cobradores locais. Um centro por mapa; até três cobradores no nível 3.' },
   { id: 'woodworking', name: 'Marcenaria de armas', glyph: 'W', cost: 130, wood: 14, detail: 'Produz armas de madeira e componentes para o cerco.' },
   { id: 'siegeWorks', name: 'Oficina de cerco', glyph: 'S', cost: 210, wood: 22, detail: 'Produz fortificações, munição e máquinas de cerco.' },
   ...Object.values(SIEGE_DEPLOYMENTS).map(recipe => ({
@@ -242,7 +243,7 @@ const GUILD_HERO_ART = {
 };
 const guildHeroArt = actor => GUILD_HERO_ART[actor.guildForm || actor.className];
 const actorArt = actor => guildHeroArt(actor) || PRESTIGE_ART[actor.prestige] || actor.spriteId || (actor.kind === 'skeleton' ? 'skeleton-v02' : actor.kind === 'zombie' ? 'zombie-v01' : actor.kind === 'wolf' ? 'mordavian-wolf-v01' : actor.kind === 'goblin' ? 'mordavian-goblin-v01' : actor.kind === 'troll' ? 'mordavian-troll-v01' : null) || CLASS_ART[actor.className];
-const actorPortrait = actor => guildHeroArt(actor) || PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || 'male-peasant';
+const actorPortrait = actor => (actor.profession === 'collector' ? 'tax-collector' : null) || guildHeroArt(actor) || PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || 'male-peasant';
 const actorSheet = actor => {
   if (actor.action === 'build') return 'build';
   if (actor.action === 'idle') return 'idle';
@@ -332,7 +333,7 @@ const freeLodging = () => {
 // Construção livre: vai onde o jogador colocar. Só não pode sair do mapa nem encostar em outra construção.
 const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
-  woodworking: 'lumber', siegeWorks: 'armory',
+  taxOffice: 'tax-office-l1', woodworking: 'woodworking-l1', siegeWorks: 'armory',
   ...Object.fromEntries(Object.values(SIEGE_DEPLOYMENTS).map(recipe => [recipe.id, 'lumber'])),
   woodenPalisade: 'wood-wall-l1', reinforcedWoodenWall: 'wood-wall-l2',
   woodenGate: 'wood-gate-l1', reinforcedWoodenGate: 'wood-gate-l2',
@@ -386,7 +387,7 @@ const BUILDING_ART_ASPECTS = {
   archer: 1199 / 1312, lancer: 1.5, tower: 1202 / 1308, conjurer: 1312 / 1199, bakery: 1.5, 'ember-lab': 1200 / 1003,
   'bakery-l2': 1.5, 'bakery-l3': 1.5, 'ember-lab-l2': 1200 / 1003, 'ember-lab-l3': 1200 / 1003, butcher: 1.5, 'butcher-l2': 1.5, blacksmith: 1.5, 'blacksmith-l2': 1.5,
   healer: 1.5, armory: 1.5, manor: 1.5,
-  'wood-wall-l1': 1.5, 'wood-wall-l2': 1.5, 'wood-gate-l1': 1.5, 'wood-gate-l2': 1.5,
+  'wood-wall-l1': 3, 'wood-wall-l2': 3, 'wood-gate-l1': 3, 'wood-gate-l2': 3, 'woodworking-l1': 1.5,
   'quarry-l1': 1, 'quarry-l2': 1, 'mine-l1': 1, 'mine-l2': 1,
 };
 const PIT_BUILDING_SHEETS = {
@@ -428,11 +429,17 @@ function applyBuildingImage(element, art, constructionStage = null, building = n
 }
 const buildingImage = (art, constructionStage = null, building = null) => {
   const upgrade = building?.pendingUpgrade;
+  if (art?.startsWith('tax-office-l')) {
+    const current = building ? producerLevel(building) + 1 : 1;
+    if (upgrade?.kind === 'taxOffice') return `public/art/tax-office-l${constructionStage === 'mid' ? current + 1 : current}${constructionStage === 'mid' ? '-mid' : ''}.png`;
+    return `public/art/tax-office-l${current}${constructionStage ? `-${constructionStage}` : ''}.png`;
+  }
   if (building && isModularFortification(building.type)) {
     const type = upgrade?.kind === 'fortification' ? upgrade.type : building.type;
     const level = ['reinforcedWoodenWall', 'reinforcedWoodenGate'].includes(type) ? 2 : 1;
     const structure = SIEGE_DEPLOYMENTS[type]?.deploy === 'gate' ? 'gate' : 'wall';
-    if (constructionStage) return `public/art/military-v01/${structure}-l${level}-${constructionStage}.png`;
+    // Keep the in-game wall visible while work is in progress. Dedicated phase
+    // art only ships once it shares the accepted module silhouette.
     return `public/art/military-v01/${structure}-l${level}.png`;
   }
   // Early and middle construction views for the first Bowyer's Workshop are
@@ -442,6 +449,7 @@ const buildingImage = (art, constructionStage = null, building = null) => {
   if (building?.type === 'woodworking' && constructionStage && !upgrade) {
     return `public/art/military-v01/woodworking-l1-${constructionStage}.png`;
   }
+  if (art === 'woodworking-l1') return 'public/art/military-v01/woodworking-l1.png';
   if (constructionStage && upgrade?.kind === 'guild') {
     if (constructionStage === 'mid') {
       const target = guildBuildingArt(building.type, upgrade.tier + 1, upgrade.branch);
@@ -1982,7 +1990,19 @@ const fiscalBuildings = () => [MANOR(), ...state.buildings];
 const COLLECTOR_MAX = 8;
 // Cobradores em serviço: os que o Casarão mantém na folha. Quem foi dispensado no meio da rota ainda está vivo
 // e carrega ouro, mas já não conta como ativo: termina de entregar a bolsa e só então sai do serviço.
-const activeCollectors = () => aliveCollectors().filter(worker => !worker.dismissing);
+const activeCollectors = () => aliveCollectors().filter(worker => !worker.dismissing && worker.taxOfficeSite == null);
+const officeCollectors = site => aliveCollectors().filter(worker => worker.taxOfficeSite === site && !worker.dismissing);
+function syncTaxOffices() {
+  for (const office of state.buildings.filter(building => building.type === 'taxOffice' && (isDone(building) || building.pendingUpgrade?.kind === 'taxOffice'))) {
+    while (officeCollectors(office.site).length < producerLevel(office) + 1) {
+      const worker = spawnCollector();
+      worker.taxOfficeSite = office.site;
+      worker.x = office.x; worker.y = office.y;
+      worker.mapId = buildingMapId(office); worker.mapSet = office.mapSet || 1;
+      taxLog({ kind: 'cobrador do centro contratado', site: office.site, collector: worker.id });
+    }
+  }
+}
 // Contrata um cobrador do Casarão. Reaproveita um ex-cobrador livre (dispensado antes) para não inflar a população.
 function spawnCollector() {
   const former = state.workers.find(worker => worker.alive && worker.exCollector && !worker.profession && worker.buildSite == null && !worker.workplace);
@@ -2024,7 +2044,7 @@ function addCollector() { setCollectorTarget(collectorTarget() + 1); }
 function dismissCollector(id, options = {}) {
   const collector = aliveCollectors().find(worker => String(worker.id) === String(id) && !worker.dismissing);
   if (!collector) return;
-  if (!options.keepTarget) state.collectorTarget = Math.max(0, collectorTarget() - 1);
+  if (!options.keepTarget && collector.taxOfficeSite == null) state.collectorTarget = Math.max(0, collectorTarget() - 1);
   taxLog({ kind: 'cobrador dispensado', collector: collector.name, carrying: money(collector.taxBag || 0) });
   collector.dismissing = true;
   if (!(collector.taxBag > 0) && !collector.taxRoute?.length && (collector.mapId || 'city') === 'city') finishDismissal(collector);
@@ -2033,7 +2053,7 @@ function dismissCollector(id, options = {}) {
 }
 // Dispensado e sem ouro na bolsa: sai da folha de cobradores e volta a ser camponês comum (que o Casarão pode recontratar).
 function finishDismissal(collector) {
-  collector.profession = null; collector.dismissing = false; collector.exCollector = true;
+  collector.profession = null; collector.dismissing = false; collector.exCollector = true; delete collector.taxOfficeSite;
   collector.taxRoute = null; collector.route = []; collector.finalPoint = null; collector.wait = 0;
   collector.task = 'Dispensado do ofício de cobrador';
   taxLog({ kind: 'cobrador saiu do serviço', collector: collector.name });
@@ -2052,7 +2072,8 @@ function ensureCollector() {
 }
 function planTaxRoute(actor) {
   const assigned = new Set(aliveCollectors().filter(other => other !== actor).flatMap(other => other.taxRoute || []));
-  const left = fiscalBuildings().filter(building => !building.underConstruction && !assigned.has(building.site) && taxOwed(fiscalOf(building)) > 0);
+  const office = state.buildings.find(building => building.site === actor.taxOfficeSite && building.type === 'taxOffice');
+  const left = fiscalBuildings().filter(building => !building.underConstruction && !assigned.has(building.site) && taxOwed(fiscalOf(building)) > 0 && (!office || (buildingMapId(building) === buildingMapId(office) && (building.mapSet || 1) === (office.mapSet || 1))));
   const route = [];
   let at = { x: actor.x, y: actor.y, mapId: actor.mapId || 'city' }, load = actor.taxBag || 0;
   while (left.length && load < COLLECTOR_CAPACITY) {
@@ -2097,11 +2118,24 @@ function depositTaxBag(actor) {
 function collectorRoutine(actor) {
   actor.taxBag = money(actor.taxBag || 0);
   const day = Math.floor(state.minutes / 1440), hour = (state.minutes % 1440) / 60;
+  const office = state.buildings.find(building => building.site === actor.taxOfficeSite && building.type === 'taxOffice');
+  if (actor.taxOfficeSite != null && (!office || office.ruined)) actor.dismissing = true;
   // Dispensado: não cobra mais ninguém. Volta ao Casarão, entrega a bolsa e só então deixa o ofício.
   if (actor.dismissing) {
     const inCity = (actor.mapId || 'city') === 'city';
     if (!(actor.taxBag > 0) && !actor.taxRoute && inCity) { finishDismissal(actor); return; }
     if (actor.taxRoute?.length || (!actor.taxRoute && !inCity)) actor.taxRoute = [];
+  }
+  if (office && actor.returningTaxOffice && !actor.dismissing) {
+    actor.task = 'Retornando ao Centro de Cobrança';
+    if ((actor.mapId || 'city') !== buildingMapId(office)) { travelToMap(actor, buildingMapId(office), office.mapSet || 1); return; }
+    const spot = buildSpot(office);
+    if (Math.hypot(actor.x - spot.x, actor.y - spot.y) >= 1.5) {
+      if (buildingMapId(office) === 'wilds') { actor.route = []; actor.finalPoint = spot; } else routeToPoint(actor, spot);
+      return;
+    }
+    actor.returningTaxOffice = false;
+    actor.routeDay = null;
   }
   if (!actor.taxRoute && !(actor.taxBag > 0) && actor.routeDay !== day && hour >= COLLECTOR_START_HOUR) {
     actor.routeDay = day;
@@ -2133,6 +2167,18 @@ function collectorRoutine(actor) {
     if (!isDone(MANOR())) { actor.wait = 5; return; }
     depositTaxBag(actor);
     actor.taxRoute = null;
+    if (office && !actor.dismissing) actor.returningTaxOffice = true;
+    return;
+  }
+  if (office && !actor.dismissing) {
+    actor.task = 'Retornando ao Centro de Cobrança';
+    if ((actor.mapId || 'city') !== buildingMapId(office)) { travelToMap(actor, buildingMapId(office), office.mapSet || 1); return; }
+    const spot = buildSpot(office);
+    if (Math.hypot(actor.x - spot.x, actor.y - spot.y) >= 1.5) {
+      if (buildingMapId(office) === 'wilds') { actor.route = []; actor.finalPoint = spot; } else routeToPoint(actor, spot);
+      return;
+    }
+    actor.wait = 5;
     return;
   }
   if (tavernPause(actor)) return;
@@ -2712,7 +2758,8 @@ function siteLabel(building) {
   return building.type === 'farm' ? building.produce === 'eggs' ? 'Galinheiro' : `Fazenda de ${farmType(building.produce).name}` : building.type === 'hut' ? (building.big ? 'Casebre Grande' : 'Casebre Pequeno') : building.branch ? (BRANCH_NAMES[building.branch] || `Guilda ${building.branch}`) : def.name;
 }
 function siteArt(building) {
-  const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : BUILDING_ART[building.type];
+  const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : building.type === 'woodworking' && producerLevel(building) > 0 ? 'lumber' : BUILDING_ART[building.type];
+  if (building.type === 'taxOffice') return `tax-office-l${producerLevel(building) + 1}`;
   if (GUILD_BUILDING_ART[building.type]) return guildBuildingArt(building.type, guildTier(building), building.guildForm || building.branch);
   if (building.type === 'quarry' || building.type === 'mine') return `${building.type}-l${(building.level || 0) + 1}`;
   return PRODUCER_TYPES.includes(building.type) ? levelArt(art, building) : art;
@@ -3060,6 +3107,7 @@ function fishingSpotInfoHTML(spot) {
 function placementProblem(x, y, ignoreSite = null) {
   const moving = state.movingSite != null ? state.buildings.find(building => building.site === state.movingSite) : null;
   const type = moving?.type || state.selectedBuild;
+  if (type === 'taxOffice' && state.buildings.some(building => building.type === 'taxOffice' && buildingMapId(building) === currentMap && (building.mapSet || 1) === currentMapSet && building.site !== ignoreSite)) return 'Este mapa já possui um Centro de Cobrança.';
   if (type === 'mine' && currentMap !== 'wilds') return 'Minas s\u00f3 podem ser constru\u00eddas em Wilds.';
   if (type === 'mine' && state.buildings.some(building => building.type === 'mine' && (building.mapId || 'city') === 'wilds' && (building.mapSet || 1) === currentMapSet && building.site !== ignoreSite)) return 'Este ponto das Wilds permite uma única Mina.';
   if (type === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city' && building.site !== ignoreSite)) return 'City permite apenas uma pedreira.';
@@ -3330,6 +3378,7 @@ function inspectorHTML() {
       ${selectedProducer?.type === 'butcher' ? butcherRecipeBoxHTML(selectedProducer) : ''}
       ${selectedProducer?.type === 'blacksmith' ? blacksmithRecipeBoxHTML(selectedProducer) : ''}
       ${selectedProducer ? producerBoxHTML(selectedProducer) : ''}
+      ${selectedBuilding && isDone(selectedBuilding) && selectedBuilding.type === 'taxOffice' ? taxOfficeHTML(selectedBuilding) : ''}
       ${selectedBuilding && isDone(selectedBuilding) && militaryLevel(selectedBuilding) ? militaryIndustryHTML(selectedBuilding) : ''}
       ${selectedBuilding && isDone(selectedBuilding) ? siegeControlsHTML(selectedBuilding) : ''}
       ${selectedHut && !selectedHut.big ? `<section class="inspector-section"><h4>Ampliação</h4><button type="button" class="hut-upgrade" data-hut-upgrade="${selectedHut.site}">Casebre Grande · +3 vagas · ${costHTML(HUT_UPGRADE.gold, HUT_UPGRADE.wood)}</button></section>` : ''}
@@ -3454,7 +3503,8 @@ function bindPanel(host) {
     if (select) buyMonarchItem(button.dataset.monarchBuy, select.value);
   }));
   $$('[data-armory-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeArmory(Number(button.dataset.armoryUpgrade))));
-  $$('[data-producer-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeProducer(Number(button.dataset.producerUpgrade))));
+  $('[data-tax-office-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeTaxOffice(Number(button.dataset.taxOfficeUpgrade))));
+  $('[data-producer-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeProducer(Number(button.dataset.producerUpgrade))));
   $$('[data-depot-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeDepot(Number(button.dataset.depotUpgrade))));
   $$('[data-hut-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeHut(Number(button.dataset.hutUpgrade))));
   $$('[data-hunt-mode]', host).forEach(button => button.addEventListener('click', () => {
@@ -3484,14 +3534,15 @@ const BUILD_CATEGORIES = [
   { id: 'houses', name: 'Casas', types: ['hut', 'depot'] },
   { id: 'farms', name: 'Fazendas', types: ['farm'] },
   { id: 'extraction', name: 'Extração', types: ['lumber', 'quarry', 'mine'] },
-  { id: 'production', name: 'Produção', types: ['mill', 'bakery', 'emberLab', 'butcher', 'blacksmith', 'market', 'woodworking', 'siegeWorks'] },
+  { id: 'production', name: 'Produção', types: ['mill', 'bakery', 'emberLab', 'butcher', 'blacksmith', 'market', 'taxOffice', 'woodworking', 'siegeWorks'] },
   { id: 'siege', name: 'Equipamento de cerco', types: Object.keys(SIEGE_DEPLOYMENTS) },
   { id: 'guilds', name: 'Guildas', types: ['warrior', 'archer', 'lancer', 'blackMage', 'conjurer', 'healer', 'moonwarden', 'vanguard', 'armory', 'tavern', 'hotel'] },
 ];
 const buildCardHTML = item => {
   const cityQuarryExists = item.id === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city');
-  const blocked = (item.id === 'mine' && currentMap !== 'wilds') || cityQuarryExists;
-  const reason = cityQuarryExists ? 'A única pedreira de City já foi construída.' : blocked ? item.id === 'mine' ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.id === 'quarry' && currentMap === 'city' ? 'Pedreira inicial de baixa reserva · City permite uma; Wilds não tem limite.' : item.detail;
+  const officeExists = item.id === 'taxOffice' && state.buildings.some(building => building.type === 'taxOffice' && buildingMapId(building) === currentMap && (building.mapSet || 1) === currentMapSet);
+  const blocked = officeExists || (item.id === 'mine' && currentMap !== 'wilds') || cityQuarryExists;
+  const reason = officeExists ? 'Este mapa já possui um Centro de Cobrança.' : cityQuarryExists ? 'A única pedreira de City já foi construída.' : blocked ? item.id === 'mine' ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.id === 'quarry' && currentMap === 'city' ? 'Pedreira inicial de baixa reserva · City permite uma; Wilds não tem limite.' : item.detail;
   const art = item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id];
   const preview = item.finishedItem ? siegeThumbHTML(item.id) : item.id === 'quarry' || item.id === 'mine'
     ? `<span class="building-sprite-sheet" style="${buildingImageStyle(art)}" aria-hidden="true"></span>`
@@ -3765,6 +3816,7 @@ function demolishBuilding(site) {
     state.gold = money(state.gold + building.cash);
     taxLog({ kind: 'encerramento de caixa', site, amount: building.cash });
   }
+  if (building.type === 'taxOffice') officeCollectors(site).forEach(worker => dismissCollector(worker.id, { keepTarget: true }));
   state.buildings = state.buildings.filter(item => item !== building);
   [...state.heroes, ...state.workers].forEach(actor => {
     let touched = false;
@@ -4139,6 +4191,7 @@ function completeBuilding(building) {
   building.builderId = null;
   if (worker) { worker.buildSite = null; worker.route = []; worker.finalPoint = null; worker.wait = 0; }
   gainHeirXp(25);
+  if (building.type === 'taxOffice') syncTaxOffices();
   // Fazenda ou moinho novo: todo mundo é redistribuído para ninguém ficar vazio.
   if (PRODUCER_TYPES.includes(item.id)) state.workers.forEach(worker => { worker.jobSite = null; });
   assignBuilders();
@@ -4255,6 +4308,10 @@ function finishUpgrade(building, upgrade) {
     building.type = upgrade.type;
     building.damage = Math.min(oldHp, building.damage || 0);
     say(siteLabel(building) + ' · reforço concluído.');
+  } else if (upgrade.kind === 'taxOffice') {
+    building.level = producerLevel(building) + 1;
+    syncTaxOffices();
+    say(`Centro de Cobrança no nível ${building.level + 1}.`);
   } else if (upgrade.kind === 'military') {
     building.level = producerLevel(building) + 1;
     say(siteLabel(building) + ' · ampliação concluída.');
@@ -4755,7 +4812,7 @@ function tick() {
   if (state.selectedSite != null && state.buildings.some(building => building.site === state.selectedSite && (building.type === 'blacksmith' || militaryLevel(building) || SIEGE_DEPLOYMENTS[building.type]))
       && !document.querySelector('#site-inspector :is(button:hover, select:hover, select:focus)')) renderInspector();
   accrueTavern(state.speed);
-  if (state.minutes % 60 < state.speed) { shopAtArmory(); shopAtMarket(); processDemands(); processBounties(); flushTavernSales(); ensureCollector(); }
+  if (state.minutes % 60 < state.speed) { shopAtArmory(); shopAtMarket(); processDemands(); processBounties(); flushTavernSales(); ensureCollector(); syncTaxOffices(); }
   state.minutes += state.speed;
   if (Math.floor(state.minutes / 60) > Math.floor((state.minutes - state.speed) / 60)) populationArrival();
   if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) {
@@ -6750,6 +6807,19 @@ function butcherRecipeBoxHTML(butcher) {
   const current = butcherActiveRecipe(butcher).id;
   return `<section class="inspector-section" aria-label="Receita do açougue"><h4>Produção</h4>
     <div class="farm-type-grid compact">${BUTCHER_RECIPES.filter(recipe => chapterAllows('butcher', recipe.id)).map(recipe => { const locked = !recipeIsUnlocked(butcher, recipe); return `<button class="farm-type${current === recipe.id ? ' selected' : ''}${locked ? ' locked' : ''}" data-butcher-recipe="${recipe.id}" aria-pressed="${current === recipe.id}"${locked ? ' disabled aria-disabled="true"' : ''} title="${recipeDetails(recipe)}"><img src="public/art/${foodIcon(FOOD_TYPES.find(food => food.id === recipe.id))}" alt=""><b>${recipe.name}</b><small>${recipeDetails(recipe)}</small></button>`; }).join('')}</div></section>`;
+}
+function taxOfficeHTML(building) {
+  const level = producerLevel(building);
+  const next = PRODUCER_LEVELS[level + 1];
+  return `<section class="inspector-section"><h4>Centro de Cobrança · nível ${level + 1}</h4><p>${officeCollectors(building.site).length} de ${level + 1} cobradores locais · as cargas seguem ao Casarão.</p>${next ? `<button type="button" class="hut-upgrade" data-tax-office-upgrade="${building.site}">Ampliar para nível ${level + 2} · ${costHTML(next.gold, next.wood)}</button>` : '<p>Nível máximo · três cobradores locais</p>'}</section>`;
+}
+function upgradeTaxOffice(site) {
+  const building = state.buildings.find(item => item.site === site && item.type === 'taxOffice' && isDone(item));
+  const next = building && PRODUCER_LEVELS[producerLevel(building) + 1];
+  if (!next) return;
+  if (state.gold < next.gold || state.timber < next.wood) { say('Faltam materiais para a melhoria.'); return; }
+  state.gold -= next.gold; state.timber -= next.wood;
+  startUpgrade(building, { kind: 'taxOffice' }, `Centro de Cobrança para o nível ${producerLevel(building) + 2}`);
 }
 function upgradeProducer(site) {
   const building = state.buildings.find(item => item.site === site && (PRODUCER_TYPES.includes(item.type) || item.type === 'market' || militaryLevel(item)) && isDone(item));
