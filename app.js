@@ -31,8 +31,8 @@ const BUILDINGS = [
 // Toda construção consome pedra adicional, calculada a partir da madeira necessária.
 BUILDINGS.push(
   { id: 'taxOffice', name: 'Centro de Cobrança', glyph: 'T', cost: 150, wood: 12, detail: 'Coordena cobradores locais. Um centro por mapa; até três cobradores no nível 3.' },
-  { id: 'woodworking', name: 'Marcenaria de armas', glyph: 'W', cost: 130, wood: 14, detail: 'Produz armas de madeira e componentes para o cerco.' },
-  { id: 'siegeWorks', name: 'Oficina de cerco', glyph: 'S', cost: 210, wood: 22, detail: 'Produz fortificações, munição e máquinas de cerco.' },
+  { id: 'woodworking', name: 'Marcenaria de armas', glyph: 'W', cost: 130, wood: 14, detail: 'Uma oficina por domínio, ampliada até o nível 3. Produz armas de madeira e componentes para o cerco.' },
+  { id: 'siegeWorks', name: 'Oficina de cerco', glyph: 'S', cost: 210, wood: 22, detail: 'Uma oficina por domínio, ampliada até o nível 3. Produz todas as fortificações, munições e máquinas de cerco.' },
   ...Object.values(SIEGE_DEPLOYMENTS).map(recipe => ({
     id: recipe.id, name: recipe.name, glyph: 'S', cost: 0, wood: 0, detail: 'Instale uma unidade acabada do depósito.', finishedItem: true,
   })),
@@ -333,7 +333,7 @@ const freeLodging = () => {
 // Construção livre: vai onde o jogador colocar. Só não pode sair do mapa nem encostar em outra construção.
 const BUILD_SPACING = 12.5;
 const BUILDING_ART = {
-  taxOffice: 'tax-office-l1', woodworking: 'woodworking-l1', siegeWorks: 'armory',
+  taxOffice: 'tax-office-l1', woodworking: 'woodworking-l1', siegeWorks: 'siegeWorks-l1',
   ...Object.fromEntries(Object.values(SIEGE_DEPLOYMENTS).map(recipe => [recipe.id, 'lumber'])),
   woodenPalisade: 'wood-wall-l1', reinforcedWoodenWall: 'wood-wall-l2',
   woodenGate: 'wood-gate-l1', reinforcedWoodenGate: 'wood-gate-l2',
@@ -387,7 +387,7 @@ const BUILDING_ART_ASPECTS = {
   archer: 1199 / 1312, lancer: 1.5, tower: 1202 / 1308, conjurer: 1312 / 1199, bakery: 1.5, 'ember-lab': 1200 / 1003,
   'bakery-l2': 1.5, 'bakery-l3': 1.5, 'ember-lab-l2': 1200 / 1003, 'ember-lab-l3': 1200 / 1003, butcher: 1.5, 'butcher-l2': 1.5, blacksmith: 1.5, 'blacksmith-l2': 1.5,
   healer: 1.5, armory: 1.5, manor: 1.5,
-  'wood-wall-l1': 3, 'wood-wall-l2': 3, 'wood-gate-l1': 3, 'wood-gate-l2': 3, 'woodworking-l1': 1.5,
+  'wood-wall-l1': 3, 'wood-wall-l2': 3, 'wood-gate-l1': 3, 'wood-gate-l2': 3, 'woodworking-l1': 1.5, 'woodworking-l2': 1.5, 'woodworking-l3': 1.5, 'siegeWorks-l1': 1.5, 'siegeWorks-l2': 1.5, 'siegeWorks-l3': 1.5,
   'quarry-l1': 1, 'quarry-l2': 1, 'mine-l1': 1, 'mine-l2': 1,
 };
 const PIT_BUILDING_SHEETS = {
@@ -449,7 +449,12 @@ const buildingImage = (art, constructionStage = null, building = null) => {
   if (building?.type === 'woodworking' && constructionStage && !upgrade) {
     return `public/art/military-v01/woodworking-l1-${constructionStage}.png`;
   }
-  if (art === 'woodworking-l1') return 'public/art/military-v01/woodworking-l1.png';
+  if (building && ['woodworking', 'siegeWorks'].includes(building.type) && constructionStage) {
+    const level = upgrade?.kind === 'military' ? producerLevel(building) + 2 : 1;
+    if (level > 1) return `public/art/military-v01/${building.type}-l${level}-${constructionStage}.png`;
+    if (building.type === 'siegeWorks') return `public/art/military-v01/siegeWorks-l1-${constructionStage}.png`;
+  }
+  if (art?.startsWith('woodworking-l') || art?.startsWith('siegeWorks-l')) return `public/art/military-v01/${art}.png`;
   if (constructionStage && upgrade?.kind === 'guild') {
     if (constructionStage === 'mid') {
       const target = guildBuildingArt(building.type, upgrade.tier + 1, upgrade.branch);
@@ -2758,7 +2763,8 @@ function siteLabel(building) {
   return building.type === 'farm' ? building.produce === 'eggs' ? 'Galinheiro' : `Fazenda de ${farmType(building.produce).name}` : building.type === 'hut' ? (building.big ? 'Casebre Grande' : 'Casebre Pequeno') : building.branch ? (BRANCH_NAMES[building.branch] || `Guilda ${building.branch}`) : def.name;
 }
 function siteArt(building) {
-  const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : building.type === 'woodworking' && producerLevel(building) > 0 ? 'lumber' : BUILDING_ART[building.type];
+  const industryLevel = ['woodworking', 'siegeWorks'].includes(building.type) ? producerLevel(building) + 1 : 0;
+  const art = building.type === 'farm' ? farmType(building.produce).art : building.type === 'hut' && building.big ? 'hut-big' : industryLevel >= 1 && industryLevel <= 3 ? `${building.type}-l${industryLevel}` : ['woodworking', 'siegeWorks'].includes(building.type) ? (building.type === 'woodworking' ? 'lumber' : 'armory') : BUILDING_ART[building.type];
   if (building.type === 'taxOffice') return `tax-office-l${producerLevel(building) + 1}`;
   if (GUILD_BUILDING_ART[building.type]) return guildBuildingArt(building.type, guildTier(building), building.guildForm || building.branch);
   if (building.type === 'quarry' || building.type === 'mine') return `${building.type}-l${(building.level || 0) + 1}`;
@@ -3107,6 +3113,7 @@ function fishingSpotInfoHTML(spot) {
 function placementProblem(x, y, ignoreSite = null) {
   const moving = state.movingSite != null ? state.buildings.find(building => building.site === state.movingSite) : null;
   const type = moving?.type || state.selectedBuild;
+  if (['woodworking', 'siegeWorks'].includes(type) && state.buildings.some(building => building.type === type && building.site !== ignoreSite)) return type === 'woodworking' ? 'Este domínio já possui uma Marcenaria de armas. Amplie a existente para avançar de nível.' : 'Este domínio já possui uma Oficina de cerco. Amplie a existente para avançar de nível.';
   if (type === 'taxOffice' && state.buildings.some(building => building.type === 'taxOffice' && buildingMapId(building) === currentMap && (building.mapSet || 1) === currentMapSet && building.site !== ignoreSite)) return 'Este mapa já possui um Centro de Cobrança.';
   if (type === 'mine' && currentMap !== 'wilds') return 'Minas s\u00f3 podem ser constru\u00eddas em Wilds.';
   if (type === 'mine' && state.buildings.some(building => building.type === 'mine' && (building.mapId || 'city') === 'wilds' && (building.mapSet || 1) === currentMapSet && building.site !== ignoreSite)) return 'Este ponto das Wilds permite uma única Mina.';
@@ -3541,8 +3548,9 @@ const BUILD_CATEGORIES = [
 const buildCardHTML = item => {
   const cityQuarryExists = item.id === 'quarry' && currentMap === 'city' && state.buildings.some(building => building.type === 'quarry' && (building.mapId || 'city') === 'city');
   const officeExists = item.id === 'taxOffice' && state.buildings.some(building => building.type === 'taxOffice' && buildingMapId(building) === currentMap && (building.mapSet || 1) === currentMapSet);
-  const blocked = officeExists || (item.id === 'mine' && currentMap !== 'wilds') || cityQuarryExists;
-  const reason = officeExists ? 'Este mapa já possui um Centro de Cobrança.' : cityQuarryExists ? 'A única pedreira de City já foi construída.' : blocked ? item.id === 'mine' ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.id === 'quarry' && currentMap === 'city' ? 'Pedreira inicial de baixa reserva · City permite uma; Wilds não tem limite.' : item.detail;
+  const industryExists = ['woodworking', 'siegeWorks'].includes(item.id) && state.buildings.some(building => building.type === item.id);
+  const blocked = officeExists || industryExists || (item.id === 'mine' && currentMap !== 'wilds') || cityQuarryExists;
+  const reason = industryExists ? item.id === 'woodworking' ? 'A Marcenaria única do domínio já foi construída; amplie-a para avançar de nível.' : 'A Oficina de cerco única do domínio já foi construída; amplie-a para avançar de nível.' : officeExists ? 'Este mapa já possui um Centro de Cobrança.' : cityQuarryExists ? 'A única pedreira de City já foi construída.' : blocked ? item.id === 'mine' ? 'Disponível apenas nas Wilds.' : 'Disponível apenas na City.' : item.id === 'quarry' && currentMap === 'city' ? 'Pedreira inicial de baixa reserva · City permite uma; Wilds não tem limite.' : item.detail;
   const art = item.id === 'farm' ? farmType(state.selectedFarmType).art : BUILDING_ART[item.id];
   const preview = item.finishedItem ? siegeThumbHTML(item.id) : item.id === 'quarry' || item.id === 'mine'
     ? `<span class="building-sprite-sheet" style="${buildingImageStyle(art)}" aria-hidden="true"></span>`

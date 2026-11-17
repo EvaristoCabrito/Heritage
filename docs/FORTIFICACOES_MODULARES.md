@@ -28,6 +28,10 @@ Every straight wall or gate occupies one 9-unit grid edge. East–west and north
 
 The weapons, supply icons, and other siege props follow the construction assets in the art queue.
 
+## Industry building count
+
+There is one Woodworking building and one Siege Works building in the domain. Each is upgraded in place through levels I, II, and III. Siege recipes are all products of that single Siege Works building; no siege recipe creates another shop or a dedicated production building. The three level sprites are successive appearances of the same building at its existing map anchor.
+
 ## Current asset queue
 
-The app has paths for the L1/L2 horizontal wall and gate modules and the L1 Bowyer's Workshop early, mid, and finished sprites. The wall and gate construction-phase art is not ready; a first attempt at loose-post phases was rejected and removed from the runtime assets. The current wall remains visible while work is in progress. Do not treat that fallback as completed construction-phase art. Remaining work includes proper L1/L2 early, mid, and upgrade phases, vertical-facing wall and gate views, corner joins, the remaining finished/upgrade sprites for both industries, and the one-object weapon, supply, component, and siege-machine art from the industry specification.
+All three finished levels and their early/mid construction and upgrade sprites are now present for the single Woodworking building and the single Siege Works building. L1/L2 horizontal wall and gate modules are also present. Wall/gate construction-phase art is still missing; an earlier loose-post attempt was rejected and removed. The current wall remains visible while work is in progress, so those construction phases are not complete. Remaining work includes valid L1/L2 wall and gate phases, vertical-facing views, corner joins, and the individual weapon, supply, component, and deployable siege-object art from the industry specification.
