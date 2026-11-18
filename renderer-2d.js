@@ -7,7 +7,7 @@
   const maxConcurrentLoads = 3;
   let activeLoads = 0;
   const metrics = { backend: 'HTML/CSS (mundo)', gpuAvailability: 'verificando', fps: 0, frameMs: 0, simulationMs: null, animationMs: null, sprites: null, culled: null, drawCalls: null, particles: null, textures: 0, textureBytes: 0, resolution: '—', profile: 'não implementado', errors: [] };
-  let device = null, gl = null, frame = 0, last = performance.now(), frames = 0, sample = last;
+  let frame = 0, last = performance.now(), frames = 0, sample = last;
   const panel = document.createElement('aside'); panel.className = 'renderer-diagnostics'; panel.hidden = true; panel.setAttribute('aria-live', 'polite'); scene.append(panel);
   function report() {
     metrics.resolution = `${scene.clientWidth} × ${scene.clientHeight} CSS px`;
@@ -15,24 +15,7 @@
     const mapMemory = metrics.gpuTextureBytes == null ? 'indisponível' : `${(metrics.gpuTextureBytes / 1048576).toFixed(1)} MiB estimados`;
     panel.textContent = `Diagnóstico 2D · ${metrics.backend}\nDisponibilidade GPU: ${metrics.gpuAvailability}\nFPS da página: ${metrics.fps} · intervalo entre frames: ${metrics.frameMs.toFixed(1)} ms\nÚltimo ciclo do jogo: ${time(metrics.simulationMs)} · atualização de animação: ${time(metrics.animationMs)}\nRenderização do navegador: indisponível\nSprites: ${metrics.sprites ?? 'indisponível'} · descartados: ${metrics.culled ?? 'indisponível'} · desenhos estáticos do mapa: ${metrics.drawCalls ?? 'indisponível'}\nPartículas: ${metrics.particles ?? 'indisponível'} · imagens no cache auxiliar: ${metrics.textures} · texturas GPU do mapa: ${mapMemory}\n${metrics.resolution} · perfil ${metrics.profile}${metrics.errors.length ? `\n${metrics.errors.at(-1)}` : ''}`;
   }
-  async function setup() {
-    try {
-      if (navigator.gpu) {
-        const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
-        if (adapter) {
-          device = await adapter.requestDevice();
-          device.lost.then(info => { metrics.errors.push(`Dispositivo de sondagem WebGPU perdido: ${info.message || info.reason}`); metrics.gpuAvailability = 'WebGPU perdido'; report(); });
-          metrics.gpuAvailability = 'WebGPU inicializado para sondagem'; report(); return;
-        }
-      }
-    } catch (e) { metrics.errors.push(`WebGPU: ${e.message}`); }
-    try {
-      const probe = document.createElement('canvas'); gl = probe.getContext('webgl2', { alpha: true, antialias: false });
-      if (!gl) throw new Error('WebGL 2 indisponível');
-      metrics.gpuAvailability = 'WebGL 2 disponível para sondagem';
-    } catch (e) { metrics.errors.push(e.message); metrics.gpuAvailability = 'WebGPU e WebGL 2 indisponíveis'; }
-    report();
-  }
+  metrics.gpuAvailability = navigator.gpu ? 'WebGPU suportado pelo navegador' : 'WebGL 2 será tentado pelo renderizador';
   function tick(now) {
     metrics.frameMs = now - last; last = now; frames++;
     if (now - sample >= 1000) { metrics.fps = Math.round(frames * 1000 / (now - sample)); frames = 0; sample = now; report(); }
@@ -72,6 +55,6 @@
     });
     textureCache.set(url, pending); pumpTextureQueue(); return pending;
   }
-  window.HeritageRenderer2D = Object.freeze({ metrics, textures: Object.freeze({ load: loadTexture, get size() { return textureCache.size; } }), get device() { return device; }, get gl() { return gl; }, refresh: report });
-  setup(); resume();
+  window.HeritageRenderer2D = Object.freeze({ metrics, textures: Object.freeze({ load: loadTexture, get size() { return textureCache.size; } }), refresh: report });
+  resume();
 })();
