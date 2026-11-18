@@ -3250,19 +3250,6 @@ function selectFishingSpot(site) {
   renderPanel();
 }
 
-function openFishingMenu() {
-  const local = FISHING_SPOTS.find(spot => spot.mapId === currentMap && spot.mapSet === currentMapSet);
-  const spot = local || FISHING_SPOTS.find(item => item.mapSet === currentMapSet) || FISHING_SPOTS[0];
-  if (!spot) { say('Ainda não há pontos de pesca neste mapa.'); return; }
-  if (currentMapSet !== spot.mapSet) {
-    currentMapSet = spot.mapSet;
-    state.mapSet = spot.mapSet;
-  }
-  if (currentMap !== spot.mapId || Number($('#map-world').dataset.mapSet || 1) !== spot.mapSet) switchMap(spot.mapId);
-  selectFishingSpot(spot.site);
-  $('#site-inspector').scrollTop = 0;
-}
-
 const fishingAuto = spot => state.fishingModes?.[spot.site] === 'auto';
 function fishingSpotInfoHTML(spot) {
   const assigned = state.workers.filter(worker => worker.alive && worker.profession === 'fisher' && worker.jobSite === spot.site);
@@ -3399,9 +3386,15 @@ function nekomataFrame(actor) {
 function renderHeroes() {
   const layer = $('#hero-layer');
   const active = new Set();
+  // Build the lookup once per render, instead of scanning every DOM child for every actor.
+  const tokensByActor = new Map();
+  for (const node of layer.children) {
+    if (!tokensByActor.has(node.dataset.actor)) tokensByActor.set(node.dataset.actor, node);
+  }
+  const heroIds = new Set(state.heroes.map(hero => hero.id));
   [...state.heroes, ...state.workers, ...(state.bandits || []), ...(window.Monarch?.summons() || []), ...nekomataDeaths].filter(actor => (actor.alive || actor.nekoDeathClock != null) && !workerIsWorkingIndoors(actor) && (actor.mapId || 'city') === currentMap && (actor.mapSet || 1) === currentMapSet).forEach(actor => {
     active.add(String(actor.id));
-    let token = [...layer.children].find(node => node.dataset.actor === String(actor.id));
+    let token = tokensByActor.get(String(actor.id));
     if (!token) {
       token = document.createElement('button');
       token.type = 'button';
@@ -3429,10 +3422,11 @@ function renderHeroes() {
       });
       token.insertAdjacentHTML('beforeend', '<span class="hp-bar" aria-hidden="true"><i></i></span>');
       layer.append(token);
+      tokensByActor.set(String(actor.id), token);
     }
     if (token.parentElement !== layer) layer.append(token);
     const hurt = actor.hp != null && actor.hp < maxHpOf(actor);
-    token.className = `character${state.heroes.some(hero => hero.id === actor.id) ? ' hero' : ''}${actor.className === 'Peasant' ? ' worker' : ''}${actor.profession === 'fisher' ? ' fisher' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${actor.className === 'Wildlife' ? ' wildlife' : ''}${actor.kind === 'boar' ? ' wild-boar' : actor.kind === 'elk' ? ' elk' : actor.kind === 'wolf' ? ' wolf' : actor.kind === 'nekomata' ? ' nekomata' : actor.kind === 'goblin' ? ' goblin' : actor.kind === 'troll' ? ' troll' : actor.kind === 'zombie' ? ' zombie' : ''}${actor.summon ? ' summon' : ''}${actor.mfx?.convert ? ' converted' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
+    token.className = `character${heroIds.has(actor.id) ? ' hero' : ''}${actor.className === 'Peasant' ? ' worker' : ''}${actor.profession === 'fisher' ? ' fisher' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${actor.className === 'Wildlife' ? ' wildlife' : ''}${actor.kind === 'boar' ? ' wild-boar' : actor.kind === 'elk' ? ' elk' : actor.kind === 'wolf' ? ' wolf' : actor.kind === 'nekomata' ? ' nekomata' : actor.kind === 'goblin' ? ' goblin' : actor.kind === 'troll' ? ' troll' : actor.kind === 'zombie' ? ' zombie' : ''}${actor.summon ? ' summon' : ''}${actor.mfx?.convert ? ' converted' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
     if (hurt) token.style.setProperty('--hp', `${Math.max(0, Math.round(hpOf(actor) / maxHpOf(actor) * 100))}%`);
     token.style.left = `${actor.x}%`;
     token.style.top = `${actor.y / WORLD_Y_UNITS * 100}%`;
@@ -10107,7 +10101,6 @@ function initMenus() {
     }
   });
   $('#menu-btn').addEventListener('click', openPause);
-  $('#fishing-menu-btn')?.addEventListener('click', event => { event.stopPropagation(); openFishingMenu(); });
   $('#trees-toggle')?.addEventListener('click', () => { options.trees = options.trees === 0 ? 1 : 0; writeStore(OPTIONS_KEY, options); applyOptions(); });
   // Ofício escolhido na ficha do camponês: o mesmo setProfession da aba Ofícios. A ficha redesenha no mesmo ponto da rolagem.
   $('#menu-panel').addEventListener('change', event => {
@@ -10828,8 +10821,14 @@ function init() {
   $('#tax-up').addEventListener('click', () => setTax(1));
   renderSites(); renderHeroes(); renderPanel(); updateHud();
   initEditor();
-  setInterval(tick, 1000);
-  setInterval(() => animateActors(performance.now()), 50);
+  setInterval(() => {
+    const start = performance.now();
+    try { tick(); } finally { if (window.HeritageRenderer2D) window.HeritageRenderer2D.metrics.simulationMs = performance.now() - start; }
+  }, 1000);
+  setInterval(() => {
+    const start = performance.now();
+    try { animateActors(start); } finally { if (window.HeritageRenderer2D) window.HeritageRenderer2D.metrics.animationMs = performance.now() - start; }
+  }, 50);
   initMenus();
   // O menu abre assim que a interface estiver pronta; imagens não bloqueiam a navegação.
   const loading = $('#loading-screen');

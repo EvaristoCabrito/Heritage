@@ -52,6 +52,7 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #a5b38c; box-shadow: 0 0 9px #92a77f; }
 .map-scene { isolation: isolate; position: relative; width: 100%; max-width: 100%; margin: 0 auto; overflow: hidden; aspect-ratio: 1199 / 1312; min-height: 0; border: 1px solid rgba(202,184,141,.26); border-radius: 8px; background: #24291f; box-shadow: 0 18px 45px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.04); cursor: grab; touch-action: none; }
 .map-scene.dragging { cursor: grabbing; }
+.renderer-diagnostics { position: absolute; z-index: 1000; left: 8px; bottom: 8px; max-width: min(440px, calc(100% - 16px)); padding: 9px 11px; border: 1px solid rgba(202,184,141,.4); border-radius: 5px; background: rgba(16,18,15,.92); color: #e8dfc9; font: 11px/1.5 ui-monospace,Consolas,monospace; white-space: pre-line; pointer-events: none; }
 .map-world { position: absolute; left: 0; top: 0; width: 100%; aspect-ratio: 1199 / 2624; transform-origin: top left; transform: translate3d(var(--camera-x, 0px), var(--camera-y, 0px), 0) scale(var(--zoom, 1)); will-change: transform; }
 .map-region { position: absolute; left: 0; width: 100%; height: 100%; }
 .manor-region { top: 0; }
@@ -59,6 +60,9 @@ button { color: inherit; font: inherit; touch-action: manipulation; -webkit-tap-
 .map-art { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill; user-select: none; pointer-events: none; }
 #map-world[data-map="wilds"] .map-art { top: 0; }
 .tree-foreground { position: absolute; z-index: 20; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; user-select: none; }
+.gpu-map-ground, .gpu-map-trees { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.gpu-map-trees { z-index: 20; }
+body.hide-trees .gpu-map-trees { display: none; }
 #map-world[data-map="wilds"] .tree-foreground { top: 0; }
 .manor-trees { top: 0; }
 .road-trees { top: 46.5%; }
@@ -436,8 +440,6 @@ body { overflow: hidden; }
 .stage .map-world { width: 100%; height: auto; }
 .map-tools { position: absolute; z-index: 6; top: 12px; right: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .map-tools .camera-wilds, .map-tools .zoom-control { position: static; }
-.map-tools .fishing-menu-btn { min-width: 52px; height: 30px; padding: 0 8px; border: 1px solid rgba(214,184,117,.65); border-radius: 4px; color: #f4da9a; background: linear-gradient(180deg, #2a2418, #11110e); font: 700 9px 'Figtree',sans-serif; letter-spacing: .1em; cursor: pointer; }
-.map-tools .fishing-menu-btn:hover, .map-tools .fishing-menu-btn:focus-visible { border-color: #fff0c8; color: #fff0c8; background: #47391f; outline: none; }
 .map-tools .camera-wilds { min-width: 36px; height: 36px; }
 .map-tools .zoom-btn { width: 30px; height: 30px; font-size: 13px; }
 .map-tools .zoom-control { grid-auto-flow: column; gap: 2px; padding: 2px; }

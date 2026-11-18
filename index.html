@@ -11,11 +11,13 @@
     <link rel="preload" as="image" href="public/art/healer-walk-v01.webp">
     <link rel="preload" as="image" href="public/art/peasant-walk-v01.webp">
     <link rel="preload" as="image" href="public/art/nekomata-media36-v01/nekomata-atlas-24x12-v02.png">
-    <link rel="stylesheet" href="app.css?v=423">
+    <link rel="stylesheet" href="app.css?v=424">
     <script defer src="data/scenarios/01-floresta.js"></script>
     <script defer src="data/peasant-professions.js"></script>
     <script defer src="data/military-industries.js?v=6"></script>
-    <script defer src="app.js?v=465"></script>
+    <script defer src="app.js?v=466"></script>
+    <script defer src="gpu-2d.js?v=1"></script>
+    <script defer src="renderer-2d.js?v=1"></script>
     <script defer src="data/monarch-spells.js?v=347"></script>
     <script defer src="spell-fx.js?v=345"></script>
     <script defer src="monarch.js?v=350"></script>
@@ -69,7 +71,6 @@
           <div class="demand-alerts" id="demand-alerts" aria-live="polite" aria-label="Tributos dos nobres"></div>
           <div class="map-tools">
             <button class="camera-wilds" id="camera-wilds" type="button" aria-label="Ir para Wilds" title="Ir para Wilds">WILDS</button>
-            <button class="fishing-menu-btn" id="fishing-menu-btn" type="button" aria-label="Abrir menu de pesca" title="Abrir menu de pesca">PESCA</button>
             <button class="trees-toggle" id="trees-toggle" type="button" aria-pressed="true" title="Esconder as árvores">ÁRVORES</button>
             <div class="zoom-control" role="group" aria-label="Nível de zoom">
               <button class="zoom-btn active" type="button" data-zoom="0" aria-label="Zoom 1: visão ampla" aria-pressed="true" title="Ampla">1</button>
