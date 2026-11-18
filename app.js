@@ -4,46 +4,47 @@ const GUILD_FORMS = {
 };
 
 const BUILDINGS = [
-  { id: 'farm', name: 'Fazenda', glyph: 'F', cost: 115, wood: 6, detail: 'Alho, trigo, suínos, ovos, leite ou hortaliças. Escolha o que plantar e melhore até o nível 3.', gold: 0.55, grain: 0.225, people: 0 },
-  { id: 'mill', name: 'Moinho', glyph: 'M', cost: 155, wood: 10, detail: 'Mói o trigo em farinha. Trigo cru não alimenta ninguém. As pás giram; a vila, nem tanto.', gold: 0.4, grain: 0, people: 0 },
-  { id: 'bakery', name: 'Padaria', glyph: 'P', cost: 165, wood: 10, detail: 'Assa pão, queijo ou quiche lorraine com o que tem no depósito. Você escolhe a fornada; o forno não discute. Melhora até o nível 3.', gold: 0.4, grain: 0, people: 0 },
-  { id: 'emberLab', name: 'Laboratório de Ember', glyph: 'E', cost: 220, wood: 14, detail: 'Refina em Ember os Dead Remains que os heróis trazem dos covis. Quanto melhor a grade, mais Ember. Ninguém pergunta de onde vieram.', gold: 0, grain: 0, people: 0 },
-  { id: 'butcher', name: 'Açougue', glyph: 'A', cost: 190, wood: 12, detail: 'Prepara carnes, peixes e hortaliças. Melhora até o nível 3.', gold: 0, grain: 0, people: 0 },
-  { id: 'hut', name: 'Casebre Pequeno', glyph: 'C', cost: 60, wood: 4, detail: 'Moradia para 2 camponeses. Amplia para Casebre Grande, com 5. Eles não tinham pra onde ir mesmo.', gold: 0, grain: 0, people: 0, housing: 2 },
-  { id: 'depot', name: 'Depósito de Provisões', glyph: 'D', cost: 70, wood: 6, detail: 'Guarda mais 30 unidades de comida, armas e itens. Amplia para 45, 70 e 100. Os ratos aprovam.', gold: 0, grain: 0, people: 0 },
-  { id: 'lumber', name: 'Cabana do Lenhador', glyph: 'L', cost: 80, wood: 2, detail: 'Coloque de 1 a 3 camponeses para cortar lenha: 0,05, 0,15 ou 0,25 de madeira por segundo.', gold: 0, grain: 0, people: 0 },
-  { id: 'quarry', name: 'Pedreira', glyph: 'P', cost: 95, wood: 6, detail: 'Dois trabalhadores cortam pedra de uma reserva finita; nível 2 amplia a equipe e o estoque.', gold: 0, grain: 0, people: 0 },
-  { id: 'mine', name: 'Campo de Mineração', glyph: 'M', cost: 120, wood: 8, detail: 'Dois trabalhadores extraem rocha bruta de um veio escolhido e entregam cargas à City.', gold: 0, grain: 0, people: 0 },
-  { id: 'blacksmith', name: 'Blacksmith', glyph: 'F', cost: 260, wood: 18, detail: 'Processa hematita, malaquita, galena e quartzo; nível 2 libera aço cementado.', gold: 0, grain: 0, people: 0 },
-  { id: 'market', name: 'Mercado', glyph: 'M', cost: 100, wood: 6, detail: 'Estoque local de mercadorias e armas. Capacidade de 100, 150 ou 200 vagas.', gold: 0, grain: 0, people: 0 },
-  { id: 'tavern', name: 'Taverna', glyph: 'T', cost: 145, wood: 9, detail: 'Uma cama para um herói. Também recebe visitantes e serve bebida, que rende imposto.', gold: 1.15, grain: 0, people: 0 },
-  { id: 'hotel', name: 'Hotel de Estrada', glyph: 'H', cost: 170, wood: 11, detail: 'Mais 4 camas para heróis. Os lençóis são trocados uma vez por viúva.', gold: 0.85, grain: 0, people: 0 },
-  { id: 'warrior', name: 'Guilda de Guerreiros', glyph: 'W', cost: 185, wood: 11, detail: 'Recruta Warriors. Seguram a linha de frente na força.', heroClass: 'Warrior', gold: 0.3, grain: 0, people: 1 },
-  { id: 'archer', name: 'Salão de Arqueiros', glyph: 'A', cost: 170, wood: 10, detail: 'Recruta Archers. Decidem a luta de longe.', heroClass: 'Archer', gold: 0.3, grain: 0, people: 1 },
-  { id: 'lancer', name: 'Pátio dos Lanceiros', glyph: 'L', cost: 175, wood: 11, detail: 'Recruta Lancers. A lança chega antes da espada.', heroClass: 'Lancer', gold: 0.3, grain: 0, people: 1 },
-  { id: 'blackMage', name: 'Torre dos Magos', glyph: 'M', cost: 210, wood: 12, detail: 'Recruta Black Mages. Magia que explode em área. Eles também morrem fácil.', heroClass: 'Black Mage', gold: 0.2, grain: 0, people: 1 },
-  { id: 'conjurer', name: 'Casa dos Conjuradores', glyph: 'C', cost: 200, wood: 12, detail: 'Recruta Conjurers. Chegam sozinhos e lutam acompanhados.', heroClass: 'Conjurer', gold: 0.2, grain: 0, people: 1 },
-  { id: 'healer', name: 'Guilda de Curandeiros', glyph: 'H', cost: 180, wood: 10, detail: 'Recruta Healers. Mantêm os heróis vivos. Por um tempo.', heroClass: 'Healer', gold: 0.25, grain: 0, people: 1 },
-  { id: 'moonwarden', name: 'Guilda MoonWarden', glyph: 'M', cost: 185, wood: 11, detail: 'Seu morador evolui de guerreiro a lobisomem e, por fim, a Grande Lobo.', heroClass: 'MoonWarden', gold: 0.3, grain: 0, people: 1 },
-  { id: 'vanguard', name: 'Guilda dos Vanguards', glyph: 'V', cost: 185, wood: 11, detail: 'Seu Vanguard escolhe entre Swordsmaster e WarBringer no nível 2.', heroClass: 'Vanguard', gold: 0.3, grain: 0, people: 1 },
-  { id: 'armory', name: 'Arsenal do Domínio', glyph: 'E', cost: 165, wood: 9, detail: 'Heróis e camponeses compram equipamento aqui com o próprio ouro. O ouro vem pro cofre.', gold: 0.15, grain: 0, people: 0 },
+  { id: 'farm', name: 'Fazenda', glyph: 'F', cost: 28, wood: 20, detail: 'Alho, trigo, suínos, ovos, leite ou hortaliças. Escolha o que plantar e melhore até o nível 3.', gold: 0.55, grain: 0.225, people: 0 },
+  { id: 'mill', name: 'Moinho', glyph: 'M', cost: 32, wood: 30, detail: 'Mói o trigo em farinha. Trigo cru não alimenta ninguém. As pás giram; a vila, nem tanto.', gold: 0.4, grain: 0, people: 0 },
+  { id: 'bakery', name: 'Padaria', glyph: 'P', cost: 35, wood: 30, detail: 'Assa pão, queijo ou quiche lorraine com o que tem no depósito. Você escolhe a fornada; o forno não discute. Melhora até o nível 3.', gold: 0.4, grain: 0, people: 0 },
+  { id: 'emberLab', name: 'Laboratório de Ember', glyph: 'E', cost: 45, wood: 42, detail: 'Refina em Ember os Dead Remains que os heróis trazem dos covis. Quanto melhor a grade, mais Ember. Ninguém pergunta de onde vieram.', gold: 0, grain: 0, people: 0 },
+  { id: 'butcher', name: 'Açougue', glyph: 'A', cost: 40, wood: 36, detail: 'Prepara carnes, peixes e hortaliças. Melhora até o nível 3.', gold: 0, grain: 0, people: 0 },
+  { id: 'hut', name: 'Casebre Pequeno', glyph: 'C', cost: 14, wood: 16, detail: 'Moradia para 2 camponeses. Amplia para Casebre Grande, com 5. Eles não tinham pra onde ir mesmo.', gold: 0, grain: 0, people: 0, housing: 2 },
+  { id: 'depot', name: 'Depósito de Provisões', glyph: 'D', cost: 16, wood: 20, detail: 'Guarda mais 30 unidades de comida, armas e itens. Amplia para 45, 70 e 100. Os ratos aprovam.', gold: 0, grain: 0, people: 0 },
+  { id: 'lumber', name: 'Cabana do Lenhador', glyph: 'L', cost: 18, wood: 12, detail: 'Coloque de 1 a 3 camponeses para cortar lenha: 0,05, 0,15 ou 0,25 de madeira por segundo.', gold: 0, grain: 0, people: 0 },
+  { id: 'quarry', name: 'Pedreira', glyph: 'P', cost: 22, wood: 20, detail: 'Dois trabalhadores cortam pedra de uma reserva finita; nível 2 amplia a equipe e o estoque.', gold: 0, grain: 0, people: 0 },
+  { id: 'mine', name: 'Campo de Mineração', glyph: 'M', cost: 28, wood: 26, detail: 'Dois trabalhadores extraem rocha bruta de um veio escolhido e entregam cargas à City.', gold: 0, grain: 0, people: 0 },
+  { id: 'blacksmith', name: 'Blacksmith', glyph: 'F', cost: 56, wood: 52, detail: 'Processa hematita, malaquita, galena e quartzo; nível 2 libera aço cementado.', gold: 0, grain: 0, people: 0 },
+  { id: 'market', name: 'Mercado', glyph: 'M', cost: 24, wood: 20, detail: 'Estoque local de mercadorias e armas. Capacidade de 100, 150 ou 200 vagas.', gold: 0, grain: 0, people: 0 },
+  { id: 'tavern', name: 'Taverna', glyph: 'T', cost: 34, wood: 28, detail: 'Uma cama para um herói. Também recebe visitantes e serve bebida, que rende imposto.', gold: 1.15, grain: 0, people: 0 },
+  { id: 'hotel', name: 'Hotel de Estrada', glyph: 'H', cost: 40, wood: 34, detail: 'Mais 4 camas para heróis. Os lençóis são trocados uma vez por viúva.', gold: 0.85, grain: 0, people: 0 },
+  { id: 'warrior', name: 'Guilda de Guerreiros', glyph: 'W', cost: 40, wood: 32, detail: 'Recruta Warriors. Seguram a linha de frente na força.', heroClass: 'Warrior', gold: 0.3, grain: 0, people: 1 },
+  { id: 'archer', name: 'Salão de Arqueiros', glyph: 'A', cost: 36, wood: 30, detail: 'Recruta Archers. Decidem a luta de longe.', heroClass: 'Archer', gold: 0.3, grain: 0, people: 1 },
+  { id: 'lancer', name: 'Pátio dos Lanceiros', glyph: 'L', cost: 38, wood: 32, detail: 'Recruta Lancers. A lança chega antes da espada.', heroClass: 'Lancer', gold: 0.3, grain: 0, people: 1 },
+  { id: 'blackMage', name: 'Torre dos Magos', glyph: 'M', cost: 45, wood: 36, detail: 'Recruta Black Mages. Magia que explode em área. Eles também morrem fácil.', heroClass: 'Black Mage', gold: 0.2, grain: 0, people: 1 },
+  { id: 'conjurer', name: 'Casa dos Conjuradores', glyph: 'C', cost: 43, wood: 36, detail: 'Recruta Conjurers. Chegam sozinhos e lutam acompanhados.', heroClass: 'Conjurer', gold: 0.2, grain: 0, people: 1 },
+  { id: 'healer', name: 'Guilda de Curandeiros', glyph: 'H', cost: 36, wood: 30, detail: 'Recruta Healers. Mantêm os heróis vivos. Por um tempo.', heroClass: 'Healer', gold: 0.25, grain: 0, people: 1 },
+  { id: 'moonwarden', name: 'Guilda MoonWarden', glyph: 'M', cost: 40, wood: 32, detail: 'Seu morador evolui de guerreiro a lobisomem e, por fim, a Grande Lobo.', heroClass: 'MoonWarden', gold: 0.3, grain: 0, people: 1 },
+  { id: 'vanguard', name: 'Guilda dos Vanguards', glyph: 'V', cost: 40, wood: 32, detail: 'Seu Vanguard escolhe entre Swordsmaster e WarBringer no nível 2.', heroClass: 'Vanguard', gold: 0.3, grain: 0, people: 1 },
+  { id: 'armory', name: 'Arsenal do Domínio', glyph: 'E', cost: 36, wood: 28, detail: 'Heróis e camponeses compram equipamento aqui com o próprio ouro. O ouro vem pro cofre.', gold: 0.15, grain: 0, people: 0 },
 ];
 // Toda construção consome pedra adicional, calculada a partir da madeira necessária.
 BUILDINGS.push(
-  { id: 'taxOffice', name: 'Centro de Cobrança', glyph: 'T', cost: 150, wood: 12, detail: 'Coordena cobradores locais. Um centro por mapa; até três cobradores no nível 3.' },
-  { id: 'woodworking', name: 'Marcenaria de armas', glyph: 'W', cost: 130, wood: 14, detail: 'Uma oficina por domínio, ampliada até o nível 3. Produz armas de madeira e componentes para o cerco.' },
-  { id: 'siegeWorks', name: 'Oficina de cerco', glyph: 'S', cost: 210, wood: 22, detail: 'Uma oficina por domínio, ampliada até o nível 3. Produz todas as fortificações, munições e máquinas de cerco.' },
+  { id: 'taxOffice', name: 'Centro de Cobrança', glyph: 'T', cost: 35, wood: 36, detail: 'Coordena cobradores locais. Um centro por mapa; até três cobradores no nível 3.' },
+  { id: 'woodworking', name: 'Marcenaria de armas', glyph: 'W', cost: 34, wood: 40, detail: 'Uma oficina por domínio, ampliada até o nível 3. Produz armas de madeira e componentes para o cerco.' },
+  { id: 'siegeWorks', name: 'Oficina de cerco', glyph: 'S', cost: 55, wood: 60, detail: 'Uma oficina por domínio, ampliada até o nível 3. Produz todas as fortificações, munições e máquinas de cerco.' },
   ...Object.values(SIEGE_DEPLOYMENTS).map(recipe => ({
     id: recipe.id, name: recipe.name, glyph: 'S', cost: 0, wood: 0, detail: 'Instale uma unidade acabada do depósito.', finishedItem: true,
   })),
 );
-const buildingStoneCost = item => Math.ceil(item.wood / 2);
+const buildingStoneCost = item => Math.ceil(item.wood * 0.75);
 BUILDINGS.find(building => building.id === 'lumber').detail += ' Pode ser construida em City ou Wilds.';
 BUILDINGS.find(building => building.id === 'quarry').detail += ' O prédio é o local de extração. City permite uma pedreira de baixa reserva; Wilds não tem limite.';
 BUILDINGS.find(building => building.id === 'mine').detail += ' Apenas em Wilds, no deposito de metais marcado.';
 const FARM_TYPES = [
   // grain: produção por segundo nos níveis 1, 2 e 3 da fazenda.
   { id: 'garlic', name: 'Alho', art: 'farm-garlic', icon: 'icon-market-garlic-photo-v01.png', grain: [0.075, 0.125, 0.2], gold: 0.9 },
+  { id: 'onion', name: 'Cebolas', art: 'farm-onion', icon: 'apothecary-photoreal-v01/icon-onion.png', grain: [0.075, 0.125, 0.2], gold: 0.7 },
   { id: 'wheat', name: 'Trigo', art: 'farm-wheat-v02', icon: 'icon-market-wheat-photo-v01.png', grain: [0.1125, 0.1875, 0.3], gold: 0.55 },
   { id: 'bacon', name: 'Suínos', foodId: 'pork', art: 'farm-bacon', icon: 'farm-pigs-animal-v01.png', grain: [0.005, 0.0083, 0.0132], gold: 0.75 },
   { id: 'eggs', name: 'Galinheiro', foodId: 'eggs', secondary: 'chicken', art: 'farm-eggs', icon: 'farm-chickens-animal-v01.png', grain: [0.1, 0.166, 0.264], gold: 0.65 },
@@ -53,15 +54,25 @@ const FARM_TYPES = [
   { id: 'tomato', name: 'Tomates', art: 'farm-vegetables', icon: 'tomato-v01.png', grain: [0.075, 0.125, 0.2], gold: 0.7, group: 'vegetables' },
 ];
 const FARM_OUTPUT_MULTIPLIER = 2;
-const farmType = id => FARM_TYPES.find(type => type.id === id) || FARM_TYPES[1];
+const farmType = id => FARM_TYPES.find(type => type.id === id) || FARM_TYPES.find(type => type.id === 'wheat');
 const FARM_ANIMAL_RATE = 0.1; // produção secundária de carne nas fazendas de ovos e leite
 const farmFoodId = building => farmType(building.produce).foodId || farmType(building.produce).id;
 const farmSecondaryRate = building => farmType(building.produce).secondary ? farmOutput(building) * FARM_ANIMAL_RATE : 0;
 const FISHING_RATE = 0.035; // peixe por segundo por pescador
+const FISHING_START = 100, FISHING_CAP = 200, FISHING_RECOVERY = 10;
 const STARTER_GROVES = [
   { id: 'ashLog', name: 'Bosque de freixos', x: 24, y: 51 },
   { id: 'yewLog', name: 'Bosque de teixos', x: 70, y: 34 },
   { id: 'ebonyLog', name: 'Bosque de ébanos', x: 83, y: 112 },
+];
+// Ervas aparecem como plantas individuais no terreno, nunca como pilhas de itens.
+const WILD_HERB_NODES = [
+  { id: 'menderleaf-map01-a', herb: 'menderleaf', name: 'Menderleaf', mapSet: 1, x: 31, y: 41 },
+  { id: 'bitterroot-map01-a', herb: 'bitterroot', name: 'Bitterroot', mapSet: 1, x: 57, y: 67 },
+  { id: 'silver-sage-map01-a', herb: 'silver-sage', name: 'Silver Sage', mapSet: 1, x: 78, y: 93 },
+  { id: 'menderleaf-map02-a', herb: 'menderleaf', name: 'Menderleaf', mapSet: 2, x: 28, y: 61 },
+  { id: 'bitterroot-map02-a', herb: 'bitterroot', name: 'Bitterroot', mapSet: 2, x: 67, y: 105 },
+  { id: 'frostmint-map02-a', herb: 'frostmint', name: 'Frostmint', mapSet: 2, x: 82, y: 143 },
 ];
 const WILDLIFE_MAP_SET = 1; // bosques de lenha das Wilds: só existem no mapa 1
 // Caça: javalis e alces aparecem nas Wilds do mapa da partida (mapa 1 na construção livre, mapa tropical no capítulo 1).
@@ -71,13 +82,14 @@ const FISHING_SPOTS = [
   // mais largo e mais escuro (mais fundo) do seu rio ou lago, onde ficam as trutas. Longe de pontes e da estrada.
   { site: 'wilds-stream-west-map01', type: 'fishing', name: 'Riacho das Wilds · trecho oeste', mapId: 'wilds', mapSet: 1, x: 22.7, y: 66.9, stock: 0 },
   { site: 'wilds-stream-east-map01', type: 'fishing', name: 'Riacho das Wilds · poço fundo', mapId: 'wilds', mapSet: 1, x: 55.6, y: 57.1, stock: 0 },
-  { site: 'wilds-stream-north', type: 'fishing', name: 'Lago da cachoeira', mapId: 'wilds', mapSet: 2, x: 26.2, y: 55.2, stock: 0 },
-  { site: 'wilds-stream-south', type: 'fishing', name: 'Riacho leste · poço largo', mapId: 'wilds', mapSet: 2, x: 62.3, y: 125.4, stock: 0 },
+  { site: 'wilds-stream-north', type: 'fishing', name: 'Lago da cachoeira', mapId: 'wilds', mapSet: 2, x: 82, y: 133, stock: 0 },
+  { site: 'wilds-stream-south', type: 'fishing', name: 'Riacho leste · poço largo', mapId: 'wilds', mapSet: 2, x: 29, y: 184, stock: 0 },
+  { site: 'city-stream-bridge-map02', type: 'fishing', name: 'Riacho da cidade · ponte', mapId: 'city', mapSet: 2, x: 32, y: 166, stock: 0 },
 ];
 const fishingStock = spot => state.fishingStock?.[spot.site] || 0;
 const WILDLIFE_SPAWN_MAX = 5; // até cinco animais novos por dia; pode sair zero
 const WILDLIFE_STAY_CAP = 12; // limite de animais vivos nas Wilds
-const WILDLIFE_STATS = { boar: { hp: 75, atk: 9, mag: 0, def: 5, dex: 9 }, elk: { hp: 110, atk: 12, mag: 0, def: 7, dex: 7 } };
+const WILDLIFE_STATS = { boar: { hp: 40, atk: 5, mag: 0, def: 2, dex: 3 }, elk: { hp: 55, atk: 6, mag: 0, def: 3, dex: 4 } };
 const WILDLIFE_MEAT = { boar: 'boarMeat', elk: 'elkMeat' };
 const WILDLIFE_NAMES = { boar: 'Javali', elk: 'Alce' };
 const WILDLIFE_ART = { boar: 'wild-boar', elk: 'elk' };
@@ -96,7 +108,7 @@ const FOOD_LOAD_MAX = 30;
 const foodLoad = actor => Math.min(FOOD_LOAD_MAX, FOOD_LOAD + Math.floor(skillOf(actor, 'hauling') / 100 * (FOOD_LOAD_MAX - FOOD_LOAD)) + gearBonus(actor, 'carry')) * (actor.handcart ? 2 : 1);
 const MANOR_DOOR = { x: 42, y: 39 };
 // Fazendas e moinhos sobem até o nível 3. O moinho melhorado mói mais rápido, sem exagero.
-const PRODUCER_LEVELS = [{ gold: 0, wood: 0 }, { gold: 180, wood: 12 }, { gold: 320, wood: 20 }];
+const PRODUCER_LEVELS = [{ gold: 0, wood: 0, stone: 0 }, { gold: 45, wood: 36, stone: 27 }, { gold: 80, wood: 60, stone: 45 }];
 const MILL_RATE = [0.225, 0.3, 0.4]; // trigo moído em farinha por segundo, por nível
 // Receitas são medidas em lotes: cada lote consome a quantidade declarada e rende yield unidades.
 // A unidade de produção da receita também é a unidade que o trabalhador transporta e o povo consome.
@@ -115,6 +127,9 @@ const BAKERY_RECIPES = [
   { id: 'potatoLoaf', name: 'Pão de batata', needs: { flour: 2, potato: 1, milk: 1 }, yield: 2, feeds: 1, mood: 2, level: 2, art: 'bread' },
   { id: 'vegetablePie', name: 'Torta de hortaliças', needs: { flour: 1, eggs: 1, potato: 1, carrot: 1 }, yield: 1, feeds: 3, mood: 3, level: 2, art: 'quiche' },
   { id: 'tomatoTart', name: 'Torta de tomate e queijo', needs: { flour: 1, eggs: 1, tomato: 1, cheese: 1 }, yield: 1, feeds: 3, mood: 3, level: 2, art: 'quiche' },
+  { id: 'onionFlatbread', name: 'Pão de cebola', needs: { flour: 2, onion: 1 }, yield: 2, level: 1, art: 'bread' },
+  { id: 'onionTart', name: 'Torta de cebola e queijo', needs: { flour: 1, onion: 2, eggs: 1, cheese: 1 }, yield: 1, level: 2, art: 'quiche' },
+  { id: 'onionBaconPie', name: 'Torta de cebola e bacon', needs: { flour: 1, onion: 2, bacon: 1, milk: 1 }, yield: 1, level: 3, art: 'quiche' },
   { id: 'fishPie', name: 'Torta de truta', needs: { flour: 1, eggs: 1, fish: 1, milk: 1 }, yield: 1, feeds: 4, mood: 4, level: 3, art: 'quiche' },
 ];
 const BAKE_RATE = [0.15, 0.2, 0.27]; // fornadas por segundo, por nível
@@ -203,6 +218,7 @@ const blacksmithRate = building => BLACKSMITH_RATE[producerLevel(building)];
 const blacksmithRecipe = building => BLACKSMITH_RECIPES.find(recipe => recipe.id === building?.produce && recipe.minLevel <= (producerLevel(building) + 1)) || BLACKSMITH_RECIPES[0];
 // Arte por nível: quando houver desenho do upgrade, liste aqui. Ex.: 'farm-garlic': [null, 'farm-garlic-l2', 'farm-garlic-l3']
 const LEVEL_ART = {
+  'farm-onion': [null, 'farm-onion-l2', 'farm-onion-l3'],
   'farm-garlic': [null, 'farm-garlic-l2', 'farm-garlic-l3'],
   'farm-wheat-v02': [null, 'farm-wheat-v02-l2', 'farm-wheat-v02-l3'],
   'farm-bacon': [null, 'farm-bacon-l2', 'farm-bacon-l3'],
@@ -243,10 +259,46 @@ const GUILD_HERO_ART = {
 };
 const guildHeroArt = actor => GUILD_HERO_ART[actor.guildForm || actor.className];
 const actorArt = actor => guildHeroArt(actor) || PRESTIGE_ART[actor.prestige] || actor.spriteId || (actor.kind === 'skeleton' ? 'skeleton-v02' : actor.kind === 'zombie' ? 'zombie-v01' : actor.kind === 'wolf' ? 'mordavian-wolf-v01' : actor.kind === 'goblin' ? 'mordavian-goblin-v01' : actor.kind === 'troll' ? 'mordavian-troll-v01' : null) || CLASS_ART[actor.className];
-const actorPortrait = actor => (actor.profession === 'collector' ? 'tax-collector' : null) || guildHeroArt(actor) || PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || 'male-peasant';
+const actorPortraitAsset = actor => {
+  const portraitId = (actor.profession === 'collector' ? 'tax-collector' : null) || guildHeroArt(actor) || PRESTIGE_ART[actor.prestige] || actor.portraitId || PORTRAIT_ART[actor.className] || (actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'female-peasant' : 'male-peasant') : null);
+  if (portraitId) return { src: `public/art/portraits/${portraitId}-portrait-v01.webp` };
+  if (actor.className === 'Wildlife') {
+    if (actor.kind === 'elk') return { src: 'public/art/elk-v01.webp', contain: true };
+    if (actor.kind === 'boar') return { src: 'public/art/wild-boar-v01.webp', contain: true };
+  }
+  if (actor.className === 'Bandit') {
+    const sprite = actor.spriteId === 'bandit-crossbow' ? 'bandit-crossbow' : 'bandit-sword';
+    return { src: `public/art/${sprite}-walk-v01.png`, sprite: true, backgroundSize: '400% 200%', backgroundPosition: '0 0' };
+  }
+  if (actor.className === 'Monster') {
+    const sprites = {
+      skeleton: { file: 'skeleton-v02-walk-v01.png', backgroundSize: '400% 200%' },
+      wolf: { file: 'mordavian-wolf-v01-walk-v01.png', backgroundSize: '400% 200%', backgroundPosition: '0 37.1%' },
+      goblin: { file: 'mordavian-goblin-v01-walk-v01.png', backgroundSize: '400% 200%' },
+      troll: { file: 'mordavian-troll-v01-walk-v01.png', backgroundSize: '400% 100%' },
+      zombie: { file: 'zombie-v01-walk-v01.png', backgroundSize: '400% 200%' },
+    };
+    if (actor.kind === 'nekomata') return { src: 'public/art/nekomata-media36-v01/base-media36-v01/base-1.png', contain: true };
+    const sprite = sprites[actor.kind];
+    if (sprite) return { src: `public/art/${sprite.file}`, sprite: true, backgroundSize: sprite.backgroundSize, backgroundPosition: sprite.backgroundPosition || '0 0' };
+  }
+  return null;
+};
+function actorPortraitHTML(actor, className, locate = false) {
+  const asset = actorPortraitAsset(actor);
+  const actorName = String(actor.name || 'Unidade');
+  const safeName = actorName.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+  const locateAttrs = locate ? ` data-actor-locate="${String(actor.id).replace(/[&<>"']/g, '')}" tabindex="0" title="Ir até ${safeName}"` : '';
+  const roleAttrs = locate ? `role="button" aria-label="Ir até ${safeName} no mapa"` : `role="img" aria-label="Retrato de ${safeName}"`;
+  if (!asset) return `<span class="${className} portrait-placeholder" ${roleAttrs}${locateAttrs}>${safeName.slice(0, 1)}</span>`;
+  const classes = `${className}${asset.contain ? ' animal-portrait' : ''}${asset.sprite ? ' actor-portrait-sprite' : ''}`;
+  if (asset.sprite) return `<span class="${classes}" ${roleAttrs}${locateAttrs} style="--portrait-sheet:url('${asset.src}');--portrait-bg-size:${asset.backgroundSize};--portrait-bg-position:${asset.backgroundPosition}"></span>`;
+  return `<img class="${classes}" ${roleAttrs}${locateAttrs} src="${asset.src}" alt="Retrato de ${safeName}">`;
+}
 const actorSheet = actor => {
   if (actor.action === 'build') return 'build';
   if (actor.action === 'idle') return 'idle';
+  if (actor.className === 'Peasant' && actor.profession === 'fisher' && actor.action === 'work') return 'fishing';
   if (actor.className === 'Peasant' && actor.action === 'work') return 'work';
   if (actor.className === 'Peasant' && actor.action === 'collect') return 'action';
   if (actor.className === 'Peasant' && actor.action === 'fight') return 'fight';
@@ -378,6 +430,7 @@ const CONSTRUCTION_STAGE_ART = new Set([
   'hotel', 'guild', 'archer', 'lancer', 'tower', 'conjurer', 'healer', 'armory', 'bakery', 'bakery-l2', 'bakery-l3', 'ember-lab', 'ember-lab-l2', 'ember-lab-l3', 'butcher', 'butcher-l2', 'blacksmith', 'blacksmith-l2',
 ]);
 const BUILDING_ART_ASPECTS = {
+  'farm-onion': 1.5, 'farm-onion-l2': 1.5, 'farm-onion-l3': 1.5,
   'farm-garlic': 1.5, 'farm-wheat': 1.5, 'farm-wheat-v02': 1.5, 'farm-bacon': 1.5, 'farm-eggs': 1.5, 'farm-milk': 1.5,
   'farm-garlic-l2': 1.5, 'farm-garlic-l3': 1.5, 'farm-wheat-v02-l2': 1.5, 'farm-wheat-v02-l3': 1.5,
   'farm-bacon-l2': 1.5, 'farm-bacon-l3': 1.5, 'farm-eggs-l2': 1.5, 'farm-eggs-l3': 1.5, 'farm-milk-l2': 1.5, 'farm-milk-l3': 1.5,
@@ -409,6 +462,7 @@ function pitSpriteSheet(art, constructionStage = null, building = null) {
   return { sheet, position: stage === 'early' ? '0%' : stage === 'mid' ? '50%' : '100%' };
 }
 function buildingImageStyle(art, constructionStage = null, building = null) {
+  if (building && SIEGE_PHOTO_CELLS[building.type]) return siegePhotoStyle(building.type);
   const sprite = pitSpriteSheet(art, constructionStage, building);
   return sprite
     ? `background-image:url('${sprite.sheet}');background-size:300% 100%;background-position:${sprite.position} 50%;background-repeat:no-repeat;`
@@ -429,17 +483,28 @@ function applyBuildingImage(element, art, constructionStage = null, building = n
 }
 const buildingImage = (art, constructionStage = null, building = null) => {
   const upgrade = building?.pendingUpgrade;
+  if (art?.startsWith('farm-onion')) {
+    if (building?.underConstruction && upgrade?.kind === 'producer') {
+      const target = LEVEL_ART['farm-onion']?.[producerLevel(building) + 1];
+      if (target) {
+        const stage = (building.progress || 0) < BUILD_TIME * 2 / 3 ? 'early' : 'mid';
+        return `public/art/onion-industry-v01/${target}-${stage}.png`;
+      }
+    }
+    return `public/art/onion-industry-v01/${art}${constructionStage && !upgrade ? `-${constructionStage}` : ''}.png`;
+  }
   if (art?.startsWith('tax-office-l')) {
     const current = building ? producerLevel(building) + 1 : 1;
     if (upgrade?.kind === 'taxOffice') return `public/art/tax-office-l${constructionStage === 'mid' ? current + 1 : current}${constructionStage === 'mid' ? '-mid' : ''}.png`;
     return `public/art/tax-office-l${current}${constructionStage ? `-${constructionStage}` : ''}.png`;
   }
-  if (building && isModularFortification(building.type)) {
+  if (building && ['woodenPalisade', 'reinforcedWoodenWall', 'woodenGate', 'reinforcedWoodenGate'].includes(building.type)) {
     const type = upgrade?.kind === 'fortification' ? upgrade.type : building.type;
     const level = ['reinforcedWoodenWall', 'reinforcedWoodenGate'].includes(type) ? 2 : 1;
     const structure = SIEGE_DEPLOYMENTS[type]?.deploy === 'gate' ? 'gate' : 'wall';
-    return `public/art/military-v01/${structure}-l${level}${constructionStage ? `-${constructionStage}` : ''}.png`;
+    return `public/art/military-v01/${constructionStage ? `${structure}-l${level}-${constructionStage}` : `wood-${structure}-l${level}`}.png`;
   }
+  if (art?.startsWith('wood-wall-l') || art?.startsWith('wood-gate-l')) return `public/art/military-v01/${art}.png`;
   // Early and middle construction views for the first Bowyer's Workshop are
   // individual high-resolution sprites, kept on the same site anchor as its
   // finished version. Later industry levels can add their own files without
@@ -525,7 +590,7 @@ function writeStore(key, value) {
 
 // Opções do jogador e do debug ficam salvas no navegador.
 const options = readStore(OPTIONS_KEY, { startZoom: 0, names: 'selected', autosave: 3, buildingArtStyle: 'dark' });
-if (options.zoomVersion !== 3 || ![0, 1, 2].includes(options.startZoom)) { options.startZoom = 0; options.zoomVersion = 3; }
+if (options.zoomVersion !== 3 || ![0, 1, 2, 3].includes(options.startZoom)) { options.startZoom = 0; options.zoomVersion = 3; }
 // Som: 1 ligado, 0 desligado. Vale para a música (ver setMusic) e para todo som futuro.
 if (![0, 1].includes(options.sound)) options.sound = 1;
 if (!['dark', 'color'].includes(options.buildingArtStyle)) options.buildingArtStyle = 'dark';
@@ -554,11 +619,11 @@ function newGameState(heir = null) {
       { id: 'starter-iron-pick-2', type: 'mine', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-1', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
       { id: 'starter-quarry-pick-2', type: 'quarry', edge: 'iron', durability: 40, maxDurability: 40, assignedTo: null },
-    ], remains: { D: 0, C: 0, B: 0, A: 0, nekomata: 0, nekomataWild: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, 0])),
-    food: { wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, potato: 0, carrot: 0, tomato: 0, fish: 0, garlicFlatbread: 0, potatoLoaf: 0, vegetablePie: 0, tomatoTart: 0, fishPie: 0, porkStew: 0, chickenStew: 0, beefStew: 0, stuffedTomatoes: 0, fishStew: 0, hunterPlatter: 0, farmersFeast: 0 }, items: [], ration: 2, diet: { wheat: false, flour: false, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, potato: true, carrot: true, tomato: true, fish: true, garlicFlatbread: true, potatoLoaf: true, vegetablePie: true, tomatoTart: true, fishPie: true, porkStew: true, chickenStew: true, beefStew: true, stuffedTomatoes: true, fishStew: true, hunterPlatter: true, farmersFeast: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
-    speed: 1, minutes: 380, ticks: 0, manorArrivalDay: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 5, tavernTab: 0, nextBuildingId: 1,
+    ], remains: { D: 0, C: 0, B: 0, A: 0, nekomata: 0, nekomataWild: 0 }, remainsPiles: [], fishingStock: Object.fromEntries(FISHING_SPOTS.map(spot => [spot.site, FISHING_START])),
+    food: { onion: 0, onionFlatbread: 0, onionTart: 0, onionBaconPie: 0, wheat: 0, flour: 40, garlic: 18, bacon: 0, pork: 0, chicken: 0, beef: 0, boarMeat: 0, elkMeat: 0, eggs: 0, milk: 0, bread: 0, cheese: 0, quiche: 0, sausage: 0, nuggets: 0, wings: 0, hamburger: 0, steak: 0, parmesanSteak: 0, roastBoar: 0, garlicBoar: 0, roastElk: 0, elkStew: 0, potato: 0, carrot: 0, tomato: 0, fish: 0, garlicFlatbread: 0, potatoLoaf: 0, vegetablePie: 0, tomatoTart: 0, fishPie: 0, porkStew: 0, chickenStew: 0, beefStew: 0, stuffedTomatoes: 0, fishStew: 0, hunterPlatter: 0, farmersFeast: 0 }, items: [], ration: 2, diet: { onion: true, onionFlatbread: true, onionTart: true, onionBaconPie: true, wheat: false, flour: false, garlic: true, bacon: true, pork: false, chicken: false, beef: false, boarMeat: false, elkMeat: false, eggs: true, milk: true, bread: true, cheese: true, quiche: true, sausage: true, nuggets: true, wings: true, hamburger: true, steak: true, parmesanSteak: true, roastBoar: true, garlicBoar: true, roastElk: true, elkStew: true, potato: true, carrot: true, tomato: true, fish: true, garlicFlatbread: true, potatoLoaf: true, vegetablePie: true, tomatoTart: true, fishPie: true, porkStew: true, chickenStew: true, beefStew: true, stuffedTomatoes: true, fishStew: true, hunterPlatter: true, farmersFeast: true }, happiness: 50, moodTarget: 50, moodParts: null, favor: 50, demands: [], nextDemandAt: 600, lastRaidDay: -1, bounties: [], bountyAmount: 25,
+    speed: 1, minutes: 380, ticks: 0, manorArrivalDay: 0, selectedBuild: null, selectedSite: null, selectedFarmType: 'wheat', taxPercent: 10, tavernTab: 0, nextBuildingId: 1,
     tab: 'build', won: false, goalStep: 0,
-    bandits: [], wildMeatPiles: [], wildlifeSpawnDay: Math.floor(380 / 1440), nextRaidAt: 720,
+    bandits: [], wildMeatPiles: [], wildlifeSpawnDay: -1, nextRaidAt: 720,
     heir, heirLevel: 1, heirXp: 0, heirAttributePoints: 0, heirAttributes: { CHA: 0, MAG: 0, INT: 0, WIS: 0, RES: 0 }, equipment: BASIC_EQUIPMENT(), playSeconds: 0,
     buildings: [],
     mapSet: 1,
@@ -612,8 +677,8 @@ const formatMass = n => Number(n || 0).toLocaleString('pt-BR', { maximumFraction
 const formatMetalAmount = (id, kg) => ['copper', 'silver', 'gold'].includes(id) && Math.abs(kg) < 1 ? `${formatMass(kg * 1000)} g` : `${formatMass(kg)} kg`;
 
 // A câmera percorre o mundo sem alterar as coordenadas dos lotes e personagens.
-// Zoom do jogo: ampla preenche a tela; normal aproxima 30%; próxima aproxima 60%.
-const ZOOM_LEVELS = [1, 1.3, 1.6];
+// Zoom do jogo: ampla preenche a tela; os níveis seguintes aproximam progressivamente.
+const ZOOM_LEVELS = [1, 1.3, 1.6, 2];
 const MAP_WORLD_HEIGHT = 2624;
 const MAP_RATIO = MAP_WORLD_HEIGHT / 1199;
 const WORLD_Y_UNITS = 200 * MAP_WORLD_HEIGHT / 2452;
@@ -712,7 +777,7 @@ function switchMap(name) {
   $('#map-world').dataset.map = currentMap;
   $('#map-world').dataset.mapSet = String(currentMapSet);
   const art = currentMapSet === 2
-    ? (wilds ? ['mordavia-map02-wilds-v01.png', 'mordavia-map02-wilds-trees-v01.png'] : ['mordavia-map02-city-v01.png', 'mordavia-map02-city-trees-v01.png'])
+    ? (wilds ? ['mordavia-map02-tropical-wilds-ground-v06.png', 'mordavia-map02-tropical-wilds-trees-v07.png'] : ['mordavia-map02-tropical-city-ground-v05.png', 'mordavia-map02-tropical-city-trees-v05.png'])
     : (wilds ? ['mordavia-wilds-map.webp', 'mordavia-wilds-forest-layer.png'] : ['mordavia-map.webp', 'mordavia-forest-layer.png']);
   $('.map-art').src = `public/art/${art[0]}`;
   $('.tree-foreground').src = `public/art/${art[1]}`;
@@ -739,6 +804,41 @@ function switchMap(name) {
   updateManorInventoryTrigger();
 }
 
+function focusActorOnMap(actorId) {
+  const actor = findActor(actorId);
+  if (!actor?.alive) return;
+  const rosterTab = state.tab;
+  const targetMap = actor.mapId === 'wilds' ? 'wilds' : 'city';
+  const targetMapSet = actor.mapSet || state.mapSet || 1;
+  if (targetMapSet !== currentMapSet) {
+    currentMapSet = targetMapSet;
+    state.mapSet = targetMapSet;
+  }
+  if (currentMap !== targetMap || currentMapSet !== Number($('#map-world').dataset.mapSet || 1)) switchMap(targetMap);
+  if (state.tab !== rosterTab) {
+    state.tab = rosterTab;
+    $$('.tab').forEach(tab => {
+      const active = tab.dataset.tab === rosterTab;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
+    });
+    renderPanel();
+  }
+  state.selectedActor = actor.id;
+  renderHeroes();
+  const scene = $('#map-scene');
+  const world = $('#map-world');
+  const zoom = ZOOM_LEVELS[camera.zoom];
+  const bounds = cameraBounds();
+  const slackX = Math.max(0, (scene.clientWidth - world.offsetWidth * zoom) / 2);
+  const slackY = Math.max(0, (scene.clientHeight - world.offsetHeight * zoom) / 2);
+  const actorX = world.offsetWidth * (Number(actor.x) / 100) * zoom;
+  const actorY = world.offsetHeight * (Number(actor.y) / WORLD_Y_UNITS / 100) * zoom;
+  camera.x = bounds.x ? clampCamera((actorX + slackX - scene.clientWidth / 2) / bounds.x) : .5;
+  camera.y = bounds.y ? clampCamera((actorY + slackY - scene.clientHeight / 2) / bounds.y) : 0;
+  renderCamera();
+}
+
 function updateManorInventoryTrigger() {
   const trigger = $('#manor-inventory-trigger');
   if (trigger) trigger.hidden = currentMap !== 'city';
@@ -755,42 +855,56 @@ function openManorInventory() {
 }
 
 function inventorySection(title, rows) {
-  return `<section class="inventory-section"><h3>${title}</h3>${rows.length ? `<div class="inventory-rows">${[...rows].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR')).map(([name, amount, source, shown]) => `<div class="inventory-row${amount > 0 ? '' : ' empty'}"><b>${name}</b><strong>${shown ?? format(amount)}</strong><small>${source}</small></div>`).join('')}</div>` : '<p class="inventory-empty">Nada guardado.</p>'}</section>`;
+  return `<section class="inventory-section"><h3>${title}</h3>${rows.length ? `<div class="inventory-rows">${[...rows].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR')).map(([name, amount, source, shown, icon]) => `<div class="inventory-row${amount > 0 ? '' : ' empty'}"><span class="inventory-item-label">${icon ? `<img class="inventory-item-icon" src="${icon}" alt="" aria-hidden="true" loading="lazy" decoding="async">` : ''}<b>${name}</b></span><strong>${shown ?? format(amount)}</strong><small>${source}</small></div>`).join('')}</div>` : '<p class="inventory-empty">Nada guardado.</p>'}</section>`;
 }
+const inventoryFoodIcon = id => {
+  const marketIcons = { wheat: 'icon-market-wheat-photo-v01.png', flour: 'icon-market-flour-photo-v01.png', garlic: 'icon-market-garlic-photo-v01.png', bacon: 'icon-market-bacon-photo-v01.png', eggs: 'icon-market-eggs-photo-v01.png', milk: 'icon-market-milk-photo-v01.png' };
+  if (marketIcons[id]) return `public/art/${marketIcons[id]}`;
+  const food = FOOD_TYPES.find(item => item.id === id);
+  return food ? `public/art/${foodIcon(food)}` : 'public/art/icon-provisions-photo-v01.png';
+};
+const inventoryWorkshopIcon = id => {
+  const exact = EQUIPMENT_ITEM_ICONS[id];
+  if (exact) return exact;
+  if (id === 'ember') return 'public/art/icon-ember-photo-v01.png';
+  if (id === 'charcoal' || /Log|Blank|Stave|timber/i.test(id)) return 'public/art/icon-logs-photo-v01.png';
+  if (METAL_STOCK.includes(id) || ['iron', 'steel', 'copper', 'bronze', 'tin', 'silver', 'gold'].includes(id)) return 'public/art/icon-metal-photo-v01.png';
+  return 'public/art/icon-provisions-photo-v01.png';
+};
 function renderManorInventory() {
   const keepFocus = document.activeElement?.id === 'inventory-close';
   const used = storedUnits();
-  const items = (state.items || []).map(id => { const item = craftedWeapon(id); return [item?.name || String(id), 1, item ? `Forjada · ${WEAPON_MATERIAL_LABELS[item.materialId]} · estrutura ${formatMass(item.structuralCondition)}/${formatMass(item.structuralMax)}${item.sharp ? ` · gume ${formatMass(item.edgeCondition)}/${formatMass(item.edgeMax)}` : ''}` : 'Arma ou item']; });
-  const foodRows = FOOD_TYPES.map(food => [food.name, state.food?.[food.id] || 0, food.raw ? 'Matéria-prima' : food.baked || food.meat ? 'Produzido no domínio' : 'Provisão']);
+  const items = (state.items || []).map(id => { const item = craftedWeapon(id); const icon = item && (EQUIPMENT_ITEM_ICONS[item.iconKey] || EQUIPMENT_ITEM_ICONS[item.catalogKey]) || 'public/art/icon-metal-photo-v01.png'; return [item?.name || String(id), 1, item ? `Forjada · ${WEAPON_MATERIAL_LABELS[item.materialId]} · estrutura ${formatMass(item.structuralCondition)}/${formatMass(item.structuralMax)}${item.sharp ? ` · gume ${formatMass(item.edgeCondition)}/${formatMass(item.edgeMax)}` : ''}` : 'Arma ou item', undefined, icon]; });
+  const foodRows = FOOD_TYPES.map(food => [food.name, state.food?.[food.id] || 0, food.raw ? 'Matéria-prima' : food.baked || food.meat ? 'Produzido no domínio' : 'Provisão', undefined, inventoryFoodIcon(food.id)]);
   const metalRows = METAL_STOCK.map(id => {
     const lots = (state.oreLots || []).filter(lot => lot.id === id && lot.quantityKg > 1e-6);
     const source = ORE_STOCK.has(id) ? (lots.length ? lots.map(lot => `${oreName(lot.mineral)} · ${formatMass(lot.quantityKg)} kg · ${lot.gradePpm} ppm · veio ${lot.seamId || 'local'}`).join(' / ') : 'Rocha ou achado entregue do posto') : 'Metal manufaturado';
-    return [METAL_NAMES[id], state.metals?.[id] || 0, source, formatMetalAmount(id, state.metals?.[id] || 0)];
+    return [METAL_NAMES[id], state.metals?.[id] || 0, source, formatMetalAmount(id, state.metals?.[id] || 0), 'public/art/icon-metal-photo-v01.png'];
   });
-  const remainsRows = [...REMAINS_GRADES.map(grade => [`Dead Remains ${grade.id}`, state.remains?.[grade.id] || 0, 'Guardado · matéria-prima do Laboratório de Ember']), ['Nekomata Remains · covil', state.remains?.nekomata || 0, 'Guardado · material especial'], ['Nekomata Remains · individual', state.remains?.nekomataWild || 0, 'Guardado · material especial']];
+  const remainsRows = [...REMAINS_GRADES.map(grade => [`Dead Remains ${grade.id}`, state.remains?.[grade.id] || 0, 'Guardado · matéria-prima do Laboratório de Ember', undefined, remainsImage(grade.id)]), ['Nekomata Remains · covil', state.remains?.nekomata || 0, 'Guardado · material especial', undefined, remainsImage('nekomata')], ['Nekomata Remains · individual', state.remains?.nekomataWild || 0, 'Guardado · material especial', undefined, remainsImage('nekomataWild')]];
   const workRows = state.buildings.filter(isDone).flatMap(building => {
     const name = buildingName(building);
     const crew = state.workers.filter(worker => worker.alive && worker.buildSite == null && (worker.workplace ? worker.workplace.site : worker.jobSite) === building.site).length;
     if (building.type === 'farm') {
       const type = farmType(building.produce);
-      const rows = [[`${foodName(farmFoodId(building))} · ${name}`, building.stock || 0, `Colhido · esperando transporte · ${crew} trabalhador${crew === 1 ? '' : 'es'} · produção ${rateNumber(farmOutput(building) * (1 + crewWork(building)))}/s`]];
-      if (type.secondary) rows.push([`${foodName(type.secondary)} · ${name}`, building.secondaryStock || 0, `Produção animal · esperando transporte · ${rateNumber(farmSecondaryRate(building) * (1 + crewWork(building)))}/s`]);
+      const rows = [[`${foodName(farmFoodId(building))} · ${name}`, building.stock || 0, `Colhido · esperando transporte · ${crew} trabalhador${crew === 1 ? '' : 'es'} · produção ${rateNumber(farmOutput(building) * (1 + crewWork(building)))}/s`, undefined, inventoryFoodIcon(farmFoodId(building))]];
+      if (type.secondary) rows.push([`${foodName(type.secondary)} · ${name}`, building.secondaryStock || 0, `Produção animal · esperando transporte · ${rateNumber(farmSecondaryRate(building) * (1 + crewWork(building)))}/s`, undefined, inventoryFoodIcon(type.secondary)]);
       return rows;
     }
-    if (building.type === 'mill') return [['Trigo · Moinho', building.input || 0, `Aguardando moagem · ${crew} trabalhador${crew === 1 ? '' : 'es'} no Moinho · capacidade ${rateNumber(millRate(building) * (1 + crewWork(building)))}/s`], ['Farinha · Moinho', building.stock || 0, `Moída · aguardando transporte · capacidade ${rateNumber(millRate(building) * (1 + crewWork(building)))}/s`]];
-    if (building.type === 'bakery') return [[`Insumos · ${name}`, Object.values(building.pantry || {}).reduce((sum, amount) => sum + amount, 0), 'Ingredientes aguardando preparo'], [`${foodName(building.stockFood || building.produce || 'bread')} · ${name}`, building.stock || 0, 'Pronto · aguardando transporte']];
-    if (building.type === 'butcher') return [[`Insumos · ${name}`, Object.values(building.pantry || {}).reduce((sum, amount) => sum + amount, 0), 'Ingredientes aguardando preparo'], [`${foodName(building.stockFood || building.produce || 'bacon')} · ${name}`, building.stock || 0, 'Pronto · aguardando transporte']];
-    if (building.type === 'mine') { const seam = selectedSeam(building); const rate = pitRate(building); return [[`Extração · ${name}`, rate, `${seam ? oreName(seam.mineral) : 'sem veio'} · ${seam ? (seam.remainingGrams / 1000).toFixed(1) : '0'} kg restantes`, `${fineRate(rate)}/s`]]; }
-    if (building.type === 'blacksmith') { const recipe = blacksmithRecipe(building), rate = blacksmithRate(building) * (1 + crewWork(building)); const inputs = Object.entries(recipe.needs).map(([id, qty]) => `${workshopName(id)} ${formatMass(workshopHave(id))}/${formatMass(qty)}`).join(' · '); return [[`Produção · ${name}`, rate, `${recipe.name} · ${inputs} · carvão ${formatMass(state.charcoal)}/${formatMass(recipe.fuel)} kg`, `${fineRate(rate)}/s`]]; }
+    if (building.type === 'mill') return [['Trigo · Moinho', building.input || 0, `Aguardando moagem · ${crew} trabalhador${crew === 1 ? '' : 'es'} no Moinho · capacidade ${rateNumber(millRate(building) * (1 + crewWork(building)))}/s`, undefined, inventoryFoodIcon('wheat')], ['Farinha · Moinho', building.stock || 0, `Moída · aguardando transporte · capacidade ${rateNumber(millRate(building) * (1 + crewWork(building)))}/s`, undefined, inventoryFoodIcon('flour')]];
+    if (building.type === 'bakery') return [[`Insumos · ${name}`, Object.values(building.pantry || {}).reduce((sum, amount) => sum + amount, 0), 'Ingredientes aguardando preparo', undefined, 'public/art/icon-provisions-photo-v01.png'], [`${foodName(building.stockFood || building.produce || 'bread')} · ${name}`, building.stock || 0, 'Pronto · aguardando transporte', undefined, inventoryFoodIcon(building.stockFood || building.produce || 'bread')]];
+    if (building.type === 'butcher') return [[`Insumos · ${name}`, Object.values(building.pantry || {}).reduce((sum, amount) => sum + amount, 0), 'Ingredientes aguardando preparo', undefined, 'public/art/icon-provisions-photo-v01.png'], [`${foodName(building.stockFood || building.produce || 'bacon')} · ${name}`, building.stock || 0, 'Pronto · aguardando transporte', undefined, inventoryFoodIcon(building.stockFood || building.produce || 'bacon')]];
+    if (building.type === 'mine') { const seam = selectedSeam(building); const rate = pitRate(building); return [[`Extração · ${name}`, rate, `${seam ? oreName(seam.mineral) : 'sem veio'} · ${seam ? (seam.remainingGrams / 1000).toFixed(1) : '0'} kg restantes`, `${fineRate(rate)}/s`, 'public/art/icon-metal-photo-v01.png']]; }
+    if (building.type === 'blacksmith') { const recipe = blacksmithRecipe(building), rate = blacksmithRate(building) * (1 + crewWork(building)); const inputs = Object.entries(recipe.needs).map(([id, qty]) => `${workshopName(id)} ${formatMass(workshopHave(id))}/${formatMass(qty)}`).join(' · '); return [[`Produção · ${name}`, rate, `${recipe.name} · ${inputs} · carvão ${formatMass(state.charcoal)}/${formatMass(recipe.fuel)} kg`, `${fineRate(rate)}/s`, inventoryWorkshopIcon(recipe.id)]]; }
     return [];
-  }).concat(state.workers.filter(worker => worker.alive && worker.carrying?.food).map(worker => [`Em transporte · ${foodName(worker.carrying.food)}`, worker.carrying.qty, `${worker.name} levando ao depósito`]));
+  }).concat(state.workers.filter(worker => worker.alive && worker.carrying?.food).map(worker => [`Em transporte · ${foodName(worker.carrying.food)}`, worker.carrying.qty, `${worker.name} levando ao depósito`, undefined, inventoryFoodIcon(worker.carrying.food)]));
   const rows = [
-    inventorySection('Insumos de oficina', Object.keys(state.workshopStock).map(id => [workshopName(id), workshopHave(id), 'Estoque da City'])),
-    inventorySection('Moedas e materiais', [['Ouro', state.gold || 0, 'Cofre'], ['Madeira', state.timber || 0, 'Lenhadores'], ['Pedra de Construção (kg)', state.stone || 0, 'Pedreira · obras comuns'], ['Mármore (kg)', state.marble || 0, 'Pedreira nível 2 · mansão'], ['Carvão vegetal (kg)', state.charcoal || 0, 'Blacksmith'], ['Ember', state.ember || 0, 'Laboratório de Ember']]),
+    inventorySection('Insumos de oficina', Object.keys(state.workshopStock).map(id => [workshopName(id), workshopHave(id), 'Estoque da City', undefined, inventoryWorkshopIcon(id)])),
+    inventorySection('Moedas e materiais', [['Ouro', state.gold || 0, 'Cofre', undefined, 'public/art/icon-coin-photo-v01.png'], ['Madeira', state.timber || 0, 'Lenhadores', undefined, 'public/art/icon-logs-photo-v01.png'], ['Pedra de Construção (kg)', state.stone || 0, 'Pedreira · obras comuns', undefined, 'public/art/icon-stone-photo-v01.png'], ['Mármore (kg)', state.marble || 0, 'Pedreira nível 2 · mansão', undefined, 'public/art/icon-stone-photo-v01.png'], ['Carvão vegetal (kg)', state.charcoal || 0, 'Blacksmith', undefined, 'public/art/icon-logs-photo-v01.png'], ['Ember', state.ember || 0, 'Laboratório de Ember', undefined, 'public/art/icon-ember-photo-v01.png']]),
     inventorySection('Metais', metalRows),
     inventorySection('Provisões', foodRows),
     inventorySection('Produção nos prédios', workRows),
-    inventorySection('Restos e equipamento', [...remainsRows, ['Armas e itens', items.length, items.map(([name]) => name).join(', ')]])
+    inventorySection('Restos e equipamento', [...remainsRows, ...items])
   ];
   $('#inventory-content').innerHTML = `<header class="inventory-head"><div><small>CASARÃO</small><h2>Inventário</h2><p>Estoque do depósito e produção que ainda está nos prédios.</p></div><button type="button" class="inventory-close" id="inventory-close" aria-label="Fechar inventário">×</button></header><div class="inventory-capacity"><b>Espaço usado no depósito</b><strong>${format(used)} / ${format(storageCap())}</strong><div class="inventory-capacity-bar"><i style="width:${Math.min(100, Math.round(used / storageCap() * 100))}%"></i></div></div><div class="inventory-grid">${rows.join('')}</div>`;
   $('#inventory-close').addEventListener('click', closeManorInventory);
@@ -853,15 +967,16 @@ function initCamera() {
   });
   $('#camera-road')?.addEventListener('click', () => focusRegion('road'));
   $('#camera-wilds').addEventListener('click', () => switchMap(currentMap === 'city' ? 'wilds' : 'city'));
-  $$('.zoom-btn').forEach(button => button.addEventListener('click', () => setZoom(Number(button.dataset.zoom))));
+  $$('.zoom-btn').forEach(button => {
+    const level = Number(button.dataset.zoom);
+    button.addEventListener('click', () => setZoom(level === camera.zoom ? (camera.zoom + 1) % ZOOM_LEVELS.length : level));
+  });
   window.addEventListener('resize', () => { sizeWorld(); renderCamera(); });
   sizeWorld();
   homeCamera();
 }
 
-// Mensagens ficam na tela até o jogador clicar. Repetida vira contador; acima de TOAST_MAX, sai a mais antiga.
-// Todas vão também para o log da partida (state.messageLog), que guarda as últimas MESSAGE_LOG_MAX.
-const TOAST_MAX = 3;
+// Mensagens ficam no log da partida, sem avisos sobrepostos ao mapa.
 const MESSAGE_LOG_MAX = 200;
 function logMessage(message) {
   if (!Array.isArray(state.messageLog)) state.messageLog = [];
@@ -870,58 +985,20 @@ function logMessage(message) {
   state.messageLog.push({ t: state.minutes || 0, text: message });
   if (state.messageLog.length > MESSAGE_LOG_MAX) state.messageLog.splice(0, state.messageLog.length - MESSAGE_LOG_MAX);
 }
-const TOAST_SECONDS = 15;   // cada aviso some sozinho depois disso
-function dismissToastLater(item) {
-  clearTimeout(item.dismissTimer);
-  item.dismissTimer = setTimeout(() => { item.remove(); updateToastClear(); }, TOAST_SECONDS * 1000);
-}
-function say(message, event = message) {
+function say(message) {
   logMessage(message);
-  const toast = $('#toast');
-  const last = [...toast.querySelectorAll('.toast-msg')].pop();
-  if (last && last.dataset.text === message) {
-    last.dataset.count = String(Number(last.dataset.count || 1) + 1);
-    last.querySelector('em').textContent = `×${last.dataset.count}`;
-    dismissToastLater(last);
-  } else {
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.className = 'toast-msg';
-    item.dataset.text = message;
-    item.title = 'Clique para fechar';
-    item.innerHTML = '<span></span><em></em>';
-    item.querySelector('span').textContent = message;
-    item.addEventListener('click', () => { item.remove(); updateToastClear(); });
-    toast.insertBefore(item, toast.querySelector('.toast-clear'));
-    dismissToastLater(item);
-    while (toast.querySelectorAll('.toast-msg').length > TOAST_MAX) toast.querySelector('.toast-msg').remove();
-  }
-  updateToastClear();
-  $('#event-line').textContent = event;
-}
-function updateToastClear() {
-  const toast = $('#toast');
-  let clear = toast.querySelector('.toast-clear');
-  const count = toast.querySelectorAll('.toast-msg').length;
-  if (count < 3) { clear?.remove(); return; }
-  if (!clear) {
-    clear = document.createElement('button');
-    clear.type = 'button';
-    clear.className = 'toast-clear';
-    clear.textContent = 'Fechar todas';
-    clear.addEventListener('click', () => { toast.querySelectorAll('.toast-msg').forEach(item => item.remove()); updateToastClear(); });
-    toast.append(clear);
-  }
 }
 
 const WORKER_UPKEEP = 0.075; // provisões por segundo, por trabalhador (4x mais devagar que os 0,3 antigos)
-// Mercado: sempre aberto. Sem a construção, só a troca simples de trigo, alho e madeira, 25% pior:
-// vende por 75% do preço e compra por 125%.
-// Preços fixos em ouro por unidade. Comprar custa o dobro de vender.
+// Mercado: sempre aberto. Preços de compra menores para reduzir a pressão de ouro nas transações.
 const MARKET_GOODS = [
   { id: 'wheat', name: 'Trigo', icon: 'icon-market-wheat-photo-v01.png', sell: 1, buy: 2 },
   { id: 'flour', name: 'Farinha', icon: 'icon-market-flour-photo-v01.png', sell: 2, buy: 4 },
   { id: 'garlic', name: 'Alho', icon: 'icon-market-garlic-photo-v01.png', sell: 1, buy: 2 },
+  { id: 'onion', name: 'Cebolas', icon: 'apothecary-photoreal-v01/icon-onion.png', sell: 1, buy: 2 },
+  { id: 'onionFlatbread', name: 'Pão de cebola', icon: 'onion-industry-v01/onion-flatbread.png', sell: 5, buy: 10 },
+  { id: 'onionTart', name: 'Torta de cebola e queijo', icon: 'onion-industry-v01/onion-tart.png', sell: 11, buy: 22 },
+  { id: 'onionBaconPie', name: 'Torta de cebola e bacon', icon: 'onion-industry-v01/onion-bacon-pie.png', sell: 15, buy: 30 },
   { id: 'eggs', name: 'Ovos', icon: 'icon-market-eggs-photo-v01.png', sell: 2, buy: 4 },
   { id: 'milk', name: 'Leite', icon: 'icon-market-milk-photo-v01.png', sell: 2, buy: 4 },
   { id: 'bacon', name: 'Bacon', icon: 'icon-market-bacon-photo-v01.png', sell: 3, buy: 6 },
@@ -964,7 +1041,7 @@ const MARKET_GOODS = [
     const sell = Math.max(1, Math.ceil(recipe.work / recipe.qty / 10));
     return { id: recipe.id, name: recipe.name, icon: 'icon-logs-photo-v01.png', sell, buy: sell * 2 };
   }),
-];
+].map(good => ({ ...good, buy: Math.ceil(good.buy * 0.75) }));
 const AUTO_PRODUCTION_TYPES = ['market', 'farm', 'mill', 'bakery', 'butcher', 'blacksmith', 'emberLab', 'lumber', 'mine', 'quarry'];
 const automaticProduction = building => building.productionMode === 'auto';
 const productionPaused = building => automaticProduction(building) && building.autoIdle;
@@ -984,7 +1061,7 @@ function productionModeHTML(building) {
     <small>${auto ? (building.autoStatus || 'Aguardando planejamento') : 'Controle manual'}</small></section>`;
 }
 const MARKET_CAPACITY = [100, 150, 200];
-const MARKET_STONE = [0, 6, 10];
+const MARKET_STONE = [0, 27, 45];
 const marketCapacity = market => MARKET_CAPACITY[producerLevel(market)];
 const marketBuildings = () => state.buildings.filter(market => market.type === 'market' && (isDone(market) || market.ruined || market.pendingUpgrade));
 const marketEntries = market => market.marketStock || [];
@@ -1075,7 +1152,7 @@ function trade(market, key, action, requested, instance, manual = true) {
   return true;
 }
 // Câmbio de metais no Mercado: minério e metal trocados direto com o mercador, em lotes, sem ocupar vagas.
-// Vender usa o ouro do mercador; comprar sai do cofre e custa o dobro, como a comida. Os preços fazem o
+// Vender usa o ouro do mercador; comprar sai do cofre por 1,5× o preço de venda. Os preços fazem o
 // refino sempre valer mais que o minério cru (20 kg de hematita = 4 de ouro; o ferro que sai dela, 13),
 // e prata e ouro valem muito por grama: as veias raras continuam compensando sem mexer nas minas.
 // Minério comprado entra como lote com o teor padrão do mineral, e o Blacksmith refina como qualquer outro.
@@ -1084,7 +1161,7 @@ const METAL_TRADE = [
   ['meteoriteFragments', 1, 20], ['silverOre', 10, 2], ['goldOre', 10, 2],
   ['iron', 1, 3], ['steel', 1, 6], ['crucibleSteel', 1, 8], ['castIron', 1, 25], ['meteoriteIron', 1, 40],
   ['copper', 1, 8], ['arsenicalCopper', 1, 9], ['tin', 1, 12], ['bronze', 1, 10], ['silver', 0.01, 8], ['gold', 0.001, 40],
-].map(([id, lotKg, sell]) => ({ id, lotKg, sell, buy: sell * 2 }));
+].map(([id, lotKg, sell]) => ({ id, lotKg, sell, buy: Math.ceil(sell * 1.5) }));
 const metalLotLabel = deal => (deal.lotKg >= 1 ? `${deal.lotKg} kg` : `${Math.round(deal.lotKg * 1000)} g`);
 const metalTradeName = id => (METAL_NAMES[id] || id).replace(/\s*\(kg\)$/, '');
 function metalTrade(id, action, lots) {
@@ -1148,7 +1225,7 @@ function marketPanelHTML() {
   const weaponRows = [...WEAPON_CATALOG.values()].map(recipe => {
     const stocked = marketEntries(market).filter(entry => entry.key === recipe.key);
     const manor = state.items.map(craftedWeapon).filter(weapon => weapon?.catalogKey === recipe.key);
-    return `<div class="pit-hint">${gearIconHTML(recipe.definition, recipe.definition.classes?.[0])}<b>${recipe.name}</b> · ${recipe.price} ouro · ${stocked.length || 'Sem estoque'}
+    return `<div class="pit-hint">${gearIconHTML(recipe.definition, recipe.name)}<b>${recipe.name}</b> · ${recipe.price} ouro · ${stocked.length || 'Sem estoque'}
       ${manor.map(weapon => `<div>${weapon.id} · casarão ${button(recipe.key, 'stock', 1, 'Guardar', open && used < capacity && !weaponUnderRepair(weapon.id), weapon.id)} ${button(recipe.key, 'sell', 1, `Vender por ${Math.floor(recipe.price / 2)}`, open && used < capacity && state.merchantGold >= Math.floor(recipe.price / 2) && !weaponUnderRepair(weapon.id), weapon.id)}</div>`).join('')}
       ${stocked.map(entry => `<div>${entry.instance} · ${entry.owner === 'estate' ? 'Fazenda' : 'Mercador'} ${entry.owner === 'estate'
         ? button(recipe.key, 'withdraw', 1, 'Retirar grátis', open || market.ruined, entry.instance)
@@ -1851,7 +1928,7 @@ const TAX_CATEGORIES = [
   { id: 'food', name: 'Alimentos', rate: 4 },
   { id: 'materials', name: 'Matérias-primas', rate: 6, legacy: 'woodStone' },
   { id: 'services', name: 'Outros serviços comerciais', rate: 6 },
-  { id: 'wages', name: 'Salários', rate: 5 },
+  { id: 'wages', name: 'Salários', rate: 10 },
 ];
 const MILITARY_GOODS = new Set(MILITARY_PRODUCTS.map(recipe => recipe.id));
 const TAX_RATE_MAX = 30;
@@ -1880,7 +1957,35 @@ const taxRate = category => (taxState(), state.taxRates[category] ?? 0) / 100;
 // Saúde é uma categoria permanente. Poções, elixires, remédios e o que um boticário vender caem nela sozinhos:
 // basta o produto declarar `taxCategory: 'health'` (ou `category: 'health'`), constar em HEALTH_GOODS ou ter um id
 // de remédio. Nenhum ajuste fiscal novo será preciso quando eles chegarem ao catálogo.
-const HEALTH_GOODS = new Set();
+// Catálogo reservado para a indústria de boticário. As entradas ainda não são
+// ordens de produção: dependem de coleta, insumos e tratamentos integrados.
+const APOTHECARY_RECIPES = [
+  { id: 'minorHealingPotion', name: 'Minor Healing Potion', level: 1, needs: { menderleaf: 2, garlic: 1 }, effect: 'Restaura saúde imediatamente' },
+  { id: 'herbalRegenerationPotion', name: 'Herbal Regeneration Potion', level: 1, needs: { menderleaf: 2, bitterroot: 1 }, effect: 'Restaura saúde gradualmente' },
+  { id: 'vitalityPotion', name: 'Vitality Potion', level: 1, needs: { onion: 2, menderleaf: 1 }, effect: 'Reduz fadiga e melhora resistência física' },
+  { id: 'minorAntidote', name: 'Minor Antidote', level: 1, needs: { garlic: 2, bitterroot: 2 }, effect: 'Reduz intoxicação e neutraliza venenos fracos' },
+  { id: 'warmingPotion', name: 'Warming Potion', level: 1, needs: { garlic: 1, frostmint: 2 }, effect: 'Aumenta resistência ao frio' },
+  { id: 'herbalEndurancePotion', name: 'Herbal Endurance Potion', level: 1, needs: { onion: 2, bitterroot: 1, silverSage: 1 }, effect: 'Diminui consumo de resistência durante o trabalho' },
+  { id: 'minorProtectionPotion', name: 'Minor Protection Potion', level: 1, needs: { silverSage: 2, menderleaf: 1 }, effect: 'Concede proteção mágica temporária' },
+  { id: 'gatheringTonic', name: 'Gathering Tonic', level: 1, needs: { onion: 1, bitterroot: 2 }, effect: 'Aumenta eficiência de coleta e extração' },
+  { id: 'greaterHealingPotion', name: 'Greater Healing Potion', level: 2, needs: { menderleaf: 3, silverSage: 2, redthorn: 1 }, effect: 'Restaura saúde' },
+  { id: 'manaRestorationPotion', name: 'Mana Restoration Potion', level: 2, needs: { moonbloom: 1, silverSage: 2 }, effect: 'Restaura energia mágica' },
+  { id: 'swiftnessPotion', name: 'Swiftness Potion', level: 2, needs: { frostmint: 2, silverSage: 1, redthorn: 1 }, effect: 'Aumenta velocidade de movimentação' },
+  { id: 'fireResistancePotion', name: 'Fire Resistance Potion', level: 2, needs: { ashveil: 1, garlic: 2, silverSage: 1 }, effect: 'Reduz dano e efeitos de fogo' },
+  { id: 'frostResistancePotion', name: 'Frost Resistance Potion', level: 2, needs: { frostmint: 3, onion: 1, silverSage: 1 }, effect: 'Protege contra frio e gelo' },
+  { id: 'powerfulAntidote', name: 'Powerful Antidote', level: 2, needs: { bitterroot: 2, marshReed: 2, silverSage: 1 }, effect: 'Neutraliza venenos fortes e reduz intoxicações' },
+  { id: 'fortificationPotion', name: 'Fortification Potion', level: 2, needs: { redthorn: 2, onion: 2, silverSage: 1 }, effect: 'Aumenta resistência física e defesa' },
+  { id: 'nightVisionPotion', name: 'Night Vision Potion', level: 2, needs: { nightshade: 1, moonbloom: 1, frostmint: 1 }, effect: 'Melhora visibilidade e atividades noturnas' },
+  { id: 'supremeHealingPotion', name: 'Supreme Healing Potion', level: 3, needs: { dawnpetal: 1, menderleaf: 3, moonbloom: 2 }, effect: 'Restauração extraordinária de saúde' },
+  { id: 'greaterManaPotion', name: 'Greater Mana Potion', level: 3, needs: { moonbloom: 3, silverSage: 2, emberheart: 1 }, effect: 'Grande restauração de energia mágica' },
+  { id: 'invisibilityPotion', name: 'Invisibility Potion', level: 3, needs: { moonbloom: 2, nightshade: 2, ashveil: 1 }, effect: 'Ocultação mágica temporária' },
+  { id: 'arcaneProtectionPotion', name: 'Arcane Protection Potion', level: 3, needs: { silverSage: 3, dawnpetal: 1, ashveil: 1 }, effect: 'Proteção contra efeitos mágicos' },
+  { id: 'greaterRegenerationPotion', name: 'Greater Regeneration Potion', level: 3, needs: { dawnpetal: 1, menderleaf: 3, redthorn: 2 }, effect: 'Regeneração acelerada de saúde' },
+  { id: 'emberPurificationElixir', name: 'Ember Purification Elixir', level: 3, needs: { emberheart: 1, ashveil: 2, dawnpetal: 1, garlic: 2 }, effect: 'Reduz corrupção mágica' },
+  { id: 'masterworkVitalityPotion', name: 'Masterwork Vitality Potion', level: 3, needs: { redthorn: 2, emberheart: 1, onion: 2, silverSage: 2 }, effect: 'Aumenta vigor, resistência e capacidade de trabalho' },
+  { id: 'grandRestorationElixir', name: 'Grand Restoration Elixir', level: 3, needs: { dawnpetal: 2, moonbloom: 2, emberheart: 1, menderleaf: 2 }, effect: 'Restaura saúde e energia e reduz fadiga' },
+].map(recipe => ({ ...recipe, needs: { ...recipe.needs, emptyVial: 1 }, taxCategory: 'health' }));
+const HEALTH_GOODS = new Set(APOTHECARY_RECIPES.map(recipe => recipe.id));
 const HEALTH_GOOD_PATTERN = /^(potion|elixir|tonic|salve|remedy|antidote|bandage|tincture|poultice|herbal)/i;
 const HEALTH_BUILDINGS = new Set(['apothecary', 'herbalist', 'infirmary']);
 const TAX_CATEGORY_IDS = new Set(TAX_CATEGORIES.map(category => category.id));
@@ -1999,6 +2104,7 @@ function syncTaxOffices() {
   for (const office of state.buildings.filter(building => building.type === 'taxOffice' && (isDone(building) || building.pendingUpgrade?.kind === 'taxOffice'))) {
     while (officeCollectors(office.site).length < producerLevel(office) + 1) {
       const worker = spawnCollector();
+      if (!worker) break;
       worker.taxOfficeSite = office.site;
       worker.x = office.x; worker.y = office.y;
       worker.mapId = buildingMapId(office); worker.mapSet = office.mapSet || 1;
@@ -2008,7 +2114,8 @@ function syncTaxOffices() {
 }
 // Contrata um cobrador do Casarão. Reaproveita um ex-cobrador livre (dispensado antes) para não inflar a população.
 function spawnCollector() {
-  const former = state.workers.find(worker => worker.alive && worker.exCollector && !worker.profession && worker.buildSite == null && !worker.workplace);
+  const former = state.workers.find(worker => worker.alive && worker.exCollector && !worker.profession && worker.buildSite == null && !worker.workplace)
+    || state.workers.find(worker => worker.alive && !worker.profession && worker.buildSite == null && !worker.workplace && !worker.carrying);
   if (former) {
     former.profession = 'collector'; former.exCollector = false; former.dismissing = false;
     former.task = 'Esperando a rota das ' + COLLECTOR_START_HOUR + 'h no Casarão';
@@ -2016,12 +2123,7 @@ function spawnCollector() {
     interruptTavernVisit(former);
     return former;
   }
-  const n = state.collectorsHired || 0;
-  const collector = { id: `collector-${n + 1}`, name: COLLECTOR_NAMES[n % COLLECTOR_NAMES.length], level: 1, xp: 0, className: 'Peasant', spriteId: 'peasant', portraitId: 'male-peasant',
-    profession: 'collector', x: MANOR_DOOR.x + 0.6, y: MANOR_DOOR.y, alive: true, workTrip: false, home: 'manor', purse: 0, mapId: 'city', mapSet: state.mapSet || 1, taxBag: 0 };
-  state.collectorsHired = n + 1;
-  state.workers.push(collector);
-  return collector;
+  return null;
 }
 // Define a quantidade ativa. Mais cobradores: contratados na hora (o Casarão precisa estar de pé). Menos: dispensa
 // os que estão com a bolsa mais leve; quem está em rota termina de entregar o ouro antes de sair.
@@ -2032,6 +2134,11 @@ function setCollectorTarget(count) {
   taxLog({ kind: 'cobradores: quantidade alterada', amount: count });
   while (activeCollectors().length < count) {
     const hired = spawnCollector();
+    if (!hired) {
+      state.collectorTarget = activeCollectors().length;
+      say('Não há moradia disponível para contratar outro cobrador.');
+      break;
+    }
     taxLog({ kind: 'cobrador contratado', collector: hired.name });
     say(`O Casarão contratou ${hired.name} como cobrador. Todo dia às ${COLLECTOR_START_HOUR}h ele sai, passa nas construções e traz os impostos pro tesouro. Se chegar.`);
   }
@@ -2068,6 +2175,7 @@ function ensureCollector() {
   if (Math.floor(state.minutes / 1440) < 1 || activeCollectors().length >= collectorTarget() || !isDone(MANOR())) return;
   if (state.nextCollectorAt != null && state.minutes < state.nextCollectorAt) return;
   const collector = spawnCollector();
+  if (!collector) return;
   taxLog({ kind: 'cobrador contratado', collector: collector.name });
   say(`O ofício da mansão mandou um cobrador: ${collector.name}. Todo dia às ${COLLECTOR_START_HOUR}h ele sai do Casarão, passa nas construções e traz os impostos pro tesouro. Se chegar.`);
   renderHeroes();
@@ -2545,9 +2653,11 @@ function updateHud() {
   const workerCap = workerCapacity();
   $('#hero-count').textContent = heroes;
   $('#hero-cap').textContent = heroCap;
+  $('#heroes-roster-btn').setAttribute('aria-label', `Abrir heróis: ${heroes} de ${heroCap}`);
   $('#hero-count').closest('.stat').classList.toggle('full', heroes >= heroCap);
   $('#worker-count').textContent = workers;
   $('#worker-cap').textContent = workerCap;
+  $('#workers-roster-btn').setAttribute('aria-label', `Abrir camponeses: ${workers} de ${workerCap}`);
   refreshBuildAffordability();
   $('#tax-pct').textContent = `${state.taxPercent}%`;
   $('#tax-preview').textContent = `≈ ${format(dailyTaxEstimate())} de imposto · −${format(dailyWages())} de salários por dia`;
@@ -2565,9 +2675,9 @@ function updateHud() {
 
 // Objetivos do Cenário 01, um depois do outro. O cenário termina quando o último é cumprido.
 const SCENARIO_GOALS = [
-  { title: 'Acumule 600 moedas',
-    progress: () => ({ have: state.gold, need: 600, text: `${format(state.gold)} / 600` }),
-    done: ['Dívidas quitadas. Os credores levaram as 600 moedas e deixaram o recibo.', 'Destrua um covil: na aba Heróis, ofereça uma recompensa para destruir um covil.'] },
+  { title: 'Acumule 360 moedas',
+    progress: () => ({ have: state.gold, need: 360, text: `${format(state.gold)} / 360` }),
+    done: ['Dívidas quitadas. Os credores levaram as 360 moedas e deixaram o recibo.', 'Destrua um covil: na aba Heróis, ofereça uma recompensa para destruir um covil.'] },
   { title: 'Destrua um covil: na aba Heróis, ofereça uma recompensa para destruir um covil.',
     progress: () => { const destroyed = (state.lairs || []).some(lair => lair.destroyed); return { have: destroyed ? 1 : 0, need: 1, text: destroyed ? 'Covil destruído' : 'Nenhum covil destruído' }; },
     done: ['O covil foi destruído.', ''] },
@@ -2630,10 +2740,10 @@ const CAMPAIGN_GOALS = [
     checkStep('Construa uma Marcenaria de armas e encomende um Arco curto', () => (state.craftedWeapons || []).some(weapon => weapon.catalogKey === 'shortBow')),
   ]),
   // A dívida do tio: assim que o cofre tem 600, os credores aparecem e levam tudo (a mesma cobrança da construção livre).
-  campaignMission('O primeiro negócio', 'Os credores do tio chegaram no mesmo dia, contaram as 600 moedas duas vezes e levaram todas. O mercador, com pena, contou onde os lobos dormem: na trilha que leva aos goblins.', [
+  campaignMission('O primeiro negócio', 'Os credores do tio chegaram no mesmo dia, contaram as 360 moedas duas vezes e levaram todas. O mercador, com pena, contou onde os lobos dormem: na trilha que leva aos goblins.', [
     checkStep('Construa um Mercado (Construir · Produção)', () => completedBuilding('market')),
     checkStep('Venda uma mercadoria na aba Mercado', () => !!state.marketSaleMade),
-    missionStep('Junte 600 de ouro no cofre: os credores do tio vêm cobrar a dívida', () => ({ have: Math.min(DEBT_GOLD, state.gold), need: DEBT_GOLD, text: `${format(state.gold)} / ${DEBT_GOLD} de ouro` })),
+    missionStep('Junte 360 de ouro no cofre: os credores do tio vêm cobrar a dívida', () => ({ have: Math.min(DEBT_GOLD, state.gold), need: DEBT_GOLD, text: `${format(state.gold)} / ${DEBT_GOLD} de ouro` })),
   ], () => { state.gold -= DEBT_GOLD; changeFavor(DEBT_FAVOR); updateHud(); }),
   campaignMission('O covil de lobos', 'Sem lobos, a trilha está aberta até os acampamentos goblins.', [
     checkStep('Na aba Heróis, ofereça uma recompensa pelo Covil de lobos', () => !!bountyOn('wolf-den-1') || lairDestroyed('wolf-den-1')),
@@ -2744,8 +2854,8 @@ function renderObjectiveJournal() {
   }).join('');
 }
 
-// Primeiro objetivo cumprido: os credores levam as 600 moedas e os nobres dão Favor.
-const DEBT_GOLD = 600;
+// Primeiro objetivo cumprido: os credores levam as 360 moedas e os nobres dão Favor.
+const DEBT_GOLD = 360;
 const DEBT_FAVOR = 16;
 function payDebt() {
   state.gold -= DEBT_GOLD;
@@ -2838,6 +2948,7 @@ function renderSites() {
     site.classList.toggle('ruined', !!building.ruined);
     site.style.zIndex = String(Math.round(building.y * 10));
     site.dataset.siege = SIEGE_DEPLOYMENTS[building.type]?.deploy || '';
+    site.dataset.siegePhoto = SIEGE_PHOTO_CELLS[building.type] ? 'sheet' : '';
     site.dataset.fortificationAxis = isModularFortification(building.type) ? building.fortificationAxis || 'horizontal' : '';
     site.classList.toggle('siege-damaged', !!site.dataset.siege && (building.damage || 0) > 0);
     {
@@ -2910,6 +3021,7 @@ function renderLairs() {
     marker.style.left = `${pile.x}%`;
     marker.style.top = `${pile.y / WORLD_Y_UNITS * 100}%`;
     marker.style.zIndex = String(Math.round(pile.y * 10));
+    marker.classList.toggle('nekomata-remains', pile.grade === 'nekomataWild');
     marker.hidden = (pile.mapId || 'city') !== currentMap || (pile.mapSet || 1) !== currentMapSet;
     marker.setAttribute('aria-label', pile.materials ? workshopLootName(pile.materials) : remainsName(pile.grade));
   });
@@ -2932,21 +3044,23 @@ function renderLairs() {
     marker.hidden = pile.mapId !== currentMap || pile.mapSet !== currentMapSet;
     marker.setAttribute('aria-label', label);
   });
-  state.groves.forEach(grove => {
-    const id = `grove-${grove.id}`;
+  WILD_HERB_NODES.forEach(node => {
+    const id = `wild-herb-${node.id}`;
     visibleIds.add(id);
     let marker = $(`.lair-marker[data-lair="${id}"]`, layer);
     if (!marker) {
       marker = document.createElement('div');
-      marker.className = 'lair-marker remains-pile meat-pile';
+      marker.className = 'lair-marker wild-herb-marker';
       marker.dataset.lair = id;
-      marker.innerHTML = '<img src="public/art/icon-logs-photo-v01.png" alt=""><small></small>';
+      marker.innerHTML = `<img src="public/art/apothecary-photoreal-v01/plant-${node.herb}.png" alt=""><small>${node.name}</small>`;
       layer.append(marker);
     }
-    marker.style.left = `${grove.x}%`;
-    marker.style.top = `${grove.y / WORLD_Y_UNITS * 100}%`;
-    marker.hidden = currentMap !== 'wilds' || currentMapSet !== WILDLIFE_MAP_SET;
-    $('small', marker).textContent = `${grove.name} · ${grove.logs} toras`;
+    marker.style.left = `${node.x}%`;
+    marker.style.top = `${node.y / WORLD_Y_UNITS * 100}%`;
+    marker.style.zIndex = String(Math.round(node.y * 10));
+    marker.hidden = currentMap !== 'wilds' || currentMapSet !== node.mapSet;
+    marker.setAttribute('aria-label', `${node.name}, planta silvestre`);
+    marker.title = `${node.name} · erva silvestre`;
   });
   (state.wildMeatPiles || []).forEach(pile => {
     visibleIds.add(pile.id);
@@ -2973,9 +3087,9 @@ function extractionPlaces(type, mapId = currentMap, mapSet = currentMapSet) {
   if (marked.length) return marked.map(place => type === 'mine' ? { ...place, rank: METAL_DEPOSIT_RANKS.some(rank => rank.id === place.rank) ? place.rank : 'II' } : place);
   // Esses pontos ja estao pintados no mapa dos Wilds; servem mesmo sem marcador do editor.
   const defaults = {
-    quarry: { id: `map-${mapSet}-stone-quarry`, x: 22, y: 18 },
+    quarry: { id: `map-${mapSet}-stone-quarry`, x: 22, y: mapSet === 2 ? 19 : 18 },
     // Ponto fixo original do Campo de Mineração em Wilds.
-    mine: { id: `map-${mapSet}-metal-mine`, x: 72, y: 61, rank: mapSet === 2 ? 'IV' : 'II' },
+    mine: { id: `map-${mapSet}-metal-mine`, x: mapSet === 2 ? 84 : 72, y: mapSet === 2 ? 14 : 61, rank: mapSet === 2 ? 'IV' : 'II' },
   };
   if (mapId !== 'wilds' || !defaults[type]) return [];
   const places = [{ ...defaults[type], type, mapId: 'wilds' }];
@@ -2993,12 +3107,19 @@ const WILDS_PAINTED = {
     ],
     river: [[4, 70], [13, 68], [24, 65], [34, 61], [42, 59], [53, 59], [62, 56], [75, 54], [83, 52], [89, 51], [98, 49]],
   },
+  2: {
+    areas: [
+      { name: 'a pedreira desenhada no mapa', x1: 3, x2: 39, y1: 5, y2: 31 },
+      { name: 'a mina de ouro desenhada no mapa', x1: 70, x2: 99, y1: 3, y2: 28 },
+    ],
+    river: [[100, 128], [84, 132], [68, 136], [52, 139], [38, 145], [24, 152], [8, 162], [11, 173], [27, 184], [50, 193], [76, 198], [100, 200]],
+  },
 };
-function paintedProblem(x, y, mapSet = currentMapSet) {
+function paintedProblem(x, y, mapSet = currentMapSet, buildingType = null) {
   const painted = WILDS_PAINTED[mapSet];
   if (!painted) return null;
   const area = painted.areas.find(item => x >= item.x1 && x <= item.x2 && y >= item.y1 && y <= item.y2);
-  if (area) return `Não dá para construir em cima d${area.name.slice(0, 1) === 'a' ? '' : 'e '}${area.name}.`;
+  if (area && !((area.name.includes('pedreira') && buildingType === 'quarry') || (area.name.includes('mina') && buildingType === 'mine'))) return `Não dá para construir em cima d${area.name.slice(0, 1) === 'a' ? '' : 'e '}${area.name}.`;
   const near = painted.river.slice(1).some(([bx, by], i) => {
     const [ax, ay] = painted.river[i];
     const dx = bx - ax, dy = (by - ay) * Y_TO_X_SCALE, px = x - ax, py = (y - ay) * Y_TO_X_SCALE;
@@ -3025,22 +3146,60 @@ const WILDS_WATERWAYS = {
     [[0, 91], [9, 87], [18, 84]],
   ],
   2: [
-    [[0, 39], [12, 38], [25, 42], [37, 49], [51, 58], [68, 67], [83, 71], [100, 65]],
-    [[52, 13], [48, 22], [43, 30], [39, 38]],
+    [[100, 128], [84, 132], [68, 136], [52, 139], [38, 145], [24, 152], [8, 162], [11, 173], [27, 184], [50, 193], [76, 198], [100, 200]],
+  ],
+};
+// Cursos d'água pintados também no mapa da cidade, no mesmo sistema de coordenadas.
+const CITY_WATERWAYS = {
+  2: [
+    [[0, 168], [12, 164], [24, 158], [35, 153], [44, 150], [50, 152], [56, 157], [61, 163], [68, 168], [77, 171], [88, 173], [100, 169]],
+    [[0, 188], [8, 184], [16, 181]],
   ],
 };
 
-function nearWildsWater(x, y, mapSet = currentMapSet) {
+function nearWater(x, y, mapId = currentMap, mapSet = currentMapSet, clearance = 2.7) {
+  const waterways = mapId === 'wilds' ? WILDS_WATERWAYS[mapSet] : CITY_WATERWAYS[mapSet];
   const py = y * Y_TO_X_SCALE;
-  return (WILDS_WATERWAYS[mapSet] || []).some(path => path.some((point, index) => {
+  return (waterways || []).some(path => path.some((point, index) => {
     if (index === path.length - 1) return false;
     const [ax, ayRaw] = point, [bx, byRaw] = path[index + 1];
     const ay = ayRaw * Y_TO_X_SCALE, by = byRaw * Y_TO_X_SCALE;
     const dx = bx - ax, dy = by - ay;
     const lengthSq = dx * dx + dy * dy;
     const t = lengthSq ? Math.max(0, Math.min(1, ((x - ax) * dx + (py - ay) * dy) / lengthSq)) : 0;
-    return Math.hypot(x - (ax + t * dx), py - (ay + t * dy)) <= 2.7;
+    return Math.hypot(x - (ax + t * dx), py - (ay + t * dy)) <= clearance;
   }));
+}
+function nearWildsWater(x, y, mapSet = currentMapSet) { return nearWater(x, y, 'wilds', mapSet); }
+
+function movementBlockedByWater(actor, x1, y1, x2, y2) {
+  const mapId = actor.mapId || 'city', mapSet = actor.mapSet || 1;
+  const distance = Math.hypot(x2 - x1, (y2 - y1) * Y_TO_X_SCALE);
+  const steps = Math.max(1, Math.ceil(distance / 0.65));
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    if (nearWater(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, mapId, mapSet, 3.4)) return true;
+  }
+  return false;
+}
+
+function fishingBankPoint(actor, spot) {
+  const candidates = [];
+  for (const radius of [4.2, 5, 6, 7]) {
+    for (let i = 0; i < 32; i++) {
+      const angle = i * Math.PI * 2 / 32;
+      const point = {
+        x: Math.max(1, Math.min(99, spot.x + Math.cos(angle) * radius)),
+        y: Math.max(1, Math.min(198, spot.y + Math.sin(angle) * radius / Y_TO_X_SCALE)),
+      };
+      const destinationY = Math.min(198, point.y + 1.2);
+      if (nearWater(point.x, destinationY, spot.mapId, spot.mapSet, 3.4)) continue;
+      if (movementBlockedByWater(actor, actor.x, actor.y, point.x, destinationY)) continue;
+      candidates.push({ ...point, distance: Math.hypot(point.x - actor.x, (point.y - actor.y) * Y_TO_X_SCALE) });
+    }
+    if (candidates.length) break;
+  }
+  return candidates.sort((a, b) => a.distance - b.distance)[0] || { x: spot.x, y: spot.y };
 }
 
 function renderFishingSpots() {
@@ -3054,7 +3213,12 @@ function renderFishingSpots() {
       marker.className = 'fishing-spot';
       marker.dataset.spot = spot.site;
       marker.innerHTML = '<span class="fishing-jump" aria-hidden="true"></span><i aria-hidden="true"></i><small>Pesca · atribuir camponês</small>';
-      marker.addEventListener('click', () => selectFishingSpot(spot.site));
+      marker.addEventListener('pointerdown', event => {
+        if (event.button !== 0 || !event.target.closest('.fishing-jump')) return;
+        event.stopPropagation();
+        marker.setPointerCapture(event.pointerId);
+      });
+      marker.addEventListener('click', event => { event.stopPropagation(); selectFishingSpot(spot.site); });
       layer.append(marker);
     }
     marker.style.left = `${spot.x}%`;
@@ -3079,10 +3243,24 @@ function selectFishingSpot(site) {
   state.selectedSite = null;
   selectedLairId = null;
   state.selectedBuild = null;
+  renderInspector();
   renderLairs();
   renderSites();
   renderFishingSpots();
   renderPanel();
+}
+
+function openFishingMenu() {
+  const local = FISHING_SPOTS.find(spot => spot.mapId === currentMap && spot.mapSet === currentMapSet);
+  const spot = local || FISHING_SPOTS.find(item => item.mapSet === currentMapSet) || FISHING_SPOTS[0];
+  if (!spot) { say('Ainda não há pontos de pesca neste mapa.'); return; }
+  if (currentMapSet !== spot.mapSet) {
+    currentMapSet = spot.mapSet;
+    state.mapSet = spot.mapSet;
+  }
+  if (currentMap !== spot.mapId || Number($('#map-world').dataset.mapSet || 1) !== spot.mapSet) switchMap(spot.mapId);
+  selectFishingSpot(spot.site);
+  $('#site-inspector').scrollTop = 0;
 }
 
 const fishingAuto = spot => state.fishingModes?.[spot.site] === 'auto';
@@ -3094,17 +3272,18 @@ function fishingSpotInfoHTML(spot) {
     const unavailable = worker.buildSite != null || !!worker.carrying || awayOnOtherMap;
     const detail = worker.buildSite != null ? 'terminando uma obra' : worker.carrying ? 'terminando uma entrega' : awayOnOtherMap ? 'está em outra área das Wilds' : peasantActivity(worker);
     const action = alreadyHere ? 'Atribuído aqui' : worker.profession === 'fisher' ? 'Transferir para cá' : 'Atribuir a este ponto';
-    return `<button type="button" class="pit-worker" data-fishing-assign="${worker.id}" data-fishing-spot="${spot.site}" ${alreadyHere || unavailable ? 'disabled' : ''}><b>${worker.name}</b><small>${detail} · ${action}</small></button>`;
+    if (alreadyHere) return `<button type="button" class="pit-worker here" data-fishing-remove="${worker.id}" ${worker.carrying?.food === 'fish' ? 'disabled title="Espere a entrega das Trutas"' : ''}><b>${worker.name}</b><small>${worker.carrying?.food === 'fish' ? 'Terminando entrega' : 'Atribuído · retirar'}</small></button>`;
+    return `<button type="button" class="pit-worker" data-fishing-assign="${worker.id}" data-fishing-spot="${spot.site}" ${unavailable ? 'disabled' : ''}><b>${worker.name}</b><small>${unavailable ? detail : action}</small></button>`;
   }).join('');
   return `<section class="inspector" aria-label="${spot.name}">
     <button type="button" class="inspector-back" data-inspector-close aria-label="Fechar ponto de pesca" title="Fechar">×</button>
-    <header class="inspector-id"><span class="fishing-inspector-mark" aria-hidden="true">≈</span><div><h3>${spot.name}</h3><small>Ponto fixo de pesca · Wilds</small></div></header>
-    <dl class="inspector-stats"><div><dt>Peixe no ponto</dt><dd>${format(fishingStock(spot))} Trutas</dd></div><div><dt>Produção base</dt><dd>${hn(FISHING_RATE)} Truta/s por pescador</dd></div><div><dt>Pescadores aqui</dt><dd>${assigned.length}</dd></div></dl>
-    <section class="inspector-section"><h4>Produção</h4><button type="button" class="hut-upgrade" data-fishing-mode="${spot.site}" data-mode="auto" aria-pressed="${fishingAuto(spot)}">Auto</button>
-    <button type="button" class="hut-upgrade" data-fishing-mode="${spot.site}" data-mode="manual" aria-pressed="${!fishingAuto(spot)}">Manual</button>
-    <small>${fishingAuto(spot) ? 'Pesca conforme a demanda de truta' : 'Pesca contínua com a equipe escalada'}</small></section>
-    <section class="inspector-section"><h4>Atribuir camponês</h4><p class="pit-hint">Clique em um nome. O camponês irá até este ponto, pescará e levará a carga ao depósito.</p><div class="pit-crew">${workers || '<div class="empty-state">Nenhum camponês disponível.</div>'}</div></section>
-    ${assigned.length ? `<section class="inspector-section"><h4>Retirar do ponto</h4><div class="pit-crew">${assigned.map(worker => `<button type="button" class="pit-worker" data-fishing-remove="${worker.id}" ${worker.carrying?.food === 'fish' ? 'disabled title="Espere a entrega das Trutas"' : ''}><b>${worker.name}</b><small>${worker.carrying?.food === 'fish' ? 'Terminando entrega das Trutas' : 'Remover deste ponto'}</small></button>`).join('')}</div></section>` : ''}
+    <header class="inspector-id"><span class="fishing-inspector-mark" aria-hidden="true">≈</span><div><h3>${spot.name}</h3><small>Ponto fixo de pesca · ${spot.mapId === 'city' ? 'Cidade' : 'Wilds'}</small></div></header>
+    <dl class="inspector-stats"><div><dt>Peixes disponíveis</dt><dd>${format(fishingStock(spot))} / ${FISHING_CAP}</dd></div><div><dt>Recuperação</dt><dd>${FISHING_RECOVERY} peixes por hora</dd></div><div><dt>Produção base</dt><dd>${hn(FISHING_RATE)} Truta/s por pescador</dd></div><div><dt>Pescadores aqui</dt><dd>${assigned.length}</dd></div></dl>
+    <section class="inspector-section fishing-mode-section"><h4>Produção</h4><div class="fishing-mode-control" role="group" aria-label="Modo de pesca">
+      <button type="button" class="hut-upgrade" data-fishing-mode="${spot.site}" data-mode="auto" aria-pressed="${fishingAuto(spot)}"><span class="mode-indicator" aria-hidden="true">${fishingAuto(spot) ? '✓' : ''}</span>Auto</button>
+      <button type="button" class="hut-upgrade" data-fishing-mode="${spot.site}" data-mode="manual" aria-pressed="${!fishingAuto(spot)}"><span class="mode-indicator" aria-hidden="true">${!fishingAuto(spot) ? '✓' : ''}</span>Manual</button>
+    </div><p class="fishing-mode-status" role="status"><b>Modo atual: ${fishingAuto(spot) ? 'AUTO' : 'MANUAL'}</b><span>${fishingAuto(spot) ? 'Pesca só até atender a demanda de truta.' : 'Pesca continuamente com a equipe atribuída.'}</span></p></section>
+    <section class="inspector-section"><h4>Equipe de pesca · clique para atribuir ou retirar</h4><div class="pit-crew fishing-crew">${workers || '<div class="empty-state">Nenhum camponês disponível.</div>'}</div></section>
   </section>`;
 }
 
@@ -3129,7 +3308,7 @@ function placementProblem(x, y, ignoreSite = null) {
   const onWater = currentMap === 'wilds' && nearWildsWater(x, y, currentMapSet);
   if (bridge && !onWater) return 'Instale a ponte sobre o riacho nas Wilds.';
   if (!bridge && onWater) return 'Não é possível construir sobre a água do riacho.';
-  if (currentMap === 'wilds' && !bridge && paintedProblem(x, y)) return paintedProblem(x, y);
+  if (currentMap === 'wilds' && !bridge && paintedProblem(x, y, currentMapSet, type)) return paintedProblem(x, y, currentMapSet, type);
   if (currentMap === 'wilds' && !WILDS_PAINTED[currentMapSet]) {
     const blockedDeposit = protectedWildsDeposits(currentMapSet).find(({ building, place }) => building !== type
       && Math.hypot(place.x - x, (place.y - y) * Y_TO_X_SCALE) <= 5.5);
@@ -3183,8 +3362,15 @@ function showPlacementPreview(event) {
   preview.style.zIndex = String(Math.round(y * 10) + 1);
   preview.dataset.art = art;
   preview.dataset.siege = SIEGE_DEPLOYMENTS[moving?.type || item?.id]?.deploy || '';
+  const previewType = moving?.type || item?.id;
+  preview.dataset.siegePhoto = SIEGE_PHOTO_CELLS[previewType] ? 'sheet' : '';
   preview.dataset.fortificationAxis = isModularFortification(moving?.type || item?.id) ? fortificationAxis : '';
-  applyBuildingImage(preview, art, null, moving);
+  if (SIEGE_PHOTO_CELLS[previewType]) {
+    const [column, row] = SIEGE_PHOTO_CELLS[previewType];
+    preview.style.backgroundImage = "url('public/art/military-v01/siege-equipment-sheet-v01.png')";
+    preview.style.backgroundSize = '400% 400%';
+    preview.style.backgroundPosition = `${column * 100 / 3}% ${row * 100 / 3}%`;
+  } else applyBuildingImage(preview, art, null, moving);
   preview.classList.toggle('invalid', !!placementProblem(x, y, moving ? moving.site : null));
 }
 
@@ -3199,12 +3385,13 @@ function workerIsWorkingIndoors(actor) {
 
 const NEKOMATA_FRAME_MS = { base: 130.787, atk: 142.361, move: 55.556, 'move-left': 55.556, cast: 138.889, special: 84.491, hit: 52.083, death: 92.593 };
 const NEKOMATA_BOX = { base: [4.7, 2.32857, 0.05714], atk: [4.95, 2.90714, 0.09286], move: [4.71429, 2.17143, 0.07143], 'move-left': [4.71429, 2.17143, 0.07143], cast: [4.91429, 2.7, 0.22857], special: [4.9, 3, 0.3], hit: [4.65714, 2.97143, 0.12857], death: [5.05714, 1.82857, 0.17143] };
+const NEKOMATA_CLIP_SLOT = { base: 0, atk: 1, move: 2, 'move-left': 3, cast: 4, special: 5, hit: 6, death: 7 };
 let nekomataDeaths = [];
 function nekomataFrame(actor) {
   const clip = actor.nekoDeathClock != null ? 'death' : actor.nekoHitClock != null ? 'hit' : actor.attackAnim > 0 ? (actor.nekoAttackClip || 'atk') : actor.nekoMoving ? (actor.side === 'left' ? 'move-left' : 'move') : 'base';
   const clock = clip === 'death' ? actor.nekoDeathClock : clip === 'hit' ? actor.nekoHitClock : ['atk', 'cast', 'special'].includes(clip) ? actor.actionClock || 0 : clip === 'base' ? actor.nekoIdleClock || 0 : actor.walkClock || 0;
   let frame = Math.floor(clock * 1000 / NEKOMATA_FRAME_MS[clip]);
-  if (clip === 'base') { frame %= 70; frame = frame < 36 ? frame : 70 - frame; }
+  if (clip === 'base') frame %= 36;
   else if (clip === 'move' || clip === 'move-left') frame %= 36;
   else frame = Math.min(35, frame);
   return { clip, frame: frame + 1 };
@@ -3245,7 +3432,7 @@ function renderHeroes() {
     }
     if (token.parentElement !== layer) layer.append(token);
     const hurt = actor.hp != null && actor.hp < maxHpOf(actor);
-    token.className = `character${actor.className === 'Peasant' ? ' worker' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${actor.className === 'Wildlife' ? ' wildlife' : ''}${actor.kind === 'boar' ? ' wild-boar' : actor.kind === 'elk' ? ' elk' : actor.kind === 'wolf' ? ' wolf' : actor.kind === 'nekomata' ? ' nekomata' : actor.kind === 'goblin' ? ' goblin' : actor.kind === 'troll' ? ' troll' : actor.kind === 'zombie' ? ' zombie' : ''}${actor.summon ? ' summon' : ''}${actor.mfx?.convert ? ' converted' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
+    token.className = `character${state.heroes.some(hero => hero.id === actor.id) ? ' hero' : ''}${actor.className === 'Peasant' ? ' worker' : ''}${actor.profession === 'fisher' ? ' fisher' : ''}${actor.className === 'Bandit' ? ' bandit' : ''}${actor.className === 'Monster' ? ' bandit monster' : ''}${actor.className === 'Wildlife' ? ' wildlife' : ''}${actor.kind === 'boar' ? ' wild-boar' : actor.kind === 'elk' ? ' elk' : actor.kind === 'wolf' ? ' wolf' : actor.kind === 'nekomata' ? ' nekomata' : actor.kind === 'goblin' ? ' goblin' : actor.kind === 'troll' ? ' troll' : actor.kind === 'zombie' ? ' zombie' : ''}${actor.summon ? ' summon' : ''}${actor.mfx?.convert ? ' converted' : ''}${hurt ? ' hurt' : ''}${state.selectedActor === actor.id ? ' selected' : ''}`;
     if (hurt) token.style.setProperty('--hp', `${Math.max(0, Math.round(hpOf(actor) / maxHpOf(actor) * 100))}%`);
     token.style.left = `${actor.x}%`;
     token.style.top = `${actor.y / WORLD_Y_UNITS * 100}%`;
@@ -3261,7 +3448,7 @@ function renderHeroes() {
       // e os quatro quadros mantêm a passada alternada sem espelhar metade do ciclo.
       const backWalk = false;
       const verticalTrollWalk = actor.kind === 'troll' && sheet === 'walk' && ['up', 'down'].includes(actor.walkDirection);
-      const extension = actor.className === 'Wildlife' || (art === 'peasant' && ['build', 'work', 'fight'].includes(sheet)) || (art === 'female-peasant' && ['work', 'fight'].includes(sheet)) || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp';
+      const extension = actor.profession === 'fisher' && sheet === 'fishing' || actor.className === 'Wildlife' || (art === 'peasant' && ['build', 'work', 'fight'].includes(sheet)) || (art === 'female-peasant' && ['work', 'fight'].includes(sheet)) || art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp';
       const nekoFrame = actor.kind === 'nekomata' ? nekomataFrame(actor) : null;
       if (nekoFrame) {
         const [width, height, foot] = NEKOMATA_BOX[nekoFrame.clip];
@@ -3270,15 +3457,28 @@ function renderHeroes() {
         token.style.setProperty('--neko-bottom', `${(0.05714 - foot) / 2.32857 * 100}%`);
       }
       const nativeLeft = /^moonwarden-(human|werewolf)$/.test(art) && token.dataset.side === 'left' && ['walk', 'action'].includes(sheet);
-      const guildSprite = guildHeroArt(actor) ? `${art}-${sheet === 'action' || sheet === 'idle' ? sheet : 'walk'}${nativeLeft ? '-left' : ''}-v${sheet === 'idle' ? (art.startsWith('moonwarden-') ? '02' : '03') : (art.startsWith('moonwarden-') ? '01' : '02')}.webp` : null;
+      const guildSprite = guildHeroArt(actor) ? `${art}-${sheet === 'action' || sheet === 'idle' ? sheet : 'walk'}${nativeLeft ? '-left' : ''}-v${sheet === 'idle' ? (art.startsWith('moonwarden-') ? '02' : '03') : sheet === 'action' || art.startsWith('moonwarden-') ? '01' : '02'}.webp` : null;
       const carryingSprite = actor.className === 'Peasant' && actor.carrying && sheet === 'walk'
         ? `${art}-carry-${actor.handcart ? 'cart' : 'pack'}-v01.png` : null;
-      const spriteFile = actor.profession === 'collector' ? (sheet === 'fight' ? 'tax-collector-fight-side-v01.png' : 'tax-collector-walk-v02.png') : guildSprite || (nekoFrame ? `nekomata-media36-v01/${nekoFrame.clip}-media36-v01/${nekoFrame.clip}-${nekoFrame.frame}.png` : carryingSprite || (art === 'peasant' && sheet === 'walk' ? 'peasant-walk-v03.png' : verticalTrollWalk ? 'mordavian-troll-v01-walk-vertical-v01.png' : art === 'female-peasant' && sheet === 'work' ? 'female-peasant-work-v02.png' : art === 'peasant' && sheet === 'fight' ? 'peasant-fight-side-v01.png' : art === 'female-peasant' && sheet === 'fight' ? 'female-peasant-fight-side-v01.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : actor.className === 'Wildlife' && sheet === 'idle' ? `${art}-idle-v02.png` : actor.className === 'Wildlife' && art === 'elk' && sheet === 'walk' ? 'elk-walk-v02.png' : `${art}-${sheet}-v01.${extension}`));
+      const fishingSprite = actor.profession === 'fisher' && sheet === 'fishing' ? `${art}-fishing-v01.png` : null;
+      const spriteFile = actor.profession === 'collector' ? (sheet === 'fight' ? 'tax-collector-fight-side-v01.png' : 'tax-collector-walk-v02.png') : guildSprite || (nekoFrame ? 'nekomata-media36-v01/nekomata-atlas-24x12-v02.png' : carryingSprite || fishingSprite || (art === 'peasant' && sheet === 'walk' ? 'peasant-walk-v03.png' : verticalTrollWalk ? 'mordavian-troll-v01-walk-vertical-v01.png' : art === 'female-peasant' && sheet === 'work' ? 'female-peasant-work-v02.png' : art === 'peasant' && sheet === 'fight' ? 'peasant-fight-side-v01.png' : art === 'female-peasant' && sheet === 'fight' ? 'female-peasant-fight-side-v01.png' : art === 'skeleton-v02' && sheet === 'action' ? 'skeleton-v02-action-v02.png' : actor.className === 'Wildlife' && sheet === 'idle' ? `${art}-idle-v02.png` : actor.className === 'Wildlife' && art === 'elk' && sheet === 'walk' ? 'elk-walk-v02.png' : `${art}-${sheet}-v01.${extension}`));
       if (token.dataset.spriteFile !== spriteFile) {
         $('.character-sprite', token).style.backgroundImage = `url('public/art/${spriteFile}')`;
         token.dataset.spriteFile = spriteFile;
         token.dataset.sheet = sheet;
         token.dataset.art = art;
+      }
+      if (nekoFrame) {
+        const sprite = $('.character-sprite', token);
+        const cell = nekoFrame.frame - 1;
+        const clip = NEKOMATA_CLIP_SLOT[nekoFrame.clip];
+        const atlasColumn = (clip % 4) * 6 + cell % 6;
+        const atlasRow = Math.floor(clip / 4) * 6 + Math.floor(cell / 6);
+        sprite.style.backgroundSize = '2400% 1200%';
+        sprite.style.backgroundPosition = `${atlasColumn / 23 * 100}% ${atlasRow / 11 * 100}%`;
+      } else {
+        $('.character-sprite', token).style.removeProperty('background-size');
+        $('.character-sprite', token).style.removeProperty('background-position');
       }
       token.dataset.backWalk = backWalk ? 'true' : 'false';
       token.dataset.verticalWalk = verticalTrollWalk ? 'true' : 'false';
@@ -3299,19 +3499,19 @@ function renderHeroes() {
 function heroCard(hero) {
   const nextInfo = guildHeroArt(hero) ? 'A forma acompanha o nível da guilda.' : hero.prestige ? `Caminho de prestígio: ${hero.prestige}` : hero.level >= 15 ? 'A guilda disponível mais próxima define a especialização.' : `${15 - hero.level} ${15 - hero.level === 1 ? 'nível' : 'níveis'} até o prestígio`;
   return `<article class="hero-card">
-    <img class="hero-portrait" data-actor-sheet="${hero.id}" title="Ver ficha" src="public/art/portraits/${actorPortrait(hero)}-portrait-v01.webp" alt="Retrato de ${hero.name}">
-    <div class="hero-details"><b>${hero.name}</b><small>${actorLabel(hero)}</small>${hero.trait ? `<small class="hero-trait"><b>${hero.trait}.</b> ${TRAITS[hero.trait] || ''}</small>` : ''}<small>${nextInfo}</small><small>Alcoolismo · penalidade ${Math.floor(alcoholismOf(hero))}/100</small><small>Bolsa: ${format(purseOf(hero))} de ouro</small></div>
-    <div class="hero-xp">NÍV. ${hero.level}<i style="--xp:${hero.level >= HEIR_MAX_LEVEL ? 100 : Math.round((hero.xp || 0) / xpToNext(hero.level) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${hero.id}">FICHA</button></div>
+    ${actorPortraitHTML(hero, 'hero-portrait', true)}
+    <div class="hero-details"><b>${hero.name}</b><small>${actorLabel(hero)}</small>${actorMainHandHTML(hero)}${hero.trait ? `<small class="hero-trait"><b>${hero.trait}.</b> ${TRAITS[hero.trait] || ''}</small>` : ''}<small>${nextInfo}</small><small>Alcoolismo · penalidade ${Math.floor(alcoholismOf(hero))}/100</small><small>Bolsa: ${format(purseOf(hero))} de ouro</small></div>
+    <div class="hero-xp">NÍV. ${hero.level}<i style="--xp:${hero.level >= HEIR_MAX_LEVEL ? 100 : Math.round((hero.xp || 0) / xpToNext(hero.level) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${hero.id}">STATUS</button></div>
   </article>`;
 }
 
 function workerCard(worker) {
   return `<article class="hero-card worker-card">
-    <img class="hero-portrait" data-actor-sheet="${worker.id}" title="Ver ficha" src="public/art/portraits/${actorPortrait(worker)}-portrait-v01.webp" alt="Retrato de ${worker.name}">
-    <div class="hero-details"><b>${worker.name}</b><small>${actorLabel(worker)}</small><small>${homeOf(worker) ? 'Mora no casebre.' : 'Mora no casarão, como as dívidas.'} ${workplaceOf(worker) ? `Trabalha ${workPlaceName(workplaceOf(worker))}.` : 'Sem fazenda pra trabalhar.'}</small><small class="worker-task">Agora: ${peasantActivity(worker)}.</small><label class="prof-select"><span>Ofício</span><select data-profession="${worker.id}"${worker.profession === 'collector' ? ' disabled' : ''}><option value="">Nenhum</option>${worker.profession === 'fisher' ? '<option value="fisher" selected disabled>Pescador · atribuído no mapa</option>' : ''}${worker.profession === 'collector' ? '<option value="collector" selected>Cobrador · ofício da mansão</option>' : ''}${Object.entries(PROFESSIONS).filter(([id]) => id !== 'fisher' && id !== 'collector').map(([id, prof]) => `<option value="${id}"${worker.profession === id ? ' selected' : ''}>${isFemalePeasant(worker) ? prof.fem : prof.name}</option>`).join('')}</select></label>${worker.profession === 'hunter' ? `<div><button type="button" class="hut-upgrade" data-hunt-mode="${worker.id}" data-mode="auto" aria-pressed="${worker.huntMode === 'auto'}">Auto</button>
+    ${actorPortraitHTML(worker, 'hero-portrait', true)}
+    <div class="hero-details"><b>${worker.name}</b><small>${actorLabel(worker)}</small>${actorMainHandHTML(worker)}<small>${homeOf(worker) ? 'Mora no casebre.' : 'Mora no casarão, como as dívidas.'} ${workplaceOf(worker) ? `Trabalha ${workPlaceName(workplaceOf(worker))}.` : 'Sem fazenda pra trabalhar.'}</small><small class="worker-task">Agora: ${peasantActivity(worker)}.</small><label class="prof-select"><span>Ofício</span><select data-profession="${worker.id}"${worker.profession === 'collector' ? ' disabled' : ''}><option value="">Nenhum</option>${worker.profession === 'fisher' ? '<option value="fisher" selected disabled>Pescador · atribuído no mapa</option>' : ''}${worker.profession === 'collector' ? '<option value="collector" selected>Cobrador · ofício da mansão</option>' : ''}${Object.entries(PROFESSIONS).filter(([id]) => id !== 'fisher' && id !== 'collector').map(([id, prof]) => `<option value="${id}"${worker.profession === id ? ' selected' : ''}>${isFemalePeasant(worker) ? prof.fem : prof.name}</option>`).join('')}</select></label>${worker.profession === 'hunter' ? `<div><button type="button" class="hut-upgrade" data-hunt-mode="${worker.id}" data-mode="auto" aria-pressed="${worker.huntMode === 'auto'}">Auto</button>
     <button type="button" class="hut-upgrade" data-hunt-mode="${worker.id}" data-mode="manual" aria-pressed="${worker.huntMode !== 'auto'}">Manual</button>
     ${worker.huntMode === 'auto' ? '' : `<select data-hunt-prey="${worker.id}" aria-label="Alvo da caça"><option value="">Qualquer presa</option><option value="boar" ${worker.huntPrey === 'boar' ? 'selected' : ''}>Javali</option><option value="elk" ${worker.huntPrey === 'elk' ? 'selected' : ''}>Alce</option></select>`}</div>` : ''}<small>Bolsa: ${format(purseOf(worker))} de ouro</small></div>
-    <div class="hero-xp">NÍV. ${worker.level || 1}<i style="--xp:${(worker.level || 1) >= HEIR_MAX_LEVEL ? 100 : Math.round((worker.xp || 0) / xpToNext(worker.level || 1) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${worker.id}">FICHA</button><button type="button" data-worker-cart="${worker.id}" ${!worker.handcart && workshopHave('handcart') < 1 ? 'disabled' : ''}>${worker.handcart ? 'Guardar carrinho' : 'Atribuir carrinho'}</button></div>
+    <div class="hero-xp">NÍV. ${worker.level || 1}<i style="--xp:${(worker.level || 1) >= HEIR_MAX_LEVEL ? 100 : Math.round((worker.xp || 0) / xpToNext(worker.level || 1) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${worker.id}">STATUS</button><button type="button" data-worker-cart="${worker.id}" ${!worker.handcart && workshopHave('handcart') < 1 ? 'disabled' : ''}>${worker.handcart ? 'Guardar carrinho' : 'Atribuir carrinho'}</button></div>
   </article>`;
 }
 
@@ -3386,7 +3586,7 @@ function inspectorHTML() {
       ${selectedBuilding && isDone(selectedBuilding) && selectedBuilding.type === 'taxOffice' ? taxOfficeHTML(selectedBuilding) : ''}
       ${selectedBuilding && isDone(selectedBuilding) && militaryLevel(selectedBuilding) ? militaryIndustryHTML(selectedBuilding) : ''}
       ${selectedBuilding && isDone(selectedBuilding) ? siegeControlsHTML(selectedBuilding) : ''}
-      ${selectedHut && !selectedHut.big ? `<section class="inspector-section"><h4>Ampliação</h4><button type="button" class="hut-upgrade" data-hut-upgrade="${selectedHut.site}">Casebre Grande · +3 vagas · ${costHTML(HUT_UPGRADE.gold, HUT_UPGRADE.wood)}</button></section>` : ''}
+      ${selectedHut && !selectedHut.big ? `<section class="inspector-section"><h4>Ampliação</h4><button type="button" class="hut-upgrade" data-hut-upgrade="${selectedHut.site}">Casebre Grande · +3 vagas · ${costHTML(HUT_UPGRADE.gold, HUT_UPGRADE.wood, HUT_UPGRADE.stone)}</button></section>` : ''}
       ${selectedGuild ? guildBoxHTML(selectedGuild) : ''}
       ${selectedDepot ? depotBoxHTML(selectedDepot) : ''}
       ${selectedLumber ? lumberBoxHTML(selectedLumber) : ''}
@@ -3508,8 +3708,8 @@ function bindPanel(host) {
     if (select) buyMonarchItem(button.dataset.monarchBuy, select.value);
   }));
   $$('[data-armory-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeArmory(Number(button.dataset.armoryUpgrade))));
-  $('[data-tax-office-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeTaxOffice(Number(button.dataset.taxOfficeUpgrade))));
-  $('[data-producer-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeProducer(Number(button.dataset.producerUpgrade))));
+  $$('[data-tax-office-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeTaxOffice(Number(button.dataset.taxOfficeUpgrade))));
+  $$('[data-producer-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeProducer(Number(button.dataset.producerUpgrade))));
   $$('[data-depot-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeDepot(Number(button.dataset.depotUpgrade))));
   $$('[data-hut-upgrade]', host).forEach(button => button.addEventListener('click', () => upgradeHut(Number(button.dataset.hutUpgrade))));
   $$('[data-hunt-mode]', host).forEach(button => button.addEventListener('click', () => {
@@ -3529,6 +3729,15 @@ function bindPanel(host) {
     worker.handcart = !worker.handcart;
     renderPanel();
   }));
+  $$('[data-actor-locate]', host).forEach(portrait => {
+    const locate = () => focusActorOnMap(portrait.dataset.actorLocate);
+    portrait.addEventListener('click', locate);
+    portrait.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      locate();
+    });
+  });
   $$('[data-actor-sheet]', host).forEach(button => button.addEventListener('click', () => { menu.stack = []; showScreen('actor', { id: button.dataset.actorSheet }); }));
   $$('[data-demolish]', host).forEach(button => button.addEventListener('click', () => demolishBuilding(Number(button.dataset.demolish))));
   $$('[data-cancel-construction]', host).forEach(button => button.addEventListener('click', () => cancelConstruction(Number(button.dataset.cancelConstruction))));
@@ -3589,6 +3798,16 @@ function refreshBuildAffordability() {
 let panelTabShown = null;
 const panelScroll = {};
 const closedBuildCategories = new Set();
+function openRosterPanel(tabName) {
+  state.tab = tabName;
+  $$('.tab').forEach(tab => {
+    const active = tab.dataset.tab === tabName;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+  });
+  renderPanel();
+  $('#panel-view').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 function renderPanel() {
   const host = $('#panel-view');
   // A lista nunca volta pro começo sozinha: cada aba lembra onde estava.
@@ -3628,6 +3847,7 @@ function renderPanel() {
   }
   host.scrollTop = keepScroll;
   panelTabShown = state.tab;
+  document.body.classList.toggle('heroes-roster-open', state.tab === 'heroes');
   bindPanel(host);
   renderInspector();
 }
@@ -3806,6 +4026,13 @@ function cancelConstruction(site) {
 function demolishBuilding(site) {
   const building = state.buildings.find(item => item.site === site);
   if (!building) return;
+  if (building.type === 'hut') {
+    const capacityAfterDemolition = workerCapacity() - (building.big ? 5 : 2);
+    if (state.workers.filter(worker => worker.alive).length > capacityAfterDemolition) {
+      say('Não é possível demolir essa moradia: a vila ficaria com mais camponeses do que vagas. Libere as vagas primeiro.');
+      return;
+    }
+  }
   if (building.type === 'blacksmith' && (building.weaponOrder || building.weaponJob || building.repairJob)) { say('Finalize a entrega ou cancele a ordem antes de demolir o Blacksmith.'); return; }
   if (building.militaryJob) { say('Conclua ou cancele a ordem antes de demolir a oficina.'); return; }
   if (building.type === 'market' && marketUsed(building)) { say('Retire todo o estoque antes de demolir o Mercado.'); return; }
@@ -4239,10 +4466,8 @@ function freeWorkerHome() {
 }
 
 function populationArrival() {
-  const eligible = [];
-  if (state.workers.filter(worker => worker.alive).length < workerCapacity() && freeWorkerHome()) eligible.push(workerArrival);
-  if (state.heroes.filter(hero => hero.alive).length < heroCapacity()) eligible.push(heroArrival);
-  if (eligible.length) pick(eligible)();
+  workerArrival();
+  if (state.playSeconds % 7200 === 0) heroArrival();
 }
 
 function workerArrival() {
@@ -4283,7 +4508,7 @@ function heroArrival() {
   return hero;
 }
 
-const HUT_UPGRADE = { gold: 180, wood: 12 };
+const HUT_UPGRADE = { gold: 45, wood: 36, stone: 27 };
 // Melhoria vira obra: o ouro e a madeira saem na hora, e o efeito só vale quando o camponês termina.
 function startUpgrade(building, upgrade, label) {
   building.pendingUpgrade = upgrade;
@@ -4350,9 +4575,10 @@ function finishUpgrade(building, upgrade) {
 function upgradeHut(site) {
   const hut = state.buildings.find(building => building.site === site && building.type === 'hut');
   if (!hut || hut.big || hut.underConstruction) return;
-  if (state.gold < HUT_UPGRADE.gold || state.timber < HUT_UPGRADE.wood) { say('Falta ouro ou madeira. Os camponeses vão continuar apertados.'); return; }
+  if (state.gold < HUT_UPGRADE.gold || state.timber < HUT_UPGRADE.wood || state.stone < HUT_UPGRADE.stone) { say('Falta ouro ou material de construção. Os camponeses vão continuar apertados.'); return; }
   state.gold -= HUT_UPGRADE.gold;
   state.timber -= HUT_UPGRADE.wood;
+  state.stone -= HUT_UPGRADE.stone;
   startUpgrade(hut, { kind: 'hut' }, 'Ampliação para Casebre Grande');
 }
 
@@ -4390,7 +4616,7 @@ function ensureFarmWorkers() {
 }
 
 // Nível 1 traz um morador da guilda; níveis 2 e 3 trazem heróis extras, alojados em taverna/hotel.
-const GUILD_UPGRADES = [{ gold: 240, wood: 16 }, { gold: 360, wood: 24 }];
+const GUILD_UPGRADES = [{ gold: 60, wood: 48, stone: 36 }, { gold: 90, wood: 72, stone: 54 }];
 const guildTier = guild => guild.tier ?? (guild.branch ? 2 : 0);
 const guildForm = guild => guild.guildForm || GUILD_FORMS[guild.type][guildTier(guild)][0];
 function upgradeGuild(site, branch) {
@@ -4402,9 +4628,10 @@ function upgradeGuild(site, branch) {
   if (!cost) return;
   const forms = GUILD_FORMS[def.id];
   if (forms ? !forms[tier + 1]?.includes(branch) : tier === 1 && !PRESTIGE[def.heroClass]?.includes(branch)) return;
-  if (state.gold < cost.gold || state.timber < cost.wood) { say('Falta ouro ou madeira. Os heróis vão continuar dividindo beliche.'); return; }
+  if (state.gold < cost.gold || state.timber < cost.wood || state.stone < cost.stone) { say('Falta ouro ou material de construção. Os heróis vão continuar dividindo beliche.'); return; }
   state.gold -= cost.gold;
   state.timber -= cost.wood;
+  state.stone -= cost.stone;
   startUpgrade(guild, { kind: 'guild', tier, branch }, `${def.name} para o nível ${tier + 2}`);
 }
 
@@ -4419,10 +4646,10 @@ function guildBoxHTML(guild) {
     const next = forms[tier + 1];
     actions = `<p class="storage-items">Nível ${tier + 1} · ${guildForm(guild)}</p>`;
     if (next) actions += `<div class="guild-branches">${next.map(form =>
-      `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" data-branch="${form}">Nível ${tier + 2} · ${form} · ${costHTML(cost.gold, cost.wood)}</button>`
+      `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" data-branch="${form}">Nível ${tier + 2} · ${form} · ${costHTML(cost.gold, cost.wood, cost.stone)}</button>`
     ).join('')}</div>`;
-  } else if (tier === 0) actions = `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}">Nível 2 · ${costHTML(cost.gold, cost.wood)}</button>`;
-  else if (tier === 1) actions = `<p class="storage-items">Nível 3: escolha a especialização (${costHTML(cost.gold, cost.wood)}).</p>
+  } else if (tier === 0) actions = `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}">Nível 2 · ${costHTML(cost.gold, cost.wood, cost.stone)}</button>`;
+  else if (tier === 1) actions = `<p class="storage-items">Nível 3: escolha a especialização (${costHTML(cost.gold, cost.wood, cost.stone)}).</p>
       <div class="guild-branches">${PRESTIGE[def.heroClass].map(path => `<button type="button" class="hut-upgrade" data-guild-upgrade="${guild.site}" data-branch="${path}">${path}</button>`).join('')}</div>`;
   else actions = `<p class="storage-items">Especializada em ${guild.branch}. Guilda no nível máximo.</p>`;
   return `<section class="inspector-section"><h4>Melhoria · ${members}/1 morador na guilda</h4>${actions}</section>`;
@@ -4733,8 +4960,18 @@ function animateActors(now) {
       actor.facing = dy < -0.2 ? 'back' : dy > 0.2 ? 'front' : (actor.facing || 'front');
       if (Math.abs(dx) > 0.2) actor.side = dx < 0 ? 'left' : 'right';
       const step = Math.min(distance, remaining);
-      actor.x += dx / distance * step;
-      actor.y += dy / distance * step;
+      const nextX = actor.x + dx / distance * step;
+      const nextY = actor.y + dy / distance * step;
+      if (movementBlockedByWater(actor, actor.x, actor.y, nextX, nextY)) {
+        actor.route = [];
+        actor.finalPoint = null;
+        actor.goal = null;
+        if (actor.profession === 'fisher') actor.fishingBank = null;
+        actor.wait = 0.5;
+        break;
+      }
+      actor.x = nextX;
+      actor.y = nextY;
       remaining -= step;
       moved = true;
       if (waypoint !== node) break;
@@ -4820,7 +5057,10 @@ function tick() {
   accrueTavern(state.speed);
   if (state.minutes % 60 < state.speed) { shopAtArmory(); shopAtMarket(); processDemands(); processBounties(); flushTavernSales(); ensureCollector(); syncTaxOffices(); }
   state.minutes += state.speed;
-  if (Math.floor(state.minutes / 60) > Math.floor((state.minutes - state.speed) / 60)) populationArrival();
+  const elapsedHours = Math.floor(state.minutes / 60) - Math.floor((state.minutes - state.speed) / 60);
+  if (elapsedHours > 0) FISHING_SPOTS.forEach(spot => { state.fishingStock[spot.site] = Math.min(FISHING_CAP, fishingStock(spot) + FISHING_RECOVERY * elapsedHours); });
+  if (selectedFishingSpotId != null && !document.querySelector('#site-inspector :is(button:hover, button:focus)')) renderInspector();
+  if (state.playSeconds % 3600 === 0) populationArrival();
   if (Math.floor(state.minutes / 1440) > Math.floor((state.minutes - state.speed) / 1440)) {
     gainHeirXp(40); collectTaxes();
     if (Math.floor(state.minutes / 1440) % DAYS_PER_WEEK === 0) applyWeeklyMood();
@@ -4976,7 +5216,7 @@ function BASIC_EQUIPMENT() { return { scepter: 'pineScepter', orb: 'crackedOrb',
 // Equipamento do monarca: 10 tiers por peça. O tier 1 é o que veio com a herança; os outros
 // se compram no Arsenal com o ouro do cofre, e cada nível do Arsenal libera até o seu tierCap.
 // Bônus: atributo principal +2 por tier acima do 1, secundário +1 (Mana vale o triplo).
-const MONARCH_TIER_PRICE = [0, 25, 50, 90, 140, 210, 300, 420, 580, 800];
+const MONARCH_TIER_PRICE = [0, 18, 35, 65, 100, 150, 210, 295, 405, 560];
 const MONARCH_LINES = {
   scepter: { icon: 'scepter', main: 'MAG', side: 'CHA', items: [
     ['ashScepter', 'Cetro de Freixo', 'Não é ouro, mas aponta igual.'],
@@ -5096,9 +5336,6 @@ const HERO_SLOTS = [
   { slot: 'ring1', label: 'Anel I' }, { slot: 'ring2', label: 'Anel II' },
 ];
 // Usa as classes de arte que existem no catálogo de equipamento.
-const HERO_WEAPON_ART_CLASS = {
-  Warrior: 'warrior', Archer: 'hunter', 'Black Mage': 'mage', Conjurer: 'mage', Healer: 'priest',
-};
 const PEASANT_SLOTS = [
   { slot: 'tool', label: 'Ferramenta' }, { slot: 'clothes', label: 'Roupa' }, { slot: 'hands', label: 'Mãos' }, { slot: 'feet', label: 'Pés' }, { slot: 'head', label: 'Cabeça' },
 ];
@@ -5178,6 +5415,7 @@ const GEAR = {
   strawHat: { name: 'Chapéu de Palha', slot: 'head', tier: 1, price: 2, peasant: true, bonus: { work: 0.05 }, about: 'Protege do sol. Sol aqui é raro.' },
   wideHat: { name: 'Chapéu de Abas Largas', slot: 'head', tier: 2, price: 6, peasant: true, prof: ['farmer'], bonus: { work: 0.1 }, about: 'Sombra pra ele e pra quem estiver do lado.' },
 };
+Object.values(GEAR).forEach(item => { if (item.price > 0) item.price = Math.max(1, Math.ceil(item.price * 0.7)); });
 const METAL_WEAPON_PROFILE = {
   copper: { structural: .75, wear: 1.6 }, arsenicalCopper: { structural: .9, wear: 1.25 }, bronze: { structural: 1, wear: 1 },
   iron: { structural: 1.1, wear: 1.2 }, castIron: { structural: .85, wear: 1 }, steel: { structural: 1.25, wear: .7 },
@@ -5219,15 +5457,15 @@ const NAMED_WEAPON_RECIPES = [
   ['woodenMace', 1, 40, { timber: 2 }],
   ['blessedMace', 1, 100, { ashBlank: 1, iron: .80, silver: .05, leatherStrip: 1, ember: 1, charcoal: .20 }],
   ['reliquaryMace', 2, 155, { ashBlank: 1, steel: 1.20, silver: .10, recoveredBone: 1, leatherStrip: 2, ember: 2, charcoal: .35 }],
-].map(([key, minLevel, work, needs]) => ({ key, minLevel, work, needs, definition: GEAR[key], name: GEAR[key].name, price: GEAR[key].price }));
-const WEAPON_BASE_PRICES = { dagger: 10, spear: 18, axe: 28, mace: 24, sword: 35 };
-const WEAPON_PRICE_ADJUSTMENT = { copper: 0, arsenicalCopper: 2, bronze: 4, iron: 8, castIron: 12, steelEdge: 20, steel: 28, crucibleSteel: 45, meteoriteIron: 55 };
+].map(([key, minLevel, work, needs]) => ({ key, minLevel, work, needs, definition: { ...GEAR[key], iconKey: key }, name: GEAR[key].name, price: GEAR[key].price }));
+const WEAPON_BASE_PRICES = { dagger: 7, spear: 13, axe: 20, mace: 17, sword: 25 };
+const WEAPON_PRICE_ADJUSTMENT = { copper: 0, arsenicalCopper: 2, bronze: 3, iron: 6, castIron: 9, steelEdge: 14, steel: 20, crucibleSteel: 32, meteoriteIron: 39 };
 const WEAPON_WORK = { dagger: 60, spear: 60, axe: 90, mace: 90, sword: 120 };
 const VARIANT_WEAPON_RECIPES = WEAPON_PATTERNS.flatMap(pattern => Object.keys(pattern.designs).map(material => {
   const design = weaponDesign(pattern.id, material);
   const price = WEAPON_BASE_PRICES[pattern.id] + WEAPON_PRICE_ADJUSTMENT[material];
   return { ...design, key: `variant:${pattern.id}:${material}`, minLevel: weaponMinLevel(material), work: WEAPON_WORK[pattern.id], price,
-    definition: { ...GEAR[pattern.base], name: design.name, crafted: true, tier: 1, price, classes: pattern.classes } };
+    definition: { ...GEAR[pattern.base], iconKey: `pattern:${pattern.id}`, name: design.name, crafted: true, tier: 1, price, classes: pattern.classes } };
 }));
 const WEAPON_RECIPES = [...NAMED_WEAPON_RECIPES, ...VARIANT_WEAPON_RECIPES];
 const WEAPON_CATALOG = new Map(WEAPON_RECIPES.map(recipe => [recipe.key, recipe]));
@@ -5245,7 +5483,7 @@ for (const recipe of MILITARY_RECIPES.woodworking.filter(item => item.weapon || 
     const stat = Object.hasOwn(bonus, 'mag') ? 'mag' : 'atk';
     bonus[stat] = (bonus[stat] || 0) + Math.max(0, recipe.level - definition.tier) + (recipe.work >= 70 ? 1 : 0);
   }
-  const price = Math.max(definition.price, Math.ceil(recipe.work / 2));
+  const price = Math.max(definition.price, Math.ceil(recipe.work * 0.35));
   WEAPON_CATALOG.set(recipe.id, {
     key: recipe.id, name: recipe.name, price, work: recipe.work, minLevel: recipe.level, needs: recipe.needs,
     definition: { ...definition, tier: recipe.level, name: recipe.name, price, bonus },
@@ -5265,14 +5503,56 @@ const weaponUnderRepair = id => state.buildings.some(building => building.repair
 const craftedWeapon = id => (state.craftedWeapons || []).find(item => item.id === id) || null;
 const gearItem = id => GEAR[id] || craftedWeapon(id);
 const STARTER_WEAPON = { MoonWarden: 'warAxe', Vanguard: 'valeGreatsword', Warrior: 'rustySword', Archer: 'shortBow', Lancer: 'ashSpear', 'Black Mage': 'crookedStaff', Conjurer: 'scorchedTome', Healer: 'woodenMace' };
-function gearIconHTML(item, actorClass, label = '') {
-  const artClass = HERO_WEAPON_ART_CLASS[actorClass];
-  const tier = Number(item?.tier);
-  if (item?.slot === 'weapon' && !item.crafted && artClass && tier >= 1 && tier <= 10) {
-    const path = `public/art/equipment/icon-${artClass}-t${String(tier).padStart(2, '0')}-mainHand-photo-v01.png`;
-    return `<span class="gear-icon weapon-icon"><img src="${path}" alt="" aria-hidden="true" decoding="async"></span>`;
+const EQUIPMENT_ITEM_ICONS = {
+  rustySword: 'public/art/equipment/icon-warrior-t01-mainHand-photo-v01.png',
+  warAxe: 'public/art/equipment/icon-warrior-t02-mainHand-photo-v01.png',
+  valeGreatsword: 'public/art/equipment/icon-warrior-t03-mainHand-photo-v01.png',
+  shortBow: 'public/art/equipment/icon-hunter-t01-mainHand-photo-v01.png',
+  yewBow: 'public/art/equipment/icon-hunter-t02-mainHand-photo-v01.png',
+  hornBow: 'public/art/equipment/item-icons-v01/hornBow-photo-v01.png',
+  ashSpear: 'public/art/equipment/item-icons-v01/ashSpear-photo-v01.png',
+  halberd: 'public/art/equipment/item-icons-v01/halberd-photo-v01.png',
+  knightLance: 'public/art/equipment/item-icons-v01/knightLance-photo-v01.png',
+  crookedStaff: 'public/art/equipment/icon-mage-t01-mainHand-photo-v01.png',
+  scorchedTome: 'public/art/equipment/item-icons-v01/scorchedTome-photo-v01.png',
+  ebonyStaff: 'public/art/equipment/icon-mage-t02-mainHand-photo-v01.png',
+  skullStaff: 'public/art/equipment/item-icons-v01/skullStaff-photo-v01.png',
+  woodenMace: 'public/art/equipment/icon-priest-t01-mainHand-photo-v01.png',
+  blessedMace: 'public/art/equipment/item-icons-v01/blessedMace-photo-v01.png',
+  reliquaryMace: 'public/art/equipment/icon-priest-t03-mainHand-photo-v01.png',
+  oldSickle: 'public/art/equipment/item-icons-v01/oldSickle-photo-v01.png',
+  ironHoe: 'public/art/equipment/item-icons-v01/ironHoe-photo-v01.png',
+  greatScythe: 'public/art/equipment/item-icons-v01/greatScythe-photo-v01.png',
+  flourSieve: 'public/art/equipment/item-icons-v01/flourSieve-photo-v01.png',
+  millPick: 'public/art/equipment/item-icons-v01/millPick-photo-v01.png',
+  millwrightKit: 'public/art/equipment/item-icons-v01/millwrightKit-photo-v02.png',
+  hatchet: 'public/art/equipment/item-icons-v01/hatchet-photo-v01.png',
+  woodAxe: 'public/art/equipment/item-icons-v01/woodAxe-photo-v01.png',
+  bowSaw: 'public/art/equipment/item-icons-v01/bowSaw-photo-v01.png',
+  mallet: 'public/art/equipment/item-icons-v01/mallet-photo-v01.png',
+  masonHammer: 'public/art/equipment/item-icons-v01/masonHammer-photo-v01.png',
+  smithTools: 'public/art/equipment/item-icons-v01/smithTools-photo-v01.png',
+  'pattern:dagger': 'public/art/equipment/item-icons-v01/craftedDagger-photo-v01.png',
+  'pattern:spear': 'public/art/equipment/item-icons-v01/ashSpear-photo-v01.png',
+  'pattern:axe': 'public/art/equipment/icon-warrior-t02-mainHand-photo-v01.png',
+  'pattern:mace': 'public/art/equipment/item-icons-v01/blessedMace-photo-v01.png',
+  'pattern:sword': 'public/art/equipment/icon-warrior-t01-mainHand-photo-v01.png',
+};
+function gearIconHTML(item, label = '', itemKey = '') {
+  const key = EQUIPMENT_ITEM_ICONS[itemKey] ? itemKey : item?.iconKey || (item?.patternId ? `pattern:${item.patternId}` : '');
+  const path = EQUIPMENT_ITEM_ICONS[key];
+  if (path && ['weapon', 'tool'].includes(item?.slot)) {
+    return `<span class="gear-icon weapon-icon"><img src="${path}" alt="" aria-hidden="true" decoding="async" loading="lazy"></span>`;
   }
   return `<span class="gear-icon" aria-hidden="true">${label[0] || '·'}</span>`;
+}
+function actorMainHandHTML(actor) {
+  const peasant = actor.className === 'Peasant';
+  const slot = peasant ? 'tool' : 'weapon';
+  const itemId = gearOf(actor)[slot];
+  const item = gearItem(itemId);
+  const label = peasant ? 'Ferramenta' : 'Arma';
+  return `<div class="hero-equipped">${item ? `${gearIconHTML(item, label, itemId)}<span>${label}: ${item.name}</span>` : `<small>${label}: vazia</small>`}</div>`;
 }
 // Cada herói compra na ordem que acha mais importante. A mania muda a ordem.
 const SLOT_PRIORITY = {
@@ -5321,7 +5601,7 @@ TRADES.forEach(trade => trade.actions.forEach(action => { if (action.hook) TRADE
 const BUILD_ACTION_SECONDS = 3;
 const hookOf = building => building.type === 'farm' ? `farm:${farmType(building.produce).id}` : building.type;
 // Rendimento extra que só vale num tipo de trabalho.
-const HOOK_YIELD = { lumber: 'woodYieldPercent', quarry: 'oreYieldPercent', mine: 'oreYieldPercent', 'farm:wheat': 'harvestYieldPercent', 'farm:garlic': 'harvestYieldPercent', 'farm:bacon': 'animalYieldPercent', 'farm:milk': 'animalYieldPercent', 'farm:eggs': 'animalYieldPercent' };
+const HOOK_YIELD = { lumber: 'woodYieldPercent', quarry: 'oreYieldPercent', mine: 'oreYieldPercent', 'farm:wheat': 'harvestYieldPercent', 'farm:garlic': 'harvestYieldPercent', 'farm:onion': 'harvestYieldPercent', 'farm:bacon': 'animalYieldPercent', 'farm:milk': 'animalYieldPercent', 'farm:eggs': 'animalYieldPercent' };
 const EFFECT_LABELS = {
   workSpeedPercent: 'trabalho', yieldPercent: 'rendimento', toolDurabilityPercent: 'durabilidade da ferramenta', doubleYieldChancePercent: 'chance de render dobrado',
   growthTimePercent: 'tempo de crescimento', harvestYieldPercent: 'colheita', animalYieldPercent: 'rendimento dos animais', animalDeathChancePercent: 'chance de animal morrer',
@@ -5496,6 +5776,7 @@ function assignFisherToSpot(workerId, spotId) {
   worker.wait = 0;
   worker.actionTime = 0;
   worker.actionClock = 0;
+  worker.fishingBank = null;
   say(`${worker.name} foi atribuído ao ${spot.name}. Está indo pescar.`);
   renderHeroes();
   renderFishingSpots();
@@ -5508,6 +5789,7 @@ function removeFisherFromSpot(workerId) {
   worker.jobSite = null;
   worker.workplace = null;
   worker.workTrip = false;
+  worker.fishingBank = null;
   worker.route = [];
   worker.goal = null;
   worker.finalPoint = null;
@@ -5519,10 +5801,10 @@ function removeFisherFromSpot(workerId) {
 }
 const PEASANT_PRIORITY = ['tool', 'clothes', 'feet', 'hands', 'head'];
 const ARMORY_LEVELS = [
-  { gold: 0, wood: 0, tierCap: 3 },
-  { gold: 240, wood: 16, tierCap: 5 },
-  { gold: 400, wood: 28, tierCap: 8 },
-  { gold: 720, wood: 48, tierCap: 10 },
+  { gold: 0, wood: 0, stone: 0, tierCap: 3 },
+  { gold: 60, wood: 48, stone: 36, tierCap: 5 },
+  { gold: 100, wood: 84, stone: 63, tierCap: 8 },
+  { gold: 180, wood: 144, stone: 108, tierCap: 10 },
 ];
 const BONUS_LABELS = { atk: 'Ataque', def: 'Defesa', mag: 'Magia', hp: 'Vida', dex: 'Destreza', work: 'trabalho', carry: 'carga', speed: 'passo', build: 'obra' };
 const gearOf = actor => actor.gear || (actor.gear = {});
@@ -5865,9 +6147,10 @@ function upgradeArmory(site) {
   const nextIndex = (armory?.level || 0) + 1;
   const next = armory && ARMORY_LEVELS[nextIndex];
   if (!next) return;
-  if (state.gold < next.gold || state.timber < next.wood) { say('Falta ouro ou madeira. O ferreiro vai continuar vendendo sucata.'); return; }
+  if (state.gold < next.gold || state.timber < next.wood || state.stone < next.stone) { say('Falta ouro ou material de construção. O ferreiro vai continuar vendendo sucata.'); return; }
   state.gold -= next.gold;
   state.timber -= next.wood;
+  state.stone -= next.stone;
   armory.armoryUpgradeTo = nextIndex + 1;
   armory.underConstruction = true;
   armory.progress = 0;
@@ -5881,22 +6164,24 @@ function armoryBoxHTML(armory) {
   const level = armory.level || 0;
   const next = ARMORY_LEVELS[level + 1];
   const tierCap = ARMORY_LEVELS[Math.min(level, ARMORY_LEVELS.length - 1)].tierCap;
-  const forSale = [...Object.values(GEAR).filter(item => item.slot !== 'weapon'),
-    ...[...WEAPON_CATALOG.values()].map(recipe => recipe.definition)].filter(item => item.tier <= tierCap).sort((a, b) => (a.peasant === b.peasant ? 0 : a.peasant ? 1 : -1) || a.tier - b.tier || a.price - b.price);
+  const forSale = [
+    ...Object.entries(GEAR).filter(([, item]) => item.slot !== 'weapon').map(([iconKey, item]) => ({ item, iconKey, recipeKey: null })),
+    ...[...WEAPON_CATALOG.entries()].map(([recipeKey, recipe]) => ({ item: recipe.definition, iconKey: recipe.definition.iconKey || recipeKey, recipeKey })),
+  ].filter(({ item }) => item.tier <= tierCap).sort((a, b) => (a.item.peasant === b.item.peasant ? 0 : a.item.peasant ? 1 : -1) || a.item.tier - b.item.tier || a.item.price - b.item.price);
   const saleStock = weaponStockForSale();
   return `<section class="inspector-section"><h4>Melhoria</h4>
-    ${next ? `<button type="button" class="hut-upgrade" data-armory-upgrade="${armory.site}">Nível ${level + 2} · até tier ${next.tierCap} · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. O ferreiro já não dorme.</p>'}</section>
+    ${next ? `<button type="button" class="hut-upgrade" data-armory-upgrade="${armory.site}">Nível ${level + 2} · até tier ${next.tierCap} · ${costHTML(next.gold, next.wood, next.stone)}</button>` : '<p class="storage-items">Nível máximo. O ferreiro já não dorme.</p>'}</section>
     <section class="inspector-section"><h4>Loja do monarca · até tier ${tierCap}</h4>${monarchShopHTML(tierCap)}</section>
     <details class="inspector-section"><summary>À venda para heróis e camponeses · ${forSale.length} itens</summary>
     <p class="storage-items">Heróis e camponeses compram sozinhos, com o próprio ouro. As armas vêm do estoque dos Mercados abertos. O ouro vai para o dono da mercadoria.</p>
-    <ul class="shop-list">${forSale.map(item => `<li>${gearIconHTML(item, item.classes?.find(className => HERO_WEAPON_ART_CLASS[className]), item.name)}<span><b>${item.name}</b><small>${item.peasant ? (item.prof ? item.prof.map(id => PROFESSIONS[id].name).join(', ') : 'Qualquer camponês') : item.classes ? item.classes.join(', ') : 'Qualquer herói'} · ${bonusText(item.bonus)}${item.slot === 'weapon' ? ` · ${saleStock.filter(stock => WEAPON_CATALOG.get(stock.entry.key)?.definition === item).length || 'Sem estoque'}` : ''}</small></span><em>${item.price}</em></li>`).join('')}</ul></details>`;
+    <ul class="shop-list">${forSale.map(({ item, iconKey, recipeKey }) => `<li>${gearIconHTML(item, item.name, iconKey)}<span><b>${item.name}</b><small>${item.peasant ? (item.prof ? item.prof.map(id => PROFESSIONS[id].name).join(', ') : 'Qualquer camponês') : item.classes ? item.classes.join(', ') : 'Qualquer herói'} · ${bonusText(item.bonus)}${item.slot === 'weapon' ? ` · ${saleStock.filter(stock => stock.entry.key === recipeKey).length || 'Sem estoque'}` : ''}</small></span><em>${item.price}</em></li>`).join('')}</ul></details>`;
 }
 function gearHTML(actor) {
   if (actor.className === 'Bandit' || actor.className === 'Monster') return '';
   return `<div class="sheet-section-label">EQUIPAMENTO</div><div class="equip-grid">${slotsFor(actor).map(({ slot, label }) => {
     const item = gearItem(gearOf(actor)[slot]);
     const condition = item?.crafted ? `<em>Estrutura ${formatMass(item.structuralCondition)}/${formatMass(item.structuralMax)}${item.sharp ? ` · gume ${formatMass(item.edgeCondition)}/${formatMass(item.edgeMax)}` : ''}</em>` : '';
-    return `<div class="equip-slot${item ? '' : ' empty'}">${gearIconHTML(item, actor.className, label)}<span><small>${label}</small><b>${item ? item.name : 'Vazio'}</b><em>${item ? `${bonusText(item.bonus)}. ${item.about}` : ''}</em>${condition}</span></div>`;
+    return `<div class="equip-slot${item ? '' : ' empty'}">${gearIconHTML(item, label, gearOf(actor)[slot])}<span><small>${label}</small><b>${item ? item.name : 'Vazio'}</b><em>${item ? `${bonusText(item.bonus)}. ${item.about}` : ''}</em>${condition}</span></div>`;
   }).join('')}</div>${actor.className !== 'Peasant' ? craftedWeaponOptionsHTML(actor) : ''}`;
 }
 function craftedWeaponOptionsHTML(actor) {
@@ -5949,8 +6234,8 @@ const EMBER_CLASSES = {
   necromancer: statTable(5, [24, 3, 14, 4, 7]),
   bishop: statTable(5, [30, 5, 11, 6, 7]),
   cleric: statTable(5, [36, 9, 8, 9, 5]),
-  peasant1: statTable(4, [24, 4, 0, 4, 2]),
-  villagerF1: statTable(4, [22, 3, 0, 3, 5]),
+  peasant1: statTable(4, [30, 6, 0, 5, 3]),
+  villagerF1: statTable(4, [28, 5, 0, 4, 5]),
   captain: statTable(4, [60, 11, 0, 7, 4]),
   rogue: statTable(6, [25, 8, 0, 3, 5]),
   brigandCrossbowman: statTable(3, [20, 9, 0, 2, 6]),
@@ -6065,6 +6350,7 @@ const FOOD_TYPES = [
   { id: 'flour', name: 'Farinha', art: 'mill-body', mood: 2, feeds: 1, note: 'Sai do moinho. Eles que cozinhem em casa.' },
   { id: 'wheat', name: 'Trigo', art: 'farm-wheat', raw: true, feeds: 0, note: 'Cru não serve pra nada. Vai pro moinho virar farinha.' },
   { id: 'garlic', name: 'Alho', art: 'farm-garlic', mood: 1, feeds: 1, note: 'Afasta strigoi. E todo o resto também.' },
+  { id: 'onion', name: 'Cebolas', art: 'farm-onion', icon: 'apothecary-photoreal-v01/icon-onion.png', mood: 1, feeds: 1, note: 'Colhida na fazenda e usada em receitas da padaria.' },
   { id: 'pork', name: 'Suínos', art: 'farm-bacon', raw: true, feeds: 0, note: 'Matéria-prima do açougue.' },
   { id: 'chicken', name: 'Carne de frango', art: 'farm-eggs', raw: true, feeds: 0, note: 'Produção secundária do galinheiro; matéria-prima do açougue.' },
   { id: 'beef', name: 'Carne de vaca', art: 'farm-milk', raw: true, feeds: 0, note: 'Produção secundária da fazenda de leite; matéria-prima do açougue.' },
@@ -6087,6 +6373,9 @@ const FOOD_TYPES = [
   { id: 'roastElk', name: 'Alce Assado', art: 'roast-elk', icon: 'roast-elk-v01.png', meat: true, mood: 2, feeds: 2, note: 'Carne de alce assada no açougue.' },
   { id: 'elkStew', name: 'Ensopado de Alce', art: 'elk-stew', icon: 'elk-stew-v01.png', meat: true, mood: 3, feeds: 4, note: 'Ensopado de alce com leite e batatas, feito no açougue.' },
   { id: 'garlicFlatbread', name: 'Pão achatado de alho', icon: 'icon-food-garlic-flatbread-photo-v01.webp', baked: true, mood: 2, feeds: 1, note: 'Farinha e alho assados juntos na padaria.' },
+  { id: 'onionFlatbread', name: 'Pão de cebola', icon: 'onion-industry-v01/onion-flatbread.png', baked: true, mood: 2, feeds: 1, note: 'Pão rústico assado com cebola.' },
+  { id: 'onionTart', name: 'Torta de cebola e queijo', icon: 'onion-industry-v01/onion-tart.png', baked: true, mood: 3, feeds: 3, note: 'Cebolas e queijo assados em massa com ovos.' },
+  { id: 'onionBaconPie', name: 'Torta de cebola e bacon', icon: 'onion-industry-v01/onion-bacon-pie.png', baked: true, meat: true, mood: 4, feeds: 4, note: 'Torta de cebola com bacon e leite.' },
   { id: 'potatoLoaf', name: 'Pão de batata', icon: 'icon-food-potato-loaf-photo-v01.webp', baked: true, mood: 2, feeds: 1, note: 'Pão reforçado com batata e leite.' },
   { id: 'vegetablePie', name: 'Torta de hortaliças', icon: 'icon-food-vegetable-pie-photo-v01.webp', baked: true, mood: 3, feeds: 3, note: 'Farinha, ovos, batata e cenoura assados.' },
   { id: 'tomatoTart', name: 'Torta de tomate e queijo', icon: 'icon-food-tomato-tart-photo-v01.webp', baked: true, mood: 3, feeds: 3, note: 'Tomate e queijo numa massa de ovos.' },
@@ -6159,7 +6448,7 @@ const emptyFood = () => Object.fromEntries(FOOD_TYPES.map(food => [food.id, 0]))
 // Guardam comida, armas e itens; madeira e ouro ficam fora.
 const MANOR_STORAGE = 500;
 const STORAGE_LEVELS = [
-  { cap: 30, gold: 0, wood: 0 }, { cap: 45, gold: 160, wood: 12 }, { cap: 70, gold: 280, wood: 20 }, { cap: 100, gold: 440, wood: 32 },
+  { cap: 30, gold: 0, wood: 0, stone: 0 }, { cap: 45, gold: 40, wood: 36, stone: 27 }, { cap: 70, gold: 70, wood: 60, stone: 45 }, { cap: 100, gold: 110, wood: 96, stone: 72 },
 ];
 const depots = () => state.buildings.filter(building => building.type === 'depot' && isDone(building));
 const depotCap = depot => STORAGE_LEVELS[depot.level || 0].cap;
@@ -6175,16 +6464,17 @@ function upgradeDepot(site) {
   const depot = state.buildings.find(building => building.site === site && building.type === 'depot');
   const next = depot && STORAGE_LEVELS[(depot.level || 0) + 1];
   if (!next || depot.underConstruction) return;
-  if (state.gold < next.gold || state.timber < next.wood) { say('Falta ouro ou madeira. A comida vai continuar empilhada no corredor.'); return; }
+  if (state.gold < next.gold || state.timber < next.wood || state.stone < next.stone) { say('Falta ouro ou material de construção. A comida vai continuar empilhada no corredor.'); return; }
   state.gold -= next.gold;
   state.timber -= next.wood;
+  state.stone -= next.stone;
   startUpgrade(depot, { kind: 'depot' }, `Ampliação do Depósito para ${next.cap} unidades`);
 }
 function depotBoxHTML(depot) {
   const level = depot.level || 0;
   const next = STORAGE_LEVELS[level + 1];
   return `<section class="inspector-section"><h4>Ampliação</h4>
-    ${next ? `<button type="button" class="hut-upgrade" data-depot-upgrade="${depot.site}">${next.cap} unidades · ${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Tamanho máximo. Agora só falta ter o que guardar.</p>'}</section>`;
+    ${next ? `<button type="button" class="hut-upgrade" data-depot-upgrade="${depot.site}">${next.cap} unidades · ${costHTML(next.gold, next.wood, next.stone)}</button>` : '<p class="storage-items">Tamanho máximo. Agora só falta ter o que guardar.</p>'}</section>`;
 }
 const totalFood = () => FOOD_TYPES.reduce((sum, food) => sum + (state.food?.[food.id] || 0), 0);
 const eaters = () => state.workers.filter(worker => worker.alive).length;
@@ -6400,27 +6690,48 @@ function fishingRoutine(actor, spot) {
     if ((actor.mapId || 'city') === 'wilds') {
       actor.task = 'Voltando com peixe do riacho'; travelToMap(actor, 'city', mapSet); return;
     }
-    const store = nearestStorage({ x: 42, y: 39 });
+    const store = nearestStorage(actor);
     if (isAt(actor, store)) { deliverLoad(actor); actor.task = 'Entregou o peixe'; }
     else { actor.task = 'Levando o peixe ao depósito'; walkTo(actor, store); return; }
   }
-  if ((actor.mapId || 'city') !== 'wilds') { actor.task = 'Indo pescar no riacho das Wilds'; travelToMap(actor, 'wilds', mapSet); return; }
+  if (fishingStock(spot) < 1) {
+    const alternatives = FISHING_SPOTS.filter(other => other.site !== spot.site && other.mapSet === mapSet && fishingStock(other) >= 1);
+    const distance = other => (actor.mapId || 'city') === other.mapId ? Math.hypot(actor.x - other.x, (actor.y - other.y) * Y_TO_X_SCALE) : taskDistance(actor, other);
+    alternatives.sort((a, b) => distance(a) - distance(b));
+    if (!alternatives.length) { actor.task = 'Esperando os pontos de pesca recuperarem peixes'; actor.wait = 3; return; }
+    spot = alternatives[0];
+    actor.jobSite = spot.site;
+    actor.fishingBank = null;
+    actor.fishingProgress = 0;
+    renderFishingSpots();
+  }
+  if ((actor.mapId || 'city') !== spot.mapId) { actor.task = `Indo a ${spot.name}`; travelToMap(actor, spot.mapId, mapSet); return; }
   actor.mapSet = mapSet;
-  const point = { x: spot.x, y: spot.y };
-  if (!isAt(actor, point)) { actor.task = `Indo a ${spot.name}`; walkTo(actor, point); return; }
-  if (fishingStock(spot) >= 1) {
-    const qty = Math.min(foodLoad(actor), fishingStock(spot));
-    state.fishingStock[spot.site] = fishingStock(spot) - qty; actor.carrying = { food: 'fish', qty };
-    gainSkill(actor, 'fishing', 0.3); actor.task = `Pescou ${format(qty)} de peixe`;
-    travelToMap(actor, 'city', mapSet); return;
+  if (!actor.fishingBank || actor.fishingBank.site !== spot.site) actor.fishingBank = { ...fishingBankPoint(actor, spot), site: spot.site };
+  const point = actor.fishingBank;
+  if (!isAt(actor, point)) {
+    actor.task = `Indo à margem de ${spot.name}`;
+    if (spot.mapId === 'wilds') { actor.route = []; actor.finalPoint = { x: point.x, y: Math.min(198, point.y + 1.2) }; }
+    else walkTo(actor, point);
+    return;
   }
   if (fishingAuto(spot)) {
     const needs = industryFoodDemand(state.buildings.filter(isDone));
     const goal = commodityReserve('fish') + Math.min(20, marketDemand('fish')) + (needs.fish || 0);
     if (stockOf('fish') >= goal) { actor.task = 'Reserva de truta atendida'; actor.wait = 3; return; }
   }
-  state.fishingStock[spot.site] = Math.min(FARM_STOCK_CAP, fishingStock(spot) + FISHING_RATE * (1 + skillOf(actor, 'fishing') / 100) * state.speed * 3);
+  actor.fishingProgress = (actor.fishingProgress || 0) + FISHING_RATE * (1 + skillOf(actor, 'fishing') / 100) * 3;
+  if (actor.fishingProgress >= 1) {
+    const qty = Math.min(Math.floor(actor.fishingProgress), foodLoad(actor), fishingStock(spot));
+    actor.fishingProgress -= qty;
+    state.fishingStock[spot.site] -= qty;
+    actor.carrying = { food: 'fish', qty };
+    actor.fishingBank = null;
+    gainSkill(actor, 'fishing', 0.3); actor.task = `Pescou ${format(qty)} de peixe`;
+    travelToMap(actor, 'city', mapSet); return;
+  }
   gainSkill(actor, 'fishing', 0.2); actor.task = 'Pescando no riacho das Wilds';
+  actor.action = 'work'; actor.frame = 0;
   actor.wait = 3; actor.actionTime = 3; actor.actionClock = 0;
 }
 function lumberDeliveryRoutine(actor, camp) {
@@ -6760,7 +7071,7 @@ function producerBoxHTML(building) {
   const bakery = building.type === 'bakery';
   const rateAt = lv => mill ? MILL_RATE[lv] : bakery ? BAKE_RATE[lv] * recipeOutput(bakeryActiveRecipe(building)) : building.type === 'emberLab' ? LAB_RATE[lv] : building.type === 'butcher' ? BUTCHER_RATE[lv] * recipeOutput(butcherActiveRecipe(building)) : building.type === 'blacksmith' ? BLACKSMITH_RATE[lv] : farmType(building.produce).grain[lv];
   return `<section class="inspector-section"><h4>Melhoria</h4>
-    ${next ? `<button type="button" class="hut-upgrade" data-producer-upgrade="${building.site}">Nível ${level + 2} · ${building.type === 'market' ? `${MARKET_CAPACITY[level + 1]} vagas · ${MARKET_STONE[level + 1]} pedra · ` : `${rateNumber(rateAt(level + 1))}/s · `}${costHTML(next.gold, next.wood)}</button>` : '<p class="storage-items">Nível máximo. Mais que isso, só com milagre.</p>'}</section>`;
+    ${next ? `<button type="button" class="hut-upgrade" data-producer-upgrade="${building.site}">Nível ${level + 2} · ${building.type === 'market' ? `${MARKET_CAPACITY[level + 1]} vagas · ` : `${rateNumber(rateAt(level + 1))}/s · `}${costHTML(next.gold, next.wood, building.type === 'market' ? MARKET_STONE[level + 1] : next.stone)}</button>` : '<p class="storage-items">Nível máximo. Mais que isso, só com milagre.</p>'}</section>`;
 }
 function bakeryRecipeBoxHTML(bakery) {
   const current = bakeryActiveRecipe(bakery).id;
@@ -6817,14 +7128,15 @@ function butcherRecipeBoxHTML(butcher) {
 function taxOfficeHTML(building) {
   const level = producerLevel(building);
   const next = PRODUCER_LEVELS[level + 1];
-  return `<section class="inspector-section"><h4>Centro de Cobrança · nível ${level + 1}</h4><p>${officeCollectors(building.site).length} de ${level + 1} cobradores locais · as cargas seguem ao Casarão.</p>${next ? `<button type="button" class="hut-upgrade" data-tax-office-upgrade="${building.site}">Ampliar para nível ${level + 2} · ${costHTML(next.gold, next.wood)}</button>` : '<p>Nível máximo · três cobradores locais</p>'}</section>`;
+  return `<section class="inspector-section"><h4>Centro de Cobrança · nível ${level + 1}</h4><p>${officeCollectors(building.site).length} de ${level + 1} cobradores locais · as cargas seguem ao Casarão.</p>${next ? `<button type="button" class="hut-upgrade" data-tax-office-upgrade="${building.site}">Ampliar para nível ${level + 2} · ${costHTML(next.gold, next.wood, next.stone)}</button>` : '<p>Nível máximo · três cobradores locais</p>'}</section>`;
 }
 function upgradeTaxOffice(site) {
   const building = state.buildings.find(item => item.site === site && item.type === 'taxOffice' && isDone(item));
   const next = building && PRODUCER_LEVELS[producerLevel(building) + 1];
   if (!next) return;
-  if (state.gold < next.gold || state.timber < next.wood) { say('Faltam materiais para a melhoria.'); return; }
+  if (state.gold < next.gold || state.timber < next.wood || state.stone < next.stone) { say('Falta ouro ou material de construção para a melhoria.'); return; }
   state.gold -= next.gold; state.timber -= next.wood;
+  state.stone -= next.stone;
   startUpgrade(building, { kind: 'taxOffice' }, `Centro de Cobrança para o nível ${producerLevel(building) + 2}`);
 }
 function upgradeProducer(site) {
@@ -6833,7 +7145,7 @@ function upgradeProducer(site) {
   const military = building && militaryLevel(building);
   const next = military ? MILITARY_INDUSTRIES[building.type].levels[producerLevel(building) + 1] : building && producerLevel(building) + 1 < maxLevel ? PRODUCER_LEVELS[producerLevel(building) + 1] : null;
   if (!next) return;
-  const stone = military ? next.stone : building.type === 'market' ? MARKET_STONE[producerLevel(building) + 1] : 0;
+  const stone = military || building.type === 'market' ? (military ? next.stone : MARKET_STONE[producerLevel(building) + 1]) : next.stone;
   if (state.gold < next.gold || state.timber < next.wood || state.stone < stone) { say('Faltam materiais para a melhoria.'); return; }
   state.stone -= stone;
   state.gold -= next.gold;
@@ -7396,7 +7708,7 @@ function economyPanelHTML() {
         `nível ${producerLevel(building) + 1} · ${crewOf(building)} ${crewOf(building) === 1 ? 'trabalhador' : 'trabalhadores'}${crewWork(building) ? ` · +${Math.round(crewWork(building) * 100)}%` : ''} · ${format(building.stock || 0)} esperando`)).join('') || '<p class="storage-items">Nenhuma fazenda, moinho ou padaria ainda.</p>'}
     </dl></div>
     <details class="econ-block"><summary class="food-label">CUSTOS PARA CONSTRUIR</summary><dl class="econ-lines">
-      ${BUILDINGS.map(building => row(building.name, `${building.cost} ouro · ${building.wood} madeira`)).join('')}
+      ${BUILDINGS.map(building => row(building.name, `${building.cost} ouro · ${building.wood} madeira · ${buildingStoneCost(building)} pedra`)).join('')}
     </dl><p class="storage-items">Custos únicos; melhorias têm seus próprios valores.</p></details>`;
 }
 
@@ -7863,6 +8175,10 @@ function killActor(victim, killer) {
       victim.remains = null;
       renderLairs();
     }
+    (victim.inventory || []).forEach((grade, index) => {
+      state.remainsPiles.push({ id: `remains-inventory-${victim.id}-${index}`, grade, mapId: victim.mapId || 'city', mapSet: victim.mapSet || 1, x: victim.x, y: victim.y });
+    });
+    if (victim.inventory?.length) { victim.inventory = []; renderLairs(); }
     const killerName = killer?.name || 'uma causa desconhecida';
     say(`${pick(DEATH_MSG)(victim.name)} Atacante: ${killerName}.`, `${victim.name} morreu pelas mãos de ${killerName}.`);
   }
@@ -7881,7 +8197,7 @@ function wearCraftedWeapon(actor) {
   item.structuralCondition = Math.max(0, item.structuralCondition - 0.5);
   if (item.sharp && item.edgeCondition > 0) item.edgeCondition = Math.max(0, item.edgeCondition - item.wearMultiplier);
 }
-function strike(attacker, defender) {
+function strike(attacker, defender, powerOverride = null) {
   if (window.Monarch?.blocksAttack(attacker)) return;
   const hit = isHostile(attacker) ? siegeBarrierBetween(attacker, defender) : null;
   if (hit) {
@@ -7889,8 +8205,8 @@ function strike(attacker, defender) {
     return;
   }
   const a = statsOf(attacker), d = statsOf(defender);
-  const magic = MAGIC_CLASSES.includes(classOf(attacker));
-  const power = magic ? a.mag : a.atk;
+  const magic = powerOverride != null || MAGIC_CLASSES.includes(classOf(attacker));
+  const power = powerOverride ?? (magic ? a.mag : a.atk);
   const guard = magic ? d.def / 2 : d.def;
   const raw = power * power / Math.max(1, power + guard);
   // Ordem de Aniquilação: crítico garantido, que também não pode ser esquivado.
@@ -7917,37 +8233,171 @@ function strike(attacker, defender) {
   if (killed && defender.alive) killActor(defender, attacker);
 }
 
+const HEALER_SPELLS = {
+  basicHeal: { name: 'Cura Básica', unlockLevel: 1, cost: 6 },
+  burningHands: { name: 'Burning Hands', unlockLevel: 5, cost: 10, cooldown: 4.5, range: 4.5 },
+  mediumHeal: { name: 'Cura Média', unlockLevel: 10, cost: 12 },
+};
+const MAGE_CLASSES = ['Black Mage', 'Elementalist', 'Warlock'];
+const MAGE_IGNITE = { name: 'Ignite', unlockLevel: 1, cost: 6, cooldown: 4.5 };
+const HEALER_MP_ATTRIBUTES = { CHA: 8, INT: 9, WIS: 7 };
+const healerMpMax = healer => 30 + 6 * (Math.max(1, healer.level || 1) - 1)
+  + Object.entries(HEALER_MP_ATTRIBUTES).reduce((sum, [key, base]) => sum + base + statBonus(healer, key), 0) / 2
+  + Math.max(0, statBonus(healer, 'MP'));
+function healerMpOf(healer) {
+  const cap = healerMpMax(healer);
+  healer.mp = healer.mp == null ? cap : Math.max(0, Math.min(cap, Number(healer.mp) || 0));
+  return healer.mp;
+}
+function healerMpRegen(healer, inCombat = false) {
+  const wis = HEALER_MP_ATTRIBUTES.WIS + statBonus(healer, 'WIS');
+  const int = HEALER_MP_ATTRIBUTES.INT + statBonus(healer, 'INT');
+  return (wis * 0.10 + int * 0.04) * 0.5 * (inCombat ? 0.5 : 1);
+}
+function healerManaStep(healer, delta, inCombat) {
+  healer.mp = Math.min(healerMpMax(healer), healerMpOf(healer) + healerMpRegen(healer, inCombat) * delta);
+  healer.burningHandsCooldown = Math.max(0, (healer.burningHandsCooldown || 0) - delta);
+}
+function igniteEffect(target) {
+  if (typeof SpellFX === 'undefined' || (target.mapId || 'city') !== currentMap || (target.mapSet || 1) !== currentMapSet) return;
+  const { fx, draw, emit, COLORS, SHAPE } = SpellFX;
+  const x = target.x, y = target.y;
+  fx.shockwave(x, y, 1.15, COLORS.ember, 0.45, 'ground', 0.6);
+  fx.custom(0.9, (k, t) => {
+    const alpha = Math.min(1, k * 8) * (1 - k);
+    draw.glow('sky', x, y - 1.2, 1.4, COLORS.fire, alpha * 0.65);
+    for (let i = -1; i <= 1; i++) draw.wisp('sky', x + i * 0.45, y - 1.2, 0.55, 1.35, i ? COLORS.ember : COLORS.flame, alpha, t + i);
+  });
+  emit(x, y - 1, { color: COLORS.ember, count: 18, speed: 2, size: 0.35, up: 3, life: 0.7, shape: SHAPE.wisp });
+}
+function castIgnite(mage, target) {
+  if (!target.alive || healerMpOf(mage) < MAGE_IGNITE.cost || (mage.igniteCooldown || 0) > 0) return false;
+  mage.mp -= MAGE_IGNITE.cost;
+  mage.igniteCooldown = MAGE_IGNITE.cooldown;
+  igniteEffect(target);
+  strike(mage, target);
+  return true;
+}
+function mageAbilitiesHTML(mage) {
+  return `<div class="sheet-section-label">MAGIAS DE COMBATE</div><dl class="info-lines sheet-work"><div><dt>MP</dt><dd>${Math.floor(healerMpOf(mage))} / ${Math.floor(healerMpMax(mage))}</dd></div><div><dt>Ignite · nível ${MAGE_IGNITE.unlockLevel}</dt><dd>Ataque mágico de fogo · ${MAGE_IGNITE.cost} MP · recarga ${MAGE_IGNITE.cooldown} s</dd></div></dl>`;
+}
+const healerLevel = healer => Math.max(1, healer.level || 1);
+const healerHealSpell = healer => healerLevel(healer) >= HEALER_SPELLS.mediumHeal.unlockLevel
+  && healerMpOf(healer) >= HEALER_SPELLS.mediumHeal.cost ? HEALER_SPELLS.mediumHeal : HEALER_SPELLS.basicHeal;
+const healerHealAmount = (healer, spell = healerHealSpell(healer)) => spell === HEALER_SPELLS.mediumHeal
+  ? 24 + (healerLevel(healer) - HEALER_SPELLS.mediumHeal.unlockLevel) * 2
+  : 8 + (healerLevel(healer) - HEALER_SPELLS.basicHeal.unlockLevel) * 1.5;
+const burningHandsPower = healer => 7 + (healerLevel(healer) - HEALER_SPELLS.burningHands.unlockLevel) * 1.2;
+function healerHealEffect(patient, medium) {
+  if (typeof SpellFX === 'undefined') return;
+  const { fx, emit, COLORS } = SpellFX;
+  const size = medium ? 1.5 : 1.05;
+  fx.beam(patient.x, patient.y, 0.42 * size, 5.2 * size, COLORS.heal, 0.68);
+  fx.sigil(patient.x, patient.y, 1.35 * size, COLORS.heal, 0.9, medium ? 7 : 5, 'ground', medium ? 1.1 : 0.7);
+  fx.shockwave(patient.x, patient.y, 1.2 * size, COLORS.heal, 0.48, 'ground', 0.65);
+  emit(patient.x, patient.y - 1, { color: COLORS.heal, count: medium ? 20 : 12, speed: medium ? 1.5 : 1, size: 0.38, up: 3.5, ring: 0.8, life: 0.95 });
+}
 function healHit(healer, patient) {
-  const amount = Math.max(1, statsOf(healer).mag);
+  const spell = healerHealSpell(healer);
+  if (healerMpOf(healer) < spell.cost || !patient.alive || hpOf(patient) >= maxHpOf(patient)) return false;
+  healer.mp -= spell.cost;
+  const amount = healerHealAmount(healer, spell);
   patient.hp = Math.min(maxHpOf(patient), hpOf(patient) + amount);
+  healerHealEffect(patient, spell === HEALER_SPELLS.mediumHeal);
   healer.calm = 5;
   const before = healer.level || 1;
   gainActorXp(healer, 13);
   checkPrestige(healer, before);
+  return true;
+}
+function burningHandsEffect(healer, target) {
+  if (typeof SpellFX === 'undefined') return;
+  const dx = target.x - healer.x, dy = target.y - healer.y;
+  const angle = Math.atan2(dy, dx), startX = healer.x, startY = healer.y - 1.8;
+  const reach = HEALER_SPELLS.burningHands.range;
+  const { fx, draw, emit, COLORS } = SpellFX;
+  fx.custom(0.62, (k, t) => {
+    const alpha = Math.min(1, k * 7) * Math.min(1, (1 - k) * 2.2);
+    for (let ray = -2; ray <= 2; ray++) {
+      const a = angle + ray * 0.19;
+      const endX = startX + Math.cos(a) * reach * (0.72 + k * 0.28);
+      const endY = startY + Math.sin(a) * reach * (0.72 + k * 0.28);
+      draw.segment('sky', startX, startY, endX, endY, ray % 2 ? COLORS.ember : COLORS.flame, alpha * 0.9, 0, ray === 0 ? 0.55 : 0.34, t * 3 + ray);
+      draw.wisp('sky', endX, endY, 0.34, 0.75, COLORS.flame, alpha * 0.8, t + ray);
+    }
+    draw.glow('sky', startX + Math.cos(angle) * reach * 0.55, startY + Math.sin(angle) * reach * 0.55, 1.1 * (1 - k * 0.35), COLORS.fire, alpha * 0.48);
+  });
+  fx.shockwave(target.x, target.y, 1.35, COLORS.ember, 0.42, 'ground', 0.6);
+  emit(startX, startY, { color: COLORS.ember, count: 16, speed: 3, size: 0.38, up: -0.4, angle, spread: 0.52, life: 0.7, drag: 1.4 });
+}
+function castBurningHands(healer, primary, enemies) {
+  const spell = HEALER_SPELLS.burningHands;
+  const dx = primary.x - healer.x, dy = primary.y - healer.y, length = Math.hypot(dx, dy) || 1;
+  const ux = dx / length, uy = dy / length;
+  const targets = enemies.filter(enemy => {
+    if (!enemy.alive || (enemy.mapId || 'city') !== (healer.mapId || 'city') || (enemy.mapSet || 1) !== (healer.mapSet || 1)) return false;
+    const ex = enemy.x - healer.x, ey = enemy.y - healer.y, d = Math.hypot(ex, ey);
+    return d <= spell.range && d > 0 && (ex * ux + ey * uy) / d >= Math.cos(0.58);
+  });
+  if (!targets.length || healerMpOf(healer) < spell.cost) return false;
+  healer.mp -= spell.cost;
+  healer.burningHandsCooldown = spell.cooldown;
+  burningHandsEffect(healer, primary);
+  const power = burningHandsPower(healer);
+  targets.forEach(enemy => strike(healer, enemy, power));
+  return true;
+}
+function healerAbilitiesHTML(healer) {
+  const level = healerLevel(healer), cap = healerMpMax(healer), mp = healerMpOf(healer);
+  const basic = HEALER_SPELLS.basicHeal, hands = HEALER_SPELLS.burningHands, medium = HEALER_SPELLS.mediumHeal;
+  const spellRow = (spell, detail) => `<div><dt>${spell.name} · nível ${spell.unlockLevel}</dt><dd>${level >= spell.unlockLevel ? detail : `Desbloqueia no nível ${spell.unlockLevel}`}</dd></div>`;
+  return `<div class="sheet-section-label">MAGIAS DE COMBATE</div><dl class="info-lines sheet-work">
+    <div><dt>MP</dt><dd>${Math.floor(mp)} / ${Math.floor(cap)} · regenera ${healerMpRegen(healer).toFixed(2).replace('.', ',')} MP/s fora de combate</dd></div>
+    ${spellRow(basic, `cura ${Math.round(healerHealAmount(healer, basic))} de vida · ${basic.cost} MP`)}
+    ${spellRow(hands, `${Math.round(burningHandsPower(healer))} de poder mágico em cone · ${hands.cost} MP · recarga ${hands.cooldown} s`)}
+    ${spellRow(medium, `cura ${Math.round(healerHealAmount(healer, medium))} de vida · ${medium.cost} MP`)}
+  </dl>`;
 }
 
 // Herói: procura ladrão (ou ferido, se for curandeiro) por perto; se achar, larga o resto e luta.
 function heroCombatStep(hero, delta, reducedMotion) {
   hero.calm = Math.max(0, (hero.calm || 0) - delta);
+  const healer = HEALER_CLASSES.includes(classOf(hero));
+  const mage = MAGE_CLASSES.includes(classOf(hero));
   const hunterArcher = ['Archer', 'Ranger', 'Assassin'].includes(classOf(hero));
   const bandits = (state.bandits || []).filter(bandit => bandit.alive && !bandit.mfx?.convert && (bandit.className !== 'Wildlife' || hunterArcher));
-  let target = null, heal = false;
-  if (HEALER_CLASSES.includes(classOf(hero))) {
-    const wounded = state.heroes.filter(other => other.alive && other !== hero && hpOf(other) < maxHpOf(other) * 0.7 && distanceTo(hero, other) < AGGRO_RANGE);
-    if (wounded.length) { target = wounded.sort((x, y) => distanceTo(hero, x) - distanceTo(hero, y))[0]; heal = true; }
+  const mapId = hero.mapId || 'city', mapSet = hero.mapSet || 1;
+  const enemiesHere = bandits.filter(enemy => (enemy.mapId || 'city') === mapId && (enemy.mapSet || 1) === mapSet);
+  const enemyNearby = enemiesHere.some(enemy => distanceTo(hero, enemy) < AGGRO_RANGE);
+  if (healer) healerManaStep(hero, delta, enemyNearby);
+  if (mage) {
+    healerManaStep(hero, delta, enemyNearby);
+    hero.igniteCooldown = Math.max(0, (hero.igniteCooldown || 0) - delta);
   }
-  if (!target && bandits.length) {
-    const sameMap = bandits.filter(bandit => (bandit.mapId || 'city') === (hero.mapId || 'city') && (bandit.mapSet || 1) === (hero.mapSet || 1));
-    const near = sameMap.filter(bandit => distanceTo(hero, bandit) < AGGRO_RANGE).sort((x, y) => distanceTo(hero, x) - distanceTo(hero, y));
-    target = near[0] || sameMap.find(bandit => bandit.id === hero.respondTo) || null;
+  let target = null, heal = false;
+  if (healer) {
+    const allies = [...state.heroes, ...state.workers];
+    const wounded = allies.filter(other => other.alive && (other.mapId || 'city') === mapId && (other.mapSet || 1) === mapSet
+      && hpOf(other) < maxHpOf(other) && distanceTo(hero, other) < AGGRO_RANGE);
+    wounded.sort((x, y) => hpOf(x) / maxHpOf(x) - hpOf(y) / maxHpOf(y)
+      || (maxHpOf(y) - hpOf(y)) - (maxHpOf(x) - hpOf(x))
+      || distanceTo(hero, x) - distanceTo(hero, y));
+    if (wounded.length) { target = wounded[0]; heal = true; }
+  }
+  if (!target && enemiesHere.length) {
+    const near = enemiesHere.filter(enemy => distanceTo(hero, enemy) < AGGRO_RANGE).sort((x, y) => distanceTo(hero, x) - distanceTo(hero, y));
+    target = near[0] || enemiesHere.find(enemy => enemy.id === hero.respondTo) || null;
     if (!target) hero.respondTo = null;
   }
   if (!target) { if (hero.combatTarget) { hero.combatTarget = null; hero.route = []; hero.finalPoint = null; } return false; }
   if (!hero.combatTarget) { hero.route = []; hero.finalPoint = null; hero.wait = 0; }
   hero.combatTarget = target.id;
   hero.cooldown = (hero.cooldown || 0) - delta * (window.Monarch?.attackRate(hero) ?? 1);
-  const range = heal ? SHOT_RANGE : RANGED_CLASSES.includes(classOf(hero)) ? SHOT_RANGE : MELEE_RANGE;
-  if (distanceTo(hero, target) > range || (!heal && range === MELEE_RANGE && siegeBarrierBetween(hero, target))) {
+  const burningUnlocked = healer && healerLevel(hero) >= HEALER_SPELLS.burningHands.unlockLevel;
+  const burningAffordable = burningUnlocked && healerMpOf(hero) >= HEALER_SPELLS.burningHands.cost;
+  const burningInRange = burningAffordable && distanceTo(hero, target) <= HEALER_SPELLS.burningHands.range && !siegeBarrierBetween(hero, target);
+  const range = heal ? SHOT_RANGE : burningAffordable ? HEALER_SPELLS.burningHands.range : RANGED_CLASSES.includes(classOf(hero)) ? SHOT_RANGE : MELEE_RANGE;
+  if (distanceTo(hero, target) > range || (!heal && siegeBarrierBetween(hero, target) && (range === MELEE_RANGE || burningAffordable))) {
     const moved = moveToward(hero, target, 4.2 * delta);
     animateWalk(hero, moved > 0, delta, reducedMotion);
     return true;
@@ -7957,7 +8407,18 @@ function heroCombatStep(hero, delta, reducedMotion) {
     hero.cooldown = ATTACK_COOLDOWN;
     hero.attackAnim = 0.5;
     hero.actionClock = 0;
-    if (heal) healHit(hero, target); else strike(hero, target);
+    if (heal) {
+      if (!healHit(hero, target)) animateIdle(hero, delta, reducedMotion);
+    } else if (mage && !siegeBarrierBetween(hero, target) && castIgnite(hero, target)) {
+      // Ignite usa o mesmo combate e a mesma camada de efeitos das magias do Healer.
+    } else if (burningInRange && (hero.burningHandsCooldown || 0) <= 0) {
+      castBurningHands(hero, target, enemiesHere);
+    } else if (distanceTo(hero, target) <= MELEE_RANGE && !siegeBarrierBetween(hero, target)) {
+      strike(hero, target);
+    } else {
+      hero.cooldown = 0;
+      animateIdle(hero, delta, reducedMotion);
+    }
   }
   animateAttack(hero, delta, reducedMotion);
   return true;
@@ -7965,13 +8426,13 @@ function heroCombatStep(hero, delta, reducedMotion) {
 
 // Camponês: não caça ladrão, mas depois de apanhar revida quem estiver colado nele. Bate fraco.
 function huntingTarget(hunter) {
-  const animals = state.bandits.filter(animal => animal.alive && isWildlife(animal) && (animal.mapSet || 1) === huntMapSet());
+  const animals = state.bandits.filter(animal => animal.alive && isWildlife(animal) && (animal.mapId || 'wilds') === 'wilds' && (animal.mapSet || 1) === huntMapSet());
   const score = animal => {
     const food = WILDLIFE_MEAT[animal.kind];
     const sinew = animal.kind === 'elk' ? (state.huntingDemand?.elk || 0) * 12 : 0;
     return commodityReserve(food) + marketDemand(food) - stockOf(food) + sinew + (state.huntingDemand?.hide || 0) * 8;
   };
-  return animals.filter(animal => hunter.huntMode === 'auto' ? score(animal) > 0 : !hunter.huntPrey || animal.kind === hunter.huntPrey)
+  return animals.filter(animal => hunter.huntMode === 'auto' || !hunter.huntPrey || animal.kind === hunter.huntPrey)
     .sort((a, b) => (hunter.huntMode === 'auto' ? score(b) - score(a) : 0) || distanceTo(hunter, a) - distanceTo(hunter, b))[0];
 }
 function peasantHuntStep(worker, delta, reducedMotion) {
@@ -8130,18 +8591,20 @@ function spawnBandits() {
   say(count === 1 ? 'Um ladrão apareceu na estrada velha. Ele não veio pedir informação.' : `${count} ladrões apareceram na estrada velha. Eles não vieram pedir informação.`);
 }
 
-function spawnWildlife() {
-  const live = (state.bandits || []).filter(actor => isWildlife(actor) && actor.alive).length;
-  const count = Math.min(WILDLIFE_STAY_CAP - live, Math.floor(Math.random() * (WILDLIFE_SPAWN_MAX + 1)));
+function spawnWildlife(initialHerd = false) {
+  const mapSet = huntMapSet();
+  const live = (state.bandits || []).filter(actor => isWildlife(actor) && actor.alive && (actor.mapId || 'wilds') === 'wilds' && (actor.mapSet || 1) === mapSet).length;
+  const randomCount = Math.floor(Math.random() * (WILDLIFE_SPAWN_MAX + 1));
+  const count = Math.min(WILDLIFE_STAY_CAP - live, initialHerd && live === 0 ? Math.max(2, randomCount) : randomCount);
   // Pontos de campo aberto de cada mapa: longe da água, dos penhascos, da estrada e dos covis.
   const locations = huntMapSet() === 2
     ? [{ x: 45, y: 100 }, { x: 60, y: 90 }, { x: 70, y: 108 }, { x: 25, y: 150 }, { x: 75, y: 160 }, { x: 35, y: 170 }, { x: 45, y: 190 }]
     : [{ x: 16, y: 31 }, { x: 31, y: 55 }, { x: 48, y: 83 }, { x: 72, y: 42 }, { x: 79, y: 116 }, { x: 23, y: 143 }, { x: 54, y: 158 }, { x: 91, y: 88 }];
   for (let i = 0; i < count; i++) {
-    const kind = Math.random() < 0.58 ? 'boar' : 'elk';
+    const kind = initialHerd && live === 0 && i < 2 ? (i === 0 ? 'boar' : 'elk') : Math.random() < 0.58 ? 'boar' : 'elk';
     const base = pick(locations);
     const stats = WILDLIFE_STATS[kind];
-    state.bandits.push({ id: `wildlife-${kind}-${state.minutes}-${Math.floor(Math.random() * 99999)}`, className: 'Wildlife', kind, spriteId: WILDLIFE_ART[kind], mapId: 'wilds', mapSet: huntMapSet(), name: `${WILDLIFE_NAMES[kind]} ${i + 1}`, level: 1, fixedStats: stats, hp: stats.hp, alive: true, x: base.x + Math.random() * 4 - 2, y: base.y + Math.random() * 5 - 2, action: 'idle', frame: Math.floor(Math.random() * 4), idleClock: Math.random() * 2, wait: 1 + Math.random() * 4, facing: 'front', side: 'right' });
+    state.bandits.push({ id: `wildlife-${kind}-${state.minutes}-${Math.floor(Math.random() * 99999)}`, className: 'Wildlife', kind, spriteId: WILDLIFE_ART[kind], mapId: 'wilds', mapSet, name: `${WILDLIFE_NAMES[kind]} ${i + 1}`, level: 1, fixedStats: stats, hp: stats.hp, alive: true, x: base.x + Math.random() * 4 - 2, y: base.y + Math.random() * 5 - 2, action: 'idle', frame: Math.floor(Math.random() * 4), idleClock: Math.random() * 2, wait: 1 + Math.random() * 4, facing: 'front', side: 'right' });
   }
   if (count > 0) say(`${count} ${count === 1 ? 'animal apareceu' : 'animais apareceram'} nas Wilds: javalis e alces podem ser caçados.`);
 }
@@ -8249,7 +8712,7 @@ function destroyLair(lair, hero, bounty) {
 function carryRemainsStep(hero) {
   const grade = remainsGrade(hero.remains);
   hero.task = `Levando ${remainsName(grade.id)} pro depósito`;
-  if (travelToMap(hero, 'city')) return;
+  if (travelToMap(hero, 'city', hero.mapSet || 1)) return;
   const store = nearestStorage(hero);
   if (!isAt(hero, store)) { walkTo(hero, store); return; }
   if (storedUnits() > storageCap() - 1) {
@@ -8282,6 +8745,7 @@ function remainsPileStep(hero) {
   if (travelToMap(hero, pile.mapId || 'city', pile.mapSet || 1)) return true;
   if (distanceTo(hero, pile) < 1.5) {
     if (pile.materials) hero.workshopLoot = pile.materials;
+    else if (pile.grade === 'nekomataWild') (hero.inventory ||= []).push(pile.grade);
     else hero.remains = pile.grade;
     state.remainsPiles = piles.filter(item => item !== pile);
     renderLairs();
@@ -8357,7 +8821,7 @@ function combatTick(minutesPassed) {
   if (state.minutes >= state.nextRaidAt) { spawnBandits(); state.nextRaidAt += RAID_EVERY; }
   const night = Math.floor(state.minutes / 1440);
   if (state.wildlifeSpawnDay == null) state.wildlifeSpawnDay = night;
-  if (night > state.wildlifeSpawnDay) { state.wildlifeSpawnDay = night; spawnWildlife(); }
+  if (night > state.wildlifeSpawnDay) { const initialHerd = state.wildlifeSpawnDay < 0; state.wildlifeSpawnDay = night; spawnWildlife(initialHerd); }
   const firstLevelCemetery = (state.lairs || []).find(lair => lair.active && lair.kind === 'cemetery' && lair.level === 1);
   if (state.minutes % 1440 >= 1320 && state.lastSkeletonDay !== night && firstLevelCemetery) { state.lastSkeletonDay = night; spawnSkeleton(firstLevelCemetery); }
   // Covis ativos soltam um bicho a cada 12 horas de jogo (12 minutos reais na velocidade 1).
@@ -8613,7 +9077,7 @@ function startGame(newState, slot) {
   $('#hero-layer').innerHTML = '';
   $('#map-scene').style.setProperty('--mill-spin-duration', `${8 / state.speed}s`);
   $$('.tab').forEach(tab => { const active = tab.dataset.tab === state.tab; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
-  camera.zoom = Math.min(2, Math.max(0, options.startZoom));
+  camera.zoom = Math.min(ZOOM_LEVELS.length - 1, Math.max(0, options.startZoom));
   $$('.zoom-btn').forEach(button => { const active = Number(button.dataset.zoom) === camera.zoom; button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active)); });
   closeMenu();
   sizeWorld();
@@ -8621,7 +9085,6 @@ function startGame(newState, slot) {
   window.Monarch?.reset();
   renderSites(); renderHeroes(); renderPanel(); updateHud();
   renderPlaces();
-  $('#event-line').textContent = state.ticks ? 'De volta ao Vale do Luto.' : 'A herança foi aceita. Os credores já estão a caminho.';
   writeSave(slot);
   game.running = true;
   setMusic('game');
@@ -8880,7 +9343,7 @@ const HOWTO = [
     <h3>Controles</h3>
     <ul>
       <li>Arraste o mapa com mouse ou toque; a roda do mouse e as setas do teclado também movem a câmera.</li>
-      <li>Zoom 1, 2 e 3: ampla (100%), normal (130%) e próxima (160%). O botão <b>WILDS</b> leva ao segundo mapa e volta.</li>
+      <li>Zoom 1, 2, 3 e 4: ampla (100%), normal (130%), próxima (160%) e muito próxima (200%). O botão <b>WILDS</b> alterna entre City e Wilds.</li>
       <li><b>Esc</b> ou <b>MENU</b> pausa. <b>FICHA</b> abre a ficha do herdeiro. Mensagens ficam na tela até você clicar.</li>
       <li>Salvar sozinho (Opções) grava a cada 1, 3 ou 5 minutos e quando a página fecha.</li>
     </ul>` },
@@ -8892,17 +9355,25 @@ const HOWTO = [
     <p>Toda construção e toda melhoria precisa de ${BUILD_TIME} de trabalho de um camponês no local (2 minutos reais a 1×, sem bônus). Pedreiros são chamados primeiro, depois quem não tem profissão.</p>
     ${howFormula(`Avanço por segundo = 1 + Construção/100 + bônus de obra do equipamento`)}
     <h3>Melhorias</h3>
-    ${howTable(['Melhoria', 'Ouro', 'Madeira', 'Efeito'], [
-      ['Fazenda, moinho, padaria, açougue ou laboratório, nível 2', PRODUCER_LEVELS[1].gold, PRODUCER_LEVELS[1].wood, 'produz mais'],
-      ['Fazenda, moinho, padaria, açougue ou laboratório, nível 3', PRODUCER_LEVELS[2].gold, PRODUCER_LEVELS[2].wood, 'produz mais'],
-      ['Casebre Grande', HUT_UPGRADE.gold, HUT_UPGRADE.wood, '+3 vagas (5 no total)'],
-      ...STORAGE_LEVELS.slice(1).map(level => [`Depósito para ${level.cap}`, level.gold, level.wood, `guarda ${level.cap}`]),
-      ['Guilda, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, 'melhora a guilda'],
-      ['Guilda, nível 3', GUILD_UPGRADES[1].gold, GUILD_UPGRADES[1].wood, 'especialização'],
-      ['MoonWarden, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, 'morador vira lobisomem de machado e escudo'],
-      ['MoonWarden, nível 3', GUILD_UPGRADES[1].gold, GUILD_UPGRADES[1].wood, 'morador vira Grande Lobo'],
-      ['Vanguards, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, 'escolha Swordsmaster ou WarBringer para o morador'],
-      ...ARMORY_LEVELS.slice(1).map((level, i) => [`Arsenal, nível ${i + 2}`, level.gold, level.wood, `vende até tier ${level.tierCap}`]),
+    ${howTable(['Melhoria', 'Ouro', 'Madeira', 'Pedra', 'Efeito'], [
+      ['Fazenda, moinho, padaria, açougue ou laboratório, nível 2', PRODUCER_LEVELS[1].gold, PRODUCER_LEVELS[1].wood, PRODUCER_LEVELS[1].stone, 'produz mais'],
+      ['Fazenda, moinho, padaria, açougue ou laboratório, nível 3', PRODUCER_LEVELS[2].gold, PRODUCER_LEVELS[2].wood, PRODUCER_LEVELS[2].stone, 'produz mais'],
+      ['Centro de Cobrança, nível 2', PRODUCER_LEVELS[1].gold, PRODUCER_LEVELS[1].wood, PRODUCER_LEVELS[1].stone, 'mais cobradores'],
+      ['Centro de Cobrança, nível 3', PRODUCER_LEVELS[2].gold, PRODUCER_LEVELS[2].wood, PRODUCER_LEVELS[2].stone, 'mais cobradores'],
+      ['Mercado, nível 2', PRODUCER_LEVELS[1].gold, PRODUCER_LEVELS[1].wood, MARKET_STONE[1], '150 vagas'],
+      ['Mercado, nível 3', PRODUCER_LEVELS[2].gold, PRODUCER_LEVELS[2].wood, MARKET_STONE[2], '200 vagas'],
+      ...['Marcenaria de armas', 'Oficina de cerco'].flatMap((name, i) => {
+        const type = i === 0 ? 'woodworking' : 'siegeWorks';
+        return MILITARY_INDUSTRIES[type].levels.slice(1).map((level, j) => [`${name}, nível ${j + 2}`, level.gold, level.wood, level.stone, 'amplia equipe e capacidade']);
+      }),
+      ['Casebre Grande', HUT_UPGRADE.gold, HUT_UPGRADE.wood, HUT_UPGRADE.stone, '+3 vagas (5 no total)'],
+      ...STORAGE_LEVELS.slice(1).map(level => [`Depósito para ${level.cap}`, level.gold, level.wood, level.stone, `guarda ${level.cap}`]),
+      ['Guilda, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, GUILD_UPGRADES[0].stone, 'melhora a guilda'],
+      ['Guilda, nível 3', GUILD_UPGRADES[1].gold, GUILD_UPGRADES[1].wood, GUILD_UPGRADES[1].stone, 'especialização'],
+      ['MoonWarden, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, GUILD_UPGRADES[0].stone, 'morador vira lobisomem de machado e escudo'],
+      ['MoonWarden, nível 3', GUILD_UPGRADES[1].gold, GUILD_UPGRADES[1].wood, GUILD_UPGRADES[1].stone, 'morador vira Grande Lobo'],
+      ['Vanguards, nível 2', GUILD_UPGRADES[0].gold, GUILD_UPGRADES[0].wood, GUILD_UPGRADES[0].stone, 'escolha Swordsmaster ou WarBringer para o morador'],
+      ...ARMORY_LEVELS.slice(1).map((level, i) => [`Arsenal, nível ${i + 2}`, level.gold, level.wood, level.stone, `vende até tier ${level.tierCap}`]),
     ])}
     <h3>Dano e conserto</h3>
     <p>Construção com a vida zerada vira <b>ruína</b> e para de funcionar. Os camponeses consertam sozinhos, pedreiros primeiro.</p>
@@ -8921,7 +9392,7 @@ const HOWTO = [
     <p>O Galinheiro produz ovos e frango; a fazenda de leite produz leite e carne de vaca. Cada carne animal sai a ${hn(FARM_ANIMAL_RATE)}× a taxa normal da fazenda. A fazenda de Suínos entrega matéria-prima ao açougue. O açougue combina carnes, pesca e hortaliças em receitas por lote, busca insumos e entrega a produção no depósito. Lotes por segundo por nível: ${BUTCHER_RATE.map(value => `${hn(value)}/s`).join(', ')}.</p>
     <p>Consulte <b>Receitas: açougue</b> para os lotes e desbloqueios.</p>
     <h3>Pesca</h3>
-    <p>Nas Wilds, clique em um ponto de pesca marcado e escolha um camponês. Ele vai ao ponto, acumula Trutas, leva a carga ao depósito e melhora com a habilidade Pesca. Taxa base: ${hn(FISHING_RATE)} por segundo; cada ponto guarda até ${FARM_STOCK_CAP}.</p>
+    <p>Cada ponto de pesca começa com ${FISHING_START} peixes, recupera ${FISHING_RECOVERY} por hora e acumula até ${FISHING_CAP}. O pescador procura outro ponto da mesma região quando o seu acaba, leva as trutas ao depósito e melhora com a habilidade Pesca. Taxa base: ${hn(FISHING_RATE)} por segundo.</p>
     <h3>Caça nas Wilds</h3>
     <p>Javalis e alces aparecem em quantidade variável a cada dia (às vezes nenhum). Camponeses com a profissão Caçador e arqueiros podem abatê-los; a carne crua cai no local e os camponeses recolhem e levam ao depósito. Os animais alternam caminhada e um ciclo próprio de espera quando param entre destinos.</p>
     <h3>Ração e consumo</h3>
@@ -8962,7 +9433,7 @@ const HOWTO = [
     <p>Cada personagem tem a própria bolsa. Camponeses chegam com ${WORKER_START_PURSE} e heróis com ${HERO_START_PURSE}. Heróis enchem a bolsa com loot e recompensas.</p>
     <h3>Mercado</h3>
     ${howTable(['Produto', 'Vender', 'Comprar'], [...MARKET_GOODS.map(good => [good.name, hn(good.sell), hn(good.buy)]), ...WEAPON_RECIPES.map(recipe => [recipe.name, hn(Math.floor(recipe.price / 2)), hn(recipe.price)])])}
-    ${howTable(['Nível', 'Vagas', 'Ouro', 'Madeira', 'Pedra de Construção'], [[1, 100, 100, 6, buildingStoneCost(BUILDINGS.find(item => item.id === 'market'))], [2, 150, 180, 12, 6], [3, 200, 320, 20, 10]])}
+    ${howTable(['Nível', 'Vagas', 'Ouro', 'Madeira', 'Pedra de Construção'], [[1, MARKET_CAPACITY[0], BUILDINGS.find(item => item.id === 'market').cost, BUILDINGS.find(item => item.id === 'market').wood, buildingStoneCost(BUILDINGS.find(item => item.id === 'market'))], [2, MARKET_CAPACITY[1], PRODUCER_LEVELS[1].gold, PRODUCER_LEVELS[1].wood, MARKET_STONE[1]], [3, MARKET_CAPACITY[2], PRODUCER_LEVELS[2].gold, PRODUCER_LEVELS[2].wood, MARKET_STONE[2]]])}
     <p>Cada Mercado começa vazio. As mercadorias ocupam 1 vaga por unidade inteira. O mercador divide uma bolsa de 200 de ouro entre os Mercados da campanha.</p>
     <p>Use Auto para abastecer com excedentes conforme as vendas e as classes dos heróis. Em Manual, escolha cada transferência. Os prédios de produção têm seu próprio controle Auto e Manual.</p>` },
   { title: 'Madeira', html: () => `
@@ -8973,7 +9444,7 @@ const HOWTO = [
     <p>Quem está escalado numa cabana, pedreira ou mina trabalha lá em vez da fazenda.</p>` },
   { title: 'Camponeses', html: () => `
     <h3>De onde vêm</h3>
-    <p>O casarão tem três vagas. Cada Casebre Pequeno acrescenta duas, ou cinco depois da ampliação. A cada hora de jogo chega no máximo uma unidade. Se houver vaga para camponês e herói, o jogo sorteia a categoria. Com lotação total, ninguém chega.</p>
+    <p>O casarão tem três vagas. Cada Casebre Pequeno acrescenta duas, ou cinco depois da ampliação. Chega até um camponês por hora de partida e até um herói a cada duas horas, cada um se houver vaga adequada.</p>
     <h3>Profissões</h3>
     ${howTable(['Profissão', 'Trabalha em', 'Habilidade'], Object.values(PROFESSIONS).map(prof => [prof.name, prof.types.length ? prof.types.map(type => BUILDINGS.find(item => item.id === type)?.name).join(', ') : prof.skill === 'fishing' ? 'Pontos de pesca no riacho das Wilds' : prof.skill === 'hunting' ? 'Caça e coleta de carne nas Wilds' : 'Obras e consertos', SKILLS.find(skill => skill.id === prof.skill).name]))}
     <p>Sem profissão, o camponês faz o que houver e só compra equipamento básico.</p>
@@ -9070,7 +9541,7 @@ const HOWTO = [
   { title: 'Equipamento', html: () => `
     <p>Heróis têm 10 espaços e chegam com a arma básica da classe. Camponeses têm 5 (ferramenta, roupa, mãos, pés e cabeça). Ninguém recebe ordem de compra.</p>
     <h3>Arsenal</h3>
-    ${howTable(['Nível', 'Ouro', 'Madeira', 'Vende até'], ARMORY_LEVELS.map((level, i) => { const base = BUILDINGS.find(item => item.id === 'armory'); return [i + 1, i ? level.gold : base.cost, i ? level.wood : base.wood, `tier ${level.tierCap}`]; }))}
+    ${howTable(['Nível', 'Ouro', 'Madeira', 'Pedra', 'Vende até'], ARMORY_LEVELS.map((level, i) => { const base = BUILDINGS.find(item => item.id === 'armory'); return [i + 1, i ? level.gold : base.cost, i ? level.wood : base.wood, i ? level.stone : buildingStoneCost(base), `tier ${level.tierCap}`]; }))}
     <p>Toda hora, cada herói ou camponês livre tem 30% de chance de passar no Arsenal, no máximo uma compra por dia. Compra com a própria bolsa a melhor peça que puder pagar, no primeiro espaço da sua lista de prioridade que tiver melhora. O ouro da venda vai para o cofre.</p>
     ${howTable(['Mania', 'Compra primeiro'], [['Covarde', 'armadura, cabeça'], ['Ganancioso', 'anéis, amuleto'], ['Valente', 'arma, mãos'], ['Teimoso', 'arma, anéis'], ['Amaldiçoado', 'amuleto, armadura'], ['Bêbado', 'capa, pés'], ['Outros', 'arma, armadura']])}
     <p>Camponeses compram na ordem ferramenta, roupa, pés, mãos e cabeça; sem profissão, pulam a ferramenta. O equipamento deles dá trabalho, carga, passo ou obra.</p>
@@ -9167,7 +9638,7 @@ const SCREENS = {
     return { cls: 'is-title', html: `<section class="menu-card wide intro">
       <header class="menu-card-head"><span class="eyebrow">CONSTRUÇÃO LIVRE</span><h2>Wasteland Farming</h2>
         <p class="lead">Seu tio morreu e deixou a fazenda pra você. Ninguém da família quis. Agora você vai descobrir por quê.</p></header>
-      <p class="goal"><b>Objetivo:</b> juntar 600 moedas. O antigo dono deixou dívidas, e elas cobram juros.</p>
+      <p class="goal"><b>Objetivo:</b> juntar 360 moedas. O antigo dono deixou dívidas, e elas cobram juros.</p>
       <ul class="how">
         <li><b>Casebres</b> abrem vagas para camponeses. Eles trabalham nas fazendas e moinhos e comem. Na aba <b>Provisões</b> você escolhe a ração e o que servir. Carne deixa todo mundo mais feliz.</li>
         <li><b>Guildas, taverna e hotel</b> oferecem vagas para heróis. Você não manda neles. Eles fazem o que querem.</li>
@@ -9257,7 +9728,7 @@ const SCREENS = {
     const here = actor => (actor.deathMap || actor.mapId || 'city') === currentMap && (actor.deathMapSet || actor.mapSet || 1) === currentMapSet;
     const dead = [...state.heroes, ...state.workers].filter(actor => !actor.alive && !actor.summon && here(actor)).sort((a, b) => (b.deathAt ?? -1) - (a.deathAt ?? -1));
     const heroes = dead.filter(actor => actor.className !== 'Peasant'), peasants = dead.filter(actor => actor.className === 'Peasant');
-    const row = actor => `<li class="grave-row"><img src="public/art/portraits/${actorPortrait(actor)}-portrait-v01.webp" alt="">
+    const row = actor => `<li class="grave-row">${actorPortraitHTML(actor, 'grave-portrait')}
         <span><b>${actor.name}</b><small>${actorLabel(actor)} · Nível ${actor.level || 1}</small></span>
         <em>${actor.deathAt != null ? dateLabel(actor.deathAt) : 'Data esquecida'}${actor.deathBy ? `<br>por ${actor.deathBy}` : ''}</em></li>`;
     const group = (label, list, empty) => `<div class="sheet-section-label">${label} · ${list.length}</div>${list.length ? `<ul class="grave-list">${list.map(row).join('')}</ul>` : `<p class="sheet-house grave-empty">${empty}</p>`}`;
@@ -9275,14 +9746,17 @@ const SCREENS = {
     const level = actor.level || 1;
     return { cls: 'is-pause', html: `<section class="menu-card sheet">
       <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar ficha" title="Fechar ficha">×</button></div>
-      <div class="sheet-top"><img class="sheet-portrait" src="public/art/portraits/${actorPortrait(actor)}-portrait-v01.webp" alt="">
-        <div><span class="eyebrow">FICHA · ${actor.className === 'Monster' ? 'MONSTRO' : actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
+      <div class="sheet-top">${actorPortraitHTML(actor, 'sheet-portrait')}
+        <div><span class="eyebrow">FICHA · ${actor.className === 'Monster' ? 'MONSTRO' : actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Wildlife' ? 'ANIMAL' : actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
       ${levelHTML(level, actor.xp || 0)}
       <p class="sheet-house">Vida agora: ${Math.ceil(hpOf(actor))} de ${maxHpOf(actor)}</p>
       ${attributesHTML(attributesAt(tableFor(actor), level), actor)}
+      ${HEALER_CLASSES.includes(classOf(actor)) ? healerAbilitiesHTML(actor) : ''}
+      ${MAGE_CLASSES.includes(classOf(actor)) ? mageAbilitiesHTML(actor) : ''}
       ${actor.trait ? `<p class="sheet-about"><b>${actor.trait}.</b> ${TRAITS[actor.trait] || ''}</p>` : ''}
       ${actor.className === 'Peasant' ? `<dl class="info-lines sheet-work"><div><dt>Ofício</dt><dd>${actor.alive ? `<select class="sheet-prof-select" data-profession="${actor.id}" aria-label="Ofício de ${actor.name}"${actor.profession === 'collector' ? ' disabled' : ''}><option value="">Nenhum, faz o que aparece</option>${actor.profession === 'collector' ? '<option value="collector" selected>Cobrador · ofício da mansão</option>' : ''}${actor.profession === 'fisher' ? '<option value="fisher" selected disabled>Pescador · atribuído no mapa</option>' : ''}${Object.entries(PROFESSIONS).filter(([id]) => id !== 'fisher' && id !== 'collector').map(([id, prof]) => `<option value="${id}"${actor.profession === id ? ' selected' : ''}>${isFemalePeasant(actor) ? prof.fem : prof.name}</option>`).join('')}</select>` : professionName(actor)}</dd></div><div><dt>Trabalha</dt><dd>${workplaceOf(actor) ? siteLabel(workplaceOf(actor)) : 'Em lugar nenhum'}</dd></div><div><dt>Mora</dt><dd>${homeOf(actor) ? siteLabel(homeOf(actor)) : 'Casarão'}</dd></div><div><dt>Agora</dt><dd>${peasantActivity(actor)}</dd></div>${actor.carrying ? `<div><dt>Carregando</dt><dd>${format(actor.carrying.qty)} de ${foodName(actor.carrying.food)}</dd></div>` : ''}<div><dt>Alcoolismo · penalidade</dt><dd>${Math.floor(alcoholismOf(actor))}/100</dd></div><div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro · salário ${WORKER_WAGE} por dia</dd></div></dl>` : `<dl class="info-lines sheet-work"><div><dt>Alcoolismo · penalidade</dt><dd>${Math.floor(alcoholismOf(actor))}/100</dd></div><div><dt>Bolsa</dt><dd>${format(purseOf(actor))} de ouro, ganho no loot</dd></div></dl>`}
       ${actor.className === 'Peasant' ? `${tradesHTML(actor)}<div class="sheet-section-label">HABILIDADES</div><dl class="skill-grid">${SKILLS.map(skill => { const value = skillOf(actor, skill.id); return `<div><dt>${skill.name}</dt><dd><i style="width:${value}%"></i></dd><small>${Math.floor(value)}</small></div>`; }).join('')}</dl>` : ''}
+      ${state.heroes.includes(actor) ? `<div class="sheet-section-label">INVENTÁRIO</div><dl class="info-lines sheet-work">${actor.inventory?.length ? Object.entries(actor.inventory.reduce((counts, grade) => { counts[grade] = (counts[grade] || 0) + 1; return counts; }, {})).map(([grade, count]) => `<div><dt>${remainsName(grade)}</dt><dd>${count}</dd></div>`).join('') : '<div><dt>Itens</dt><dd>Vazio</dd></div>'}</dl>` : ''}
       ${gearHTML(actor)}
       <p class="sheet-house">${actorOrigin(actor)}</p>
     </section>` };
@@ -9302,7 +9776,7 @@ const SCREENS = {
     const heroes = state.heroes.filter(hero => hero.alive);
     const needS = Math.min(2, workers.length), needP = Math.min(3, heroes.length);
     const pickCard = (actor, kind, chosen) => `<button type="button" class="retinue-card${chosen.includes(String(actor.id)) ? ' selected' : ''}" data-action="toggle-retinue" data-kind="${kind}" data-id="${actor.id}">
-        <img src="public/art/portraits/${actorPortrait(actor)}-portrait-v01.webp" alt=""><span><b>${actor.name}</b><small>${actorLabel(actor)} · Nível ${actor.level || 1}</small></span></button>`;
+        ${actorPortraitHTML(actor, 'retinue-portrait')}<span><b>${actor.name}</b><small>${actorLabel(actor)} · Nível ${actor.level || 1}</small></span></button>`;
     const ready = servants.length === needS && protectors.length === needP;
     return { cls: 'is-pause', html: `<section class="menu-card wide retinue">
       <header class="menu-card-head"><span class="eyebrow">FIM DO CAPÍTULO ${state.campaignChapter}</span><h2>${CAMPAIGN_CHAPTERS[state.campaignChapter - 1].title}</h2>
@@ -9337,7 +9811,7 @@ const SCREENS = {
         <div class="option-row"><div><b>Som</b><small>Música e efeitos do jogo.</small></div>${segmented('sound', options.sound, [[1, 'Ligado'], [0, 'Desligado']])}</div>
         <div class="option-row"><div><b>Velocidade do jogo</b><small>Controla a passagem do tempo nesta partida.</small></div>${segmented('gameSpeed', state.speed, [[1, '1×'], [2, '2×'], [3, '3×']])}</div>
         <div class="option-row"><div><b>Salvar sozinho</b><small>Salva o jogo de tempos em tempos e quando você fecha a página.</small></div>${segmented('autosave', options.autosave, [[0, 'Desligado'], [1, '1 min'], [3, '3 min'], [5, '5 min']])}</div>
-        <div class="option-row"><div><b>Zoom ao começar</b><small>Ampla, normal ou próxima. Dá pra trocar no mapa a qualquer hora.</small></div>${segmented('startZoom', options.startZoom, [[0, 'Ampla'], [1, 'Normal'], [2, 'Próxima']])}</div>
+        <div class="option-row"><div><b>Zoom ao começar</b><small>Ampla, normal, próxima ou muito próxima. Dá pra trocar no mapa a qualquer hora.</small></div>${segmented('startZoom', options.startZoom, [[0, 'Ampla'], [1, 'Normal'], [2, 'Próxima'], [3, 'Muito próxima']])}</div>
         <div class="option-row"><div><b>Nomes dos personagens</b><small>Eles têm nome. Ninguém lembra qual.</small></div>${segmented('names', options.names, [['selected', 'Ao tocar'], ['always', 'Sempre']])}</div>
         <div class="option-row"><div><b>Aparência das construções</b><small>Só troca a arte. Não altera produção, custos, regras nem saves.</small></div>${segmented('buildingArtStyle', options.buildingArtStyle, [['dark', 'Escura'], ['color', 'Colorida']])}</div>
       </div>
@@ -9386,6 +9860,7 @@ const SCREENS = {
     const clock = `${pad2(Math.floor(state.minutes / 60) % 24)}:${pad2(state.minutes % 60)}`;
     return { cls: 'is-pause', html: `<section class="menu-card narrow">
       <header class="menu-card-head"><span class="eyebrow">DIA ${day} · ${clock}</span><h2>Pausado</h2></header>
+      ${menu.saveNotice ? `<p class="save-confirmation" role="status">${menu.saveNotice}</p>` : ''}
       <nav class="menu-list compact" aria-label="Menu de pausa">
         <button type="button" class="primary" data-action="resume">Voltar ao jogo</button>
         <button type="button" data-action="save">Salvar jogo</button>
@@ -9451,6 +9926,13 @@ function showScreen(name, params = {}) {
   menu.stack.push({ name, params });
   game.running = false;
   renderMenu();
+  if (name === 'gameMode' || name === 'saves') queueScreenImages(HEIRS.map(heir => heirPortraitSrc(heir.id, 1)));
+  if (name === 'heir' || name === 'intro') queueScreenImages([
+    'public/art/mordavia-map.webp', 'public/art/mordavia-forest-layer.png',
+    'public/art/mordavia-map02-city-v01.png', 'public/art/mordavia-map02-city-trees-v01.png',
+    'public/art/mordavia-map02-tropical-city-ground-v05.png', 'public/art/mordavia-map02-tropical-city-trees-v05.png',
+    'public/art/mordavia-map02-tropical-wilds-ground-v06.png', 'public/art/mordavia-map02-tropical-wilds-trees-v07.png',
+  ]);
 }
 
 function closeMenu() {
@@ -9609,12 +10091,23 @@ function initMenus() {
         confirmThen({ title: `${actor.name} vira ${spec.name}?`, text: 'A especialização é definitiva. A outra opção some pra sempre, como o resto da família.', confirmLabel: 'Escolher' }, () => { chooseSpecialization(id, trade, specKey); goBack(); });
         break;
       }
-      case 'save': say(writeSave(game.slot) ? 'Jogo salvo.' : 'Não deu pra salvar. O navegador recusou.'); renderMenu(); break;
-      case 'save-quit': writeSave(game.slot); toTitle(); break;
+      case 'save': {
+        const saved = writeSave(game.slot);
+        menu.saveNotice = saved ? `Jogo salvo com sucesso · ${new Date(game.lastSaved).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}.` : 'Não foi possível salvar o jogo. O navegador recusou o armazenamento.';
+        if (saved) say('Jogo salvo com sucesso.');
+        renderMenu();
+        break;
+      }
+      case 'save-quit': {
+        if (writeSave(game.slot)) { say('Jogo salvo com sucesso.'); toTitle(); }
+        else { menu.saveNotice = 'Não foi possível salvar o jogo. Você continua nesta partida.'; renderMenu(); }
+        break;
+      }
       case 'dead-quit': toTitle(); break;
     }
   });
   $('#menu-btn').addEventListener('click', openPause);
+  $('#fishing-menu-btn')?.addEventListener('click', event => { event.stopPropagation(); openFishingMenu(); });
   $('#trees-toggle')?.addEventListener('click', () => { options.trees = options.trees === 0 ? 1 : 0; writeStore(OPTIONS_KEY, options); applyOptions(); });
   // Ofício escolhido na ficha do camponês: o mesmo setProfession da aba Ofícios. A ficha redesenha no mesmo ponto da rolagem.
   $('#menu-panel').addEventListener('change', event => {
@@ -9669,6 +10162,17 @@ function initMenus() {
     menu.pending = null;
     if (game.slot) closeMenu();
     else { menu.stack = []; showScreen('title'); }
+  });
+  // Inspetores sobre o mapa fecham ao clicar em qualquer área externa, inclusive outras interfaces.
+  document.addEventListener('click', event => {
+    const inspector = $('#site-inspector');
+    if (!inspector || inspector.hidden || inspector.contains(event.target)) return;
+    if (state.movingSite != null) cancelMove();
+    state.selectedSite = null;
+    selectedLairId = null;
+    selectedFishingSpotId = null;
+    state.demolishArmed = null;
+    renderLairs(); renderSites(); renderFishingSpots(); renderPanel();
   });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !$('#inventory-layer').hidden) { event.preventDefault(); closeManorInventory(); return; }
@@ -10314,50 +10818,38 @@ function init() {
     $$('.tab').forEach(other => { const active = other === tab; other.classList.toggle('active', active); other.setAttribute('aria-selected', String(active)); });
     renderPanel();
   }));
+  $('#heroes-roster-btn').addEventListener('click', () => openRosterPanel('heroes'));
+  $('#workers-roster-btn').addEventListener('click', () => openRosterPanel('workers'));
   const setTax = step => {
     changeTaxRate('wages', step);
     say(`Imposto em ${state.taxPercent}%. Cobrado à meia-noite.`, state.taxPercent >= 15 ? `Imposto em ${state.taxPercent}%. Os camponeses aprenderam palavras novas.` : `Imposto em ${state.taxPercent}%.`);
   };
-  $('#tax-down').addEventListener('click', () => setTax(-5));
-  $('#tax-up').addEventListener('click', () => setTax(5));
+  $('#tax-down').addEventListener('click', () => setTax(-1));
+  $('#tax-up').addEventListener('click', () => setTax(1));
   renderSites(); renderHeroes(); renderPanel(); updateHud();
   initEditor();
   setInterval(tick, 1000);
   setInterval(() => animateActors(performance.now()), 50);
   initMenus();
-  // Tela de carregamento: some quando as imagens das telas de entrada chegarem (ou em 60 s, para nunca travar).
+  // O menu abre assim que a interface estiver pronta; imagens não bloqueiam a navegação.
   const loading = $('#loading-screen');
-  if (loading) {
-    const finish = () => { loading.classList.add('done'); setTimeout(() => { loading.hidden = true; }, 400); };
-    setTimeout(finish, 60000);
-    preloadImages().then(finish);
-  }
+  if (loading) loading.hidden = true;
 }
 
-// Baixa antes do menu as imagens que as telas de entrada e o mapa inicial usam: fundo, herdeiros e nobres.
-// As imagens ficam guardadas em preloadedImages para o navegador reaproveitar quando a tela abrir.
-// Imagem que falha conta como carregada, para a barra nunca parar.
-const preloadedImages = [];
-function preloadImages() {
-  const urls = [...new Set([
-    'public/art/mordavia-title.webp', 'public/art/mordavia-map.webp', 'public/art/mordavia-forest-layer.png',
-    ...HEIRS.map(heir => heirPortraitSrc(heir.id, 1)),
-    ...NOBLES.map(noble => noblePortraitSrc(noble.house, 1)),
-  ])];
-  const bar = $('#loading-bar'), label = $('#loading-label');
-  let done = 0;
-  const step = () => {
-    done++;
-    const pct = Math.round(done / urls.length * 100);
-    if (bar) bar.style.width = `${pct}%`;
-    if (label) label.textContent = `Carregando imagens · ${pct}%`;
-  };
-  return Promise.all(urls.map(src => new Promise(resolve => {
+// Antecipação limitada das próximas telas, sem impedir a tela atual de abrir.
+const screenImageQueue = [];
+const queuedScreenImages = new Set();
+let activeScreenImages = 0;
+function queueScreenImages(urls) {
+  for (const url of urls) {
+    if (!queuedScreenImages.has(url)) { queuedScreenImages.add(url); screenImageQueue.push(url); }
+  }
+  while (activeScreenImages < 3 && screenImageQueue.length) {
     const img = new Image();
-    img.onload = img.onerror = () => { step(); resolve(); };
-    img.src = src;
-    preloadedImages.push(img);
-  })));
+    activeScreenImages++;
+    img.onload = img.onerror = () => { activeScreenImages--; queueScreenImages([]); };
+    img.src = screenImageQueue.shift();
+  }
 }
 
 init();

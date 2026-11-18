@@ -1,5 +1,5 @@
 // ==========================================================================
-// Efeitos visuais das magias do Monarca em WebGL.
+// Efeitos visuais das magias em WebGL 2.
 // Duas telas sobre o mapa: "ground" (no chão, abaixo dos personagens) e "sky" (acima deles).
 // Cada tela cobre só a parte visível do mundo e acompanha a câmera; as coordenadas de entrada
 // são as do jogo (x de 0 a 100, y de 0 a WORLD_Y_UNITS), as mesmas dos personagens.
@@ -187,8 +187,7 @@ const SpellFX = (() => {
     canvas.setAttribute('aria-hidden', 'true');
     canvas.style.zIndex = String(z);
     if (after) after.after(canvas); else anchor.append(canvas);
-    const gl = canvas.getContext('webgl', { premultipliedAlpha: false, alpha: true, antialias: false })
-      || canvas.getContext('experimental-webgl', { premultipliedAlpha: false, alpha: true });
+    const gl = canvas.getContext('webgl2', { premultipliedAlpha: false, alpha: true, antialias: false });
     if (!gl) return null;
     const compile = (type, src) => {
       const shader = gl.createShader(type);
@@ -198,8 +197,10 @@ const SpellFX = (() => {
       return shader;
     };
     const prog = gl.createProgram();
-    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+    const vertexSource = '#version 300 es\n' + VERT.replace(/\battribute\b/g, 'in').replace(/\bvarying\b/g, 'out');
+    const fragmentSource = '#version 300 es\n' + FRAG.replace('precision mediump float;', 'precision mediump float;\nout vec4 fragmentColor;').replace(/\bvarying\b/g, 'in').replace(/\bgl_FragColor\b/g, 'fragmentColor');
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, vertexSource));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fragmentSource));
     gl.linkProgram(prog);
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
     const buffer = gl.createBuffer();
@@ -219,7 +220,7 @@ const SpellFX = (() => {
       layers.sky = makeLayer('sky', 7, world, document.getElementById('hero-layer'));
       ok = !!(layers.ground && layers.sky);
     } catch (error) {
-      console.warn('Efeitos das magias desligados: WebGL indisponível.', error);
+      console.warn('Efeitos das magias desligados: WebGL 2 indisponível.', error);
       ok = false;
     }
     return ok;

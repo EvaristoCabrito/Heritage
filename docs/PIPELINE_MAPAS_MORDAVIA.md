@@ -2,6 +2,35 @@
 
 Use este procedimento para mapas futuros do jogo. A arte é fotorealista e acompanha as referências aprovadas. O mapa final deve ser contínuo: “seamless” significa continuidade real da mesma composição, não uma faixa disfarçada.
 
+## Estrutura do jogo e vocabulário
+
+Há somente dois conjuntos jogáveis: **Free Build** e **Campanha**. Cada conjunto tem duas regiões navegáveis, **City** e **Wilds**; o botão WILDS alterna entre elas. A Campanha começa no conjunto visual tropical quando chega ao capítulo correspondente. Free Build e Campanha são modos/percursos do jogo, não quatro mapas nem quatro sistemas de jogo.
+
+Cada região navegável é uma composição vertical contínua, formada por **dois painéis empilhados**: painel superior e painel inferior. Esses painéis não são mapas independentes e não devem receber coordenadas ou regras de jogo separadas. A composição de cada região tem dois arquivos pareados:
+
+1. **Base do terreno:** chão, água, estradas, construções fixas e demais detalhes do terreno, sem copas de árvores.
+2. **Camada de árvores:** PNG RGBA transparente, no mesmo enquadramento e tamanho da base, contendo as copas que aparecem à frente de personagens e construções.
+
+O jogo sobrepõe a camada de árvores à base. Portanto, cada região tem a sua própria camada de árvores; não junte copas à base e não reutilize uma camada de outra região. A camada frontal pode ocultar parcialmente personagens e construções de acordo com a posição vertical, como acontece no mapa atual.
+
+| Conjunto | Região City | Região Wilds |
+|---|---|---|
+| Free Build (Map 1) | `public/art/mordavia-map.webp` + `public/art/mordavia-forest-layer.png` | `public/art/mordavia-wilds-map.webp` + `public/art/mordavia-forest-layer.png` |
+| Campanha tropical (Map 2) | `public/art/mordavia-map02-tropical-city-ground-v05.png` + `public/art/mordavia-map02-tropical-city-trees-v05.png` | `public/art/mordavia-map02-tropical-wilds-ground-v06.png` + `public/art/mordavia-map02-tropical-wilds-trees-v06.png` |
+
+No código, `mapId` identifica a região (`city` ou `wilds`) e `mapSet` identifica o conjunto visual (1 ou 2). Um ponto de caça, pesca, covil ou construção precisa declarar os dois quando aplicável. Para reposicionar um ponto, altere somente o registro da região e conjunto correspondentes; não copie as coordenadas para a outra região ou conjunto. As coordenadas horizontais `x` são percentuais da largura. A coordenada vertical de jogo `y` vai de 0 a 200 e vira posição CSS com `y / WORLD_Y_UNITS * 100%`.
+
+No Map 1, City e Wilds usam atualmente o mesmo PNG de borda florestal como sobreposição. Isso é uma reutilização explícita do asset legado; para uma arte nova ou uma composição diferente, crie e associe uma camada própria para cada região. No Map 2, City tropical e Wilds tropical já usam camadas distintas.
+
+### Como desenhar e integrar uma região
+
+1. Desenhe uma única fonte vertical completa para a base da região e outra para sua camada de árvores. Use o mesmo enquadramento para as duas fontes e deixe caminhos e áreas de construção livres onde o jogo precisa de passagem.
+2. Normalize ambas as fontes completas para **1199 × 2624 px**. Só depois corte cada fonte em dois painéis: `y=0–1311` e `y=1312–2623`, ambos com **1199 × 1312 px**. A costura é uma divisão de arquivo; não deve aparecer como divisão no terreno.
+3. Monte novamente os dois painéis e confira que a imagem recomposta é idêntica à fonte normalizada. Faça essa conferência separadamente para base e camada de árvores; preserve o alfa da camada.
+4. Crie nomes novos e versionados para os arquivos. Atualize o par da região em `switchMap()` no `app.js`, mantendo cada base junto da camada correspondente e sem apagar versões anteriores.
+5. Confira os pontos existentes da região antes de adicionar locais de jogo. Mantenha rotas e destinos em terreno caminhável; não ponha caça, pesca, covis ou construções fixas em água, copas, pontes ou caminhos bloqueados. Mude somente os pontos da região solicitada.
+6. Preserve a composição em telas e zooms diferentes: o cenário inteiro usa coordenadas normalizadas, e a câmera apenas recorta/mostra outra parte da mesma região. Não crie uma implementação alternativa do mapa para Free Build ou Campanha.
+
 ## 1. Planejar regiões
 
 - Defina o conteúdo de cada região antes de gerar a arte.

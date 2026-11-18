@@ -53,13 +53,14 @@ O estoque alto é concedido uma vez ao criar uma partida nova. Custos, pagamento
 - Comida no estilo Lords of the Realm: cada fazenda produz o seu alimento (trigo, alho, bacon, ovos ou leite). Trigo cru não alimenta: o moinho mói o trigo do depósito em farinha, 1 para 1, e a farinha vai pra mesa (eles que cozinhem em casa). Na aba Provisões (ou clicando em Provisões ou Felicidade na barra do topo) você escolhe a ração (nenhuma, meia, normal, dobrada ou tripla, a 0,3 por camponês por segundo na normal) e o que servir. A Felicidade (0 a 100) aparece na barra do topo: ração maior, imposto baixo e comida servida aumentam (alho +1, farinha +2, bacon +2, ovos +1, leite +1); ração pequena, imposto alto e fome diminuem. Ela muda uma vez por semana, à meia-noite do 7º dia, até 10 pontos na direção da média da semana.
 - O casarão guarda 500 unidades de comida, armas e itens. Para guardar mais, construa um Depósito de Provisões (70 G, 6 M): soma 30 e amplia para 45, 70 e 100 (80 G e 6 M, 140 G e 10 M, 220 G e 16 M). Com tudo cheio, o excesso da colheita se perde.
 - Arrastar o mapa com mouse ou toque; usar a roda do mouse ou as setas do teclado para percorrer o domínio. O botão de casa volta ao casarão.
-- Escolher entre três níveis de zoom: ampla (100%, o padrão), normal (130%) e próxima (160%). A troca mantém o centro da câmera quando possível. Recursos, heróis e trabalhadores com seus limites e o total de construções ficam na barra do topo. Personagens e construções seguem a escala do mapa, com os personagens da altura da porta do casarão.
+- Escolher entre quatro níveis de zoom: ampla (100%, o padrão), normal (130%), próxima (160%) e muito próxima (200%). A troca mantém o centro da câmera quando possível. Recursos, heróis e trabalhadores com seus limites e o total de construções ficam na barra do topo. Personagens e construções seguem a escala do mapa, com os personagens da altura da porta do casarão.
 
 ## Arquivos principais
 
 - `index.html` — estrutura da interface.
 - `app.css` — layout responsivo e estilo visual.
 - `app.js` — economia, obras, heróis, saves, menus e cenário.
+- `docs/PIPELINE_MAPAS_MORDAVIA.md` — estrutura de Free Build e Campanha, regiões City/Wilds, camadas de árvores, dimensões, coordenadas e processo para desenhar e integrar mapas.
 - `public/art/mordavia-map.webp` — mapa contínuo ativo.
 - `public/art/mordavia-forest-layer.png` — camada de floresta transparente sobre o mapa.
 - `public/art/mordavia-title.webp` — fundo estático sem fumaça para a tela de título.

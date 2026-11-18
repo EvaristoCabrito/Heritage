@@ -1,11 +1,11 @@
 const MILITARY_INDUSTRIES = {
   woodworking: {
     names: ["Bowyer’s Workshop", "Military Bowyer", "Master Weaponsmith’s Woodworks"],
-    levels: [{ cap: 16, crew: 1 }, { cap: 24, crew: 2, gold: 180, wood: 20, stone: 10 }, { cap: 36, crew: 3, gold: 320, wood: 32, stone: 18 }],
+    levels: [{ cap: 16, crew: 1 }, { cap: 24, crew: 2, gold: 45, wood: 60, stone: 36 }, { cap: 36, crew: 3, gold: 80, wood: 96, stone: 60 }],
   },
   siegeWorks: {
     names: ["Siege Carpenter’s Yard", "Siege Engineer’s Yard", "Grand Siege Works"],
-    levels: [{ cap: 42, crew: 1 }, { cap: 70, crew: 2, gold: 260, wood: 32, stone: 16 }, { cap: 100, crew: 3, gold: 440, wood: 48, stone: 28 }],
+    levels: [{ cap: 42, crew: 1 }, { cap: 70, crew: 2, gold: 65, wood: 96, stone: 48 }, { cap: 120, crew: 3, gold: 110, wood: 144, stone: 84 }],
   },
 };
 
@@ -118,6 +118,17 @@ const MILITARY_RECIPES = Object.fromEntries(Object.entries({
 
 const MILITARY_PRODUCTS = Object.values(MILITARY_RECIPES).flat();
 const SIEGE_DEPLOYMENTS = Object.fromEntries(MILITARY_RECIPES.siegeWorks.filter(recipe => recipe.deploy).map(recipe => [recipe.id, recipe]));
+// Prancha original gerada para as peças de cerco: quatro colunas por quatro linhas.
+const SIEGE_PHOTO_CELLS = {
+  siegeLadder: [0, 0], siegeStaircase: [1, 0], woodenAssaultRamp: [2, 0], heavySiegeStaircase: [3, 0],
+  lightSiegeTower: [0, 1], grandSiegeTower: [1, 1], fortifiedSiegeStaircase: [2, 1],
+  batteringRam: [3, 1], coveredBatteringRam: [0, 2], heavyCoveredRam: [1, 2],
+  lightBallista: [2, 2], heavyBallista: [3, 2], tractionTrebuchet: [0, 3], counterweightTrebuchet: [1, 3],
+};
+function siegePhotoStyle(type) {
+  const cell = SIEGE_PHOTO_CELLS[type];
+  return cell ? `background-image:url('public/art/military-v01/siege-equipment-sheet-v01.png');background-size:400% 400%;background-position:${cell[0] * 100 / 3}% ${cell[1] * 100 / 3}%;background-repeat:no-repeat;` : '';
+}
 
 const militaryLevel = building => MILITARY_INDUSTRIES[building.type]?.levels[producerLevel(building)];
 const militaryCrew = building => state.workers.filter(worker => worker.alive && worker.workplace?.site === building.site);
@@ -437,6 +448,11 @@ function siegePlacementSpacing(type, building) {
 }
 
 function siegeThumbHTML(type, extraClass = '') {
+  if (SIEGE_PHOTO_CELLS[type]) return `<span class="siege-thumb siege-thumb-photo siege-sheet ${extraClass}" style="${siegePhotoStyle(type)}" aria-hidden="true"></span>`;
+  if (['woodenPalisade', 'reinforcedWoodenWall', 'woodenGate', 'reinforcedWoodenGate'].includes(type)) {
+    const art = BUILDING_ART[type];
+    return `<span class="siege-thumb siege-thumb-photo ${extraClass}" style="${buildingImageStyle(art)}" aria-hidden="true"></span>`;
+  }
   return `<span class="siege-thumb ${extraClass}" data-siege="${SIEGE_DEPLOYMENTS[type].deploy}" aria-hidden="true"></span>`;
 }
 

@@ -1445,8 +1445,8 @@ const Monarch = (() => {
     panel = document.createElement('div');
     panel.className = 'spell-panel';
     panel.hidden = true;
-    panel.innerHTML = `<header><b>MAGIAS</b><span class="spell-panel-level"></span><button type="button" class="spell-panel-close" aria-label="Fechar" title="Fechar">×</button></header>
-      <div class="spell-panel-mp"><i></i><span></span></div>
+    panel.innerHTML = `<header><b>MAGIAS</b><span class="spell-panel-level"></span><button type="button" class="spell-mp-toggle" aria-pressed="true" aria-controls="spell-panel-mp" title="Mostrar ou ocultar barra de MP">MP</button><button type="button" class="spell-panel-close" aria-label="Fechar" title="Fechar">×</button></header>
+      <div class="spell-panel-mp" id="spell-panel-mp"><i></i><span></span></div>
       <p class="spell-panel-help">Escolha a magia e clique no alvo. Esc ou clique direito cancela. Para a barra de baixo: arraste a magia até um espaço, ou passe o mouse nela e aperte F1 a F12.</p>
       <div class="spell-panel-list"></div>
       <footer class="spell-panel-next"></footer>`;
@@ -1461,6 +1461,13 @@ const Monarch = (() => {
     panel.addEventListener('click', event => {
       event.stopPropagation();
       if (event.target.closest('.spell-panel-close')) { togglePanel(false); return; }
+      const mpToggle = event.target.closest('.spell-mp-toggle');
+      if (mpToggle) {
+        const mpBar = panel.querySelector('.spell-panel-mp');
+        mpBar.hidden = !mpBar.hidden;
+        mpToggle.setAttribute('aria-pressed', String(!mpBar.hidden));
+        return;
+      }
       const button = event.target.closest('.spell-cast');
       if (!button || button.disabled) return;
       if (button.dataset.field === '1') fieldPress(button.dataset.spell); else press(button.dataset.spell);
