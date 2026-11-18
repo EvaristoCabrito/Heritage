@@ -3169,19 +3169,21 @@ function onCityMap02Bridge(x, y) {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy)) <= 3.6;
 }
 
-function nearWater(x, y, mapId = currentMap, mapSet = currentMapSet, clearance = 2.7) {
+function waterDistance(x, y, mapId = currentMap, mapSet = currentMapSet) {
   const waterways = mapId === 'wilds' ? WILDS_WATERWAYS[mapSet] : CITY_WATERWAYS[mapSet];
   const py = y * Y_TO_X_SCALE;
-  return (waterways || []).some(path => path.some((point, index) => {
-    if (index === path.length - 1) return false;
-    const [ax, ayRaw] = point, [bx, byRaw] = path[index + 1];
+  let closest = Infinity;
+  for (const path of waterways || []) for (let index = 0; index < path.length - 1; index++) {
+    const [ax, ayRaw] = path[index], [bx, byRaw] = path[index + 1];
     const ay = ayRaw * Y_TO_X_SCALE, by = byRaw * Y_TO_X_SCALE;
     const dx = bx - ax, dy = by - ay;
     const lengthSq = dx * dx + dy * dy;
     const t = lengthSq ? Math.max(0, Math.min(1, ((x - ax) * dx + (py - ay) * dy) / lengthSq)) : 0;
-    return Math.hypot(x - (ax + t * dx), py - (ay + t * dy)) <= clearance;
-  }));
+    closest = Math.min(closest, Math.hypot(x - (ax + t * dx), py - (ay + t * dy)));
+  }
+  return closest;
 }
+function nearWater(x, y, mapId = currentMap, mapSet = currentMapSet, clearance = 2.7) { return waterDistance(x, y, mapId, mapSet) <= clearance; }
 function nearWildsWater(x, y, mapSet = currentMapSet) { return nearWater(x, y, 'wilds', mapSet); }
 
 function movementBlockedByWater(actor, x1, y1, x2, y2) {
@@ -3191,11 +3193,113 @@ function movementBlockedByWater(actor, x1, y1, x2, y2) {
   ].every(([x, y]) => onCityMap02Bridge(x, y))) return false;
   const distance = Math.hypot(x2 - x1, (y2 - y1) * Y_TO_X_SCALE);
   const steps = Math.max(1, Math.ceil(distance / 0.65));
+  const startDistance = waterDistance(x1, y1, mapId, mapSet);
+  const escapingWater = startDistance < 3.4;
+  let previousDistance = startDistance;
   for (let i = 1; i <= steps; i++) {
     const t = i / steps;
-    if (nearWater(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, mapId, mapSet, 3.4)) return true;
+    const currentDistance = waterDistance(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, mapId, mapSet);
+    if (currentDistance < 3.4 && (!escapingWater || currentDistance + 0.05 < previousDistance)) return true;
+    previousDistance = currentDistance;
   }
   return false;
+}
+
+const NAV_CELL_SIZE = 2;
+const NAV_COLS = 51;
+const NAV_ROWS = 101;
+const NAV_GRIDS = new Map();
+const navIndex = (col, row) => row * NAV_COLS + col;
+const navPoint = index => ({ x: index % NAV_COLS * NAV_CELL_SIZE, y: Math.floor(index / NAV_COLS) * NAV_CELL_SIZE });
+function terrainGridFor(actor) {
+  const mapId = actor.mapId || 'city', mapSet = actor.mapSet || 1;
+  const key = `${mapId}:${mapSet}`;
+  if (NAV_GRIDS.has(key)) return NAV_GRIDS.get(key);
+  const grid = new Uint8Array(NAV_COLS * NAV_ROWS);
+  for (let row = 1; row < NAV_ROWS - 1; row++) for (let col = 1; col < NAV_COLS - 1; col++) {
+    const { x, y } = navPoint(navIndex(col, row));
+    const blocked = nearWater(x, y, mapId, mapSet, 3.4)
+      && !(mapId === 'city' && mapSet === 2 && onCityMap02Bridge(x, y));
+    if (!blocked) grid[navIndex(col, row)] = 1;
+  }
+  NAV_GRIDS.set(key, grid);
+  return grid;
+}
+function closestNavCell(grid, point) {
+  const col0 = Math.max(1, Math.min(NAV_COLS - 2, Math.round(point.x / NAV_CELL_SIZE)));
+  const row0 = Math.max(1, Math.min(NAV_ROWS - 2, Math.round(point.y / NAV_CELL_SIZE)));
+  let best = -1, bestDistance = Infinity;
+  for (let radius = 0; radius <= 5 && best < 0; radius++) {
+    for (let row = Math.max(1, row0 - radius); row <= Math.min(NAV_ROWS - 2, row0 + radius); row++) {
+      for (let col = Math.max(1, col0 - radius); col <= Math.min(NAV_COLS - 2, col0 + radius); col++) {
+        if (Math.max(Math.abs(col - col0), Math.abs(row - row0)) !== radius) continue;
+        const index = navIndex(col, row);
+        if (!grid[index]) continue;
+        const candidate = navPoint(index);
+        const distance = Math.hypot(candidate.x - point.x, (candidate.y - point.y) * Y_TO_X_SCALE);
+        if (distance < bestDistance) { best = index; bestDistance = distance; }
+      }
+    }
+  }
+  return best;
+}
+function terrainPath(actor, target) {
+  const grid = terrainGridFor(actor);
+  const start = closestNavCell(grid, actor), end = closestNavCell(grid, target);
+  if (start < 0 || end < 0) return [];
+  const goal = navPoint(end);
+  const score = new Float64Array(grid.length); score.fill(Infinity); score[start] = 0;
+  const previous = new Int32Array(grid.length); previous.fill(-1);
+  const closed = new Uint8Array(grid.length), heap = [];
+  const heuristic = index => { const p = navPoint(index); return Math.hypot(goal.x - p.x, (goal.y - p.y) * Y_TO_X_SCALE); };
+  const push = item => {
+    let i = heap.length; heap.push(item);
+    while (i > 0) { const parent = (i - 1) >> 1; if (heap[parent].f <= item.f) break; heap[i] = heap[parent]; i = parent; }
+    heap[i] = item;
+  };
+  const pop = () => {
+    const first = heap[0], last = heap.pop();
+    if (heap.length) {
+      let i = 0;
+      while (true) {
+        const left = i * 2 + 1, right = left + 1;
+        if (left >= heap.length) break;
+        const child = right < heap.length && heap[right].f < heap[left].f ? right : left;
+        if (heap[child].f >= last.f) break;
+        heap[i] = heap[child]; i = child;
+      }
+      heap[i] = last;
+    }
+    return first;
+  };
+  push({ index: start, f: heuristic(start) });
+  const offsets = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]];
+  while (heap.length) {
+    const current = pop(), index = current.index;
+    if (closed[index]) continue;
+    if (index === end) {
+      const path = [];
+      for (let at = end; at >= 0; at = previous[at]) { path.unshift(navPoint(at)); if (at === start) break; }
+      return path;
+    }
+    closed[index] = 1;
+    const col = index % NAV_COLS, row = Math.floor(index / NAV_COLS);
+    for (const [dc, dr] of offsets) {
+      const nc = col + dc, nr = row + dr;
+      if (nc < 1 || nc >= NAV_COLS - 1 || nr < 1 || nr >= NAV_ROWS - 1) continue;
+      const next = navIndex(nc, nr);
+      if (!grid[next] || closed[next]) continue;
+      if (dc && dr && (!grid[navIndex(col + dc, row)] || !grid[navIndex(col, row + dr)])) continue;
+      const fromPoint = navPoint(index), toPoint = navPoint(next);
+      if (movementBlockedByWater(actor, fromPoint.x, fromPoint.y, toPoint.x, toPoint.y)) continue;
+      const distance = Math.hypot(dc * NAV_CELL_SIZE, dr * NAV_CELL_SIZE * Y_TO_X_SCALE);
+      const nextScore = score[index] + distance;
+      if (nextScore >= score[next]) continue;
+      score[next] = nextScore; previous[next] = index;
+      push({ index: next, f: nextScore + heuristic(next) });
+    }
+  }
+  return [];
 }
 
 function fishingBankPoint(actor, spot) {
@@ -4730,6 +4834,7 @@ function taskDistance(actor, place) {
   return Math.hypot(actor.x - exit.x, actor.y - exit.y) + 8 + roadDistanceTo(gate, point);
 }
 function routeToPoint(actor, point) {
+  actor.terrainRoute = null;
   const tree = roadPathsFrom(actor);
   let finish = 0, best = Infinity;
   PATH_NODES.forEach((node, i) => {
@@ -4743,6 +4848,7 @@ function routeToPoint(actor, point) {
 }
 
 function routeActor(actor, finish) {
+  actor.terrainRoute = null;
   const path = shortestPath(nearestNode(actor), finish);
   if (path.length && Math.hypot(PATH_NODES[path[0]].x - actor.x, PATH_NODES[path[0]].y - actor.y) < 0.5) path.shift();
   actor.route = path;
@@ -4957,21 +5063,40 @@ function animateActors(now) {
     while (remaining > 0 && (actor.route.length || actor.finalPoint)) {
       const onTrail = actor.route.length > 0;
       const lane = onTrail ? laneOffset(actor) : null;
-      const node = onTrail ? { x: PATH_NODES[actor.route[0]].x + lane.x, y: Math.min(198, PATH_NODES[actor.route[0]].y + lane.y) } : actor.finalPoint;
+      const routeTarget = onTrail ? { x: PATH_NODES[actor.route[0]].x + lane.x, y: Math.min(198, PATH_NODES[actor.route[0]].y + lane.y) } : actor.finalPoint;
+      const routeKey = routeTarget ? `${Math.round(routeTarget.x * 2)}:${Math.round(routeTarget.y * 2)}` : '';
+      if (actor.terrainRoute?.length && actor.terrainRouteKey !== routeKey) actor.terrainRoute = null;
+      const onTerrainRoute = actor.terrainRoute?.length > 0;
+      const node = onTerrainRoute ? actor.terrainRoute[0] : routeTarget;
       const waypoint = siegePassage(actor, node, remaining);
       const dx = waypoint.x - actor.x, dy = waypoint.y - actor.y;
       const distance = Math.hypot(dx, dy);
       if (distance < 0.001 && waypoint !== node) break;
-      if (distance < 0.001) { if (onTrail) actor.route.shift(); else actor.finalPoint = null; continue; }
+      if (distance < 0.001) {
+        if (onTerrainRoute) { actor.terrainRoute.shift(); if (!actor.terrainRoute.length) actor.terrainRoute = null; }
+        else if (onTrail) actor.route.shift(); else actor.finalPoint = null;
+        continue;
+      }
       actor.facing = dy < -0.2 ? 'back' : dy > 0.2 ? 'front' : (actor.facing || 'front');
       if (Math.abs(dx) > 0.2) actor.side = dx < 0 ? 'left' : 'right';
       const step = Math.min(distance, remaining);
       const nextX = actor.x + dx / distance * step;
       const nextY = actor.y + dy / distance * step;
       if (movementBlockedByWater(actor, actor.x, actor.y, nextX, nextY)) {
+        const detour = terrainPath(actor, routeTarget);
+        if (detour.length > 1) {
+          actor.terrainRoute = detour;
+          actor.terrainRouteKey = routeKey;
+          break;
+        }
+        if (detour.length === 1 && Math.hypot(actor.x - routeTarget.x, (actor.y - routeTarget.y) * Y_TO_X_SCALE) < 1.6) {
+          if (onTrail) actor.route.shift(); else actor.finalPoint = null;
+          continue;
+        }
         actor.route = [];
         actor.finalPoint = null;
         actor.goal = null;
+        actor.terrainRoute = null;
         if (actor.profession === 'fisher') actor.fishingBank = null;
         actor.wait = 0.5;
         break;
@@ -4983,7 +5108,8 @@ function animateActors(now) {
       if (waypoint !== node) break;
       if (step >= distance - 0.001) {
         actor.x = node.x; actor.y = node.y;
-        if (onTrail) actor.route.shift(); else actor.finalPoint = null;
+        if (onTerrainRoute) { actor.terrainRoute.shift(); if (!actor.terrainRoute.length) actor.terrainRoute = null; }
+        else if (onTrail) actor.route.shift(); else actor.finalPoint = null;
         if (!actor.route.length && !actor.finalPoint) {
           // Quem trabalha tem ritmo fixo; quem só anda para um tempo diferente a cada vez, para ninguém andar em fila sincronizada.
           actor.wait = actor.className === 'Peasant' ? (actor.headingToWork ? 2.3 / taskSpeed(actor, workplaceOf(actor)) : 1.8 + Math.random() * 3) : 1.2;
@@ -4998,6 +5124,7 @@ function animateActors(now) {
     else animateWalk(actor, moved, delta, reducedMotion);
     } catch (error) {
       actor.route = [];
+      actor.terrainRoute = null;
       actor.wait = 0;
       actor.goal = null;
       if (actor.className === 'Peasant') {
@@ -8020,18 +8147,42 @@ const raidEntry = () => PATH_NODES[18] || PATH_NODES[9];
 
 function moveToward(actor, target, step) {
   target = siegePassage(actor, target, step);
-  const dx = target.x - actor.x, dy = target.y - actor.y;
-  const distance = Math.hypot(dx, dy);
+  target = { x: Math.max(2, Math.min(98, target.x)), y: Math.max(2, Math.min(198, target.y)) };
+  let dx = target.x - actor.x, dy = target.y - actor.y;
+  let distance = Math.hypot(dx, dy);
   if (distance < 0.001) return 0;
   if (actor.kind === 'troll') actor.walkDirection = Math.abs(dy) > Math.abs(dx) ? (dy < 0 ? 'up' : 'down') : 'side';
   // Lentidão, raízes, atordoamento e pressa vêm das magias do Monarca.
   const move = Math.min(distance, step * (window.Monarch?.moveMul(actor) ?? 1));
   if (move <= 0) return 0;
-  actor.x += dx / distance * move;
-  actor.y += dy / distance * move;
+  let waypoint = target;
+  let nextX = actor.x + dx / distance * move, nextY = actor.y + dy / distance * move;
+  if (movementBlockedByWater(actor, actor.x, actor.y, nextX, nextY)) {
+    const key = `${actor.mapId || 'city'}:${actor.mapSet || 1}:${Math.round(target.x / NAV_CELL_SIZE)}:${Math.round(target.y / NAV_CELL_SIZE)}`;
+    if (actor.navMoveKey !== key) {
+      actor.navMoveKey = key;
+      actor.navMoveRoute = terrainPath(actor, target);
+    }
+    while (actor.navMoveRoute?.length && Math.hypot(actor.navMoveRoute[0].x - actor.x, actor.navMoveRoute[0].y - actor.y) < 0.45) actor.navMoveRoute.shift();
+    waypoint = actor.navMoveRoute?.[0];
+    if (!waypoint) return 0;
+    dx = waypoint.x - actor.x; dy = waypoint.y - actor.y;
+    distance = Math.hypot(dx, dy);
+    const detourStep = Math.min(distance, move);
+    nextX = actor.x + dx / distance * detourStep;
+    nextY = actor.y + dy / distance * detourStep;
+    if (movementBlockedByWater(actor, actor.x, actor.y, nextX, nextY)) return 0;
+  } else {
+    actor.navMoveKey = null;
+    actor.navMoveRoute = null;
+  }
+  const moved = Math.hypot(nextX - actor.x, nextY - actor.y);
+  actor.x = nextX;
+  actor.y = nextY;
   actor.facing = dy < -0.5 ? 'back' : dy > 0.5 ? 'front' : (actor.facing || 'front');
   if (Math.abs(dx) > 0.2) actor.side = dx < 0 ? 'left' : 'right';
-  return move;
+  if (waypoint !== target && distance <= move + 0.001) actor.navMoveRoute.shift();
+  return moved;
 }
 
 function faceToward(actor, target) {
