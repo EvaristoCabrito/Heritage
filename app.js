@@ -3415,6 +3415,7 @@ function renderHeroes() {
       token.type = 'button';
       token.dataset.actor = String(actor.id);
       token.setAttribute('aria-label', `${actor.name}, ${actor.className}`);
+      token.title = `Clique para abrir a ficha de ${actor.name}`;
       const art = actorArt(actor);
       token.innerHTML = art
         ? `<span class="character-sprite" style="background-image:url('public/art/${art}-walk-v01.${art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp'}')" aria-hidden="true"></span><span class="character-name">${actor.name}</span>`
@@ -3429,11 +3430,7 @@ function renderHeroes() {
           huntBounty(actor.id);
           return;
         }
-        state.selectedActor = actor.id;
-        renderHeroes();
-        // Clicar no boneco abre a ficha dele: nível, experiência, atributos e origem.
-        menu.stack = [];
-        showScreen('actor', { id: actor.id });
+        openActorSheet(actor.id);
       });
       token.insertAdjacentHTML('beforeend', '<span class="hp-bar" aria-hidden="true"><i></i></span>');
       layer.append(token);
@@ -3510,7 +3507,7 @@ function heroCard(hero) {
   return `<article class="hero-card">
     ${actorPortraitHTML(hero, 'hero-portrait', true)}
     <div class="hero-details"><b>${hero.name}</b><small>${actorLabel(hero)}</small>${actorMainHandHTML(hero)}${hero.trait ? `<small class="hero-trait"><b>${hero.trait}.</b> ${TRAITS[hero.trait] || ''}</small>` : ''}<small>${nextInfo}</small><small>Alcoolismo · penalidade ${Math.floor(alcoholismOf(hero))}/100</small><small>Bolsa: ${format(purseOf(hero))} de ouro</small></div>
-    <div class="hero-xp">NÍV. ${hero.level}<i style="--xp:${hero.level >= HEIR_MAX_LEVEL ? 100 : Math.round((hero.xp || 0) / xpToNext(hero.level) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${hero.id}">STATUS</button></div>
+    <div class="hero-xp">NÍV. ${hero.level}<i style="--xp:${hero.level >= HEIR_MAX_LEVEL ? 100 : Math.round((hero.xp || 0) / xpToNext(hero.level) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${hero.id}" aria-label="Abrir ficha de ${hero.name}">FICHA</button></div>
   </article>`;
 }
 
@@ -3520,7 +3517,7 @@ function workerCard(worker) {
     <div class="hero-details"><b>${worker.name}</b><small>${actorLabel(worker)}</small>${actorMainHandHTML(worker)}<small>${homeOf(worker) ? 'Mora no casebre.' : 'Mora no casarão, como as dívidas.'} ${workplaceOf(worker) ? `Trabalha ${workPlaceName(workplaceOf(worker))}.` : 'Sem fazenda pra trabalhar.'}</small><small class="worker-task">Agora: ${peasantActivity(worker)}.</small><label class="prof-select"><span>Ofício</span><select data-profession="${worker.id}"${worker.profession === 'collector' ? ' disabled' : ''}><option value="">Nenhum</option>${worker.profession === 'fisher' ? '<option value="fisher" selected disabled>Pescador · atribuído no mapa</option>' : ''}${worker.profession === 'collector' ? '<option value="collector" selected>Cobrador · ofício da mansão</option>' : ''}${Object.entries(PROFESSIONS).filter(([id]) => id !== 'fisher' && id !== 'collector').map(([id, prof]) => `<option value="${id}"${worker.profession === id ? ' selected' : ''}>${isFemalePeasant(worker) ? prof.fem : prof.name}</option>`).join('')}</select></label>${worker.profession === 'hunter' ? `<div><button type="button" class="hut-upgrade" data-hunt-mode="${worker.id}" data-mode="auto" aria-pressed="${worker.huntMode === 'auto'}">Auto</button>
     <button type="button" class="hut-upgrade" data-hunt-mode="${worker.id}" data-mode="manual" aria-pressed="${worker.huntMode !== 'auto'}">Manual</button>
     ${worker.huntMode === 'auto' ? '' : `<select data-hunt-prey="${worker.id}" aria-label="Alvo da caça"><option value="">Qualquer presa</option><option value="boar" ${worker.huntPrey === 'boar' ? 'selected' : ''}>Javali</option><option value="elk" ${worker.huntPrey === 'elk' ? 'selected' : ''}>Alce</option></select>`}</div>` : ''}<small>Bolsa: ${format(purseOf(worker))} de ouro</small></div>
-    <div class="hero-xp">NÍV. ${worker.level || 1}<i style="--xp:${(worker.level || 1) >= HEIR_MAX_LEVEL ? 100 : Math.round((worker.xp || 0) / xpToNext(worker.level || 1) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${worker.id}">STATUS</button><button type="button" data-worker-cart="${worker.id}" ${!worker.handcart && workshopHave('handcart') < 1 ? 'disabled' : ''}>${worker.handcart ? 'Guardar carrinho' : 'Atribuir carrinho'}</button></div>
+    <div class="hero-xp">NÍV. ${worker.level || 1}<i style="--xp:${(worker.level || 1) >= HEIR_MAX_LEVEL ? 100 : Math.round((worker.xp || 0) / xpToNext(worker.level || 1) * 100)}%"></i><button type="button" class="card-sheet-btn" data-actor-sheet="${worker.id}" aria-label="Abrir ficha de ${worker.name}">FICHA</button><button type="button" data-worker-cart="${worker.id}" ${!worker.handcart && workshopHave('handcart') < 1 ? 'disabled' : ''}>${worker.handcart ? 'Guardar carrinho' : 'Atribuir carrinho'}</button></div>
   </article>`;
 }
 
@@ -3747,7 +3744,7 @@ function bindPanel(host) {
       locate();
     });
   });
-  $$('[data-actor-sheet]', host).forEach(button => button.addEventListener('click', () => { menu.stack = []; showScreen('actor', { id: button.dataset.actorSheet }); }));
+  $$('[data-actor-sheet]', host).forEach(button => button.addEventListener('click', () => openActorSheet(button.dataset.actorSheet)));
   $$('[data-demolish]', host).forEach(button => button.addEventListener('click', () => demolishBuilding(Number(button.dataset.demolish))));
   $$('[data-cancel-construction]', host).forEach(button => button.addEventListener('click', () => cancelConstruction(Number(button.dataset.cancelConstruction))));
 }
@@ -6339,6 +6336,14 @@ function peasantName(female) {
 }
 const actorLabel = actor => actor.className === 'Wildlife' ? `${WILDLIFE_NAMES[actor.kind] || 'Animal selvagem'}` : actor.className === 'Monster' ? `Caveira · nível ${actor.level || 1}` : actor.className === 'Bandit' ? (actor.kind === 'crossbow' ? 'Ladrão de besta' : 'Ladrão de espada') : actor.className === 'Peasant' ? (isFemalePeasant(actor) ? 'Camponesa' : 'Camponês') : `${actor.className}${actor.guildForm && actor.guildForm !== actor.className ? ` · ${actor.guildForm}` : actor.prestige ? ` · ${actor.prestige}` : ''}`;
 const findActor = id => [...state.heroes, ...state.workers, ...(state.bandits || [])].find(actor => String(actor.id) === String(id)) || null;
+function openActorSheet(actorId) {
+  const actor = findActor(actorId);
+  if (!actor?.alive) return;
+  state.selectedActor = actor.id;
+  renderHeroes();
+  menu.stack = [];
+  showScreen('actor', { id: actor.id });
+}
 function actorOrigin(actor) {
   if (actor.className === 'Bandit') return 'Veio pela estrada velha atrás do que não é dele.';
   if (actor.className === 'Monster') return 'Levantou do cemitério dos Wilds. Ninguém sabe o que quer. Ela também não.';
@@ -9763,7 +9768,7 @@ const SCREENS = {
     return { cls: 'is-pause', html: `<section class="menu-card sheet">
       <div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar ficha" title="Fechar ficha">×</button></div>
       <div class="sheet-top">${actorPortraitHTML(actor, 'sheet-portrait')}
-        <div><span class="eyebrow">FICHA · ${actor.className === 'Monster' ? 'MONSTRO' : actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Wildlife' ? 'ANIMAL' : actor.className === 'Peasant' ? 'SERVO' : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
+        <div><span class="eyebrow">FICHA · ${actor.className === 'Monster' ? 'MONSTRO' : actor.className === 'Bandit' ? 'LADRÃO' : actor.className === 'Wildlife' ? 'ANIMAL' : actor.className === 'Peasant' ? actorLabel(actor).toUpperCase() : 'PROTETOR'}</span><h2>${actor.name}</h2><p class="heir-motto">${actorLabel(actor)}</p></div></div>
       ${levelHTML(level, actor.xp || 0)}
       <p class="sheet-house">Vida agora: ${Math.ceil(hpOf(actor))} de ${maxHpOf(actor)}</p>
       ${attributesHTML(attributesAt(tableFor(actor), level), actor)}
