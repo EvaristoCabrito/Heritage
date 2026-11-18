@@ -3525,7 +3525,9 @@ function renderHeroes() {
         ? `<span class="character-sprite" style="background-image:url('public/art/${art}-walk-v01.${art.startsWith('bandit') || art.startsWith('skeleton-v02') || art.startsWith('zombie-v01') || art.startsWith('mordavian-wolf-v01') || art.startsWith('mordavian-goblin-v01') || art.startsWith('mordavian-troll-v01') ? 'png' : 'webp'}')" aria-hidden="true"></span><span class="character-name">${actor.name}</span>`
         : actor.className === 'Monster' ? `<span class="monster-skull" aria-hidden="true">☠</span><span class="character-name">${actor.name}</span>`
         : `<span class="hero-face">${actor.className[0]}</span><span class="character-name">${actor.name}</span>`;
-      token.addEventListener('click', () => {
+      token.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
         if (!actor.alive) return;
         if (state.selectedBuild) return;
         // Clique esquerdo num inimigo põe recompensa pela cabeça dele (valor escolhido na aba Heróis).
@@ -3848,7 +3850,11 @@ function bindPanel(host) {
       locate();
     });
   });
-  $$('[data-actor-sheet]', host).forEach(button => button.addEventListener('click', () => openActorSheet(button.dataset.actorSheet)));
+  $$('[data-actor-sheet]', host).forEach(button => button.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    openActorSheet(button.dataset.actorSheet);
+  }));
   $$('[data-demolish]', host).forEach(button => button.addEventListener('click', () => demolishBuilding(Number(button.dataset.demolish))));
   $$('[data-cancel-construction]', host).forEach(button => button.addEventListener('click', () => cancelConstruction(Number(button.dataset.cancelConstruction))));
 }
@@ -5760,8 +5766,8 @@ function tradeOf(actor, key) {
   return actor.trades[key] || (actor.trades[key] = { xp: 0, level: 1, spec: null, mastery: 0 });
 }
 const tradeLevel = (actor, key) => actor?.trades?.[key]?.level || 1;
-const tradeSpec = (actor, key) => TRADE_BY_KEY[key]?.specializations.find(spec => spec.key === actor?.trades?.[key]?.spec) || null;
-const masteryRank = progress => TRADE_DATA.masteryRanks.filter(start => (progress.mastery || 0) >= start).length;
+const tradeSpec = (actor, key) => TRADE_BY_KEY[key]?.specializations?.find(spec => spec.key === actor?.trades?.[key]?.spec) || null;
+const masteryRank = progress => (TRADE_DATA.masteryRanks || [0]).filter(start => (Number(progress?.mastery) || 0) >= start).length;
 // Passivos ganhos e bônus da especialização, somados.
 function tradeEffects(actor, key) {
   const trade = TRADE_BY_KEY[key];
@@ -5830,9 +5836,11 @@ const unlockLine = (unlock, got, tag) => `<li class="${got ? 'got' : ''}"><em>${
 function tradesHTML(actor) {
   const place = actor.buildSite != null ? null : workplaceOf(actor);
   const current = actor.buildSite != null ? TRADE_HOOKS.build?.trade : place ? TRADE_HOOKS[hookOf(place)]?.trade : null;
-  const table = TRADE_DATA.levelTable;
-  const rows = TRADES.map(trade => {
-    const progress = actor.trades?.[trade.key] || { xp: 0, level: 1, spec: null, mastery: 0 };
+  const table = TRADE_DATA.levelTable || [];
+  const rows = TRADES.filter(Boolean).map(trade => {
+    const stored = actor.trades?.[trade.key] || {};
+    const level = Math.max(1, Math.min(TRADE_MAX, Math.floor(Number(stored.level) || 1)));
+    const progress = { ...stored, level, xp: Number.isFinite(Number(stored.xp)) ? Number(stored.xp) : (table[level - 1]?.totalXp || 0), mastery: Number(stored.mastery) || 0 };
     const spec = tradeSpec(actor, trade.key);
     const maxed = progress.level >= TRADE_MAX;
     let fill = 100, status;
@@ -5843,18 +5851,19 @@ function tradesHTML(actor) {
       status = `${spec.name} · rank ${rank}${next != null ? ` · ${format(progress.mastery || 0)}/${format(next)} de maestria` : ' · maestria completa'}`;
     } else if (maxed) status = 'Pronto para especializar';
     else {
-      const from = table[progress.level - 1].totalXp, to = table[progress.level].totalXp;
-      fill = (progress.xp - from) / (to - from) * 100;
+      const from = table[progress.level - 1]?.totalXp || 0;
+      const to = table[progress.level]?.totalXp ?? from + (table[progress.level - 1]?.xpToNext || 1);
+      fill = to > from ? (progress.xp - from) / (to - from) * 100 : 0;
       status = `${format(progress.xp - from)}/${format(to - from)} XP`;
     }
-    const actions = trade.actions.map(action => `${action.name}${action.hook ? '' : '*'}`).join(', ');
-    const passives = trade.passives.map(passive => `<li class="${progress.level >= passive.level ? 'got' : ''}"><em>Nv ${passive.level}</em> <b>${passive.name}</b> · ${effectText(passive.effects, true)}</li>`).join('');
-    const unlocks = trade.unlocks.map(unlock => unlockLine(unlock, progress.level >= unlock.level, `Nv ${unlock.level}`)).join('');
+    const actions = (trade.actions || []).map(action => `${action.name}${action.hook ? '' : '*'}`).join(', ');
+    const passives = (trade.passives || []).map(passive => `<li class="${progress.level >= passive.level ? 'got' : ''}"><em>Nv ${passive.level}</em> <b>${passive.name}</b> · ${effectText(passive.effects || {}, true)}</li>`).join('');
+    const unlocks = (trade.unlocks || []).map(unlock => unlockLine(unlock, progress.level >= unlock.level, `Nv ${unlock.level}`)).join('');
     const specs = spec
-      ? `<p class="trade-note"><b>${spec.option} · ${spec.name}</b>: ${spec.focus}. ${effectText(spec.bonus, true)}.</p><ul>${spec.unlocks.map(unlock => unlockLine(unlock, masteryRank(progress) >= unlock.rank, `Rank ${unlock.rank}`)).join('')}</ul>`
+      ? `<p class="trade-note"><b>${spec.option} · ${spec.name}</b>: ${spec.focus}. ${effectText(spec.bonus || {}, true)}.</p><ul>${(spec.unlocks || []).map(unlock => unlockLine(unlock, masteryRank(progress) >= unlock.rank, `Rank ${unlock.rank}`)).join('')}</ul>`
       : maxed
-        ? `<p class="trade-note">Escolha uma. É definitiva.</p><div class="trade-specs">${trade.specializations.map(item => `<button type="button" class="trade-spec" data-action="pick-spec" data-id="${actor.id}" data-trade="${trade.key}" data-spec="${item.key}"><b>${item.option} · ${item.name}</b><small>${item.focus}. ${effectText(item.bonus, true)}</small></button>`).join('')}</div>`
-        : `<ul>${trade.specializations.map(item => `<li><em>Nv ${TRADE_DATA.specializationLevel}</em> <b>${item.option} · ${item.name}</b> · ${item.focus}</li>`).join('')}</ul>`;
+        ? `<p class="trade-note">Escolha uma. É definitiva.</p><div class="trade-specs">${(trade.specializations || []).map(item => `<button type="button" class="trade-spec" data-action="pick-spec" data-id="${actor.id}" data-trade="${trade.key}" data-spec="${item.key}"><b>${item.option} · ${item.name}</b><small>${item.focus}. ${effectText(item.bonus || {}, true)}</small></button>`).join('')}</div>`
+        : `<ul>${(trade.specializations || []).map(item => `<li><em>Nv ${TRADE_DATA.specializationLevel}</em> <b>${item.option} · ${item.name}</b> · ${item.focus}</li>`).join('')}</ul>`;
     return `<details class="trade${current === trade.key ? ' main' : ''}${maxed && !spec ? ' ready' : ''}"><summary><span class="trade-name">${trade.name}</span><span class="trade-bar"><i style="width:${Math.max(0, Math.min(100, fill))}%"></i></span><b>${progress.level}</b><small>${status}</small></summary>
       <div class="trade-body"><p class="trade-note">${trade.area}. Sobe com: ${actions}.</p>
         <div class="trade-sub">PASSIVOS</div><ul>${passives}</ul>
@@ -6467,7 +6476,6 @@ function openActorSheet(actorId) {
   const actor = findActor(actorId);
   if (!actor?.alive) return;
   state.selectedActor = actor.id;
-  renderHeroes();
   menu.stack = [];
   showScreen('actor', { id: actor.id });
 }
@@ -10048,7 +10056,19 @@ const SCREENS = {
 function renderMenu() {
   const current = menu.stack[menu.stack.length - 1];
   if (!current) return;
-  const { cls, html } = SCREENS[current.name](current.params || {});
+  let screen;
+  try {
+    screen = SCREENS[current.name](current.params || {});
+  } catch (error) {
+    console.error(`Falha ao montar a tela ${current.name}`, error);
+    if (current.name !== 'actor') throw error;
+    const actor = findActor(current.params?.id);
+    screen = {
+      cls: 'is-pause',
+      html: `<section class="menu-card sheet"><div class="sheet-close-row"><button type="button" class="sheet-close" data-action="resume" aria-label="Fechar ficha">×</button></div><header class="menu-card-head"><span class="eyebrow">FICHA</span><h2>${actor?.name || 'Unidade'}</h2><p>Não foi possível carregar todos os detalhes desta ficha.</p></header><p class="sheet-house">${actor?.className || 'Unidade'} · Nível ${actor?.level || 1}</p></section>`,
+    };
+  }
+  const { cls, html } = screen;
   const layer = $('#menu-layer');
   layer.className = `menu-layer ${cls}${['sheet', 'actor', 'graveyard'].includes(current.name) ? ' sheet-open' : ''}`;
   layer.hidden = false;
@@ -10096,8 +10116,17 @@ function fitMenu() {
 
 function showScreen(name, params = {}) {
   menu.stack.push({ name, params });
+  try {
+    renderMenu();
+  } catch (error) {
+    menu.stack.pop();
+    $('#menu-layer').hidden = true;
+    game.running = !!game.slot;
+    console.error(`Falha ao abrir a tela ${name}`, error);
+    say('A tela não pôde ser aberta. A partida continuou normalmente.');
+    return false;
+  }
   game.running = false;
-  renderMenu();
   if (name === 'gameMode' || name === 'saves') queueScreenImages(HEIRS.map(heir => heirPortraitSrc(heir.id, 1)));
   if (name === 'heir' || name === 'intro') queueScreenImages([
     'public/art/mordavia-map.webp', 'public/art/mordavia-forest-layer.png',
@@ -10105,6 +10134,7 @@ function showScreen(name, params = {}) {
     'public/art/mordavia-map02-tropical-city-ground-v05.png', 'public/art/mordavia-map02-tropical-city-trees-v05.png',
     'public/art/mordavia-map02-tropical-wilds-ground-v06.png', 'public/art/mordavia-map02-tropical-wilds-trees-v07.png',
   ]);
+  return true;
 }
 
 function closeMenu() {
