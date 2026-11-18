@@ -89,6 +89,7 @@ const FISHING_SPOTS = [
 const fishingStock = spot => state.fishingStock?.[spot.site] || 0;
 const WILDLIFE_SPAWN_MAX = 5; // até cinco animais novos por dia; pode sair zero
 const WILDLIFE_STAY_CAP = 12; // limite de animais vivos nas Wilds
+const WILDLIFE_NORTH_MIGRATION_EVERY = 75;
 const WILDLIFE_STATS = { boar: { hp: 40, atk: 5, mag: 0, def: 2, dex: 3 }, elk: { hp: 55, atk: 6, mag: 0, def: 3, dex: 4 } };
 const WILDLIFE_MEAT = { boar: 'boarMeat', elk: 'elkMeat' };
 const WILDLIFE_NAMES = { boar: 'Javali', elk: 'Alce' };
@@ -3156,6 +3157,17 @@ const CITY_WATERWAYS = {
     [[0, 188], [8, 184], [16, 181]],
   ],
 };
+// Travessia da ponte fixa de City no mapa tropical: segue a estrada central sobre o riacho.
+const CITY_MAP02_BRIDGE = [{ x: 39, y: 137 }, { x: 45, y: 153 }];
+
+function onCityMap02Bridge(x, y) {
+  const [a, b] = CITY_MAP02_BRIDGE;
+  const px = x, py = y * Y_TO_X_SCALE;
+  const ax = a.x, ay = a.y * Y_TO_X_SCALE, bx = b.x, by = b.y * Y_TO_X_SCALE;
+  const dx = bx - ax, dy = by - ay;
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy)) <= 3.6;
+}
 
 function nearWater(x, y, mapId = currentMap, mapSet = currentMapSet, clearance = 2.7) {
   const waterways = mapId === 'wilds' ? WILDS_WATERWAYS[mapSet] : CITY_WATERWAYS[mapSet];
@@ -3174,6 +3186,9 @@ function nearWildsWater(x, y, mapSet = currentMapSet) { return nearWater(x, y, '
 
 function movementBlockedByWater(actor, x1, y1, x2, y2) {
   const mapId = actor.mapId || 'city', mapSet = actor.mapSet || 1;
+  if (mapId === 'city' && mapSet === 2 && [
+    [x1, y1], [(x1 + x2) / 2, (y1 + y2) / 2], [x2, y2],
+  ].every(([x, y]) => onCityMap02Bridge(x, y))) return false;
   const distance = Math.hypot(x2 - x1, (y2 - y1) * Y_TO_X_SCALE);
   const steps = Math.max(1, Math.ceil(distance / 0.65));
   for (let i = 1; i <= steps; i++) {
@@ -8431,6 +8446,7 @@ function huntingTarget(hunter) {
 }
 function peasantHuntStep(worker, delta, reducedMotion) {
   if (worker.profession !== 'hunter' || (worker.mapId || 'city') !== 'wilds' || (worker.mapSet || 1) !== huntMapSet()) return false;
+  if (worker.carrying && ['boarMeat', 'elkMeat'].includes(worker.carrying.food)) return false;
   const animal = huntingTarget(worker);
   if (!animal) return false;
   if (distanceTo(worker, animal) > MELEE_RANGE) {
@@ -8469,13 +8485,19 @@ function wildlifeStep(animal, delta, reducedMotion) {
     if (animal.cooldown <= 0) { animal.cooldown = ATTACK_COOLDOWN * 1.5; animal.attackAnim = 0.55; animal.actionClock = 0; strike(animal, foe); }
     animateAttack(animal, delta, reducedMotion); return;
   }
+  animal.roamClock = (animal.roamClock || 0) + delta;
   if (animal.wait > 0) {
     animal.wait = Math.max(0, animal.wait - delta);
     animateIdle(animal, delta, reducedMotion); return;
   }
+  if (!animal.roamTarget && animal.roamClock >= WILDLIFE_NORTH_MIGRATION_EVERY) {
+    animal.roamTarget = { x: 18 + Math.random() * 64, y: 22 + Math.random() * 32 };
+    animal.roamClock = 0;
+    animal.northMigration = true;
+  }
   if (!animal.roamTarget) animal.roamTarget = { x: 10 + Math.random() * 80, y: 18 + Math.random() * 155 };
   if (distanceTo(animal, animal.roamTarget) < 0.65) {
-    animal.roamTarget = null; animal.wait = 1.8 + Math.random() * 3.6;
+    animal.roamTarget = null; animal.northMigration = false; animal.wait = 1.8 + Math.random() * 3.6;
     animateIdle(animal, delta, reducedMotion); return;
   }
   animateWalk(animal, moveToward(animal, animal.roamTarget, 1.25 * delta) > 0, delta, reducedMotion);
@@ -8598,7 +8620,7 @@ function spawnWildlife(initialHerd = false) {
     const kind = initialHerd && live === 0 && i < 2 ? (i === 0 ? 'boar' : 'elk') : Math.random() < 0.58 ? 'boar' : 'elk';
     const base = pick(locations);
     const stats = WILDLIFE_STATS[kind];
-    state.bandits.push({ id: `wildlife-${kind}-${state.minutes}-${Math.floor(Math.random() * 99999)}`, className: 'Wildlife', kind, spriteId: WILDLIFE_ART[kind], mapId: 'wilds', mapSet, name: `${WILDLIFE_NAMES[kind]} ${i + 1}`, level: 1, fixedStats: stats, hp: stats.hp, alive: true, x: base.x + Math.random() * 4 - 2, y: base.y + Math.random() * 5 - 2, action: 'idle', frame: Math.floor(Math.random() * 4), idleClock: Math.random() * 2, wait: 1 + Math.random() * 4, facing: 'front', side: 'right' });
+    state.bandits.push({ id: `wildlife-${kind}-${state.minutes}-${Math.floor(Math.random() * 99999)}`, className: 'Wildlife', kind, spriteId: WILDLIFE_ART[kind], mapId: 'wilds', mapSet, name: `${WILDLIFE_NAMES[kind]} ${i + 1}`, level: 1, fixedStats: stats, hp: stats.hp, alive: true, x: base.x + Math.random() * 4 - 2, y: base.y + Math.random() * 5 - 2, action: 'idle', frame: Math.floor(Math.random() * 4), idleClock: Math.random() * 2, wait: 1 + Math.random() * 4, roamClock: Math.random() * WILDLIFE_NORTH_MIGRATION_EVERY, facing: 'front', side: 'right' });
   }
   if (count > 0) say(`${count} ${count === 1 ? 'animal apareceu' : 'animais apareceram'} nas Wilds: javalis e alces podem ser caçados.`);
 }
