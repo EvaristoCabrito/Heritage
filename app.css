@@ -116,6 +116,8 @@ body.hide-trees .gpu-map-trees { display: none; }
 .lair-marker:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
 .lair-marker.selected small { border-color: #f4da9a; color: #f4da9a; }
 /* Personagens ficam sempre por cima de construções e árvores, inteiros e opacos. */
+.scatter-tree-layer { position: absolute; z-index: 5; inset: 0; pointer-events: none; }
+.scatter-tree { position: absolute; height: auto; transform: translate(-50%, -100%); pointer-events: none; user-select: none; filter: drop-shadow(3px 8px 4px rgba(0,0,0,.35)); }
 .hero-layer { position: absolute; z-index: 6; inset: 0; pointer-events: none; }
 .manor-inventory-trigger { position: absolute; z-index: 5; left: 4%; top: 5.5%; width: 44%; height: 13%; padding: 0; border: 0; outline: none; background: transparent; cursor: pointer; pointer-events: auto; touch-action: manipulation; }
 #map-world[data-map-set="2"] .manor-inventory-trigger { left: 3%; top: 5%; width: 36%; height: 11%; }
@@ -1698,8 +1700,9 @@ body.sorting, body.sorting * { user-select: none; -webkit-user-select: none; }
 #site-layer .site.constructing .build-progress { visibility: hidden; }
 
 /* Botão ÁRVORES: esconde a camada de árvores da frente do mapa. Mesmo visual do botão WILDS. */
+#map-world.art-pale .map-atmosphere { display: none; }
 body.hide-trees .tree-foreground { display: none; }
-.map-tools .trees-toggle { min-width: 36px; height: 30px; padding: 0 8px; border: 1px solid rgba(214,184,117,.55); border-radius: 4px; color: #f4ead4; background: rgba(26,28,23,.84); font: 600 10px 'Figtree', sans-serif; letter-spacing: .08em; cursor: pointer; }
+.map-tools .trees-toggle, .map-tools .map-art-cycle { min-width: 36px; height: 30px; padding: 0 8px; border: 1px solid rgba(214,184,117,.55); border-radius: 4px; color: #f4ead4; background: rgba(26,28,23,.84); font: 600 10px 'Figtree', sans-serif; letter-spacing: .08em; cursor: pointer; }
 .map-tools .trees-toggle[aria-pressed="false"] { color: #9d9583; border-style: dashed; }
 .map-tools .trees-toggle:focus-visible { outline: 2px solid #f4da9a; outline-offset: 2px; }
 
@@ -1707,7 +1710,7 @@ body.hide-trees .tree-foreground { display: none; }
 .map-tools .zoom-control { display: block; padding: 2px; }
 .map-tools .zoom-btn:not(.active) { display: none; }
 .map-tools .zoom-btn.active { color: #f4ead4; background: transparent; }
-.map-tools .camera-wilds, .map-tools .trees-toggle, .map-tools .spell-corner-btn {
+.map-tools .camera-wilds, .map-tools .trees-toggle, .map-tools .map-art-cycle, .map-tools .spell-corner-btn {
   box-sizing: border-box;
   width: max-content;
   min-width: max-content;

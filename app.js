@@ -686,6 +686,45 @@ const WORLD_Y_UNITS = 200 * MAP_WORLD_HEIGHT / 2452;
 const Y_TO_X_SCALE = MAP_WORLD_HEIGHT / WORLD_Y_UNITS * 100 / 1199;
 let currentMap = 'city';
 let currentMapSet = 1;
+// Which painting is on screen. 1 free build, 2 campaign, 3 free build map 2.
+let mapArt = 1;
+const MAP_ART = {
+  1: {
+    label: 'LIVRE 1',
+    city: ['mordavia-map.webp', 'mordavia-forest-layer.png'],
+    wilds: ['mordavia-wilds-map.webp', 'mordavia-wilds-forest-layer.png'],
+  },
+  2: {
+    label: 'CAMPANHA',
+    city: ['mordavia-map02-tropical-city-ground-v05.png', 'mordavia-map02-tropical-city-trees-v05.png'],
+    wilds: ['mordavia-map02-tropical-wilds-ground-v06.png', 'mordavia-map02-tropical-wilds-trees-v07.png'],
+  },
+  3: {
+    label: 'LIVRE 2',
+    city: ['mordavia-map02-tropical-city-ground-v08.png', 'scatter-trees/empty.png'],
+    wilds: ['mordavia-map02-tropical-wilds-ground-v08.png', 'scatter-trees/empty.png'],
+  },
+  4: {
+    label: 'LIVRE 3',
+    city: ['mordavia-map03b-tropical-city-ground.png', 'mordavia-map03b-tropical-city-trees.png'],
+    wilds: ['mordavia-map03c-tropical-wilds-ground.png', 'mordavia-map03c-tropical-wilds-trees.png'],
+  },
+  5: {
+    label: 'LIVRE 4',
+    city: ['mordavia-map04f-tropical-city-ground.png', 'mordavia-map04-tropical-city-trees.png'],
+    wilds: ['mordavia-map04g-tropical-wilds-ground.png', 'mordavia-map04-tropical-wilds-trees.png'],
+  },
+  6: {
+    label: 'LIVRE 5',
+    city: ['mordavia-map05-tropical-city-ground.png', 'mordavia-map05-tropical-city-trees.png'],
+    wilds: ['mordavia-map05-tropical-wilds-ground.png', 'mordavia-map05-tropical-wilds-trees.png'],
+  },
+  7: {
+    label: 'LIVRE 6',
+    city: ['mordavia-map06-tundra-city-ground.png', 'scatter-trees/empty.png'],
+    wilds: ['mordavia-map06-tundra-wilds-ground.png', 'scatter-trees/empty.png'],
+  },
+};
 const camera = { x: 0.5, y: 0, zoom: 0, drag: null };
 const clampCamera = value => Math.max(0, Math.min(1, value));
 
@@ -777,9 +816,9 @@ function switchMap(name) {
   const wilds = currentMap === 'wilds';
   $('#map-world').dataset.map = currentMap;
   $('#map-world').dataset.mapSet = String(currentMapSet);
-  const art = currentMapSet === 2
-    ? (wilds ? ['mordavia-map02-tropical-wilds-ground-v06.png', 'mordavia-map02-tropical-wilds-trees-v07.png'] : ['mordavia-map02-tropical-city-ground-v05.png', 'mordavia-map02-tropical-city-trees-v05.png'])
-    : (wilds ? ['mordavia-wilds-map.webp', 'mordavia-wilds-forest-layer.png'] : ['mordavia-map.webp', 'mordavia-forest-layer.png']);
+  $('#map-world').classList.toggle('art-pale', mapArt !== 1);
+  const pack = MAP_ART[mapArt] || MAP_ART[1];
+  const art = wilds ? pack.wilds : pack.city;
   $('.map-art').src = `public/art/${art[0]}`;
   $('.tree-foreground').src = `public/art/${art[1]}`;
   $('.map-art').alt = wilds ? 'Mapa dos Wilds' : 'Mapa de City';
@@ -787,6 +826,11 @@ function switchMap(name) {
   button.textContent = wilds ? 'CITY' : 'WILDS';
   button.title = wilds ? 'Voltar para City' : 'Abrir Wilds';
   button.setAttribute('aria-label', button.title);
+  const artButton = $('#map-art-cycle');
+  if (artButton) {
+    artButton.textContent = pack.label;
+    artButton.title = 'Trocar o mapa. Agora: ' + pack.label;
+  }
   camera.x = 0.5;
   camera.y = 0;
   state.selectedSite = null;
@@ -803,6 +847,53 @@ function switchMap(name) {
   renderPanel();
   updateHud();
   updateManorInventoryTrigger();
+  renderScatterTrees();
+}
+
+const SCATTER_TREES = {
+  3: {
+    city: [
+      { art: 'royal-palm', x: 11, y: 52, w: 8 },
+      { art: 'coconut', x: 90, y: 40, w: 9 },
+      { art: 'broadleaf', x: 7, y: 96, w: 12 },
+      { art: 'fig', x: 92, y: 118, w: 13 },
+      { art: 'mangrove', x: 13, y: 146, w: 12 },
+      { art: 'rainforest', x: 88, y: 164, w: 11 },
+      { art: 'royal-palm', x: 20, y: 182, w: 7 },
+      { art: 'coconut', x: 80, y: 196, w: 8 },
+    ],
+    wilds: [
+      { art: 'fig', x: 9, y: 46, w: 13 },
+      { art: 'royal-palm', x: 88, y: 34, w: 8 },
+      { art: 'coconut', x: 15, y: 90, w: 9 },
+      { art: 'broadleaf', x: 90, y: 104, w: 12 },
+      { art: 'mangrove', x: 11, y: 142, w: 12 },
+      { art: 'rainforest', x: 86, y: 156, w: 11 },
+      { art: 'royal-palm', x: 22, y: 180, w: 7 },
+      { art: 'coconut', x: 78, y: 198, w: 8 },
+    ],
+  },
+};
+
+function renderScatterTrees() {
+  const layer = $('#scatter-tree-layer');
+  if (!layer) return;
+  const spots = SCATTER_TREES[mapArt]?.[currentMap] || [];
+  const next = spots.map(spot => `${spot.art}:${spot.x}:${spot.y}`).join('|');
+  if (layer.dataset.spots === next) return;
+  layer.dataset.spots = next;
+  layer.replaceChildren(...spots.map(spot => {
+    const img = document.createElement('img');
+    img.className = 'scatter-tree';
+    img.alt = '';
+    img.draggable = false;
+    img.src = `public/art/scatter-trees/${spot.art}.png`;
+    img.style.left = `${spot.x}%`;
+    img.style.top = `${spot.y / WORLD_Y_UNITS * 100}%`;
+    img.style.width = `${spot.w}%`;
+    img.style.zIndex = String(Math.round(spot.y * 10));
+    return img;
+  }));
 }
 
 function focusActorOnMap(actorId) {
@@ -9227,6 +9318,7 @@ function startGame(newState, slot) {
   ensureFarmWorkers();
   game.slot = slot;
   currentMapSet = state.mapSet === 2 ? 2 : 1;
+  mapArt = state.campaignChapter ? (currentMapSet === 2 ? 2 : 1) : ({ 2: 3, 3: 4, 4: 5, 5: 6, 6: 7 }[state.freeMap] || 1);
   worldScenario = loadScenario(state.scenario || 1);
   migrateLegacyExtractionSites();
   state.buildings.filter(building => building.type === 'mine' && building.resourcePlaceId).forEach(building => {
@@ -9262,6 +9354,7 @@ function startGame(newState, slot) {
   closeMenu();
   sizeWorld();
   homeCamera();
+  if (mapArt === 5 && currentMap === 'city') { camera.y = 1; renderCamera(); }
   window.Monarch?.reset();
   renderSites(); renderHeroes(); renderPanel(); updateHud();
   renderPlaces();
@@ -9318,8 +9411,9 @@ function openCampaignResult() {
   showScreen(state.retinue || !CAMPAIGN_CHAPTERS[state.campaignChapter] ? 'retinueDone' : 'scenarioEnd', { servants: [], protectors: [] });
 }
 
-function newGame(slot, heir, campaign = false) {
+function newGame(slot, heir, campaign = false, freeMap = 1) {
   const fresh = campaign ? campaignState(1, heir) : newGameState(heir);
+  if (!campaign) fresh.freeMap = [2, 3, 4, 5, 6].includes(freeMap) ? freeMap : 1;
   grantStartingStock(fresh);
   startGame(fresh, slot);
   say('A herança é sua. Os credores já foram avisados.');
@@ -9803,6 +9897,9 @@ const SCREENS = {
   gameMode() {
     return { cls: 'is-title', html: `<section class="menu-card narrow"><header class="menu-card-head"><h2>Novo jogo</h2></header><nav class="menu-list" aria-label="Modo de jogo"><button type="button" class="primary" data-action="game-mode" data-mode="free">Construção livre</button><button type="button" data-action="game-mode" data-mode="campaign">Campanha</button><button type="button" data-action="back">Voltar</button></nav></section>` };
   },
+  freeMap() {
+    return { cls: 'is-title', html: `<section class="menu-card narrow"><header class="menu-card-head"><span class="eyebrow">CONSTRUÇÃO LIVRE</span><h2>Escolha o mapa</h2></header><nav class="menu-list" aria-label="Mapa da construção livre"><button type="button" class="primary" data-action="free-map" data-map="1">Mapa 1</button><button type="button" data-action="free-map" data-map="2">Mapa 2</button><button type="button" data-action="free-map" data-map="3">Mapa 3</button><button type="button" data-action="free-map" data-map="4">Mapa 4</button><button type="button" data-action="free-map" data-map="5">Mapa 5</button><button type="button" data-action="free-map" data-map="6">Mapa 6</button><button type="button" data-action="back">Voltar</button></nav></section>` };
+  },
   campaignBriefing({ chapter, slot }) {
     const definition = CAMPAIGN_CHAPTERS[chapter - 1];
     const transition = chapter > 1;
@@ -10199,7 +10296,15 @@ function initMenus() {
       case 'heir-stat-down': adjustHeirAttribute(button.dataset.stat, -1); break;
       case 'continue': showScreen('continue'); break;
       case 'new': showScreen('gameMode'); break;
-      case 'game-mode': showScreen('saves', { mode: 'new', campaign: button.dataset.mode === 'campaign' }); break;
+      case 'game-mode':
+        if (button.dataset.mode === 'campaign') showScreen('saves', { mode: 'new', campaign: true });
+        else showScreen('freeMap');
+        break;
+      case 'free-map': {
+        const picked = Number(button.dataset.map);
+        showScreen('saves', { mode: 'new', campaign: false, freeMap: [2, 3, 4, 5, 6].includes(picked) ? picked : 1 });
+        break;
+      }
       case 'load': showScreen('saves', { mode: 'load' }); break;
       case 'nobles': showScreen('nobles'); break;
       case 'howto': showScreen('howto', { section: 0 }); break;
@@ -10221,9 +10326,11 @@ function initMenus() {
         else loadGame(slot);
         break;
       case 'new-slot': {
-        const campaign = menu.stack.at(-1).params.campaign;
-        if (readSave(slot)) confirmThen({ title: `Novo jogo no slot ${slot}?`, text: 'O jogo que está lá some pra sempre.', confirmLabel: 'Começar novo', danger: true }, () => { menu.stack.pop(); showScreen('heir', { slot, selected: 0, campaign }); });
-        else showScreen('heir', { slot, selected: 0, campaign });
+        const params = menu.stack.at(-1).params;
+        const campaign = params.campaign;
+        const freeMap = params.freeMap;
+        if (readSave(slot)) confirmThen({ title: `Novo jogo no slot ${slot}?`, text: 'O jogo que está lá some pra sempre.', confirmLabel: 'Começar novo', danger: true }, () => { menu.stack.pop(); showScreen('heir', { slot, selected: 0, campaign, freeMap }); });
+        else showScreen('heir', { slot, selected: 0, campaign, freeMap });
         break;
       }
       case 'pick-heir': case 'pick-noble': {
@@ -10234,8 +10341,16 @@ function initMenus() {
         $('#menu-layer').scrollTop = keepScroll;
         break;
       }
-      case 'choose-heir': showScreen('intro', { slot, heir: HEIRS[menu.stack[menu.stack.length - 1].params.selected].id, campaign: menu.stack.at(-1).params.campaign }); break;
-      case 'accept': newGame(slot, menu.stack[menu.stack.length - 1].params.heir, menu.stack.at(-1).params.campaign); break;
+      case 'choose-heir': {
+        const picked = menu.stack[menu.stack.length - 1].params;
+        showScreen('intro', { slot, heir: HEIRS[picked.selected].id, campaign: picked.campaign, freeMap: picked.freeMap });
+        break;
+      }
+      case 'accept': {
+        const picked = menu.stack[menu.stack.length - 1].params;
+        newGame(slot, picked.heir, picked.campaign, picked.freeMap);
+        break;
+      }
       case 'delete-slot':
         confirmThen({ title: `Apagar o slot ${slot}?`, text: 'Esse jogo some pra sempre. Como a família anterior.', confirmLabel: 'Apagar', danger: true }, () => {
           deleteSave(slot);
