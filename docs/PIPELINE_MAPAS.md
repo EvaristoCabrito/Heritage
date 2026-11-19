@@ -74,6 +74,7 @@ Não há ordenação por árvore. Uma copa não passa para trás de uma pessoa. 
 
 - Tronco, árvore distante e árvore cujo pé o personagem deve cobrir ficam **no chão**.
 - A PNG de copas leva só a copa que deve cobrir o personagem, com alfa de verdade.
+- A variedade de vegetação mora nesta camada. O chão fica aberto de propósito, e por isso parece pobre de plantas quando se olha ele sozinho. Palmeira, figueira, bambu e o resto das espécies diferentes entram aqui, cada copa com alfa próprio, porque é esta folha que passa na frente das pessoas. Não compense enchendo o chão de espécies.
 - Não pinte a árvore inteira nas duas camadas. Dá copa dupla e borda suja.
 - Não deixe retângulo opaco, franja branca, franja preta, nem xadrez gravado no arquivo.
 - Pesca fica na água aberta, não debaixo de uma copa sólida. O ícone ainda aparece, a água não.
@@ -319,7 +320,7 @@ O cemitério da City livre está no mesmo ponto do fim da estrada (44, 190). Nã
 O que faz os mapas atuais parecerem fracos, e o que a próxima versão evita:
 
 1. **Metade de baixo clonada.** City e Wilds precisam de caminhos diferentes, outra clareira, outra pedra, outra água. O único encontro é o portão da seção 6.2.
-2. **Carimbo de folha.** O chão tropical repete um decalque de samambaia. Varie escala, espécie, terra nua, borda gasta da trilha e sombra de contato debaixo da copa.
+2. **Carimbo de folha no chão.** O chão tropical repete um decalque de samambaia. O chão não é o lugar da variedade: variedade de espécie vai na PNG de copas. No chão, troque o carimbo por terra nua, trilha gasta e sombra de contato. Na camada de cima, use copas diferentes, não a mesma árvore carimbada.
 3. **Tamanho errado.** Entregue 1199 × 2624. O 847 × 1857 do conjunto 2 é ampliado pelo CSS e desmancha no zoom.
 4. **Duas luzes.** Conjunto 1 está em torno de rgb 90, 73, 48, saturação cerca de 42. Conjunto 2 está mais verde e em saturação cerca de 62, com água ciano. Grade o tropical para a luz dos prédios fotorrealistas antes de soltar os sprites em cima.
 5. **Copa dupla e fumaça gravada.** Chão sem copa de primeiro plano, PNG só com essas copas, chaminé sem fumaça pintada.
