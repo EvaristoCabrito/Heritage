@@ -147,7 +147,10 @@ void main() { outputColor = texture(image, uv) * tint; }`;
       try {
         const adapter = await navigator.gpu.requestAdapter();
         if (!adapter) throw new Error('Adaptador WebGPU indisponível');
-        device = await adapter.requestDevice();
+        const maxDim = adapter.limits?.maxTextureDimension2D;
+        device = await (Number.isFinite(maxDim) && maxDim > 0
+          ? adapter.requestDevice({ requiredLimits: { maxTextureDimension2D: maxDim } })
+          : adapter.requestDevice());
         return await createGPU(document.createElement('canvas'), device);
       } catch (error) { device?.destroy(); errors.push(`WebGPU: ${error.message}`); }
     } else if (options.backend !== 'webgl2') errors.push('WebGPU indisponível');

@@ -32,7 +32,7 @@
       if (layer.retired) return;
       layer.retired = true; layer.revision++; restore(layer);
       observer?.disconnect(); image.removeEventListener('load', schedule); image.removeEventListener('error', onError);
-      layer.texture?.destroy(); layer.texture = null; layer.bytes = 0;
+      layer.textures?.forEach(t => t.destroy()); layer.texture?.destroy(); layer.texture = null; layer.textures = null; layer.bytes = 0;
       canvas.remove(); renderer.destroy();
       const index = layers.indexOf(layer); if (index >= 0) layers.splice(index, 1);
       updateMetrics();
@@ -55,25 +55,49 @@
       const revision = ++layer.revision;
       restore(layer);
       if (!image.complete || !image.naturalWidth || !image.naturalHeight) return;
-      let texture;
+      const textures = [];
       let scope = false;
       try {
         const width = image.naturalWidth, height = image.naturalHeight;
-        if (width > renderer.maxTextureSize || height > renderer.maxTextureSize) throw new Error('Mapa excede o limite de textura da GPU');
+        const scale = Math.min(1, renderer.maxTextureSize / width, renderer.maxTextureSize / height);
+        const canvasW = Math.max(1, Math.round(width * scale)), canvasH = Math.max(1, Math.round(height * scale));
+        const sprites = [];
+        if (width <= renderer.maxTextureSize && height <= renderer.maxTextureSize) {
+          const texture = renderer.texture(image);
+          textures.push(texture);
+          sprites.push({ texture, x: 0, y: 0, width: canvasW, height: canvasH });
+        } else {
+          const sliceH = Math.min(renderer.maxTextureSize, 2048);
+          const sliceW = width <= renderer.maxTextureSize ? width : canvasW;
+          for (let y = 0; y < height; y += sliceH) {
+            const h = Math.min(sliceH, height - y);
+            const dstY = Math.round(y * scale);
+            const dstH = Math.max(1, Math.round((y + h) * scale) - dstY);
+            const sliceCanvas = document.createElement('canvas');
+            sliceCanvas.width = sliceW;
+            sliceCanvas.height = h;
+            const ctx = sliceCanvas.getContext('2d');
+            if (!ctx) throw new Error('Contexto 2D para fatia de mapa indisponível');
+            ctx.drawImage(image, 0, y, width, h, 0, 0, sliceW, h);
+            const texture = renderer.texture(sliceCanvas);
+            textures.push(texture);
+            sprites.push({ texture, x: 0, y: dstY, width: canvasW, height: dstH });
+          }
+        }
         renderer.beginValidation(); scope = true;
-        canvas.width = width; canvas.height = height;
-        texture = renderer.texture(image);
-        const frame = window.HeritageGPU2D.batchesFor([{ texture, x: 0, y: 0, width, height }]);
+        canvas.width = canvasW; canvas.height = canvasH;
+        const frame = window.HeritageGPU2D.batchesFor(sprites);
         renderer.draw(frame.data, frame.batches);
         const validation = renderer.finishValidation(); scope = false;
         await validation;
-        if (revision !== layer.revision || layer.retired) { texture.destroy(); return; }
-        layer.texture?.destroy(); layer.texture = texture; layer.bytes = width * height * 4;
+        if (revision !== layer.revision || layer.retired) { textures.forEach(t => t.destroy()); return; }
+        layer.textures?.forEach(t => t.destroy()); layer.texture?.destroy();
+        layer.textures = textures; layer.texture = textures[0]; layer.bytes = textures.length === 1 ? width * height * 4 : canvasW * canvasH * 4;
         canvas.style.visibility = 'visible'; image.style.visibility = 'hidden'; layer.active = true;
         updateMetrics();
       } catch (error) {
         if (scope) { try { await renderer.finishValidation(); } catch {} }
-        texture?.destroy();
+        textures.forEach(t => t.destroy());
         if (revision !== layer.revision) return;
         fallback(error);
       }

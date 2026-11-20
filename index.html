@@ -41,7 +41,28 @@
         </div>
 
         <div class="hud-time">
-          <div class="world-clock"><span class="live-dot"></span><span id="clock">06:20</span><small id="date">Manhã · Dia 1 · Mês 1 · Ano 1</small></div>
+          <div class="world-clock" id="world-clock" role="button" tabindex="0" title="Passagem do tempo: clique para alterar a velocidade" aria-haspopup="menu" aria-expanded="false">
+            <span class="live-dot"></span>
+            <div class="clock-time-row">
+              <span id="clock">06:20</span>
+              <span class="clock-speed-tag" id="clock-speed-tag">1×</span>
+            </div>
+            <small id="date">Manhã · Dia 1 · Mês 1 · Ano 1</small>
+            <div class="clock-speed-menu" id="clock-speed-menu" role="menu" hidden>
+              <div class="clock-speed-title">Passagem do tempo</div>
+              <div class="clock-speed-list">
+                <button type="button" class="speed-opt active" data-speed="1" role="menuitem" aria-checked="true">
+                  <b>1×</b><span>Normal</span>
+                </button>
+                <button type="button" class="speed-opt" data-speed="2" role="menuitem" aria-checked="false">
+                  <b>2×</b><span>Rápida</span>
+                </button>
+                <button type="button" class="speed-opt" data-speed="3" role="menuitem" aria-checked="false">
+                  <b>3×</b><span>Máxima</span>
+                </button>
+              </div>
+            </div>
+          </div>
           <button class="sheet-btn graveyard-btn" id="graveyard-btn" type="button" title="Cemitério: heróis e camponeses perdidos nesta região" aria-label="Abrir o cemitério desta região"><img src="public/art/icon-heroes-cemetery-photo-v01.png" alt="" aria-hidden="true"></button>
           <button class="sheet-btn" id="sheet-btn" type="button" title="Status do herdeiro" aria-label="Abrir o status do herdeiro">STATUS</button>
           <button class="music-toggle" type="button" data-music-toggle title="Música: ligada" aria-label="Desligar música" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/><path class="mute" d="M16 9l6 6M22 9l-6 6"/></svg></button>
